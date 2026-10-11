@@ -2,7 +2,7 @@
 //   click a portal: take it            G: go to the nearest way down on this depth
 //   PageDown / PageUp: go down / up a depth right away (finding the well / ring first)
 import * as THREE from 'three';
-import { camera } from '../render/scene.js';
+import { camera, renderer } from '../render/scene.js';
 import { step } from '../world/coords.js';
 import { state, player, setStatus } from './state.js';
 import { whenReady } from './hud.js';
@@ -20,8 +20,7 @@ export function takePortal(q) {
 }
 
 function portalAt(e) {
-  if (state.inventoryOpen) return null;
-  if (!state.world) return null;
+  if (state.inventoryOpen || !state.world || e.target !== renderer.domElement) return null;
   mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   ray.setFromCamera(mouse, camera);
   const hit = ray.intersectObjects(state.world.portalFx.map(f => f.obj), true)[0];
@@ -58,8 +57,6 @@ async function goTo(kind, take) {
 }
 
 if (state.dev) {
-  document.querySelector('#hud .title span').textContent = 'DEV';
-  document.getElementById('help').insertAdjacentHTML('beforeend', '<br>DEV: click a portal to take it &nbsp; <kbd>G</kbd> next way down &nbsp; <kbd>PgDn</kbd>/<kbd>PgUp</kbd> change depth');
   addEventListener('click', e => { const q = portalAt(e); if (q) takePortal(q); });
   addEventListener('mousemove', e => { document.body.style.cursor = portalAt(e) ? 'pointer' : ''; });
   addEventListener('keydown', e => {

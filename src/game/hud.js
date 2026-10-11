@@ -1,33 +1,40 @@
-// HUD text, health bar and screen fades.
-import { clamp } from '../core/util.js';
+// The dev overlay (?dev=1: seed, depth, layer, fps, cube stats, status) and screen fades.
+// The player's own bars float over the character (render/playerbar.js).
 import { themeAt } from '../themes/depth.js';
-import { xpProgress } from '../core/progression.js';
 import { isFaceOpen } from '../core/boundaries.js';
 import { state } from './state.js';
 
 const $ = id => document.getElementById(id);
+const shown = {};
+// write only on change: rewriting text every frame would drop a selection being copied
+const put = (id, text, html = false) => { if (shown[id] === text) return; shown[id] = text; $(id)[html ? 'innerHTML' : 'textContent'] = text; };
+
+if (state.dev) {
+  $('dev').hidden = false;
+  $('dev-copy').addEventListener('click', () => navigator.clipboard?.writeText($('dev').innerText.replace(/^copy\s*/, '')));
+}
 
 export function showStats(map, cube, seed, visits) {
-  $('depth').textContent = `${map.depth} · ${map.town ? 'Town' : map.merchantCamp ? 'Merchant camp' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`;
-  $('seed').textContent = seed;
+  put('dev-depth', `${map.depth} · ${map.town ? 'Town' : map.merchantCamp ? 'Merchant camp' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`);
+  put('dev-seed', String(seed));
   const s = map.stats;
   const portals = map.portals.filter(p => p.kind !== 'spawn' && !isFaceOpen(state.openedFaces, cube, p.dir)).map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));
   const open = [0, 1, 2, 3].filter(d => isFaceOpen(state.openedFaces, cube, d)).map(d => ['E', 'W', 'S', 'N'][d]);
-  $('stats').innerHTML =
+  put('dev-stats',
     `cube ${cube} · ${map.kind} · ${map.archetype} · ${s.layers} layer${s.layers > 1 ? 's' : ''} · portals ${portals.join(' ')} · open ${open.join(' ') || '-'} · visit ${visits}<br>` +
     `slopes ${s.slopes} · cliffs ${s.cliffs} · ramps ${s.ramps} · pillars ${s.pillars} · ` +
     `stairs ${s.stairs} · landings ${s.landings} · bridges ${s.bridges} · fences ${s.fences}<br>` +
-    `${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`;
+    `${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`, true);
 }
 
+let frames = 0, since = performance.now();
 export function updateHud(player, map, statusMsg) {
-  const xp = xpProgress(player);
-  $('hpbar').style.width = clamp(player.hp / player.maxHp * 100, 0, 100) + '%';
-  $('player-stats').textContent = `Level ${player.level} · HP ${Math.ceil(player.hp)}/${player.maxHp}`;
-  $('xpbar').style.width = clamp(xp.current / xp.required * 100, 0, 100) + '%';
-  $('xp-text').textContent = `XP ${xp.current}/${xp.required}`;
-  $('status').textContent = statusMsg;
-  $('layer').textContent = map ? `${player.layer + 1}/${map.K}` : '-';
+  if (!state.dev) return;
+  put('dev-layer', map ? `${player.layer + 1}/${map.K}` : '-');
+  put('dev-status', statusMsg);
+  frames++;
+  const now = performance.now();
+  if (now - since >= 500) { put('dev-fps', String(Math.round(frames * 1000 / (now - since)))); frames = 0; since = now; }
 }
 
 export function flash() {

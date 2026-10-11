@@ -5,6 +5,7 @@ import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
 import { knockDown } from './ragdoll.js';
 import { toggleInventory, setInventoryOpen } from './inventory.js';
 import { controls, clearInput } from './inputstate.js';
+import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
 export { clearInput };
 
 const { keys, lastTap } = controls;
@@ -14,9 +15,12 @@ const DOUBLE_TAP = 0.3;
 
 addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
-  if (e.code === 'KeyI') { if (!e.repeat) toggleInventory(); e.preventDefault(); return; }
+  if (e.code === 'KeyI') { if (!e.repeat) { setHelpOpen(false); toggleInventory(); } e.preventDefault(); return; }
   if (e.code === 'Escape' && state.inventoryOpen) { setInventoryOpen(false); e.preventDefault(); return; }
   if (state.inventoryOpen) return;
+  // by key, not code: ? and / sit on different keys across layouts
+  if (e.key === '?' || e.key === '/') { if (!e.repeat) toggleHelp(); e.preventDefault(); return; }
+  if (e.code === 'Escape' && helpOpen()) { setHelpOpen(false); e.preventDefault(); return; }
   keys.add(e.code);
   if (e.repeat) return;
   if (MOVE.includes(e.code)) {

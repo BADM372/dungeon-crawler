@@ -10,29 +10,48 @@
 </script>
 </head>
 <body>
-<div id="hud">
-  <div class="title">CUBE CRAWLER <span></span></div>
-  <div>Depth <b id="depth">-</b> &middot; Seed <b id="seed">-</b> &middot; Layer <b id="layer">-</b></div>
-  <div class="hp"><div id="hpbar"></div></div>
-  <div id="player-stats">Level 1 · HP 100/100</div>
-  <div class="xp"><div id="xpbar"></div></div>
-  <div id="xp-text">XP 0/100</div>
-  <div id="status"></div>
-  <div id="stats"></div>
+<div id="dev" hidden>
+  <div><button id="dev-copy" title="Copy all of this">copy</button> seed <b id="dev-seed" class="pick">-</b> &middot; depth <b id="dev-depth">-</b> &middot; layer <b id="dev-layer">-</b> &middot; <b id="dev-fps">-</b> fps</div>
+  <div id="dev-stats"></div>
+  <div id="dev-status"></div>
 </div>
-<div id="help">
-  <kbd>WASD</kbd> walk (double-tap or hold <kbd>Shift</kbd> to run) &nbsp; <kbd>Space</kbd> jump &nbsp; <kbd>F</kbd> / click sword &nbsp; <kbd>Q</kbd>/<kbd>E</kbd> rotate view &nbsp; <kbd>wheel</kbd> zoom<br>
-  <kbd>I</kbd> inventory &nbsp; <kbd>K</kbd> knock over &nbsp; <kbd>R</kbd> respawn &nbsp; <kbd>N</kbd> new world &nbsp; <kbd>P</kbd> show generator path &nbsp; <kbd>V</kbd> neighbour cubes
-</div>
-<div id="legend">
-  <div>portal, unexplored <i style="background:#ffc94a"></i></div>
-  <div>portal, explored <i style="background:#5fd3ff"></i></div>
-  <div>open connection <i style="background:#70d6aa"></i></div>
-  <div>water (deadly) <i style="background:#2e86de"></i></div>
-  <div>lava (deadly) <i style="background:#ff5a00"></i></div>
-  <div>acid (deadly) <i style="background:#7dff3a"></i></div>
-  <div>stairs <i style="background:#c9bfae"></i></div>
-  <div>bridge / fence <i style="background:#a0703f"></i></div>
+<div id="help-overlay" hidden>
+  <section id="help-panel" role="dialog" aria-labelledby="help-title">
+    <header><h1 id="help-title">Controls</h1><span><kbd>?</kbd> / <kbd>Esc</kbd> to close</span></header>
+    <dl class="keys">
+      <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>walk (double-tap or hold <kbd>Shift</kbd> to run)</dd>
+      <dt><kbd>Space</kbd></dt><dd>jump</dd>
+      <dt><kbd>F</kbd> / click</dt><dd>swing the sword</dd>
+      <dt><kbd>Q</kbd> <kbd>E</kbd></dt><dd>rotate the view</dd>
+      <dt>wheel</dt><dd>zoom</dd>
+      <dt><kbd>I</kbd></dt><dd>inventory</dd>
+      <dt><kbd>K</kbd></dt><dd>knock over</dd>
+      <dt><kbd>R</kbd></dt><dd>respawn where you came in</dd>
+      <dt><kbd>N</kbd></dt><dd>new world</dd>
+      <dt><kbd>P</kbd></dt><dd>show the generator path</dd>
+      <dt><kbd>V</kbd></dt><dd>neighbour cubes</dd>
+      <dt><kbd>?</kbd></dt><dd>this help</dd>
+    </dl>
+    <div class="dev-only" hidden>
+      <h2>Developer</h2>
+      <dl class="keys">
+        <dt>click portal</dt><dd>take it</dd>
+        <dt><kbd>G</kbd></dt><dd>go to the next way down</dd>
+        <dt><kbd>PgDn</kbd> <kbd>PgUp</kbd></dt><dd>change depth</dd>
+      </dl>
+    </div>
+    <h2>Legend</h2>
+    <div id="legend">
+      <div><i style="background:#ffc94a"></i>portal, unexplored</div>
+      <div><i style="background:#5fd3ff"></i>portal, explored</div>
+      <div><i style="background:#70d6aa"></i>open connection</div>
+      <div><i style="background:#2e86de"></i>water (deadly)</div>
+      <div><i style="background:#ff5a00"></i>lava (deadly)</div>
+      <div><i style="background:#7dff3a"></i>acid (deadly)</div>
+      <div><i style="background:#c9bfae"></i>stairs</div>
+      <div><i style="background:#a0703f"></i>bridge / fence</div>
+    </div>
+  </section>
 </div>
 <div id="inventory-overlay" hidden>
   <section id="inventory-panel" role="dialog" aria-modal="true" aria-labelledby="inventory-title" tabindex="-1">

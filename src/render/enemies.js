@@ -6,26 +6,13 @@ import { spiderModel } from './spidermodel.js';
 import { stunderModel } from './stundermodel.js';
 import { cloneEnemy } from './enemymodel.js';
 import { player } from '../game/state.js';
+import { makeBar, makeLevelLabel } from './bars.js';
 
 const prefabs = { spider: spiderModel, stunder: stunderModel };
-const barGeo = new THREE.PlaneGeometry(1, 1);
-const backMat = new THREE.MeshBasicMaterial({ color: 0x231f25, side: THREE.DoubleSide });
-const fillMat = new THREE.MeshBasicMaterial({ color: 0xf2a449, side: THREE.DoubleSide });
 const white = new THREE.Color(0xffffff), inverseYaw = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 const angleTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
 
-function levelLabel(level) {
-  const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 32;
-  const ctx = canvas.getContext('2d');
-  ctx.font = 'bold 24px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.lineWidth = 5; ctx.strokeStyle = '#171c25'; ctx.strokeText(`Lv ${level}`, 64, 16);
-  ctx.fillStyle = '#ffe4ae'; ctx.fillText(`Lv ${level}`, 64, 16);
-  const texture = new THREE.CanvasTexture(canvas);
-  const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthWrite: false }));
-  label.scale.set(.7, .175, 1);
-  return label;
-}
 function makeView(e, prefab) {
   const group = new THREE.Group(), model = cloneEnemy(prefab);
   group.add(model); scene.add(group);
@@ -41,11 +28,10 @@ function makeView(e, prefab) {
     if (name === 'attack' || name === 'death') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
     a.play(); a.timeScale = 0; a.setEffectiveWeight(name === 'walk' ? 1 : 0); actions[name] = a;
   }
-  const bar = new THREE.Group(), back = new THREE.Mesh(barGeo, backMat), fill = new THREE.Mesh(barGeo, fillMat);
-  back.scale.set(0.66, 0.07, 1); fill.scale.set(0.62, 0.045, 1); fill.position.z = 0.001;
-  bar.add(back, fill); bar.position.y = e.profile.height + 0.12; group.add(bar);
-  const label = levelLabel(e.level); label.position.y = e.profile.height + .3; group.add(label);
-  return { group, model, mixer, actions, prefab, materials, bar, fill, label, yaw: e.yaw, phase: e.phase,
+  const hpBar = makeBar(), bar = hpBar.group;
+  bar.position.y = e.profile.height + 0.12; group.add(bar);
+  const label = makeLevelLabel(e.level); label.position.y = e.profile.height + .3; group.add(label);
+  return { group, model, mixer, actions, prefab, materials, bar, hpBar, label, yaw: e.yaw, phase: e.phase,
     attacks: -1, dead: false, weights: { walk: 1, fast: 0, attack: 0, death: 0 } };
 }
 function dying(v, e) {
@@ -95,8 +81,7 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     v.label.visible = v.bar.visible || Math.hypot(e.x - player.x, e.z - player.z) < e.profile.aggro + 1;
     inverseYaw.setFromAxisAngle(up, -v.yaw);
     v.bar.quaternion.copy(inverseYaw).multiply(camera.quaternion);
-    const hp = e.hp / e.profile.hp;
-    v.fill.scale.x = 0.62 * hp; v.fill.position.x = -0.31 * (1 - hp);
+    v.hpBar.set(e.hp / e.profile.hp);
     v.mixer.update(0);
   }
 }

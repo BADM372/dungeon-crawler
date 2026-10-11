@@ -36,7 +36,7 @@ export async function runTownChecks() {
         enterCube(camp, dir ^ 1);
         for (const b of MERCHANTS) check(rendered(b.name) === 1, 'Camp tent not rendered once: ' + b.name);
         for (const b of BUILDINGS) check(rendered(b.name) === 0, 'Permanent building rendered in camp');
-        check(document.getElementById('depth').textContent.includes('Merchant camp'), 'Camp mislabeled in HUD');
+        check(document.getElementById('dev-depth').textContent.includes('Merchant camp'), 'Camp mislabeled in HUD');
         for (const box of camp.map.occluders.filter(b => b.shape === 'box'))
           check(camp.map.blockers.some(list => list.includes(box)), 'Rendering discarded static tent collision');
         const outside = await state.cubes.get(step(camp.key, dir));

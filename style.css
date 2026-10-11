@@ -1,21 +1,8 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, #2a3140 0%, #12151c 70%, #0b0d12 100%); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: #d8dde6; }
 canvas { display: block; }
-#hud { position: absolute; top: 14px; left: 16px; pointer-events: none; min-width: 240px; }
-#hud .title { font-size: 15px; letter-spacing: 3px; font-weight: bold; color: #fff; }
-#hud .title span { font-size: 11px; color: #8a96a8; letter-spacing: 1px; font-weight: normal; }
-#hud b { color: #fff; }
-.hp { margin: 8px 0 4px; width: 220px; height: 8px; background: #2a2f3a; border: 1px solid #444c5c; }
-#hpbar { height: 100%; width: 100%; background: linear-gradient(90deg, #d9534f, #f0ad4e); transition: width .15s; }
-#status { min-height: 18px; color: #ffd27a; }
-#stats { color: #8a96a8; font-size: 11px; margin-top: 4px; }
-#help { position: absolute; bottom: 14px; left: 16px; color: #8a96a8; font-size: 12px; pointer-events: none; }
-#help kbd { background: #2a2f3a; border: 1px solid #444c5c; border-radius: 3px; padding: 0 4px; color: #e6e9ef; }
-#legend { position: absolute; top: 14px; right: 16px; font-size: 12px; color: #aab3c2; pointer-events: none; }
-#legend div { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
-#legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid #0006; }
 #fade { position: absolute; inset: 0; background: #0b0d12; opacity: 1; pointer-events: none; transition: opacity .35s; }
 #flash { position: absolute; inset: 0; background: #ff3b1f; opacity: 0; pointer-events: none; transition: opacity .4s; }
-#minimap { position: absolute; top: 150px; right: 16px; pointer-events: none; image-rendering: pixelated; }
+#minimap { position: absolute; top: 14px; right: 16px; pointer-events: none; image-rendering: pixelated; }
 #loading { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
   color: #e6e9ef; font-size: 12px; letter-spacing: 1px; background: #0b0d12cc; border: 1px solid #444c5c; border-radius: 4px;
   padding: 6px 12px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 10; }
@@ -23,10 +10,29 @@ canvas { display: block; }
 #loading span { width: 12px; height: 12px; border: 2px solid #5fd3ff55; border-top-color: #5fd3ff; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.xp { width: 220px; height: 4px; background: #2a2f3a; margin: 4px 0; }
-#xpbar { height: 100%; width: 0; background: #83b887; transition: width .15s; }
-#player-stats, #xp-text { font-size: 11px; color: #b8c2d0; }
 [hidden] { display: none !important; }
+kbd { display: inline-block; min-width: 1.2em; text-align: center; background: #2a2f3a; border: 1px solid #444c5c; border-radius: 3px; padding: 0 4px; color: #e6e9ef; font: inherit; }
+
+#dev { position: absolute; top: 8px; left: 8px; z-index: 5; max-width: min(640px, calc(100vw - 260px)); padding: 4px 7px;
+  font-size: 10px; line-height: 1.45; color: #aab3c2; background: #0b0d1299; border-radius: 3px; user-select: text; }
+#dev b { color: #fff; font-weight: normal; }
+#dev .pick { user-select: all; cursor: text; }
+#dev-status { color: #ffd27a; min-height: 1.45em; }
+#dev-copy { font: inherit; color: #aab3c2; background: #2a2f3a; border: 1px solid #444c5c; border-radius: 2px; padding: 0 4px; cursor: pointer; }
+#dev-copy:hover { color: #fff; }
+
+#help-overlay { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; padding: 16px; pointer-events: none; }
+#help-panel { pointer-events: auto; box-sizing: border-box; width: min(520px, 100%); max-height: calc(100dvh - 32px); overflow: auto;
+  padding: 16px 20px; background: #12161ee6; border: 1px solid #444c5c; border-radius: 8px; box-shadow: 0 16px 60px #0008; font-size: 12px; }
+#help-panel header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: #8a96a8; font-size: 11px; }
+#help-panel h1 { margin: 0 0 10px; color: #fff; font-size: 15px; letter-spacing: 3px; }
+#help-panel h2 { margin: 14px 0 6px; color: #c5cdbc; font-size: 12px; }
+#help-panel .keys { display: grid; grid-template-columns: 9.5em 1fr; gap: 5px 14px; margin: 0; }
+#help-panel dt { color: #e6e9ef; white-space: nowrap; }
+#help-panel dd { margin: 0; color: #aab3c2; }
+#legend { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; color: #aab3c2; }
+#legend div { display: flex; align-items: center; gap: 6px; }
+#legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid #0006; }
 #inventory-overlay { position: fixed; inset: 0; z-index: 20; background: #080c13b8; display: grid; place-items: center; padding: 16px; }
 #inventory-panel { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 32px); overflow: auto; padding: 22px;
   background: #202631; border: 1px solid #68715e; border-radius: 8px; box-shadow: 0 16px 80px #0009; }

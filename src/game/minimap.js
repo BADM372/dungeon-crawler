@@ -23,7 +23,7 @@ export function drawMinimap() {
   const W = state.cubes, [X0, Y, Z0] = parse(state.cubeKey);
   const visited = k => !!W.cubes.get(k)?.visits;
   g.clearRect(0, 0, canvas.width, canvas.height);
-  g.fillStyle = '#0b0d12cc'; g.fillRect(0, 0, SIZE, SIZE);
+  g.fillStyle = '#0b0d1266'; g.fillRect(0, 0, canvas.width, canvas.height);
   for (let dz = -R; dz <= R; dz++) for (let dx = -R; dx <= R; dx++) {
     const k = key(X0 + dx, Y, Z0 + dz), c = W.cubes.get(k);
     if (!c?.visits) continue;
