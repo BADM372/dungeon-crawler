@@ -3,11 +3,13 @@
 // active cube as well as for the low-detail neighbours.
 import { N, BASE, FLUIDS } from '../core/constants.js';
 import { GeoBuilder } from './builder.js';
-import { BEDROCK } from './palette.js';
+import { BEDROCK, usePalette } from './palette.js';
+import { themeAt } from '../world/depth.js';
 import { buildFloors } from './floors.js';
 import { buildStructures } from './structures.js';
 
 export function buildCubeGeometry(m) {
+  usePalette(themeAt(m.depth ?? 0));
   const layers = Array.from({ length: m.K }, () => ({
     terrain: new GeoBuilder(), wood: new GeoBuilder(),
     fluids: Object.fromEntries(FLUIDS.map(t => [t, new GeoBuilder()])),

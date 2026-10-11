@@ -67,7 +67,7 @@ function tryGenerate(seed, spec) {
     x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
     seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
-    kind: spec.kind, key: spec.key, pathPts: pathPoints(ctx, ctx.moves),
+    kind: spec.kind, key: spec.key, depth: spec.depth, pathPts: pathPoints(ctx, ctx.moves),
     routes: ctx.segments.map(s => pathPoints(ctx, s)),   // first portal -> each other portal
   };
 }

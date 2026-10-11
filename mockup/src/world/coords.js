@@ -3,7 +3,7 @@
 export const D6 = [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, -1, 0], [0, 1, 0]];
 export const OPP6 = [1, 0, 3, 2, 5, 4];
 export const DIR_NAME = ['east', 'west', 'south', 'north', 'down', 'up'];
-export const MIN_Y = -3;   // deepest stratum
+export const MIN_Y = -20;   // deepest stratum (depth 20)
 
 export const key = (X, Y, Z) => `${X},${Y},${Z}`;
 export const parse = k => k.split(',').map(Number);

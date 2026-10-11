@@ -1,0 +1,63 @@
+// Themes below the ground (depth 5 and deeper): caves without sun or sky. See themes.js.
+import { WATER, LAVA, ACID } from '../core/constants.js';
+
+const T = (at, name, o) => ({ at, name, tiles: {}, cave: true, ...o });
+
+export const CAVES = [
+  T(5, 'Root caves', {
+    top: [[0, '#4a3e2e'], [6, '#5e4c35'], [12, '#705c40'], [20, '#82704e']],
+    side: [[0, '#352a20'], [8, '#46352a'], [14, '#574332'], [22, '#68523c']],
+    lip: '#4a5a2a', under: '#1e1712', bed: ['#1a1614', '#151210'], fluids: [0.8, 0.05, 0.15], river: WATER,
+    tiles: { highland: 1.5, gorge: 2 },
+    light: { sky: ['#0e0d0f', '#050506'], hemi: ['#8a8f9a', '#2a2014', 0.8], sun: ['#9aa4c0', 0.85], fog: 0.3 },
+  }),
+  T(7, 'Frozen caves', {
+    top: [[0, '#5d7f93'], [6, '#82a6b8'], [12, '#aacbd7'], [20, '#d8ecf2']],
+    side: [[0, '#1f2d3a'], [8, '#2b3f50'], [14, '#395166'], [22, '#4b677d']],
+    lip: '#a8d0e0', under: '#131b23', bed: ['#161b22', '#11151b'], fluids: [0.9, 0, 0.1], river: WATER,
+    tiles: { lake: 2 },
+    light: { sky: ['#06090e', '#020305'], hemi: ['#6a8fb0', '#101820', 0.72], sun: ['#8fb8ff', 0.75], fog: 0.38 },
+  }),
+  T(9, 'Fungal swamp', {
+    top: [[0, '#3a4826'], [6, '#4b5a2e'], [12, '#5c6a36'], [20, '#6d7a3e']],
+    side: [[0, '#272d1b'], [8, '#333b22'], [14, '#3f4728'], [22, '#4b532e']],
+    lip: '#5a7a30', under: '#14170e', bed: ['#151712', '#11130e'], fluids: [0.45, 0.05, 0.5], river: ACID,
+    tiles: { lake: 2, river: 1.5 },
+    light: { sky: ['#070a06', '#020302'], hemi: ['#7a8f6a', '#141a0e', 0.66], sun: ['#a0c890', 0.65], fog: 0.45 },
+  }),
+  T(11, 'Spider nests', {
+    top: [[0, '#4a444a'], [6, '#565058'], [12, '#625c66'], [20, '#6e6874']],
+    side: [[0, '#28232a'], [8, '#322c34'], [14, '#3c363e'], [22, '#464048']],
+    lip: '#605a66', under: '#121014', bed: ['#141216', '#100e12'], fluids: [0.3, 0.1, 0.6], river: ACID,
+    tiles: { highland: 1.5, gorge: 1.5 },
+    light: { sky: ['#060508', '#020203'], hemi: ['#6a6070', '#100c12', 0.6], sun: ['#b0a0c0', 0.6], fog: 0.5 },
+  }),
+  T(13, 'Crystal mines', {
+    top: [[0, '#4a4a52'], [6, '#5a5a64'], [12, '#6a6a76'], [20, '#7a7a88']],
+    side: [[0, '#24242c'], [8, '#30303a'], [14, '#3c3c48'], [22, '#484856']],
+    lip: '#7a8aa8', under: '#16161c', bed: ['#141418', '#101014'], fluids: [0.7, 0.2, 0.1], river: WATER,
+    tiles: { highland: 2, gorge: 1.5 },
+    light: { sky: ['#05060a', '#020203'], hemi: ['#6a7aa0', '#0c0e16', 0.56], sun: ['#90a8ff', 0.55], fog: 0.55 },
+  }),
+  T(15, 'Buried ruins', {
+    top: [[0, '#7a6648'], [6, '#8c7650'], [12, '#9e8658'], [20, '#b09660']],
+    side: [[0, '#4a3a24'], [8, '#5c482c'], [14, '#6e5634'], [22, '#80643c']],
+    lip: '#a08a5e', under: '#2a2014', bed: ['#1a1610', '#15120d'], fluids: [0.2, 0.4, 0.4], river: ACID,
+    tiles: { gorge: 2, highland: 1.5 },
+    light: { sky: ['#0a0704', '#030201'], hemi: ['#a08a60', '#140e08', 0.52], sun: ['#ffcf8a', 0.5], fog: 0.55 },
+  }),
+  T(17, 'Volcanic depths', {
+    top: [[0, '#2a2626'], [6, '#363030'], [12, '#423a38'], [20, '#4e4440']],
+    side: [[0, '#1a1414'], [8, '#241c1a'], [14, '#2e2420'], [22, '#382c26']],
+    lip: '#5a2a1a', under: '#100a08', bed: ['#120c0a', '#0e0908'], fluids: [0.05, 0.85, 0.1], river: LAVA,
+    tiles: { gorge: 2, lake: 2 },
+    light: { sky: ['#1a0604', '#050101'], hemi: ['#a05030', '#1a0806', 0.5], sun: ['#ff7a40', 0.55], fog: 0.55 },
+  }),
+  T(19, 'Obsidian abyss', {
+    top: [[0, '#1a1820'], [6, '#22202a'], [12, '#2a2834'], [20, '#32303e']],
+    side: [[0, '#0e0c12'], [8, '#14121a'], [14, '#1a1822'], [22, '#201e2a']],
+    lip: '#3a1a3a', under: '#08070a', bed: ['#0a090c', '#070609'], fluids: [0, 1, 0], river: LAVA,
+    tiles: { lake: 4, gorge: 1.5 },
+    light: { sky: ['#160406', '#040101'], hemi: ['#803040', '#100406', 0.45], sun: ['#ff4a30', 0.5], fog: 0.55 },
+  }),
+];

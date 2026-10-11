@@ -11,19 +11,25 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.prepend(renderer.domElement);
 
 export const scene = new THREE.Scene();
-{
-  const c = document.createElement('canvas'); c.width = 2; c.height = 256;
-  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, '#2a3242'); gr.addColorStop(1, '#0c0e13');
+scene.fog = new THREE.Fog(0x000000, 1e4, 2e4);   // always present (adding fog later recompiles shaders)
+
+// background gradient (changes with depth, see look.js)
+const sky = document.createElement('canvas'); sky.width = 2; sky.height = 256;
+const skyTex = new THREE.CanvasTexture(sky); skyTex.colorSpace = THREE.SRGBColorSpace;
+scene.background = skyTex;
+export function setSky(top, bottom) {
+  const g = sky.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, top); gr.addColorStop(1, bottom);
   g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  scene.background = tex;
+  skyTex.needsUpdate = true;
 }
+setSky('#2a3242', '#0c0e13');
 
 export const camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.1, 500);
 
-scene.add(new THREE.HemisphereLight(0xdfeaff, 0x3a3020, 1.1));
-const sun = new THREE.DirectionalLight(0xfff1dd, 2.4);
+export const hemi = new THREE.HemisphereLight(0xdfeaff, 0x3a3020, 1.1);
+scene.add(hemi);
+export const sun = new THREE.DirectionalLight(0xfff1dd, 2.4);
 sun.position.set(N / 2 - 12, 34, N / 2 + 8);
 sun.target.position.set(N / 2, 0, N / 2);
 sun.castShadow = true;

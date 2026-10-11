@@ -43,7 +43,7 @@ export function addStreams(ctx) {
   const falls = ctx.falls = [];
   for (let k = 1; k < K; k++) {
     if (R() > 0.85) continue;
-    const type = pickFluid(0.6, 0.25);
+    const type = pickFluid();
     const { cands, at } = channels(ctx, k);
     if (!cands.length) continue;
     const st = cands[ri(0, cands.length - 1)];

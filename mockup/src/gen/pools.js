@@ -14,7 +14,7 @@ export function addPools(ctx) {
   const { R, ri, K, pickFluid, layerFloor, stats } = ctx;
   for (let k = 1; k < K; k++) {
     if (R() > 0.6) continue;
-    const type = pickFluid(0.7, 0.18);   // mostly water
+    const type = pickFluid();
     const ok = c => { const f = layerFloor(c, k); return f && !f.prot && !f.ramp; };
     const centers = [];
     for (let c = 0; c < N * N; c++) {

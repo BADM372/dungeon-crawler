@@ -8,7 +8,11 @@ export function createContext(seed) {
   const ctx = {
     seed, R, cols,
     ri: (a, b) => a + Math.floor(R() * (b - a + 1)),
-    pickFluid: (w, l) => { const r = R(); return r < w ? WATER : r < w + l ? LAVA : ACID; },
+    // fluid for pools and falls: the depth's mix (water / lava / acid weights)
+    pickFluid: () => {
+      const [w, l, a] = ctx.spec.fluidMix, r = R() * (w + l + a);
+      return r < w ? WATER : r < w + l ? LAVA : ACID;
+    },
     // the order of these matters: it fixes the random sequence for a seed
     noise: makeNoise(R),
     fenceNoise: makeNoise(R),

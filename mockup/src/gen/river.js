@@ -36,7 +36,7 @@ export function carveRiver(ctx) {
   }
 
   for (let p = ri(0, 2); p > 0; p--) {
-    const type = pickFluid(0.7, 0.18);   // mostly water
+    const type = pickFluid();
     const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
     const cells = [];
     for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) {

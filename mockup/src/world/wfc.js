@@ -5,6 +5,10 @@
 import { mulberry32, hash32 } from '../core/util.js';
 import { TILES, layersOf } from './tiles.js';
 import { OPP6, step, hashKey } from './coords.js';
+import { themeAt, depthOf } from './depth.js';
+
+// tile weight at cube k: the base weight scaled by the depth's theme
+const weightAt = k => { const m = themeAt(depthOf(k)).tiles; return t => t.weight * (m[t.kind] ?? 1); };
 
 export class WFC {
   constructor(seed) { this.seed = seed; this.tiles = new Map(); }
@@ -14,9 +18,9 @@ export class WFC {
     return TILES.filter(t => nb.every((n, d) => !n || n.sock[OPP6[d]] === t.sock[d]));
   }
 
-  entropy(dom) {
-    const sum = dom.reduce((s, t) => s + t.weight, 0);
-    return Math.log(sum) - dom.reduce((s, t) => s + t.weight * Math.log(t.weight), 0) / sum;
+  entropy(dom, w) {
+    const sum = dom.reduce((s, t) => s + w(t), 0);
+    return Math.log(sum) - dom.reduce((s, t) => s + w(t) * Math.log(w(t)), 0) / sum;
   }
 
   rng(k, salt = 0) { return mulberry32(hash32(this.seed ^ hashKey(k) ^ salt)); }
@@ -26,12 +30,12 @@ export class WFC {
     while (todo.size) {
       let best = null, bestE = Infinity, bestDom = null;
       for (const k of todo) {
-        const dom = this.domain(k), e = this.entropy(dom) + (hashKey(k) % 1000) * 1e-6;   // tiny tie-break
+        const dom = this.domain(k), e = this.entropy(dom, weightAt(k)) + (hashKey(k) % 1000) * 1e-6;   // tiny tie-break
         if (e < bestE) { best = k; bestE = e; bestDom = dom; }
       }
-      const R = this.rng(best), sum = bestDom.reduce((s, t) => s + t.weight, 0);
+      const R = this.rng(best), w = weightAt(best), sum = bestDom.reduce((s, t) => s + w(t), 0);
       let r = R() * sum, tile = bestDom[bestDom.length - 1];
-      for (const t of bestDom) if ((r -= t.weight) < 0) { tile = t; break; }
+      for (const t of bestDom) if ((r -= w(t)) < 0) { tile = t; break; }
       this.tiles.set(best, { ...tile, K: layersOf(tile.kind, R()) });
       todo.delete(best);
     }

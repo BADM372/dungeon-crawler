@@ -64,6 +64,7 @@ export function buildMarkers(m, group, showPath, seen = {}) {
   const portalFx = m.portals.map(p => {
     const col = COLORS[seen[p.id] ? 'seen' : 'new'];
     const fx = p.kind === 'side' ? gate(p, col) : p.kind === 'down' ? well(p, col) : p.kind === 'up' ? ring(p, col) : spawnPad(p);
+    fx.obj.userData.portal = p;   // dev tools: click to take it
     group.add(fx.obj);
     return fx;
   });

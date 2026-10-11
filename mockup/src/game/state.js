@@ -19,7 +19,9 @@ export const state = {
   map: null, world: null, time: 0,
   showPath: false, transitioning: false,
   statusMsg: '', statusUntil: 0,
-  cubes: null, cubeKey: '', arrival: null, portalLock: 0, showNeighbors: true,   // the world of cubes and where we are in it
+  // the world of cubes and where we are in it; lookDepth: the depth the lighting shows
+  cubes: null, cubeKey: '', arrival: null, portalLock: 0, showNeighbors: true, lookDepth: 0,
+  dev: params.has('dev'),   // debug tools (?dev)
   baseSeed: params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0,
 };
 

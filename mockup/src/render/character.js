@@ -72,7 +72,7 @@ function setup(gltf) {
   mixer.update(0);
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
-    ready: true, group, model, mesh, bones, mixer, actions, standing,
+    ready: true, group, model, mesh, bones, mixer, actions, standing, light,
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
   });
 }

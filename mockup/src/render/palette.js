@@ -15,12 +15,12 @@ export function gradient(stops, v) {
   return new THREE.Color(stops[stops.length - 1][1]);
 }
 
-// terrain: grass tops by height (in levels), rock strata on the sides
-export const TOP_STOPS = [[0, '#3b6532'], [4, '#4c8a3c'], [8, '#76ad50'], [12, '#a3b26a'], [16, '#b7a888'], [20, '#d9d3c5']];
-export const SIDE_STOPS = [[0, '#4e382a'], [6, '#7a5638'], [11, '#7a6d62'], [20, '#9a948c']];
-export const LIP = C('#3f6b2e');
-export const UNDERSIDE = C('#3a2f28');
-export const BEDROCK = [C('#2a2a31'), C('#23232a')];
+// terrain: tops by height (in levels), rock strata on the sides; set per depth (usePalette)
+export let TOP_STOPS, SIDE_STOPS, LIP, UNDERSIDE, BEDROCK;
+export function usePalette(theme) {
+  TOP_STOPS = theme.top; SIDE_STOPS = theme.side;
+  LIP = C(theme.lip); UNDERSIDE = C(theme.under); BEDROCK = theme.bed.map(C);
+}
 export const fluidBed = t => C(t === WATER ? '#7d6f52' : t === LAVA ? '#2b1d1a' : '#3e4a2a');
 export const fluidBank = t => C(t === WATER ? '#c9b98a' : t === LAVA ? '#3a2a22' : '#a4a64a');
 

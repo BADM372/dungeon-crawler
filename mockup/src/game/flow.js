@@ -51,7 +51,7 @@ export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id,
 export function enterCube(c, from = null) {
   const k = c.key;
   c.visits++;
-  state.cubeKey = k; state.map = c.map;
+  state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
   state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo);
   resetSpiders();

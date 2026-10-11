@@ -13,6 +13,9 @@ import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
 import { tickNeighbors } from './render/neighbors.js';
+import { applyLook } from './render/look.js';
+import { depthOf } from './world/depth.js';
+import './game/dev.js';
 import { updateSpiders, spiders } from './game/spiders.js';
 import { travelling, updateTravel, drawTravelSpiders } from './game/travel.js';
 
@@ -34,6 +37,9 @@ function frame() {
   updateHud(player, state.map, state.statusMsg);
   updateCamera(dt);
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
+  // the look follows the depth smoothly (also while sliding down / up)
+  if (state.cubeKey) state.lookDepth += (depthOf(state.cubeKey) - state.lookDepth) * Math.min(1, dt * 2.5);
+  applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));
   updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
