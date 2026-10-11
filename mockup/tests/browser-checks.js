@@ -1,0 +1,179 @@
+// Browser integration checks: run from game.html's devtools (see docs/combat.md).
+// Uses the real controller, input handlers, enemy AI, GLTFLoader, skeletons and
+// animation mixers on a controlled floor grid. Restores the live level afterward.
+import * as THREE from 'three';
+import { N, DIRS } from '../src/core/constants.js';
+import { player, state } from '../src/game/state.js';
+import { SWORD, cancelSwing, startSwing, damageEnemy } from '../src/core/combat.js';
+import { resetEnemies, allEnemies, updateEnemies, drawEnemies } from '../src/game/enemies.js';
+import { spiders } from '../src/game/spiders.js';
+import { stunders } from '../src/game/stunders.js';
+import { updatePlayer } from '../src/game/update.js';
+import { character } from '../src/render/character.js';
+import { animateCharacter } from '../src/render/animator.js';
+import { scene } from '../src/render/scene.js';
+import { stunderModel } from '../src/render/stundermodel.js';
+import { spiderModel } from '../src/render/spidermodel.js';
+import { startTravel, travelling, updateTravel, drawTravelEnemies } from '../src/game/travel.js';
+
+const check = (condition, message) => { if (!condition) throw Error(message); };
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function paused(fn) {
+  const raf = window.requestAnimationFrame;
+  let next;
+  window.requestAnimationFrame = callback => { next = callback; return 0; };
+  try { await delay(150); return await fn(); }
+  finally { window.requestAnimationFrame = raf; if (next) raf.call(window, next); }
+}
+function arena() {
+  const floors = Array.from({ length: N * N }, (_, c) => ({ c, id: c, x: c % N, z: Math.floor(c / N),
+    top: 0, bottom: -2, layer: 0, cs: [0, 0, 0, 0], split: 0, link: [] }));
+  for (const f of floors) f.link = DIRS.map(([dx, dz]) => {
+    const x = f.x + dx, z = f.z + dz;
+    return x >= 0 && z >= 0 && x < N && z < N ? floors[z * N + x] : null;
+  });
+  return { seed: 123, K: 1, B: [0], floors, cols: floors.map(f => [f]), pieces: floors.map(() => []),
+    blockers: floors.map(() => []), fences: new Map(), portals: [], ladders: [], falls: [] };
+}
+const at = (x, z) => state.map.floors[Math.floor(z) * N + Math.floor(x)];
+function place(e, x, z) {
+  Object.assign(e, { x, y: 0, z, yaw: Math.PI, f: at(x, z), home: at(x, z), path: null,
+    mode: 'idle', t: 1e6, think: 1e6, cool: 0, stun: 0, speed: 0 });
+}
+function hero() {
+  cancelSwing(player, true);
+  Object.assign(player, { x: 6.5, y: 0, visY: 0, z: 6.5, yaw: 0, vx: 0, vy: 0, vz: 0,
+    hp: 100, grounded: true, swimming: false, climb: null, ragdoll: null, stun: 0,
+    support: at(6.5, 6.5), safe: { x: 6.5, y: 0, z: 6.5 }, coyote: 0, jumpBuf: 0 });
+}
+function press(code) {
+  dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true }));
+  dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true }));
+}
+function tick(n, freeze = true) {
+  let maxY = player.y;
+  for (let i = 0; i < n; i++) {
+    if (freeze) for (const e of allEnemies()) if (e.mode !== 'dead') {
+      e.mode = 'idle'; e.think = e.t = 1e6;
+    }
+    updatePlayer(1 / 60); updateEnemies(1 / 60);
+    player.visY = player.y;
+    animateCharacter(1 / 60, i / 60); drawEnemies(1 / 60);
+    maxY = Math.max(maxY, player.y);
+  }
+  scene.updateMatrixWorld(true);
+  return maxY;
+}
+function bones(e) {
+  const out = [];
+  e.view.model.traverse(o => { if (o.isBone) out.push(...o.position.toArray(), ...o.quaternion.toArray()); });
+  return out;
+}
+function minimumY(model) {
+  scene.updateMatrixWorld(true);
+  const v = new THREE.Vector3(); let min = Infinity;
+  model.traverse(o => {
+    if (!o.isMesh) return;
+    for (let i = 0; i < o.geometry.attributes.position.count; i++) {
+      o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld); min = Math.min(min, v.y);
+    }
+  });
+  return min;
+}
+
+export async function runCombatChecks() {
+  check(character.ready && spiderModel.ready && stunderModel.ready, 'Wait for all character assets to load');
+  check(!state.transitioning, 'Wait for portal travel to finish');
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, results = [];
+    try {
+      state.map = arena(); resetEnemies(); hero();
+      for (const [i, e] of allEnemies().entries()) place(e, 2.5 + i * 0.03, 2.5);
+      check(spiders.length > 0 && stunders.length === 2, 'Fixture must provide both species');
+      const spider = spiders[0], stunder = stunders[0];
+      tick(60); // settle the real blend tree after moving to the test floor
+      const swordBottom = minimumY(character.sword);
+      check(character.sword && swordBottom >= -0.002, 'Idle sword must be attached and off the floor: ' + swordBottom);
+      check(stunders[0].view.model.getObjectByName('head') !== stunders[1].view.model.getObjectByName('head'), 'Instances must own independent bones');
+      results.push('loaded sword / independent enemy skeletons');
+
+      place(spider, 6.5, 6.5); press('Space');
+      const maxY = tick(120);
+      check(maxY > 0.5 && spider.hp === 30 && spider.mode !== 'dead', 'A real jump / landing must not stomp-kill');
+      results.push('Space jump does not damage enemies');
+
+      hero(); place(spider, 6.5, 7.25); press('KeyF'); tick(75);
+      check(spider.hp === 0 && spider.mode === 'dead', 'F must slash-kill a spider');
+      check(spider.view.actions.death.getEffectiveWeight() === 1, 'SpiderDeath must play instead of squash / hide');
+      for (const time of [0.3, 0.7, 1.2, 1.9]) {
+        spider.deadT = time; drawEnemies(1 / 60);
+        check(minimumY(spider.view.model) >= -0.003, 'Spider death penetrates the floor at ' + time);
+      }
+      const held = bones(spider);
+      spider.deadT = 2.4; drawEnemies(1 / 60);
+      check(bones(spider).every((v, i) => Math.abs(v - held[i]) < 1e-5), 'Spider corpse must hold its final pose');
+      results.push('F slash / SpiderDeath floor contact and held corpse');
+
+      hero(); place(stunder, 6.5, 7.4);
+      for (let i = 0; i < 4; i++) {
+        if (i === 0) document.querySelector('canvas').dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }));
+        else press('KeyF');
+        tick(75);
+        check(stunder.hp === 90 - i * 30, 'Stunder should take exactly one hit per swing');
+      }
+      check(stunder.mode === 'dead' && stunder.view.actions.death.getEffectiveWeight() === 1, 'Stunder must play its real death clip');
+      results.push('left-click slash / Stunder survives 3 hits, dies on 4');
+
+      tick(260);
+      check(!allEnemies().includes(spider) && !allEnemies().includes(stunder), 'Finished corpses must leave the population');
+      check(!spider.view && !stunder.view, 'Corpse mixers / materials / skeletons must be disposed');
+      results.push('corpse view and population cleanup');
+
+      resetEnemies(); hero();
+      for (const [i, e] of allEnemies().entries()) place(e, 2.5 + i * 0.03, 2.5);
+      const heavy = stunders[0]; place(heavy, 6.5, 7.5);
+      Object.assign(heavy, { mode: 'attack', t: 0, bit: false, attacks: 1, think: 1e6 });
+      for (let i = 0; i < 33; i++) { updateEnemies(1 / 60); drawEnemies(1 / 60); }
+      check(player.hp === 60 && player.ragdoll, 'Stunder ram must deal 40 damage and knock down');
+      const sourceHead = stunderModel.source.getObjectByName('head'), head = heavy.view.model.getObjectByName('head');
+      scene.updateMatrixWorld(true);
+      const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(sourceHead.getWorldQuaternion(new THREE.Quaternion()).invert())
+        .applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
+      check(forward.y < -0.85, 'Stunder ram must strike head-down');
+      results.push('40-damage knockdown synced with head-down animation');
+
+      hero(); place(heavy, 6.5, 7.4);
+      Object.assign(heavy, { mode: 'attack', t: 0.5, bit: false, attacks: 2, think: 1e6 });
+      startSwing(player); player.sword.t = SWORD.activeStart;
+      updateEnemies(1 / 60);
+      check(player.hp === 100 && heavy.hp === 90 && heavy.mode !== 'attack', 'Connecting sword must interrupt the wind-up');
+      results.push('sword interrupts enemy attack');
+      return results;
+    } finally {
+      state.map = originalMap;
+      Object.assign(player, saved); cancelSwing(player, true);
+      resetEnemies();
+    }
+  });
+}
+
+// Uses a real generated neighbour, not the fixture. Leaves you in that cube.
+export async function runTravelCheck() {
+  check(!state.transitioning, 'Wait for current travel to finish');
+  return paused(async () => {
+    drawEnemies(1 / 60);
+    const old = allEnemies(), portal = state.map.portals.find(p => p.kind !== 'spawn');
+    check(portal, 'Need an exit portal');
+    if (old[0]) damageEnemy(old[0], old[0].hp); // cleanup must include a dead enemy too
+    player.sword.requested = true;
+    startTravel(portal);
+    for (let i = 0; i < 100 && !travelling(); i++) await delay(30);
+    check(travelling(), 'Travel did not start');
+    for (let i = 0; i < 180 && travelling(); i++) { updateTravel(1 / 60); drawTravelEnemies(1 / 60); }
+    check(!state.transitioning && !travelling(), 'Travel did not finish');
+    check(old.every(e => !e.view), 'Old live / dead enemy views leaked across portal');
+    check(stunders.length <= 2, 'Next cube exceeded Stunder cap');
+    check(!player.sword.active && !player.sword.requested, 'Queued sword input crossed the portal');
+    return { cube: state.cubeKey, stunders: stunders.length, oldEnemiesDisposed: old.length };
+  });
+}

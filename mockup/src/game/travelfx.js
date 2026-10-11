@@ -3,11 +3,11 @@
 // either cube cross-fades with the full version of that cube (complementary dither patterns);
 // all other proxies fade out with the old cube or in with the new one.
 import { disposeWorld } from '../render/world.js';
-import { removeSpiderViews, animateSpiders } from '../render/spiders.js';
+import { removeEnemyViews, animateEnemies } from '../render/enemies.js';
 import { disposeNeighbors, adoptNeighbors } from '../render/neighbors.js';
 import { setFade } from '../render/fade.js';
 import { state } from './state.js';
-import { spiders } from './spiders.js';
+import { allEnemies } from './enemies.js';
 
 const ease = t => t * t * (3 - 2 * t);
 
@@ -30,18 +30,18 @@ export function slideVisuals(tr, t, off, oldOff) {
   tr.old.world.group.position.copy(oldOff);
   setFade(tr.old.world.group, fadeOld);
   ghosts(tr, fadeOld, fadeNew, off, oldOff);
-  animateSpiders(tr.old.spiders, 0, oldOff);
-  for (const s of tr.old.spiders) if (s.view) s.view.group.visible = fadeOld > 0.5 && s.mode !== 'dead';
+  animateEnemies(tr.old.enemies, 0, oldOff);
+  for (const e of tr.old.enemies) if (e.view) e.view.group.visible = fadeOld > 0.5 && e.view.group.visible;
   tr.fadeNew = fadeNew;
 }
 
 export function endVisuals(tr) {
   disposeWorld(tr.old.world);
-  removeSpiderViews(tr.old.spiders);
+  removeEnemyViews(tr.old.enemies);
   disposeNeighbors(tr.old.ghosts);
   for (const g of tr.ghosts) { g.group.position.copy(g.base); setFade(g.group, 1); }
   adoptNeighbors(tr.ghosts);
   state.world.group.position.set(0, 0, 0);
   setFade(state.world.group, 1);
-  for (const s of spiders) if (s.view) s.view.group.visible = true;
+  for (const e of allEnemies()) if (e.view) e.view.group.visible = e.mode !== 'dead' || e.deadT < e.profile.corpseTime;
 }

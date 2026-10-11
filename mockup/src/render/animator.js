@@ -10,7 +10,7 @@ import { applyRagdollPose } from './ragdollpose.js';
 import { stretchStride } from './stride.js';
 import { W, blend, updateBlend, resetMode } from './blendtree.js';
 
-let yaw = 0, seenGetUp = 0;
+let seenGetUp = 0;
 let getUp = null;   // { t, list, quats, hipsWorld, hips }
 
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -41,18 +41,27 @@ export function animateCharacter(dt, time) {
 
   // on a ladder: face the wall, the walk cycle stands in for climbing
   const speed = p.climb ? Math.abs(p.climbV) * 0.8 : Math.hypot(p.vx, p.vz);
-  if (p.climb) { const [dx, dz] = DIRS[p.climb.l.d]; yaw = angleTo(yaw, Math.atan2(dx, dz), Math.min(1, dt * 12)); }
+  let yaw = p.yaw;
+  if (p.sword.active) yaw = p.sword.yaw;
+  else if (p.climb) { const [dx, dz] = DIRS[p.climb.l.d]; yaw = angleTo(yaw, Math.atan2(dx, dz), Math.min(1, dt * 12)); }
   else if (speed > 0.2 && p.stun <= 0) yaw = angleTo(yaw, Math.atan2(p.vx, p.vz), Math.min(1, dt * (p.swimming ? 5 : 12)));
+  p.yaw = yaw;
   ch.group.position.set(p.x, p.visY, p.z);
   ch.group.rotation.y = yaw;
   ch.group.updateMatrixWorld(true);
 
   updateBlend(dt, speed, time);
+  const slash = ch.actions.slash, duration = slash.getClip().duration;
+  const target = p.sword.active ? Math.min(1, p.sword.t / 0.08, (duration - p.sword.t) / 0.12) : 0;
+  ch.swordWeight += (Math.max(0, target) - ch.swordWeight) * Math.min(1, dt * 22);
+  for (const n in W) ch.actions[n].setEffectiveWeight(W[n] * (1 - ch.swordWeight));
+  slash.time = Math.min(p.sword.t, duration); slash.setEffectiveWeight(ch.swordWeight);
+  if (ch.sword) ch.sword.visible = !p.swimming && !p.climb;
   ch.mixer.update(0);
-  stretchStride(blend.stretch, W.walk + W.run);
+  stretchStride(blend.stretch, (W.walk + W.run) * (1 - ch.swordWeight));
   // breathing on top of the idle pose
-  ch.bones.spine.rotateX(Math.sin(time * 2.2) * 0.025 * W.idle);
+  ch.bones.spine.rotateX(Math.sin(time * 2.2) * 0.025 * W.idle * (1 - ch.swordWeight));
   if (getUp) blendFromGetUp(dt);
 }
 
-export const characterYaw = () => yaw;
+export const characterYaw = () => player.yaw;

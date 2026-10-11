@@ -9,11 +9,13 @@ import { groundAt } from '../physics/collide.js';
 import { player, state, setStatus } from './state.js';
 import { showStats, flash, fadeOut, fadeIn, whenReady } from './hud.js';
 import { resetCut } from './cut.js';
-import { resetSpiders } from './spiders.js';
+import { resetEnemies } from './enemies.js';
+import { cancelSword } from './sword.js';
 import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
 
 export function spawnAt(x, y, z) {
+  cancelSword(true);
   Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, stun: 0, climb: null });
   player.safe = { x, y, z };
   const gr = groundAt(x, z, y + 0.05, 0);
@@ -55,7 +57,7 @@ export function enterCube(c, from = null) {
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
   state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo);
-  resetSpiders();
+  resetEnemies();
   const p = c.map.portals.find(q => from === null ? q.kind === 'spawn' : q.dir === from);
   state.arrival = arrivalPoint(p);
   state.portalLock = p.id;   // released once you step off the portal you came through
@@ -91,12 +93,15 @@ whenPropsReady(() => {
   const c = state.cubes.cubes.get(state.cubeKey);
   disposeWorld(state.world);
   state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo);
+  // Props add blockers after a late load. Re-select safe, seeded spawn sites.
+  cancelSword(); resetEnemies();
 });
 
 export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.cubes?.dispose();
   state.cubes = new WorldClient(seed, { arche: state.dev && new URLSearchParams(location.search).get('arche') });
   state.transitioning = true;
+  cancelSword(true);
   player.hp = 100;
   return whenReady(state.cubes.get(state.cubes.start)).then(c => { enterCube(c); state.transitioning = false; });
 }

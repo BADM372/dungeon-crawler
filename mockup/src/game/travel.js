@@ -11,7 +11,8 @@ import { setFade } from '../render/fade.js';
 import { setCut } from '../render/section.js';
 import { player, state, setStatus } from './state.js';
 import { whenReady } from './hud.js';
-import { resetSpiders, detachSpiders, drawSpiders, spiders } from './spiders.js';
+import { resetEnemies, detachEnemies, drawEnemies, allEnemies } from './enemies.js';
+import { cancelSword } from './sword.js';
 import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors } from './flow.js';
 import { slideVisuals, endVisuals } from './travelfx.js';
 import { fallPoint } from './fall.js';
@@ -27,6 +28,7 @@ export const travelling = () => !!tr;
 export function startTravel(p) {
   if (state.transitioning) return;
   state.transitioning = true;
+  cancelSword();
   const k = step(state.cubeKey, p.dir);
   whenReady(state.cubes.get(k)).then(c => slide(p, c), () => { state.transitioning = false; setStatus('The portal does not open'); });
 }
@@ -38,7 +40,7 @@ function slide(p, c) {
   const arr = m.portals.find(q => q.dir === OPP6[p.dir]), fall = p.kind === 'fall' && fallPoint(m);
   const A = fall ? fall.air : arrivalPoint(arr);
   const D = new THREE.Vector3(D6[p.dir][0] * N, D6[p.dir][1] * GAP, D6[p.dir][2] * N);
-  tr = { t: 0, D, kind: p.kind, k, oldKey, old: { world: oldWorld, spiders: detachSpiders(), ghosts: detachNeighbors() },
+  tr = { t: 0, D, kind: p.kind, k, oldKey, old: { world: oldWorld, enemies: detachEnemies(), ghosts: detachNeighbors() },
     S: new THREE.Vector3(player.x, player.y, player.z).sub(D), A: new THREE.Vector3(A.x, A.y, A.z), last: null };
   tr.T = p.kind === 'side' ? THREE.MathUtils.clamp(tr.S.distanceTo(tr.A) / 2.2, 0.9, 1.4) : 1.3;
   setCut(Infinity, null, 0, 0, 0);
@@ -50,7 +52,7 @@ function slide(p, c) {
   setFade(state.world.group, 0);
   tr.ghosts = buildNeighbors(visitedNeighbors(k));   // includes the cube we are leaving
   for (const g of tr.old.ghosts) g.fade0 = g.group.userData.fade;
-  resetSpiders();
+  resetEnemies();
 }
 
 
@@ -69,9 +71,9 @@ export function updateTravel(dt) {
   if (t >= 1) finish();
 }
 
-export function drawTravelSpiders(dt) {
-  drawSpiders(dt, tr ? off : undefined);
-  if (tr) for (const s of spiders) if (s.view) s.view.group.visible = tr.fadeNew > 0.5;
+export function drawTravelEnemies(dt) {
+  drawEnemies(dt, tr ? off : undefined);
+  if (tr) for (const e of allEnemies()) if (e.view) e.view.group.visible = tr.fadeNew > 0.5 && e.view.group.visible;
 }
 
 function finish() {

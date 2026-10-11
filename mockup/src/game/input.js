@@ -1,4 +1,4 @@
-// Keyboard and mouse wheel.
+// Keyboard, sword clicks and mouse wheel.
 import { clamp } from '../core/util.js';
 import { player, state, view, setStatus } from './state.js';
 import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
@@ -22,6 +22,7 @@ addEventListener('keydown', e => {
     lastTap[e.code] = now;
   }
   if (e.code === 'Space') { jumpPressed = true; e.preventDefault(); }
+  if (e.code === 'KeyF' && !state.transitioning) { player.sword.requested = true; e.preventDefault(); }
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
   if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned where you came in'); }
@@ -35,7 +36,12 @@ addEventListener('keyup', e => {
   keys.delete(e.code);
   if (!MOVE.some(k => keys.has(k))) running = false;
 });
-addEventListener('blur', () => { keys.clear(); running = false; });
+addEventListener('blur', () => { keys.clear(); running = false; jumpPressed = false; player.sword.requested = false; });
+addEventListener('pointerdown', e => {
+  if (e.button === 0 && e.target.tagName === 'CANVAS' && !state.transitioning) {
+    player.sword.requested = true; e.preventDefault();
+  }
+});
 addEventListener('wheel', e => { view.zoomTarget = clamp(view.zoomTarget * (e.deltaY > 0 ? 1.1 : 0.9), 0.15, 1.4); }, { passive: true });
 
 // desired move direction in world space (WASD relative to the camera), length <= 1
@@ -54,3 +60,4 @@ export const wantsRun = () => player.autoRun || running;
 
 // true once per key press
 export function takeJump() { const j = jumpPressed; jumpPressed = false; return j; }
+export function takeAttack() { const a = player.sword.requested; player.sword.requested = false; return a; }
