@@ -6,7 +6,7 @@ import { N } from '../core/constants.js';
 import { parse, step } from './coords.js';
 import { VOID } from './profile.js';
 import { fallFluid, cascade } from './cascades.js';
-import { edgeCell } from '../gen/portals.js';
+import { edgeCell } from '../cubegen/portals.js';
 
 const CHANCE = 0.3, DROP = 7;   // the ground under the lip lies at least DROP levels lower
 

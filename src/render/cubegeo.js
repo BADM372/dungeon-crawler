@@ -4,7 +4,7 @@
 import { N, BASE, FLUIDS } from '../core/constants.js';
 import { GeoBuilder } from './builder.js';
 import { BEDROCK, usePalette } from './palette.js';
-import { themeAt } from '../world/depth.js';
+import { themeAt } from '../themes/depth.js';
 import { buildFloors } from './floors.js';
 import { buildStructures } from './structures.js';
 

@@ -2,11 +2,11 @@
 // (WFC), decides its faces, and then generates its map from a spec built out of those faces.
 import { hash32 } from '../core/util.js';
 import { worldNoise } from '../core/wnoise.js';
-import { generate } from '../gen/index.js';
+import { generate } from '../cubegen/index.js';
 import { WFC } from './wfc.js';
 import { key, parse, step, faceKey, hashKey, MIN_Y } from './coords.js';
 import { decideFaces, LAYER_BASE } from './faces.js';
-import { themeAt } from './depth.js';
+import { themeAt } from '../themes/depth.js';
 import { makeLayouts } from './layout.js';
 import { voidAllowed, fallMask } from './voids.js';
 import { isTown, isMerchantCamp, isClearing, enemyFreeAt } from './town.js';

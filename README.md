@@ -7,8 +7,11 @@ Plain ES modules and a vendored three.js; no build step.
 
 - `index.html`, `style.css`, `src/`: the game.
   - `src/core/`: pure rules and data (constants, combat, items, inventory, ...).
-  - `src/world/`: cross-cube world planning (layout, themes, faces); also runs in the worker.
-  - `src/gen/`: per-cube terrain generation.
+  - `src/world/`: the world graph and everything shared between cubes (layout, WFC, faces,
+    falls across faces, sites, town plan), plus the worker that owns it.
+  - `src/cubegen/`: builds one cube's map from the spec `world/` hands it. Files named like
+    a `world/` file (`cascades`, `spouts`, `sites`, `town`) carve that shared decision into the cube.
+  - `src/themes/`: per-depth data: palettes, lighting, generator settings, structure materials.
   - `src/physics/`, `src/render/`, `src/game/`: movement, drawing and game state/flow.
 - `assets/`: exported game data (GLB models, item icons, manifests). The game
   loads assets only from here. These files are generated; do not edit them by hand.

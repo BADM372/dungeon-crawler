@@ -2,8 +2,8 @@
 // sag, bases of stairs / landings and supporting pillars.
 import { LH, SHEAD, OPP, EDGE_CORNERS } from '../core/constants.js';
 import { runY } from '../core/surfaces.js';
-import { buildOf } from '../world/builds.js';
-import { themeAt } from '../world/depth.js';
+import { buildOf } from '../themes/builds.js';
+import { themeAt } from '../themes/depth.js';
 
 export function shapeStructures(ctx) {
   const { R, cols, pieces, runs, pathFloors } = ctx;

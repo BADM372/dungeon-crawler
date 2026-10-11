@@ -5,7 +5,7 @@
 import { mulberry32, hash32 } from '../core/util.js';
 import { TILES, layersOf } from './tiles.js';
 import { OPP6, step, hashKey } from './coords.js';
-import { themeAt, depthOf } from './depth.js';
+import { themeAt, depthOf } from '../themes/depth.js';
 import { TOWN_KEY, merchantCampKey } from './town.js';
 
 // tile weight at cube k: the base weight scaled by the depth's theme

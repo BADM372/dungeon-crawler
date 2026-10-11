@@ -1,7 +1,7 @@
 // World-level destination budgets: fixed before terrain retries or asset loading.
 import { hash32, mulberry32 } from '../core/util.js';
 import { hashKey } from './coords.js';
-import { themeAt } from './depth.js';
+import { themeAt } from '../themes/depth.js';
 
 export const PRESTIGE = ['basic', 'uncommon', 'rare', 'exceptional'];
 const SETTINGS = {

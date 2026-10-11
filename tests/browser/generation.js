@@ -9,7 +9,7 @@ import { buildWorld, disposeWorld } from '../../src/render/world.js';
 import { renderer, scene, camera } from '../../src/render/scene.js';
 import { blockedAt } from '../../src/physics/collide.js';
 import { makeLayouts } from '../../src/world/layout.js';
-import { themeAt } from '../../src/world/depth.js';
+import { themeAt } from '../../src/themes/depth.js';
 
 const check = (value, message) => { if (!value) throw Error(message); };
 export async function runGenerationChecks() {

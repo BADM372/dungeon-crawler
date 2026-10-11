@@ -1,6 +1,6 @@
 // HUD text, health bar and screen fades.
 import { clamp } from '../core/util.js';
-import { themeAt } from '../world/depth.js';
+import { themeAt } from '../themes/depth.js';
 import { xpProgress } from '../core/progression.js';
 import { isFaceOpen } from '../core/boundaries.js';
 import { state } from './state.js';

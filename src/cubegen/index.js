@@ -1,4 +1,4 @@
-// World generator: runs the stages in order and retries with a new seed on failure.
+// Cube generator: turns one cube's spec into its map. Runs the stages in order and retries with a new seed on failure.
 import { N, LH, DIRS } from '../core/constants.js';
 import { hash32 } from '../core/util.js';
 import { floorY, runY } from '../core/surfaces.js';

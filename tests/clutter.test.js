@@ -5,7 +5,7 @@ import { assetMetadata } from '../tools/prop-metadata.mjs';
 import { PROP_METADATA } from '../src/core/propmetadata.js';
 import { props, catalogProp, signatureProp } from '../src/core/propcatalog.js';
 import { placeProps } from '../src/render/propplace.js';
-import { themeAt } from '../src/world/depth.js';
+import { themeAt } from '../src/themes/depth.js';
 import { N, LH, WATER, LAVA, ACID, FLUID_NAME, DIRS } from '../src/core/constants.js';
 
 for (const p of PROP_METADATA) catalogProp(p);

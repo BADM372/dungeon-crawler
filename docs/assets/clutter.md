@@ -93,7 +93,7 @@ ruins masonry is neutral as in `props.glb`; everything else, including `relics`,
 - Destination reservations keep ambient clutter away from rewards and approaches.
   Focal assets such as altars, ritual circles and abandoned expeditions are recipe-only.
 
-`src/gen/sites.js` authors destination arrangements before reachability
+`src/cubegen/sites.js` authors destination arrangements before reachability
 validation, using worker-safe bounds/collider metadata. Regenerate the metadata with
 `npm run prop-metadata` after re-exporting models. The game tests verify
 that the metadata still matches actual GLBs.

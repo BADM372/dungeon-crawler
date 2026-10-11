@@ -183,7 +183,7 @@ so ancient ruins and lava chambers do not default to wooden cliff fences.
 
 - `world/sites.js`: four destination intents per stratum (one rare/exceptional,
   one uncommon, two basic), preferring branches and avoiding entrance/descent cubes.
-- `gen/sites.js`: reserved footprints, shaped floors/platforms, flat reward anchors,
+- `cubegen/sites.js`: reserved footprints, shaped floors/platforms, flat reward anchors,
   deliberate recipes, and required approach/return routing. Gallery rails align;
   ruin halls add paired column remains. Higher prestige receives more space.
 - `map.rewardSites`: stable IDs, prestige, setting, anchor, interaction approach and

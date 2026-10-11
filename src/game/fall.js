@@ -3,7 +3,7 @@
 import { CUBE_H } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
 import { step } from '../world/coords.js';
-import { depthOf } from '../world/depth.js';
+import { depthOf } from '../themes/depth.js';
 import { groundAt } from '../physics/collide.js';
 import { player, state } from './state.js';
 import { startTravel } from './travel.js';

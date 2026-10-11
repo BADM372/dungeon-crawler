@@ -1,7 +1,7 @@
 // Depth (0 at the surface, MAX_DEPTH at the bottom) and its theme. Plain data, so the world
 // worker can use it too. depthOf(cube key) = -Y.
-import { THEMES } from './themes.js';
-import { parse } from './coords.js';
+import { THEMES } from './index.js';
+import { parse } from '../world/coords.js';
 
 export const MAX_DEPTH = 20;
 export const depthOf = k => -parse(k)[1];

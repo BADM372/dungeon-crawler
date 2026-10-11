@@ -9,8 +9,8 @@ import * as THREE from 'three';
 import { N, LH, CUBE_H, LAVA, ACID } from '../core/constants.js';
 import { GeoBuilder } from './builder.js';
 import { C, gradient } from './palette.js';
-import { themeAt } from '../world/depth.js';
-import { buildOf } from '../world/builds.js';
+import { themeAt } from '../themes/depth.js';
+import { buildOf } from '../themes/builds.js';
 import { scene, camera, renderer } from './scene.js';
 import { U, inject, turnShape } from './cutshader.js';
 

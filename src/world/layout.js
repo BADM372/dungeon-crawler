@@ -9,7 +9,7 @@
 // arc hangs off it (branches), and a few extra portals make loops.
 import { mulberry32, hash32 } from '../core/util.js';
 import { key, faceKey } from './coords.js';
-import { MAX_DEPTH } from './depth.js';
+import { MAX_DEPTH } from '../themes/depth.js';
 import { planSites } from './sites.js';
 
 const RADIUS = d => d === 0 || d >= MAX_DEPTH ? 0 : d <= 5 ? 3 : d <= 12 ? 2 : 1;

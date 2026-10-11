@@ -1,4 +1,4 @@
-// Themes below the ground (depth 5 and deeper): caves without sun or sky. See themes.js.
+// Themes below the ground (depth 5 and deeper): caves without sun or sky. See index.js.
 import { WATER, LAVA, ACID } from '../core/constants.js';
 
 const T = (at, name, o) => ({ at, name, tiles: {}, cave: true, ...o });

@@ -5,10 +5,10 @@
 //   fluids: weights [water, lava, acid] for pools and falls; river: fluid of the rivers
 //   tiles: weight multipliers for the WFC kinds; cave: below the ground (no sun, no sky)
 //   void: how much of a cube may be open to the depth below; relief: how tall highlands get
-//   arche: weights of the cube archetypes (gen/archetypes.js); props: prop set (assets/props.glb), propDensity: chance of a prop per floor (0.32)
+//   arche: weights of the cube archetypes (cubegen/archetypes.js); props: prop set (assets/props.glb), propDensity: chance of a prop per floor (0.32)
 //   light: sky [top, bottom], hemi [sky, ground, intensity], sun [colour, intensity], fog 0..1
 import { WATER } from '../core/constants.js';
-import { CAVES } from './cavethemes.js';
+import { CAVES } from './caves.js';
 
 const T = (at, name, o) => ({ at, name, tiles: {}, cave: false, ...o });
 

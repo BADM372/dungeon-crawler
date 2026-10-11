@@ -5,7 +5,7 @@
 import { N } from '../core/constants.js';
 import { clamp } from '../core/util.js';
 import { key, parse } from './coords.js';
-import { themeAt } from './depth.js';
+import { themeAt } from '../themes/depth.js';
 import { voidAllowed, isVoid } from './voids.js';
 import { isClearing, TOWN_LEVEL } from './town.js';
 

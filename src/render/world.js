@@ -13,7 +13,7 @@ import { makeFadable } from './fade.js';
 import { makeGlass, setGlassFaces } from './glass.js';
 import { buildProps } from './props.js';
 import { placeProps } from './propplace.js';
-import { themeAt } from '../world/depth.js';
+import { themeAt } from '../themes/depth.js';
 
 export function disposeWorld(world) {
   if (!world) return;

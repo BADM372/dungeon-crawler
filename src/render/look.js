@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { scene, setSky, hemi, sun } from './scene.js';
 import { character } from './character.js';
-import { lightAt } from '../world/depth.js';
+import { lightAt } from '../themes/depth.js';
 
 const ca = new THREE.Color(), cb = new THREE.Color();
 const mix = (a, b, t) => ca.set(a).lerp(cb.set(b), t);

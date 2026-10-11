@@ -1,7 +1,6 @@
 // All built structures: stairs, landings, bridges and visible fences.
 import { buildStair, buildLanding } from './stairs.js';
-import { buildStoneBridge, buildPlankBridge } from './bridges.js';
-import { buildRopeBridge, buildIronBridge } from './bridges2.js';
+import { buildStoneBridge, buildPlankBridge, buildRopeBridge, buildIronBridge } from './bridges.js';
 import { POST, RAIL } from './palette.js';
 import { buildLadder } from './ladders.js';
 

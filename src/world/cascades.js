@@ -5,7 +5,7 @@
 //   fall: { x, z, d, type }: (x, z) the void cell it pours down, d the flow direction into it
 import { N, DIRS, WATER, LAVA, ACID } from '../core/constants.js';
 import { parse, step, faceKey } from './coords.js';
-import { themeAt } from './depth.js';
+import { themeAt } from '../themes/depth.js';
 import { voidAllowed, isVoid } from './voids.js';
 
 const CHANCE = 0.45;

@@ -1,8 +1,8 @@
 // Colours used by the world meshes.
 import * as THREE from '../../vendor/three/three.module.js';   // plain path: also loads in the world worker
 import { WATER, LAVA } from '../core/constants.js';
-import { buildOf } from '../world/builds.js';
-import { THEMES } from '../world/themes.js';
+import { buildOf } from '../themes/builds.js';
+import { THEMES } from '../themes/index.js';
 
 export const C = s => new THREE.Color(s);
 
@@ -27,7 +27,7 @@ export function usePalette(theme) {
 export const fluidBed = t => C(t === WATER ? '#7d6f52' : t === LAVA ? '#2b1d1a' : '#3e4a2a');
 export const fluidBank = t => C(t === WATER ? '#c9b98a' : t === LAVA ? '#3a2a22' : '#a4a64a');
 
-// structures: shades of the theme's stone, wood, rope and iron (world/builds.js)
+// structures: shades of the theme's stone, wood, rope and iron (themes/builds.js)
 export let STONE, STONE2, CHEEK, CAP, SOFFIT, PIER, WOOD, WOOD2, BEAM, ROPE, POST, RAIL, IRON, IRON2;
 function useBuild(b) {
   const s = k => C(b.stone).multiplyScalar(k), w = k => C(b.wood).multiplyScalar(k);

@@ -4,8 +4,8 @@ PROPS FOR CUBE CRAWLER - what the game needs from Blender
 Context
 -------
 The game (this repo) is a world of 16x16-cell cubes stacked into 20 depths.
-Every depth has a theme (palette + fluids + lighting); see src/world/themes.js and
-cavethemes.js for the exact colours. The terrain is LOW-POLY and FLAT-SHADED, coloured with
+Every depth has a theme (palette + fluids + lighting); see src/themes/index.js and
+caves.js for the exact colours. The terrain is LOW-POLY and FLAT-SHADED, coloured with
 vertex colours (gradients by height, darker cliff strata, a lighter lip on cliff tops). The
 character and the spider are smooth "clay" models (blender/character.py, spider.py).
 The props should sit between the two: chunky, simple, slightly irregular shapes with FLAT

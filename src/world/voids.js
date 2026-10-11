@@ -3,7 +3,7 @@
 // The void field is world-space noise, so open areas continue across cube faces.
 import { N } from '../core/constants.js';
 import { key, parse } from './coords.js';
-import { themeAt, MAX_DEPTH } from './depth.js';
+import { themeAt, MAX_DEPTH } from '../themes/depth.js';
 import { isClearing } from './town.js';
 
 export function voidAllowed(world, k) {

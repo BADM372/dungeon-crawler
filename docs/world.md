@@ -9,11 +9,12 @@ near them, and stay around after that.
 | Layer | Code | Contents |
 |---|---|---|
 | World | `src/world/` | WFC tiles, faces, specs, the cube cache |
-| Generator | `src/gen/` | turns a spec into a map |
+| Themes | `src/themes/` | per-depth palettes, lighting, generator settings, materials |
+| Generator | `src/cubegen/` | turns a spec into a map |
 | Game | `src/game/flow.js`, `portals.js`, `minimap.js` | entering cubes, portal travel, the overview |
 | Render | `src/render/markers.js`, `neighbors.js` | portal looks, low-detail neighbors |
 
-## Starting town (`world/town.js`, `gen/town.js`)
+## Starting town (`world/town.js`, `cubegen/town.js`)
 
 The spawn cube `(0,0,0)` is an authored clearing, rotated to match its **single
 outgoing side portal**. It contains the four permanent `assets/town.glb`
@@ -156,7 +157,7 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 - **Relief:** themes also have a `relief` that stretches highland faces (up to level ~18 in
   the snowy peaks) and makes hills and plateaus taller.
 
-## Falls into the cube below (`world/cascades.js`, `gen/cascades.js`)
+## Falls into the cube below (`world/cascades.js`, `cubegen/cascades.js`)
 
 - **The look:** a pool in one cube spills over the edge of its void and pours out through
   the bottom of the glass box. In the cube below, the stream comes in through the top of
@@ -180,7 +181,7 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 - **Results:** about 7% of cubes, mostly in the sky islands and the abyss. Over 8 worlds,
   all 270 falls have a matching end in the cube below.
 
-## Falls across a side face (`world/spouts.js`, `gen/spouts.js`)
+## Falls across a side face (`world/spouts.js`, `cubegen/spouts.js`)
 
 - **The look:** a stream on an upper layer of one cube runs to a side face and over it onto
   a short lip in the neighbour. From the lip's inner edge it falls into a pool on the
@@ -201,7 +202,7 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
   Over 3 worlds, no upper-layer edge cell differs on any of 1943 faces.
 - **How many:** about one cube in ten gets one.
 
-## Cube archetypes (`gen/archetypes.js`)
+## Cube archetypes (`cubegen/archetypes.js`)
 
 Every cube gets a big shape on top of the blended ground. The shaping fades out towards the
 faces, so the outer ring still matches the neighbours.
@@ -239,7 +240,7 @@ under plank bridges never stand where another structure passes underneath.
   cutaway shader (`frontWall` in `render/cutshader.js`). The cut rock shows as a flat
   cross-section, like a cutaway model.
 
-## Themed structures (`world/builds.js`, `render/bridges2.js`)
+## Themed structures (`themes/builds.js`, `render/bridges.js`)
 
 - **Materials per theme:** each theme (by its prop set) names the stone, wood, rope and iron
   its structures are made of. Stairs, landings, bridges, fences and ladders use shades of
@@ -253,7 +254,7 @@ under plank bridges never stand where another structure passes underneath.
 - **Style mix:** each theme weights the styles. Rope bridges are common in the sky islands
   and spider nests, iron in the mines, volcanic depths and abyss, stone in the ruins.
 
-## Ladders and jumps (`gen/climbs.js`, `physics/climb.js`)
+## Ladders and jumps (`cubegen/climbs.js`, `physics/climb.js`)
 
 Routes can now also use these moves:
 
@@ -297,7 +298,7 @@ They are drawn as one instanced mesh per prop (and per material part), with per-
 material clones so they fade and get cut with their cube. Props with `sway` bend in the
 wind in the vertex shader. Up to six glowing props per cube add light sources for the pool.
 
-## Reward sites (`world/sites.js`, `gen/sites.js`)
+## Reward sites (`world/sites.js`, `cubegen/sites.js`)
 
 Each stratum budgets four optional destinations, preferring branch cubes: two basic,
 one uncommon, and one rare (occasionally exceptional). Prestige and site identity are
@@ -333,7 +334,7 @@ in game devtools for real worker, asset, shader and collision checks.
 - Drops are capped at 8 levels (deeper ones ragdoll you) and need an extra level of headroom.
 - Lake cubes and half of the underground cubes get floating islands (no pillars).
 
-## The way down (`gen/route.js`, `gen/reach.js`, `gen/escape.js`)
+## The way down (`cubegen/route.js`, `cubegen/reach.js`, `cubegen/escape.js`)
 
 The world guarantees that from anywhere you can arrive, you can get to depth 20.
 
