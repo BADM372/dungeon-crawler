@@ -10,6 +10,8 @@ export const U = {
   uCutY: { value: 1e3 }, uCenter: { value: new THREE.Vector2() }, uRadius: { value: 1 },
   uAspect: { value: 1 }, uDepth: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
   uFront: { value: new THREE.Vector4() }, uWallY: { value: 1e3 },
+  // section cap colours (section.js)
+  uCapRock: { value: new THREE.Color() }, uCapStone: { value: new THREE.Color() }, uCapWood: { value: new THREE.Color() },
   uPoly: { value: Array.from({ length: CORNERS }, () => new THREE.Vector2()) },
 };
 
@@ -48,7 +50,7 @@ export function inject(mat, fragCode, key) {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vCutW;\nvarying float vCutZ;\n' + sh.vertexShader.replace('#include <project_vertex>',
       '#include <project_vertex>\n#ifdef USE_INSTANCING\n  vCutW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;\n#else\n  vCutW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#endif\n  vCutZ = -mvPosition.z;');
-    sh.fragmentShader = `varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth, uWallY;\nuniform vec2 uCenter, uRes;\nuniform vec4 uFront;\nuniform vec2 uPoly[${CORNERS}];\n`
+    sh.fragmentShader = `varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth, uWallY;\nuniform vec2 uCenter, uRes;\nuniform vec4 uFront;\nuniform vec3 uCapRock, uCapStone, uCapWood;\nuniform vec2 uPoly[${CORNERS}];\n`
       + REGION + '\n' + fragCode(sh.fragmentShader);
   };
   mat.customProgramCacheKey = () => key;

@@ -223,7 +223,7 @@ under plank bridges never stand where another structure passes underneath.
   vertex point, so the four faces meeting there agree.
 - **Pillars:** one to three rock columns rise to the top level in every cave cube.
 - **Walls down:** the faces towards the camera are cut down to just over the character in the
-  cutaway shader (`frontWall` in `render/cutshader.js`). The cut rock shows as hatched
+  cutaway shader (`frontWall` in `render/cutshader.js`). The cut rock shows as a flat
   cross-section, like a cutaway model.
 
 ## Themed structures (`world/builds.js`, `render/bridges2.js`)
@@ -336,7 +336,9 @@ The world guarantees that from anywhere you can arrive, you can get to depth 20.
 - **What gets cut:** everything above the cut height, closer to the camera than the
   character and inside the shape, is discarded.
 - **What you see instead:**
-  - The back faces of cut solids show as a dark hatched section cap.
+  - The back faces of cut solids show as a flat section cap, one colour per kind of solid:
+    the rock strata at the cut height, the structure stone or the wood, a little darker than
+    a lit floor. One colour keeps the inner faces from reading as a see-through hollow.
   - Fluids get flat caps.
   - What was removed (terrain, structures, props) is drawn again as very faint glass: a
     twin of every cut solid that shares its geometry, draws only inside the cutaway, writes

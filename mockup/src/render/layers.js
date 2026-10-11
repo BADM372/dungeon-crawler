@@ -10,9 +10,9 @@ import { cutMaterial } from './section.js';
 export function layerMeshes(geo, group) {
   const fluidMeshes = [];
   for (const L of geo) {
-    for (const a of [L.terrain, L.wood]) {
+    for (const [a, cap] of [[L.terrain, 'rock'], [L.stone, 'stone'], [L.wood, 'wood']]) {
       if (!a) continue;
-      const mesh = new THREE.Mesh(toGeometry(a), cutMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), true));
+      const mesh = new THREE.Mesh(toGeometry(a), cutMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), cap));
       mesh.castShadow = mesh.receiveShadow = true;
       group.add(mesh);
     }

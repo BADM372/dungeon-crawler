@@ -11,7 +11,7 @@ export const pillarBox = (b, q, col) => {
 
 // stone platform with low parapets on the sides no flight connects to
 export function buildLanding(r, L) {
-  const S = L.terrain, p = r.pieces[0], x = r.from.x, z = r.from.z, y = r.y0;
+  const S = L.stone, p = r.pieces[0], x = r.from.x, z = r.from.z, y = r.y0;
   S.box(x + 0.02, p.base, z + 0.02, x + 0.98, y, z + 0.98, (x + z) & 1 ? STONE : STONE2, CHEEK);
   for (let d = 0; d < 4; d++) {
     if (r.conn.has(d)) continue;
@@ -23,7 +23,7 @@ export function buildLanding(r, L) {
 
 // uniform steps over the whole flight, side walls, solid where the flight rests on ground
 export function buildStair(r, L) {
-  const S = L.terrain, F = runFrame(r), k = r.k;
+  const S = L.stone, F = runFrame(r), k = r.k;
   const rise = r.y1 - r.y0, n = Math.max(2, Math.round(Math.abs(rise) / 0.2)), half = Math.abs(rise) / n / 2;
   for (let i = 0; i < n; i++) {
     const s0 = i * k / n, s1 = (i + 1) * k / n, top = r.y0 + rise * (i + 0.5) / n;

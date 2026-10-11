@@ -32,7 +32,7 @@ function geometryFor(geo) {
   if (entry) { cache.delete(geo); cache.set(geo, entry); entry.refs++; return entry; }
   const solids = [], fluids = [];
   for (const L of geo) {
-    for (const a of [L.terrain, L.wood]) if (a) solids.push(toGeometry(a));
+    for (const a of [L.terrain, L.stone, L.wood]) if (a) solids.push(toGeometry(a));
     for (const t of FLUIDS) if (L.fluids[t]) {
       const f = toGeometry(L.fluids[t]); f.deleteAttribute('color'); fluids.push(f);
     }

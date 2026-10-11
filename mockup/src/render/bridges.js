@@ -5,7 +5,7 @@ import { pillarBox } from './stairs.js';
 
 // stone deck with parapets, carried by round arches that spring from the banks / piers
 export function buildStoneBridge(r, L) {
-  const S = L.terrain, F = runFrame(r), k = r.k, segs = k * 4;
+  const S = L.stone, F = runFrame(r), k = r.k, segs = k * 4;
   for (let i = 0; i < segs; i++) {
     const s0 = i * k / segs, s1 = (i + 1) * k / segs, ya = F.Y(s0), yb = F.Y(s1);
     slab(S, F, s0, s1, -0.5, 0.5, ya - 0.25, ya, yb - 0.25, yb, (i >> 1) & 1 ? STONE : STONE2, CHEEK);

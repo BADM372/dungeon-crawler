@@ -11,7 +11,7 @@ import { buildStructures } from './structures.js';
 export function buildCubeGeometry(m) {
   usePalette(themeAt(m.depth ?? 0));
   const layers = Array.from({ length: m.K }, () => ({
-    terrain: new GeoBuilder(), wood: new GeoBuilder(),
+    terrain: new GeoBuilder(), stone: new GeoBuilder(), wood: new GeoBuilder(),
     fluids: Object.fromEntries(FLUIDS.map(t => [t, new GeoBuilder()])),
   }));
   // bedrock under every column that is not open to the depth below
@@ -23,7 +23,7 @@ export function buildCubeGeometry(m) {
   buildStructures(m, layers);
   const arr = b => b.pos.length ? b.arrays() : null;
   return layers.map(L => ({
-    terrain: arr(L.terrain), wood: arr(L.wood),
+    terrain: arr(L.terrain), stone: arr(L.stone), wood: arr(L.wood),
     fluids: Object.fromEntries(FLUIDS.map(t => [t, arr(L.fluids[t])])),
   }));
 }
@@ -31,6 +31,6 @@ export function buildCubeGeometry(m) {
 // the buffers to transfer (instead of copy) when posting the geometry
 export function buffers(geo) {
   const out = [];
-  for (const L of geo) for (const a of [L.terrain, L.wood, ...Object.values(L.fluids)]) if (a) out.push(a.pos.buffer, a.nor.buffer, a.col.buffer);
+  for (const L of geo) for (const a of [L.terrain, L.stone, L.wood, ...Object.values(L.fluids)]) if (a) out.push(a.pos.buffer, a.nor.buffer, a.col.buffer);
   return out;
 }
