@@ -2,18 +2,20 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+// names.attack is one clip name, or { [attack.clip]: clip name } for several attacks.
 export function loadEnemyModel(url, scale, names) {
   const model = { ready: false, scale };
+  const attackNames = typeof names.attack === 'string' ? { attack: names.attack } : names.attack;
   new GLTFLoader().load(url, gltf => {
     const clips = Object.fromEntries(gltf.animations.map(c => [c.name, c]));
-    if (Object.values(names).some(n => !clips[n])) {
+    if ([names.walk, names.fast, names.death, ...Object.values(attackNames)].some(n => n && !clips[n])) {
       model.error = 'Missing enemy animation in ' + url; console.error(model.error); return;
     }
     const extras = n => gltf.parser.json.animations.find(a => a.name === n)?.extras || {};
     gltf.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
     Object.assign(model, {
       ready: true, source: gltf.scene, walk: clips[names.walk], fast: names.fast ? clips[names.fast] : null,
-      attack: clips[names.attack], death: clips[names.death],
+      attacks: Object.fromEntries(Object.entries(attackNames).map(([k, n]) => [k, clips[n]])), death: clips[names.death],
       walkSpeed: (extras(names.walk).speed || 1) * scale,
       fastSpeed: names.fast ? extras(names.fast).speed * scale : 0,
     });

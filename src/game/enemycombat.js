@@ -1,4 +1,4 @@
-// Bites / head-down rams and solid bodies. Contact never damages an enemy.
+// Bites, rams, slaps and kicks, and solid bodies. Contact never damages an enemy.
 import { player, state, setStatus } from './state.js';
 import { takeDamage } from '../core/progression.js';
 import { flash } from './hud.js';
@@ -6,22 +6,23 @@ import { playerHurtFx } from './juice.js';
 import { knockDown } from './ragdoll.js';
 import { canMove } from '../physics/canmove.js';
 import { walkable, stepEnemy } from '../physics/enemynav.js';
+import { attackOf } from '../core/enemies.js';
 
 export const resetEnemyCombat = () => {};
 export const playerFloor = height => player.grounded && !player.swimming && walkable(player.support, height) ? player.support : null;
 export function strikePlayer(e) {
-  const p = player, cfg = e.profile, dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
-  if (p.ragdoll || p.hp <= 0 || d > cfg.hitReach || Math.abs(p.y - e.y) > 0.65) return;
-  if (d > 0.01 && Math.cos(Math.atan2(dx, dz) - e.yaw) < 0.5) return;
-  p.vx = (d ? dx / d : Math.sin(e.yaw)) * cfg.knock;
-  p.vz = (d ? dz / d : Math.cos(e.yaw)) * cfg.knock;
-  const reason = e.type === 'stunder' ? 'Rammed by a Stunder!' : 'Bitten by a spider!';
-  playerHurtFx(Math.min(cfg.damage, p.hp), e.x, e.z);
-  // only a heavy ram or a deadly bite knocks you over; a bite is a short flinch and a shove
-  if (e.type === 'stunder' || p.hp <= cfg.damage) {
-    knockDown({ damage: cfg.damage, hop: e.type === 'stunder' ? 4 : 3.5, reason }); return;
+  const p = player, cfg = e.profile, a = attackOf(e), dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
+  if (p.ragdoll || p.hp <= 0 || d > a.hitReach || Math.abs(p.y - e.y) > 0.65) return;
+  if (d > 0.01 && Math.cos(Math.atan2(dx, dz) - e.yaw) < a.arc) return;
+  const damage = Math.round(cfg.damage * (a.power ?? 1)), knock = a.knock ?? cfg.knock;
+  p.vx = (d ? dx / d : Math.sin(e.yaw)) * knock;
+  p.vz = (d ? dz / d : Math.cos(e.yaw)) * knock;
+  playerHurtFx(Math.min(damage, p.hp), e.x, e.z);
+  // only a heavy blow or a deadly one knocks you over; the rest are a short flinch and a shove
+  if (a.knockDown || p.hp <= damage) {
+    knockDown({ damage, hop: a.hop, reason: a.reason }); return;
   }
-  takeDamage(p, cfg.damage, state.time); flash(); setStatus(reason);
+  takeDamage(p, damage, state.time); flash(); setStatus(a.reason);
   p.vx *= 0.6; p.vz *= 0.6; p.stun = 0.15;
 }
 function pushPlayer(dx, dz) {

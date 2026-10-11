@@ -1,6 +1,7 @@
 // Independent seeded streams: enemies never alter the terrain generator's RNG.
-// A level is a cube in the existing level flow. Each gets 0-2 Stunders, on
-// dry, spacious floors, away from entrances and one another.
+// A level is a cube in the existing level flow. Each species draws its own count
+// (profile.minCount..maxCount, at every depth for now) and places it on dry floors
+// with room for its body, away from entrances and from others of its kind.
 import { N } from '../core/constants.js';
 import { enemyRoll } from '../core/enemies.js';
 import { mulberry32, hash32 } from '../core/util.js';

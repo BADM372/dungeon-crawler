@@ -29,6 +29,8 @@ import { depthOf } from './themes/depth.js';
 import './game/dev.js';
 import { updateSpiders, spiders } from './game/spiders.js';
 import { stunders } from './game/stunders.js';
+import { snakes } from './game/snakes.js';
+import { octonauts } from './game/octonauts.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
 import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
@@ -74,7 +76,8 @@ setStatus('Welcome to town. Follow the path through the grove to leave.');
 window.__game = {
   get map() { return state.map; }, player, generate, loadCube, updatePlayer, groundAt,
   get transitioning() { return state.transitioning; }, get spiders() { return spiders; }, updateSpiders, state,
-  get stunders() { return stunders; }, get enemies() { return allEnemies(); }, updateEnemies,
+  get stunders() { return stunders; }, get snakes() { return snakes; }, get octonauts() { return octonauts; },
+  get enemies() { return allEnemies(); }, updateEnemies,
   devSwapWeapon: state.dev ? devSwapWeapon : undefined,
 };
 frame();

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SPIDER, STUNDER, makeEnemy } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, makeEnemy, attackOf, pickAttack } from '../src/core/enemies.js';
 import { SWORD, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit } from '../src/core/combat.js';
 
 const hero = () => ({ x: 0, y: 0, z: 0, yaw: 0, hp: 100, stun: 0, sword: swordState() });
@@ -77,4 +77,20 @@ test('travel cancellation clears queued input and previous targets', () => {
   cancelSwing(p, true);
   assert.equal(p.sword.active, false); assert.equal(p.sword.requested, false);
   assert.equal(p.sword.hits.size, 0); assert.equal(p.sword.cool, 0);
+});
+
+test('Octonaut picks slaps about twice as often as spin kicks; single-attack species keep their profile', () => {
+  const picks = [0, 0];
+  for (let i = 0; i < 300; i++) picks[pickAttack(OCTONAUT, i / 300)]++;
+  assert.deepEqual(picks, [200, 100]);
+  assert.equal(pickAttack(SPIDER, 0.9), 0);
+  const e = enemy(SNAKE);
+  assert.equal(attackOf(e), e.profile);
+  const o = enemy(OCTONAUT);
+  o.attack = 1;
+  assert.equal(attackOf(o).name, 'spin');
+  assert.ok(attackOf(o).arc < 0 && attackOf(o).knockDown && attackOf(o).power > 1);
+  o.attack = 0;
+  assert.equal(attackOf(o).name, 'slap');
+  assert.equal(attackOf(o).knockDown, false);
 });

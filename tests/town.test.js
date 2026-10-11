@@ -9,7 +9,7 @@ import { World } from '../src/world/world.js';
 import { step, faceKey } from '../src/world/coords.js';
 import { BUILDINGS, MERCHANTS, TOWN_LEVEL, enemyFreeAt, merchantCampKey, rotateTownPoint } from '../src/world/town.js';
 import { state } from './fixtures.js';
-import { SPIDER, STUNDER } from '../src/core/enemies.js';
+import { SPIDER, ENEMY_PROFILES } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
 import { blockedAt, insideSolid, ceilingAt } from '../src/physics/collide.js';
 import { canMove } from '../src/physics/canmove.js';
@@ -90,7 +90,7 @@ test('town is flat, has water, four permanent buildings, varied tall trees, and 
       assert.equal(m.cols[Math.floor(p.z) * N + Math.floor(p.x)][0].fluid, 0);
       assert.ok(!m.occluders.filter(b => b.shape !== 'ellipsoid').some(b => containsXZ(b, p.x, p.z, CHAR_R + .02)));
     }
-    assert.deepEqual(enemySpots(m, SPIDER), []); assert.deepEqual(enemySpots(m, STUNDER), []);
+    for (const p of ENEMY_PROFILES) assert.deepEqual(enemySpots(m, p), []);
     assert.deepEqual(signature(m), signature(new World(seed).cube(w.start).map));
   }
   assert.deepEqual([...directions].sort(), [0, 1, 2, 3]);
@@ -144,7 +144,7 @@ test('the three tents form a safe roadside camp exactly one cube in front of tow
     assert.deepEqual([route[0].x, route[0].z], [entry.x + .5, entry.z + .5]);
     assert.deepEqual([route.at(-1).x, route.at(-1).z], [exit.x + .5, exit.z + .5]);
     checkWalkingRoutes(m); checkCurvedPaths(m);
-    assert.deepEqual(enemySpots(m, SPIDER), []); assert.deepEqual(enemySpots(m, STUNDER), []);
+    for (const p of ENEMY_PROFILES) assert.deepEqual(enemySpots(m, p), []);
     assert.deepEqual(signature(m), signature(new World(seed).cube(k).map));
     assert.deepEqual(signature(m), signature(structuredClone(m)), 'worker clone preserves authored placements');
   }
@@ -252,7 +252,7 @@ test('safe surface buffer includes diagonals, ends after one cube, and does not 
     const w = new World(seed), town = w.cube(w.start).map;
     const roadKey = step(w.start, town.exit), road = state.map = w.cube(roadKey).map;
     assert.equal(road.enemyFree, true);
-    assert.deepEqual(enemySpots(road, SPIDER), []); assert.deepEqual(enemySpots(road, STUNDER), []);
+    for (const p of ENEMY_PROFILES) assert.deepEqual(enemySpots(road, p), []);
     const outside = state.map = w.cube(step(roadKey, town.exit)).map;
     assert.equal(outside.enemyFree, false);
     hostilePopulation += enemySpots(outside, SPIDER).length;

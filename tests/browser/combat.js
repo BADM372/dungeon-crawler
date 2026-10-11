@@ -9,6 +9,9 @@ import { createPlayerStats, createRun } from '../../src/core/progression.js';
 import { resetEnemies, allEnemies, updateEnemies, drawEnemies } from '../../src/game/enemies.js';
 import { spiders } from '../../src/game/spiders.js';
 import { stunders } from '../../src/game/stunders.js';
+import { snakes } from '../../src/game/snakes.js';
+import { octonauts } from '../../src/game/octonauts.js';
+import { SNAKE, OCTONAUT, makeEnemy } from '../../src/core/enemies.js';
 import { updatePlayer } from '../../src/game/update.js';
 import { climb } from '../../src/physics/climb.js';
 import { W, resetMode } from '../../src/render/blendtree.js';
@@ -17,6 +20,8 @@ import { animateCharacter } from '../../src/render/animator.js';
 import { scene } from '../../src/render/scene.js';
 import { stunderModel } from '../../src/render/stundermodel.js';
 import { spiderModel } from '../../src/render/spidermodel.js';
+import { snakeModel } from '../../src/render/snakemodel.js';
+import { octonautModel } from '../../src/render/octonautmodel.js';
 import { startTravel, travelling, updateTravel, drawTravelEnemies } from '../../src/game/travel.js';
 import { camera } from '../../src/render/scene.js';
 import { updatePointer, hoveredEnemy } from '../../src/game/pointer.js';
@@ -175,6 +180,59 @@ export async function runCombatChecks() {
     } finally {
       state.map = originalMap; state.run = savedRun;
       Object.assign(player, saved); cancelSwing(player, true); equipSword(savedWeapon);
+      resetEnemies();
+    }
+  });
+}
+
+// Snake bite, Octonaut slap and spin kick: real AI timers, damage, reach / arc and the
+// matching GLB clip for each attack.
+export async function runNewEnemyChecks() {
+  check(snakeModel.ready && octonautModel.ready, 'Wait for the snake / Octonaut assets to load');
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, savedRun = state.run, results = [];
+    const strike = (e, attack, steps, t = 0) => {
+      Object.assign(e, { mode: 'attack', t, bit: false, attacks: e.attacks + 1, attack, think: 1e6 });
+      for (let i = 0; i < steps; i++) { updateEnemies(1 / 60); drawEnemies(1 / 60); }
+    };
+    try {
+      state.run = createRun(); state.map = arena(); resetEnemies();
+      for (const e of allEnemies()) place(e, 2.5, 2.5);
+      const snake = makeEnemy({ f: at(6.5, 7.4), x: 6.5, y: 0, z: 7.4, yaw: Math.PI }, SNAKE);
+      const octo = makeEnemy({ f: at(6.5, 7.5), x: 6.5, y: 0, z: 7.5, yaw: Math.PI }, OCTONAUT);
+      snakes.push(snake); octonauts.push(octo);
+      place(octo, 12.5, 12.5); hero(); place(snake, 6.5, 7.4);
+      strike(snake, 0, 30);
+      check(player.hp === 100 - SNAKE.damage && !player.ragdoll, 'A snake bite is a 16-damage flinch: ' + player.hp);
+      check(snake.view.actions.attack.getEffectiveWeight() > 0.99, 'SnakeAttack must play during the bite');
+      place(snake, 12.5, 2.5);
+      results.push('snake bite: damage, flinch, SnakeAttack');
+
+      hero(); place(octo, 6.5, 7.5);
+      strike(octo, 0, 30);
+      check(player.hp === 100 - OCTONAUT.damage && !player.ragdoll, 'Slap must deal 20 without knocking down: ' + player.hp);
+      check(octo.view.actions.slap.getEffectiveWeight() > 0.99 && octo.view.actions.spin.getEffectiveWeight() < 0.01, 'OctoSlap must play');
+      hero(); place(octo, 6.5, 5.5); octo.yaw = Math.PI;   // player behind it, after the wind-up stopped tracking
+      strike(octo, 0, 30, OCTONAUT.attacks[0].trackUntil);
+      check(player.hp === 100, 'A slap must not reach behind the Octonaut');
+      hero(); place(octo, 6.5, 5.4); octo.yaw = Math.PI;
+      strike(octo, 1, 40, OCTONAUT.attacks[1].trackUntil);
+      check(player.hp === 100 - Math.round(OCTONAUT.damage * 1.4) && player.ragdoll, 'Spin kick must hit all around and knock down: ' + player.hp);
+      check(octo.view.actions.spin.getEffectiveWeight() > 0.99, 'OctoSpin must play');
+      results.push('Octonaut slap (frontal) / spin kick (all around, knockdown) with matching clips');
+
+      hero(); place(octo, 6.5, 7.5); place(snake, 8.5, 6.5);
+      damageEnemy(octo, octo.hp); damageEnemy(snake, snake.hp); updateEnemies(1 / 60); drawEnemies(1 / 60);
+      check(octo.view.actions.death.getEffectiveWeight() === 1 && snake.view.actions.death.getEffectiveWeight() === 1, 'Death clips must play');
+      for (const time of [0.4, 1, 1.6, 2.1]) {
+        octo.deadT = snake.deadT = time; drawEnemies(1 / 60);
+        check(minimumY(octo.view.model) >= -0.003 && minimumY(snake.view.model) >= -0.003, 'Corpses must stay above the floor at ' + time);
+      }
+      results.push('death clips stay on the floor');
+      return results;
+    } finally {
+      state.map = originalMap; state.run = savedRun;
+      Object.assign(player, saved); cancelSwing(player, true);
       resetEnemies();
     }
   });

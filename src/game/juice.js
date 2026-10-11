@@ -21,14 +21,12 @@ export function cameraKick(dx, dz, amount, dy = 0) {
   kick.x += dx / l * amount; kick.z += dz / l * amount; kick.y += dy;
 }
 
-const ICHOR = { spider: ['#a6d84e', '#5f8f22'], stunder: ['#d0503a', '#7a2418'] };
-
 // the player's blade hit enemy e for dmg (killed: that was the last of its health);
 // (dx, dz): the direction of the blow
 export function enemyHitFx(e, dmg, killed, dx, dz) {
   const l = Math.hypot(dx, dz) || 1, nx = dx / l, nz = dz / l;
   const x = e.x - nx * e.profile.radius * 0.5, y = e.y + Math.min(e.profile.bodyHeight * 0.6, 0.7), z = e.z - nz * e.profile.radius * 0.5;
-  const [c1, c2] = ICHOR[e.type] || ICHOR.spider, n = killed ? 16 : 9;
+  const [c1, c2] = e.profile.ichor ?? ['#a6d84e', '#5f8f22'], n = killed ? 16 : 9;
   emit(glow, x, y, z, { life: 0.14, size: killed ? 0.8 : 0.55, grow: 0.8, color: '#ffc870', alpha: 0.9 });
   for (let i = 0; i < n; i++) {   // sparks fanning out along the blow
     const s = rand(2.5, 5.5), a = rand(-0.9, 0.9), cx = nx * Math.cos(a) - nz * Math.sin(a), cz = nz * Math.cos(a) + nx * Math.sin(a);
@@ -45,7 +43,7 @@ export function enemyHitFx(e, dmg, killed, dx, dz) {
     drift: rand(-0.35, 0.35), pop: 0.7 });
   hitstop(killed ? 0.09 : 0.055);
   cameraKick(nx, nz, killed ? 0.16 : 0.08);
-  sfx(killed ? 'kill' : 'hit', { at: e, pitch: e.type === 'stunder' ? 0.8 : 1.1 });
+  sfx(killed ? 'kill' : 'hit', { at: e, pitch: e.profile.pitch ?? 1.1 });
 }
 
 export function swingFx() { sfx('swing', { at: player, pitch: 0.9 + 0.2 * Math.random() }); }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { N, LH } from '../src/core/constants.js';
 import { edgeKey } from '../src/core/util.js';
 import { flatMap, state } from './fixtures.js';
-import { SPIDER, STUNDER, makeEnemy } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, ENEMY_PROFILES, makeEnemy } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
 import { walkable, neighbors, findPath, stepEnemy, clearLine } from '../src/physics/enemynav.js';
 import { World } from '../src/world/world.js';
@@ -70,4 +70,40 @@ test('real generated levels keep the population cap and species clearance', () =
     assert.deepEqual(signature(spots), signature(enemySpots(map, STUNDER)));
     for (const e of spots) assert.ok(walkable(e.f, STUNDER.height));
   }
+});
+test('snakes and Octonauts spawn on every depth, with their own seeded streams and caps', () => {
+  for (const profile of [SNAKE, OCTONAUT]) {
+    const counts = new Set();
+    for (let seed = 0; seed < 120; seed++) {
+      const map = flatMap(seed), spots = enemySpots(map, profile);
+      counts.add(spots.length);
+      assert.ok(spots.length <= profile.maxCount);
+      assert.deepEqual(signature(spots), signature(enemySpots(map, profile)));
+      for (const e of spots) assert.ok(walkable(e.f, profile.height) && Math.hypot(e.f.x, e.f.z) >= 4);
+    }
+    assert.equal(counts.size, profile.maxCount + 1, profile.type);
+  }
+  assert.equal(new Set(ENEMY_PROFILES.map(p => p.seedSalt)).size, ENEMY_PROFILES.length);
+  assert.equal(new Set(ENEMY_PROFILES.map(p => p.type)).size, ENEMY_PROFILES.length);
+  for (const depth of [0, 3, 7, 12, 20]) {
+    const seen = { snake: 0, octonaut: 0 };
+    for (let seed = 0; seed < 30; seed++) {
+      const map = flatMap(seed); map.depth = depth;
+      for (const p of [SNAKE, OCTONAUT]) seen[p.type] += enemySpots(map, p).length;
+    }
+    assert.ok(seen.snake > 0 && seen.octonaut > 0, 'depth ' + depth);
+  }
+});
+test('real levels hold at least twice as many spiders as the old 1-7 draw', () => {
+  let total = 0, cubes = 0;
+  for (const seed of [1, 2, 3, 8, 17, 42]) {
+    const world = new World(seed), [x, y, z] = world.start.split(',').map(Number);
+    for (let dy = -1; dy >= -4; dy--) {
+      const map = state.map = world.cube(`${x},${y + dy},${z}`).map;
+      if (map.enemyFree) continue;
+      total += enemySpots(map, SPIDER).length; cubes++;
+    }
+  }
+  assert.ok(cubes >= 20);
+  assert.ok(total / cubes >= 2 * 4, `average ${total / cubes}`);   // the old draw averaged ~3.9 here
 });

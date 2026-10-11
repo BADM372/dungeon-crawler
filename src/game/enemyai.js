@@ -1,8 +1,10 @@
 // Shared floor-bound behaviour. Species tuning controls health, speed, clearance,
-// wind-up / strike / recovery, and whether a hit is a bite or a heavy ram.
+// wind-up / strike / recovery, and what a hit does; a species with several attacks
+// picks one each time it strikes.
 import { player, state } from './state.js';
 import { playerFloor, strikePlayer } from './enemycombat.js';
 import { stepEnemy, findPath, around, clearLine } from '../physics/enemynav.js';
+import { attackOf, pickAttack } from '../core/enemies.js';
 
 const turn = (e, yaw, dt, rate = 8) => { e.yaw += Math.atan2(Math.sin(yaw - e.yaw), Math.cos(yaw - e.yaw)) * Math.min(1, dt * rate); };
 function steer(e, x, z, speed, dt) {
@@ -41,10 +43,11 @@ function decide(e) {
 function act(e, dt) {
   const p = player, cfg = e.profile, dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
   if (e.mode === 'attack') {
+    const a = attackOf(e);
     e.t += dt; e.speed = 0;
-    if (e.t < cfg.trackUntil) turn(e, Math.atan2(dx, dz), dt, 6);
-    if (!e.bit && e.t >= cfg.hitAt) { e.bit = true; strikePlayer(e); }
-    if (e.t >= cfg.attackTime) { e.mode = 'chase'; e.cool = cfg.cooldown; }
+    if (e.t < a.trackUntil) turn(e, Math.atan2(dx, dz), dt, 6);
+    if (!e.bit && e.t >= a.hitAt) { e.bit = true; strikePlayer(e); }
+    if (e.t >= a.attackTime) { e.mode = 'chase'; e.cool = cfg.cooldown; }
     return;
   }
   if (e.mode === 'chase') {
@@ -52,7 +55,7 @@ function act(e, dt) {
     const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7;
     if (d < cfg.reach && Math.abs(p.y - e.y) < 0.5 && !p.ragdoll) {
       e.speed = 0; turn(e, Math.atan2(dx, dz), dt);
-      if (e.cool <= 0 && facing) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; }
+      if (e.cool <= 0 && facing) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); }
       return;
     }
     follow(e, cfg.chase, dt, [p.x, p.z]); return;

@@ -1,4 +1,4 @@
-# Sword combat and Stunder
+# Sword combat and enemies
 
 - **Mouse (Diablo style):** click the floor to walk there (pathing over the floor
   graph, to the closest reachable floor if the spot cannot be reached), click an enemy
@@ -23,12 +23,25 @@
   Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
   head-down ram. The enemy under the cursor is highlighted and shows its health. Player/enemy levels and alternative weapons scale these numbers;
   see [progression.md](progression.md). Inventory (`I`) pauses simulation and input.
-- Every cube/level has a separate seeded 0–2 Stunder draw. Spawn sites must be
-  dry, clear for its 2.8-cell height, linked to walkable floors, at least four
-  cells from portals and spaced apart. If no safe site exists, spawn fewer.
-- Both species share navigation / AI / melee. Stunder walks at 0.45 cells/s,
-  pursues at 1.05 cells/s using its fast wiggling walk, commits its heading
-  before the ram, and contacts at animation frame 16.
+- Every cube/level has a separate seeded draw per species: 4–14 spiders, 0–2
+  Stunders, 0–3 snakes and 0–2 Octonauts, at every depth for now (to be rebalanced).
+  Spawn sites must be dry, clear for the species' height, linked to walkable floors,
+  at least four cells from portals and spaced apart. If no safe site exists, spawn fewer.
+- All species share navigation / AI / melee (`core/enemies.js` holds the tuning).
+  Stunder walks at 0.45 cells/s, pursues at 1.05 cells/s using its fast wiggling
+  walk, commits its heading before the ram, and contacts at animation frame 16.
+- Snake (light green, `blender/snake.py`): slithers with a lateral wave that runs
+  back along its body at exactly its ground speed, so the body follows a fixed path
+  on the floor. It coils, strikes forward and down and bites at frame 12 (16 damage,
+  a flinch like a spider bite).
+- Octonaut (pale blue, six legs, two arms, floating face; `blender/octonaut.py`):
+  two attacks, listed in the profile's `attacks` and picked at random each time it
+  strikes (slaps twice as often): a two-armed slap in front of it (frame 13), and a
+  full spin on five legs that sweeps the sixth, stretched out, all around it (frame
+  19): 1.4x damage, hits in every direction, knocks the player down. Each attack has
+  its own clip; the renderer plays the one `attackOf(e)` names.
+- Snake and Octonaut share shining purple eyes (an emissive material; the eyes
+  shrink away as they die).
 - Actual GLB death clips play once and hold their corpse poses, then fade and
   release their skeletons, mixers and instance materials. Portals detach /
   slide / dispose both species, rather than leaving enemies in the old cube.
@@ -77,7 +90,9 @@ these do not change inventory or combat stats. Swimming / climbing hides the pro
 `Climb` is an in-place IK loop covering two ladder rungs (0.56 game units);
 vertical speed advances its phase, descent reverses it, and stopping holds
 the grip. Regenerate via the Blender commands in
-`character.py`, `spider.py` and `sword.py`. Tests check balance, hit timing,
+`character.py`, `spider.py`, `stunder.py`, `snake.py`, `octonaut.py` and `sword.py`
+(snake / octonaut share `blender/creature.py` and can also be rebuilt from a Blender
+MCP session; previews land in `blender/previews/`). Tests check balance, hit timing,
 direction / reach / height, cancellations, deterministic spawns, clearance,
 navigation and the exported asset/clip contract.
 
@@ -87,6 +102,7 @@ in the browser console:
 ```js
 const checks = await import('./tests/browser/combat.js');
 await checks.runCombatChecks(); // real input (click on an enemy, F), controller, damage, GLB poses, cleanup
+await checks.runNewEnemyChecks(); // snake bite, Octonaut slap / spin kick, their clips and corpses
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
 const water = await import('./tests/browser/water.js');

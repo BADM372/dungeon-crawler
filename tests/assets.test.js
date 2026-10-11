@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { SLASH_CLIP } from '../src/core/combat.js';
-import { SPIDER, STUNDER } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
 function glb(name) {
@@ -28,7 +28,7 @@ test('player is unarmed, retains both hand sockets and exports only its own clip
     assert.equal(socket.children?.length || 0, 0, 'hand socket must be empty');
   }
   assert.equal(j.meshes.length, 1); assert.equal(j.skins.length, 1);
-  assert.ok(!j.animations.some(a => /Spider|Stunder/.test(a.name)));
+  assert.ok(!j.animations.some(a => /Spider|Stunder|Snake|Octo/.test(a.name)));
   const slash = j.animations.find(a => a.name === 'Slash');
   assert.ok(slash);
   assert.ok(Math.abs(duration(slash) - SLASH_CLIP.duration) < 1e-5);
@@ -78,6 +78,43 @@ test('Stunder timings and speeds match the four existing clips', () => {
   assert.equal(a.StunderAttack.extras.attack_style, 'head_down');
   assert.ok(Math.abs(duration(a.StunderDeath) - STUNDER.deathTime) < 1e-5);
   assert.equal(a.StunderDeath.extras.hold_last_frame, true);
+});
+test('snake slithers at its wander speed, bites on the profile hit frame and holds its corpse', () => {
+  const { json: j, duration } = glb('snake');
+  assert.deepEqual(j.animations.map(a => a.name).sort(), ['SnakeAttack', 'SnakeDeath', 'SnakeWalk']);
+  const a = Object.fromEntries(j.animations.map(a => [a.name, a]));
+  assert.equal(a.SnakeWalk.extras.speed, SNAKE.wander);
+  // the body wave travels one wavelength per loop: it stays put on the floor as the snake moves
+  assert.ok(Math.abs(a.SnakeWalk.extras.wavelength - SNAKE.wander * duration(a.SnakeWalk)) < 1e-5);
+  assert.equal(a.SnakeAttack.extras.hit_frame / 30, SNAKE.hitAt);
+  assert.ok(Math.abs(duration(a.SnakeAttack) - SNAKE.attackTime) < 1e-5);
+  assert.ok(Math.abs(duration(a.SnakeDeath) - SNAKE.deathTime) < 1e-5);
+  assert.equal(a.SnakeDeath.extras.hold_last_frame, true);
+});
+test('Octonaut has a slap and a spin kick whose clips match the attack timings', () => {
+  const { json: j, duration } = glb('octonaut');
+  assert.deepEqual(j.animations.map(a => a.name).sort(), ['OctoDeath', 'OctoSlap', 'OctoSpin', 'OctoWalk']);
+  const a = Object.fromEntries(j.animations.map(a => [a.name, a]));
+  assert.equal(a.OctoWalk.extras.speed, OCTONAUT.wander);
+  const [slap, spin] = OCTONAUT.attacks;
+  for (const [clip, attack, style] of [[a.OctoSlap, slap, 'slap'], [a.OctoSpin, spin, 'spin_kick']]) {
+    assert.equal(clip.extras.attack_style, style);
+    assert.equal(clip.extras.hit_frame / 30, attack.hitAt);
+    assert.ok(Math.abs(duration(clip) - attack.attackTime) < 1e-5);
+  }
+  assert.ok(Math.abs(duration(a.OctoDeath) - OCTONAUT.deathTime) < 1e-5);
+  assert.equal(a.OctoDeath.extras.hold_last_frame, true);
+  const legs = new Set(j.nodes.map(n => n.name).filter(n => /^leg\d_upper$/.test(n)));
+  assert.equal(legs.size, 6);
+  assert.ok(j.nodes.some(n => n.name === 'hand.L') && j.nodes.some(n => n.name === 'hand.R'));
+});
+test('the new enemies have shining purple eyes', () => {
+  for (const name of ['snake', 'octonaut']) {
+    const { json: j } = glb(name), eyes = j.materials.find(m => /Eyes_glow/.test(m.name));
+    const [r, g, b] = eyes.emissiveFactor;
+    assert.ok(b === 1 && r > 2 * g && b > r, name);
+    assert.ok(eyes.extensions.KHR_materials_emissive_strength.emissiveStrength > 1, name);
+  }
 });
 test('standalone sword is a small untextured, unskinned prop', () => {
   const { json: j } = glb('sword');
