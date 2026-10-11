@@ -19,14 +19,22 @@
   release their skeletons, mixers and instance materials. Portals detach /
   slide / dispose both species, rather than leaving enemies in the old cube.
 
-## Water and falls
+## Fluids and falls
 
-- Walking/running stops at water-facing edges; jumps and airborne falls can still
-  enter water. Bridges and dry floors above water remain walkable.
-- Entering water is fatal: the player ragdolls, then respawns at the cube entry
-  with full health. Existing ragdolls can drown too.
-- Falling through a cube into water preserves the landing position, but records
-  a nearby dry entry so death does not cause a drowning/respawn loop.
+- Walking/running stops at edges facing water, lava or acid; jumps, knockbacks and
+  airborne falls can still enter them. Bridges and dry floors above fluids remain walkable.
+- Entering any fluid is fatal (`physics/fluid.js`, `dieInFluid` in `game/ragdoll.js`):
+  you drown in water, burn up in lava, dissolve in acid. The player ragdolls, slowed
+  down and sinking, for at least 2.2 s, then respawns at the cube entry with full
+  health. Existing ragdolls die the same way when they tumble in.
+- There are no dedicated death animations; `render/fluiddeath.js` layers an effect
+  over the ragdoll: a splash and bubbles (water); embers, smoke, a glowing then
+  charred body and an orange light (lava); fizz, vapour and a green body that fades
+  away (acid). The shared character material is restored when that ragdoll ends.
+- Falling through a cube into a fluid preserves the landing position, but records
+  a nearby dry entry so death does not cause a death/respawn loop.
+- Lava and acid *falls* (the sheets pouring off ledges) are unchanged: lavafalls knock
+  you down for 50 damage, acid falls hurt over time.
 
 ## Development
 
@@ -68,7 +76,7 @@ await checks.runCombatChecks(); // real input, controller, damage, GLB poses, cl
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
 const water = await import('./tests/water-browser-checks.js');
-await water.runWaterChecks(); // edge guard, jumps/high falls, ragdolls, dry respawn
+await water.runWaterChecks(); // all fluids: edge guard, jumps/high falls, ragdolls, effects, dry respawn
 const inventory = await import('./tests/inventory-browser-checks.js');
 await inventory.runInventoryChecks(); // resets the run; UI, equipment, rewards, revisits
 ```

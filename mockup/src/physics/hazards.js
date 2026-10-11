@@ -1,31 +1,19 @@
-// Fluids (drown / burn), waterfalls, health regeneration and the respawn point.
+// Fluids (drown / burn / dissolve), waterfalls, health regeneration and the respawn point.
 import { LH, LAVA, ACID, DIRS } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
 import { takeDamage, regenerate } from '../core/progression.js';
 import { player, state } from '../game/state.js';
 import { hurt } from '../game/flow.js';
-import { knockDown, drown } from '../game/ragdoll.js';
-import { inWater } from './water.js';
+import { knockDown, dieInFluid } from '../game/ragdoll.js';
+import { inFluid } from './fluid.js';
 import { startFall } from '../game/fall.js';
 
-// returns false when the player got respawned
-function fluids(dt, gr) {
-  if (inWater(gr, player.y)) { drown(); return false; }
-  const fl = gr.s && !gr.s.kind && gr.s.fluid ? gr.s : null;
-  const wasSwimming = player.swimming;
+// returns false when the player got respawned. Entering any fluid is fatal; walking
+// is kept off fluid edges by canMove, so only jumps, falls and knockbacks get here.
+function fluids(gr) {
   player.swimming = false; player.fluid = 0;
-  if (!fl || player.y >= fl.surf * LH + 0.05) return true;
-  if (fl.fluid === LAVA) { knockDown({ damage: 50, reason: 'Fell into lava!', respawn: 'safe' }); return false; }
-  const fy = fl.surf * LH - 0.5;   // swim chest deep
-  if (player.y > fy + 0.01 && !wasSwimming) return true;
-  player.vy = 0;
-  player.y += (fy - player.y) * Math.min(1, dt * 6);
-  player.swimming = true; player.grounded = true; player.fluid = fl.fluid;
-  if (fl.fluid === ACID) {
-    takeDamage(player, 30 * dt, state.time);
-    if (!state.statusMsg) state.statusMsg = 'Acid burns! Get out!';
-    if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
-  }
+  const fluid = inFluid(gr, player.y);
+  if (fluid) { dieInFluid(fluid, gr.s.surf * LH); return false; }
   return true;
 }
 
@@ -53,7 +41,7 @@ export function applyHazards(dt, gr) {
   if (player.y < -1.5 && startFall()) return false;
   if (player.y < -3) { hurt(25, 'Fell out of the cube'); return false; }
   if (state.time > state.statusUntil) state.statusMsg = '';
-  if (!fluids(dt, gr) || !falls(dt, gr.i)) return false;
+  if (!fluids(gr) || !falls(dt, gr.i)) return false;
   if (!player.swimming && player.grounded) regenerate(player, dt, state.time);
 
   // remember a safe spot to respawn at

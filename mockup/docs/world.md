@@ -359,8 +359,8 @@ The world guarantees that from anywhere you can arrive, you can get to depth 20.
 - **Fall landings:** `fallMask` marks where you can fall in from the cube above (its void
   field, a cell wider). Up to six landings there that do not lead to the exit get an escape
   route (stairs, ladders, bridges). The map's `safe` flags mark floors that lead on.
-  `fallPoint` moves any landing that still does not (sealed pits, lava, acid) to the
-  nearest one that does.
+  `fallPoint` moves any dry landing that still does not (sealed pits) to the nearest one
+  that does. Landings in a fluid are kept (and fatal), with a dry death entry nearby.
 - **Before:** routes ran from the first portal to the others, so drops made them one-way
   in the wrong direction. 7.7% of portals could not reach the way on, and none of 12 test
   worlds could be finished; four of them trapped you in the town. Now 64 of 64 test worlds

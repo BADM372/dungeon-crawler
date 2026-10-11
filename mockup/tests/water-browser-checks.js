@@ -1,6 +1,6 @@
-// Real hazard / ragdoll / respawn checks, run from game.html's devtools:
+// Real fluid hazard / ragdoll / effect / respawn checks, run from game.html's devtools:
 // await (await import('./tests/water-browser-checks.js')).runWaterChecks()
-import { N, LH, WATER } from '../src/core/constants.js';
+import { N, LH, WATER, LAVA, ACID } from '../src/core/constants.js';
 import { player, state } from '../src/game/state.js';
 import { character } from '../src/render/character.js';
 import { animateCharacter } from '../src/render/animator.js';
@@ -14,13 +14,14 @@ import { applyHazards } from '../src/physics/hazards.js';
 import { groundAt } from '../src/physics/collide.js';
 import { clearInput } from '../src/game/input.js';
 import { paused } from './browser-checks.js';
+import { fluidDeathState, tickFluidDeath } from '../src/render/fluiddeath.js';
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
-function arena() {
+function arena(fluid = WATER) {
   const floors = Array.from({ length: N * N }, (_, c) => ({ c, id: c, x: c % N, z: Math.floor(c / N),
     top: 0, bottom: -4, layer: 0, cs: [0, 0, 0, 0], split: 0, link: [] }));
   const water = floors[6 * N + 7];
-  Object.assign(water, { fluid: WATER, surf: -1, top: -3, cs: [-1.5, -1.5, -1.5, -1.5] });
+  Object.assign(water, { fluid, surf: -1, top: -3, cs: [-1.5, -1.5, -1.5, -1.5] });
   return { K: 1, B: [0], floors, cols: floors.map(f => [f]), pieces: floors.map(() => []),
     blockers: floors.map(() => []), fences: new Map(), portals: [], ladders: [], falls: [],
     safe: new Uint8Array(N * N).fill(1) };
@@ -30,12 +31,19 @@ function reset(x = 6.5, y = 0, z = 6.5) {
   spawnAt(x, y, z);
   animateCharacter(1 / 60, 0);
 }
-function drowned() {
-  check(player.hp === 0 && player.ragdoll && !player.swimming, 'Water must cause fatal drowning, not swimming');
-  check(state.statusMsg === 'Drowned!', 'Drowning status missing');
+const REASON = { [WATER]: 'Drowned!', [LAVA]: 'Burned up in lava!', [ACID]: 'Dissolved in acid!' };
+function drowned(fluid = WATER) {
+  check(player.hp === 0 && player.ragdoll && !player.swimming, 'Fluids must be fatal, not swimmable: ' + fluid);
+  check(state.statusMsg === REASON[fluid], 'Death status missing: ' + REASON[fluid]);
+  check(player.fluidDeath === fluid && fluidDeathState().fluid === fluid, 'Fluid death effect missing');
+  check(fluidDeathState().tinted === (fluid !== WATER), 'Lava/acid should tint the body, water should not');
 }
 function respawned() {
-  for (let i = 0; i < 300 && player.ragdoll; i++) stepRagdoll(1 / 60);
+  let steps = 0;
+  for (; steps < 400 && player.ragdoll; steps++) { stepRagdoll(1 / 60); tickFluidDeath(1 / 60); }
+  check(steps >= 120, 'Fluid deaths keep the body around for the effect');
+  tickFluidDeath(1 / 60);
+  check(!fluidDeathState().tinted, 'Respawn must restore the body tint');
   check(!player.ragdoll && player.hp === player.maxHp, 'Drowned player must respawn at full health');
   check(player.x === state.arrival.x && player.y === state.arrival.y && player.z === state.arrival.z,
     'Death must return to the dry entry point');
@@ -50,6 +58,23 @@ export async function runWaterChecks() {
       statusMsg: state.statusMsg, statusUntil: state.statusUntil }, results = [];
     clearInput();
     try {
+      for (const fluid of [LAVA, ACID]) {
+        state.map = arena(fluid); state.arrival = { x: 3.5, y: 0, z: 3.5 };
+        reset(6.74);
+        for (let i = 0; i < 120; i++) movePlayer(1 / 60, 1, 0, true, false);
+        check(player.x < 7 && player.grounded && player.y === 0, 'Run must stop at the bank: ' + fluid);
+        movePlayer(1 / 60, 1, 0, false, true);
+        for (let i = 0; i < 120 && !player.ragdoll; i++) {
+          const gr = movePlayer(1 / 60, player.x < 7.5 ? 1 : 0, 0, false, false);
+          if (!applyHazards(1 / 60, gr)) break;
+        }
+        drowned(fluid); respawned();
+        reset(); knockDown({ reason: 'Test tumble' });
+        for (const points of [player.ragdoll.p, player.ragdoll.o]) for (const p of points) { p[0] += 1; p[1] -= 1; }
+        stepRagdoll(1 / 60); drowned(fluid); respawned();
+        results.push((fluid === LAVA ? 'lava' : 'acid') + ': edge guard, jump and ragdoll deaths, effect, tint restore, respawn');
+      }
+
       state.map = arena(); state.arrival = { x: 3.5, y: 0, z: 3.5 };
       const water = state.map.floors[6 * N + 7];
       reset(6.74);

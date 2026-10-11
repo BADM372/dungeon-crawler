@@ -16,6 +16,7 @@ import { devSwapWeapon } from './game/equipment.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
 import { tickNeighbors, cullNeighbors } from './render/neighbors.js';
 import { tickProps } from './render/props.js';
+import { tickFluidDeath } from './render/fluiddeath.js';
 import { applyLook } from './render/look.js';
 import { depthOf } from './world/depth.js';
 import './game/dev.js';
@@ -36,6 +37,7 @@ function frame() {
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
+  tickFluidDeath(dt);
   drawTravelEnemies(dt);
   tickNeighbors(dt);
   tickProps(state.time);

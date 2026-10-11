@@ -8,7 +8,7 @@ export const player = {
   r: CHAR_R, h: CHAR_H, layer: 0, yaw: 0,
   ...createPlayerStats(),
   sword: swordState(),
-  grounded: true, swimming: false, fluid: 0, support: null,
+  grounded: true, swimming: false, fluid: 0, fluidDeath: 0, support: null,
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
   // event counters the animator watches
   jumpCount: 0, landCount: 0, landImpact: 0, getUpCount: 0,

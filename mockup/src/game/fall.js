@@ -1,6 +1,6 @@
 // Falling through the void into the cube below (a shortcut with a price: you come out a few
 // units over the ground there and land hard).
-import { CUBE_H, WATER } from '../core/constants.js';
+import { CUBE_H } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
 import { step } from '../world/coords.js';
 import { depthOf } from '../world/depth.js';
@@ -33,11 +33,11 @@ function safeSpot(m, x, z) {
 export function fallPoint(m) {
   let x = player.x, z = player.z, g = groundAt(x, z, 99, 0);
   if (!isFinite(g.h)) return { air: { x, y: 3, z }, rest: arrivalPoint(m.portals.find(q => q.kind !== 'spawn')) };
-  const f = !g.s?.kind && g.s && g.s.fluid !== WATER && !m.safe[g.s.id] && safeSpot(m, x, z);
+  const f = !g.s?.kind && g.s && !g.s.fluid && !m.safe[g.s.id] && safeSpot(m, x, z);
   if (f) { x = f.x + 0.5; z = f.z + 0.5; g = groundAt(x, z, 99, 0); }
-  // Let a fall land in water, but never make that water the death respawn point.
-  const dry = g.s?.fluid === WATER && safeSpot(m, x, z);
-  const rest = g.s?.fluid !== WATER ? { x, y: g.h, z }
+  // Let a fall land in a fluid, but never make that fluid the death respawn point.
+  const wet = !g.s?.kind && g.s?.fluid, dry = wet && safeSpot(m, x, z);
+  const rest = !wet ? { x, y: g.h, z }
     : dry ? { x: dry.x + 0.5, y: floorY(dry, 0.5, 0.5), z: dry.z + 0.5 }
     : arrivalPoint(m.portals.find(q => q.kind !== 'spawn'));
   return { air: { x, y: Math.min(g.h + 5, CUBE_H - 2), z }, rest };
