@@ -11,6 +11,7 @@ import { updatePlayer } from '../src/game/update.js';
 import { checkPortals } from '../src/game/portals.js';
 import { startTravel, travelling, updateTravel } from '../src/game/travel.js';
 import { startFall } from '../src/game/fall.js';
+import { groundAt } from '../src/physics/collide.js';
 import { detachNeighbors, adoptNeighbors } from '../src/render/neighbors.js';
 import { setInventoryOpen } from '../src/game/inventory.js';
 import { wantsRun, clearInput } from '../src/game/input.js';
@@ -68,6 +69,43 @@ export async function runRunKeyChecks() {
   });
 }
 
+// Two neighbouring cubes with no gate between them: the face opens once both are discovered,
+// and you can walk across it (at some point along the face where nothing blocks).
+async function gatelessCheck() {
+  for (const seed of [0, 1, 2, 3, 4, 5, 6, 7]) {
+    await newWorld(seed); clearInput();
+    const L = state.cubes.layout(1);
+    for (const k of L.exists) for (let d = 0; d < 4; d++) {
+      const n = step(k, d);
+      if (!L.exists.has(n)) continue;
+      const a = await state.cubes.get(k), b = await state.cubes.get(n);
+      if (a.map.portals.some(p => p.kind === 'side' && p.dir === d)) continue;
+      enterCube(a, a.map.portals[0].dir);
+      check(!isFaceOpen(state.openedFaces, k, d), 'Gateless face must stay closed until both sides are discovered');
+      enterCube(b, b.map.portals[0].dir);
+      check(isFaceOpen(state.openedFaces, n, OPP6[d]), 'Discovering both sides must open a gateless face');
+      panes(state.world.glass, openedSides(state.openedFaces, n));
+      enterCube(a, a.map.portals[0].dir);
+      check(isFaceOpen(state.openedFaces, k, d), 'The opened face must be shared');
+      panes(state.world.glass, openedSides(state.openedFaces, k));
+      for (let along = 0.5; along < N; along += 1) {
+        const x = d === 0 ? N - 0.5 : d === 1 ? 0.5 : along, z = d === 2 ? N - 0.5 : d === 3 ? 0.5 : along;
+        atFace(d, along, groundAt(x, z, 99, 0).h, 0.5);
+        player.autoDir = DIRS[d];
+        for (let i = 0; i < 60 && !state.transitioning; i++) updatePlayer(1 / 60);
+        player.autoDir = null;
+        if (!state.transitioning) continue;
+        for (let i = 0; i < 100 && state.transitioning && !travelling(); i++) await delay(20);
+        if (!travelling()) continue;   // blocked at the destination
+        finishSlide();
+        check(state.cubeKey === n, 'Walking across a gateless open face must enter the neighbour');
+        return `gateless face ${k} ${d}: opens on discovering both sides, walkable`;
+      }
+    }
+  }
+  throw Error('No walkable gateless face found');
+}
+
 export async function runBoundaryChecks() {
   const results = [];
   return paused(async () => {
@@ -80,9 +118,9 @@ export async function runBoundaryChecks() {
         const dir = portal.dir, opposite = OPP6[dir], roadKey = step(town.key, dir);
         const road = await state.cubes.get(roadKey), back = road.map.portals.find(p => p.dir === opposite);
         const originalPortals = town.map.portals;
-        // Visiting both ends by a different route/debug entry does not unlock this face.
+        // Visiting both ends by a different route/debug entry does not unlock a gated face.
         enterCube(road, opposite); enterCube(town);
-        check(!isFaceOpen(state.openedFaces, town.key, dir), 'Visits must not open a connection');
+        check(!isFaceOpen(state.openedFaces, town.key, dir), 'Visits must not open a gated connection');
         const oldWorld = state.world, oldGate = oldWorld.portalFx.find(fx => fx.obj.userData.portal === portal);
         const oldProxies = neighbors();
         const along = dir < 2 ? portal.z + 0.5 : portal.x + 0.5;
@@ -162,6 +200,7 @@ export async function runBoundaryChecks() {
       // Vertical portals stay present and reusable, and falls do not unlock side connections.
       const wellCube = await state.cubes.get(state.cubes.layout(0).down);
       enterCube(wellCube, wellCube.map.portals.find(p => p.kind === 'side').dir);
+      const opened = state.openedFaces.size;   // entering may open gateless faces towards the town
       const well = state.map.portals.find(p => p.kind === 'down');
       spawnAt(well.x + 0.5, well.y, well.z + 0.5); state.portalLock = 0;
       check(checkPortals(), 'Well must still trigger');
@@ -174,8 +213,9 @@ export async function runBoundaryChecks() {
       check(state.world.portalFx.some(fx => fx.obj.userData.portal.kind === 'down'), 'Well must remain after return');
       check(startFall(), 'Falling into the cube below must remain possible');
       await waitForSlide(); finishSlide();
-      check(state.openedFaces.size === 0, 'Vertical travel/falls must not unlock side faces');
+      check(state.openedFaces.size === opened, 'Vertical travel/falls must not unlock side faces');
       results.push('down / up remain portals / falling unchanged');
+      results.push(await gatelessCheck());
       return results;
     } finally { clearInput(); await newWorld(3); }
   });

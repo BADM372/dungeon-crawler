@@ -32,19 +32,16 @@ export function drawMinimap() {
     g.fillStyle = KIND_COLOR[t.kind]; g.fillRect(px + 1, pz + 1, CELL - 2, CELL - 2);
     for (let d = 0; d < 4; d++) {
       const f = t.faces[d];
-      if (!f) continue;
-      if (f.river) { const [x, y] = edgePt(px, pz, d, (f.river.pos + f.river.w / 2) / 16); g.fillStyle = '#2e86de'; g.fillRect(x - 2, y - 2, 4, 4); }
-      if (f.portal) {
-        if (isFaceOpen(state.openedFaces, k, d)) {
-          const [x, y] = edgePt(px, pz, d, 0.5);
-          g.fillStyle = '#70d6aa';
-          if (d < 2) g.fillRect(x - 1, y - CELL / 2 + 3, 2, CELL - 6);
-          else g.fillRect(x - CELL / 2 + 3, y - 1, CELL - 6, 2);
-        } else {
-          const [x, y] = edgePt(px, pz, d, (f.portal.pos + 0.5) / 16);
-          g.fillStyle = visited(step(k, d)) ? '#5fd3ff' : '#ffc94a';
-          g.fillRect(x - 3, y - 3, 6, 6);
-        }
+      if (f?.river) { const [x, y] = edgePt(px, pz, d, (f.river.pos + f.river.w / 2) / 16); g.fillStyle = '#2e86de'; g.fillRect(x - 2, y - 2, 4, 4); }
+      if (isFaceOpen(state.openedFaces, k, d)) {
+        const [x, y] = edgePt(px, pz, d, 0.5);
+        g.fillStyle = '#70d6aa';
+        if (d < 2) g.fillRect(x - 1, y - CELL / 2 + 3, 2, CELL - 6);
+        else g.fillRect(x - CELL / 2 + 3, y - 1, CELL - 6, 2);
+      } else if (f?.portal) {
+        const [x, y] = edgePt(px, pz, d, (f.portal.pos + 0.5) / 16);
+        g.fillStyle = visited(step(k, d)) ? '#5fd3ff' : '#ffc94a';
+        g.fillRect(x - 3, y - 3, 6, 6);
       }
     }
     for (const d of [4, 5]) if (t.faces[d]?.portal)

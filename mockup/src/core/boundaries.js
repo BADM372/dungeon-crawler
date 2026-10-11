@@ -1,9 +1,20 @@
 // Open side connections are run state, not changes to generated terrain or cube physics.
 import { N, DIRS } from './constants.js';
-import { faceKey } from '../world/coords.js';
+import { faceKey, step } from '../world/coords.js';
 
 export const isFaceOpen = (opened, key, dir) => dir < 4 && dir >= 0 && opened.has(faceKey(key, dir));
 export const openedSides = (opened, key) => DIRS.map((_, dir) => isFaceOpen(opened, key, dir));
+// Side faces without a gate open once the cubes on both sides have been discovered (gated
+// faces open on their first crossing). cubes: key -> { key, map, visits }; returns face keys.
+export function discoveredFaces(cubes, c) {
+  const out = [];
+  if (c.visits) for (let d = 0; d < 4; d++) {
+    if (!cubes.get(step(c.key, d))?.visits) continue;
+    if (!c.map.portals.some(p => p.kind === 'side' && p.dir === d)) out.push(faceKey(c.key, d));
+  }
+  return out;
+}
+
 export const faceDistance = (p, dir) => [N - p.x, p.x, N - p.z, p.z][dir];
 
 // Trigger before the body's rim hits the cube-local collision boundary. Require outward

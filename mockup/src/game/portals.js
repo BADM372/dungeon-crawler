@@ -16,12 +16,14 @@ function inside(q) {
 
 export function checkPortals(dx = 0, dz = 0) {
   if (state.boundaryLock >= 0 && faceDistance(player, state.boundaryLock) > player.r + 0.25) state.boundaryLock = -1;
+  // open side faces take you across anywhere along them, whether they ever had a gate or not
+  for (let d = 0; d < 4; d++) {
+    if (!isFaceOpen(state.openedFaces, state.cubeKey, d) || state.boundaryLock === d || !approachingFace(player, d, dx, dz)) continue;
+    startTravel(state.map.portals.find(q => q.kind === 'side' && q.dir === d) || { kind: 'side', dir: d });
+    return true;
+  }
   for (const q of state.map.portals) {
-    if (q.kind === 'spawn') continue;
-    if (q.kind === 'side' && isFaceOpen(state.openedFaces, state.cubeKey, q.dir)) {
-      if (state.boundaryLock !== q.dir && approachingFace(player, q.dir, dx, dz)) { startTravel(q); return true; }
-      continue;
-    }
+    if (q.kind === 'spawn' || q.kind === 'side' && isFaceOpen(state.openedFaces, state.cubeKey, q.dir)) continue;
     const at = inside(q);
     if (state.portalLock === q.id) { if (!at) state.portalLock = 0; continue; }
     if (at) { startTravel(q); return true; }

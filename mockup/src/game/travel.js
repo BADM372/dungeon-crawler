@@ -16,7 +16,7 @@ import { player, state, setStatus } from './state.js';
 import { whenReady } from './hud.js';
 import { resetEnemies, detachEnemies, drawEnemies, allEnemies } from './enemies.js';
 import { cancelSword } from './sword.js';
-import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors } from './flow.js';
+import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors, discover } from './flow.js';
 import { slideVisuals, endVisuals } from './travelfx.js';
 import { fallPoint } from './fall.js';
 
@@ -67,7 +67,7 @@ function slide(p, c) {
     S: new THREE.Vector3(player.x, player.y, player.z).sub(D), A: new THREE.Vector3(A.x, A.y, A.z), last: null, motion };
   tr.T = p.kind === 'side' ? THREE.MathUtils.clamp(tr.S.distanceTo(tr.A) / 2.2, 0.9, 1.4) : 1.3;
   setCut(Infinity, null, 0, 0, 0);
-  c.visits++;
+  discover(c);
   state.cubeKey = k; state.arrival = fall ? fall.rest : A;
   state.portalLock = fall || p.kind === 'side' ? 0 : arr.id;
   state.boundaryLock = p.kind === 'side' ? OPP6[p.dir] : -1;

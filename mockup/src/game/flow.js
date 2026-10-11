@@ -1,7 +1,7 @@
 // Level flow: the world of cubes, entering a cube, travelling through portals, spawning and
 // taking damage.
 import { DIRS } from '../core/constants.js';
-import { isFaceOpen, openedSides } from '../core/boundaries.js';
+import { isFaceOpen, openedSides, discoveredFaces } from '../core/boundaries.js';
 import { showNeighbors, clearNeighbors, clearNeighborCache } from '../render/neighbors.js';
 import { discoveredCubes } from '../core/viewdistance.js';
 import { WorldClient } from '../world/client.js';
@@ -52,6 +52,12 @@ export function hurt(amount, reason) {
   else { setStatus(reason); spawnAt(player.safe.x, player.safe.y, player.safe.z); }
 }
 
+// discovering a cube opens its gateless faces towards cubes already discovered
+export function discover(c) {
+  c.visits++;
+  for (const f of discoveredFaces(state.cubes.cubes, c)) state.openedFaces.add(f);
+}
+
 // which portals lead somewhere already explored
 export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id, p.kind !== 'spawn' && !!state.cubes.cubes.get(step(k, p.dir))?.visits]));
 
@@ -59,7 +65,7 @@ export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id,
 // `from` (null: the spawn pad)
 export function enterCube(c, from = null) {
   const k = c.key;
-  c.visits++;
+  discover(c);
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
   state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k));

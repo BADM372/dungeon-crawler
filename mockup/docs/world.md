@@ -358,10 +358,12 @@ is off during the slide.
 ### Opened side connections
 
 The first successful crossing of a side portal opens its shared face for the current
-world. Opening is tracked explicitly by `faceKey`, not inferred from visits: visiting
-both cubes via another route does not open the connection. Both gates and both copies
-of the dividing glass pane disappear; cube outlines remain. Re-entry, mesh rebuilds
-and low-detail proxies use the same opened-face state.
+world. Opening is tracked explicitly by `faceKey`: visiting both cubes via another route
+does not open a gated connection. A side face without a gate opens as soon as the cubes
+on both sides have been discovered (`discoveredFaces` in `core/boundaries.js`), so
+neighbouring rooms reached by different routes can be walked between. Both gates and
+both copies of the dividing glass pane disappear; cube outlines remain. Re-entry, mesh
+rebuilds and low-detail proxies use the same opened-face state.
 
 An opened side face triggers the same cube slide wherever the player approaches it,
 regardless of the original portal's position or layer. The arrival preserves the
