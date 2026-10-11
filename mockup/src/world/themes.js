@@ -5,7 +5,7 @@
 //   fluids: weights [water, lava, acid] for pools and falls; river: fluid of the rivers
 //   tiles: weight multipliers for the WFC kinds; cave: below the ground (no sun, no sky)
 //   void: how much of a cube may be open to the depth below; relief: how tall highlands get
-//   arche: weights of the cube archetypes (gen/archetypes.js); props: prop set (blender/props.glb)
+//   arche: weights of the cube archetypes (gen/archetypes.js); props: prop set (blender/props.glb), propDensity: chance of a prop per floor (0.32)
 //   light: sky [top, bottom], hemi [sky, ground, intensity], sun [colour, intensity], fog 0..1
 import { WATER } from '../core/constants.js';
 import { CAVES } from './cavethemes.js';
@@ -14,7 +14,7 @@ const T = (at, name, o) => ({ at, name, tiles: {}, cave: false, ...o });
 
 export const THEMES = [
   T(0, 'Meadow islands', {
-    props: 'meadow',
+    props: 'meadow', propDensity: 0.15,
     void: 0.5, relief: 0.5,
     arche: { plain: 3, archipelago: 3, spire: 1, mesa: 1, chasm: 1 },
     top: [[0, '#3b6532'], [4, '#4c8a3c'], [8, '#76ad50'], [12, '#a3b26a'], [16, '#b7a888'], [20, '#d9d3c5']],

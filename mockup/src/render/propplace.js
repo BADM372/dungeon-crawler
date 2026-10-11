@@ -12,7 +12,9 @@ import { props } from './props.js';
 // pick a prop for an attachment: theme props (priority 1 more often) and, on the ground,
 // tinted neutral rocks; `blockOK` = blocking props are allowed here
 function picker(theme, R) {
-  const lists = a => [...(props.sets.get(theme.props + '/' + a) || []), ...(a === 'ground' ? props.sets.get('any/ground') || [] : [])];
+  // neutral props: rocks everywhere; stalagmites and stalactites only in caves
+  const any = a => (props.sets.get('any/' + a) || []).filter(p => theme.cave || !p.base.startsWith('stala'));
+  const lists = a => [...(props.sets.get(theme.props + '/' + a) || []), ...any(a)];
   const weight = p => (p.priority === 1 ? 3 : 1) * (p.blocking ? 0.6 : 1) * (p.set === 'any' ? 0.5 : 1);
   return (attach, blockOK) => {
     const c = lists(attach).filter(p => blockOK || !p.blocking);
@@ -26,9 +28,13 @@ export function placeProps(m, theme) {
   const out = [], blockers = Array.from({ length: N * N }, () => []);
   if (!props.ready || !theme.props) return { out, blockers };
   const R = mulberry32(hash32(m.seed ^ 0x9a0b5)), pick = picker(theme, R);
-  // columns the route passes through (and their neighbours): no blocking props there
-  const routeCols = new Set(m.moves.flatMap(mv => [mv.from.c, mv.to.c, ...mv.cells]));
-  const nearRoute = f => [[0, 0], ...DIRS].some(([dx, dz]) => inb(f.x + dx, f.z + dz) && routeCols.has(idx(f.x + dx, f.z + dz)));
+  // where people walk: the route, every stair / bridge / landing and the floors at their ends.
+  // Blocking props stay out of those columns and the ones next to them.
+  const walkCols = new Set(m.moves.flatMap(mv => [mv.from.c, mv.to.c, ...mv.cells]));
+  for (const r of m.runs) for (const c of [...r.cells, r.from.c, r.to.c]) walkCols.add(c);
+  const nearRoute = f => [[0, 0], ...DIRS].some(([dx, dz]) => inb(f.x + dx, f.z + dz) && walkCols.has(idx(f.x + dx, f.z + dz)));
+  // straight pieces (rails, timber frames) only turn in quarter steps
+  const yawFor = p => /rail|frame/.test(p.base) ? Math.floor(R() * 4) * Math.PI / 2 : R() * Math.PI * 2;
   const nearPortal = f => m.portals.some(p => Math.abs(p.x - f.x) <= 2 && Math.abs(p.z - f.z) <= 2);
   const rock = theme.side[1][1];
   const add = (p, x, y, z, yaw, s) => out.push({ name: p.name, x, y, z, yaw, s, tint: p.set === 'any' ? rock : null });
@@ -44,7 +50,7 @@ export function placeProps(m, theme) {
       if (p && (!above || above.bottom * LH - Math.max(...f.cs) > p.height * s + 0.2)) {
         const room = Math.max(0, 0.9 - 2 * p.radius), fx = 0.5 + (R() - 0.5) * room, fz = 0.5 + (R() - 0.5) * room;
         const y = floorY(f, fx, fz) - 0.03;
-        add(p, f.x + fx, y, f.z + fz, R() * Math.PI * 2, s);
+        add(p, f.x + fx, y, f.z + fz, yawFor(p), s);
         if (p.blocking) blockers[f.c].push({ x: f.x + fx, z: f.z + fz, r: p.radius * s * 0.8, bottom: y, top: y + p.height * s });
       }
     }
