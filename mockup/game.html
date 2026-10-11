@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cube Crawler - mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, #2a3140 0%, #12151c 70%, #0b0d12 100%); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: #d8dde6; }
+  canvas { display: block; }
+  #hud { position: absolute; top: 14px; left: 16px; pointer-events: none; min-width: 240px; }
+  #hud .title { font-size: 15px; letter-spacing: 3px; font-weight: bold; color: #fff; }
+  #hud .title span { font-size: 11px; color: #8a96a8; letter-spacing: 1px; font-weight: normal; }
+  #hud b { color: #fff; }
+  .hp { margin: 8px 0 4px; width: 220px; height: 8px; background: #2a2f3a; border: 1px solid #444c5c; }
+  #hpbar { height: 100%; width: 100%; background: linear-gradient(90deg, #d9534f, #f0ad4e); transition: width .15s; }
+  #status { min-height: 18px; color: #ffd27a; }
+  #stats { color: #8a96a8; font-size: 11px; margin-top: 4px; }
+  #help { position: absolute; bottom: 14px; left: 16px; color: #8a96a8; font-size: 12px; pointer-events: none; }
+  #help kbd { background: #2a2f3a; border: 1px solid #444c5c; border-radius: 3px; padding: 0 4px; color: #e6e9ef; }
+  #legend { position: absolute; top: 14px; right: 16px; font-size: 12px; color: #aab3c2; pointer-events: none; }
+  #legend div { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  #legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid #0006; }
+  #fade { position: absolute; inset: 0; background: #0b0d12; opacity: 1; pointer-events: none; transition: opacity .35s; }
+  #flash { position: absolute; inset: 0; background: #ff3b1f; opacity: 0; pointer-events: none; transition: opacity .4s; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.164.1/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="hud">
+  <div class="title">CUBE CRAWLER <span>mockup</span></div>
+  <div>Depth <b id="depth">1</b> &middot; Seed <b id="seed">-</b></div>
+  <div class="hp"><div id="hpbar"></div></div>
+  <div id="status"></div>
+  <div id="stats"></div>
+</div>
+<div id="help">
+  <kbd>WASD</kbd> move &nbsp; <kbd>Q</kbd>/<kbd>E</kbd> rotate view &nbsp; <kbd>wheel</kbd> zoom &nbsp;
+  <kbd>R</kbd> respawn &nbsp; <kbd>N</kbd> new cube &nbsp; <kbd>P</kbd> show generator path
+</div>
+<div id="legend">
+  <div>entry <i style="background:#5fd3ff"></i></div>
+  <div>exit portal <i style="background:#ffc94a"></i></div>
+  <div>water (swim, slow) <i style="background:#2e86de"></i></div>
+  <div>lava (deadly) <i style="background:#ff5a00"></i></div>
+  <div>acid (burns) <i style="background:#7dff3a"></i></div>
+  <div>stairs <i style="background:#c9bfae"></i></div>
+  <div>bridge / fence <i style="background:#a0703f"></i></div>
+</div>
+<div id="flash"></div>
+<div id="fade"></div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ---------------------------------------------------------------------------
+// constants
+// ---------------------------------------------------------------------------
+const N = 16;            // cube footprint in cells
+const LH = 0.5;          // height of one terrain level
+const CUBE_H = 16;       // visual height of the cube
+const BASE = 0.6;        // thickness of the bedrock slab under the map
+const MAX_L = 22;
+const WATER = 1, LAVA = 2, ACID = 3;
+const FLUID_NAME = { 1: 'water', 2: 'lava', 3: 'acid' };
+const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const OPP = [1, 0, 3, 2];
+const DIRV = DIRS.map(([x, z]) => [x, 0, z]);
+// corners of a cell are indexed oz*2+ox: 0=(0,0) 1=(1,0) 2=(0,1) 3=(1,1)
+// EDGE_CORNERS[d] lists the two corners on side d, ordered like edgePts()
+const EDGE_CORNERS = [[1, 3], [0, 2], [2, 3], [0, 1]];
+const edgePts = (x, z, d) => [
+  [[x + 1, z], [x + 1, z + 1]], [[x, z], [x, z + 1]],
+  [[x, z + 1], [x + 1, z + 1]], [[x, z], [x + 1, z]]][d];
+const dirIndex = (dx, dz) => dx === 1 ? 0 : dx === -1 ? 1 : dz === 1 ? 2 : 3;
+
+// physics tuning
+const STEP = 0.3;        // max ledge the ball can roll onto
+const SWIM_STEP = 0.85;  // climbing out of water is more generous
+const GRAV = 28;
+const ROLL = 0.5;        // fraction of gravity that turns into downhill rolling
+const DRAG = 4.5;
+const SNAP = 0.25;       // stick to the ground when rolling downhill
+
+const idx = (x, z) => z * N + x;
+const inb = (x, z) => x >= 0 && z >= 0 && x < N && z < N;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const edgeKey = (a, b, c, d) => { const k1 = a + ',' + b, k2 = c + ',' + d; return k1 < k2 ? k1 + '|' + k2 : k2 + '|' + k1; };
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function hash32(n) { n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); n = Math.imul(n ^ (n >>> 16), 0x45d9f3b); return (n ^ (n >>> 16)) >>> 0; }
+
+function makeNoise(R) {
+  const S = 32, g = new Float32Array(S * S);
+  for (let i = 0; i < g.length; i++) g[i] = R();
+  const at = (x, z) => g[(((z % S) + S) % S) * S + (((x % S) + S) % S)];
+  const sm = t => t * t * (3 - 2 * t);
+  const vn = (x, z) => {
+    const xi = Math.floor(x), zi = Math.floor(z), fx = sm(x - xi), fz = sm(z - zi);
+    const a = at(xi, zi), b = at(xi + 1, zi), c = at(xi, zi + 1), d = at(xi + 1, zi + 1);
+    return a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz;
+  };
+  return (x, z) => {
+    let s = 0, amp = 1, f = 1, norm = 0;
+    for (let o = 0; o < 3; o++) { s += vn(x * f + o * 7.3, z * f + o * 3.1) * amp; norm += amp; amp *= 0.5; f *= 2; }
+    return s / norm;
+  };
+}
+
+// height of the smoothed terrain surface inside cell i at local coords (fx, fz) in [0,1].
+// Each cell is two triangles; `split` picks the diagonal. Rendering uses the exact same triangles.
+function surfY(cs, split, i, fx, fz) {
+  const k = i * 4, c00 = cs[k], c10 = cs[k + 1], c01 = cs[k + 2], c11 = cs[k + 3];
+  if (!split[i]) {
+    if (fx >= fz) return c00 + (c10 - c00) * fx + (c11 - c10) * fz;
+    return c00 + (c11 - c01) * fx + (c01 - c00) * fz;
+  }
+  if (fx + fz <= 1) return c00 + (c10 - c00) * fx + (c01 - c00) * fz;
+  return c11 + (c01 - c11) * (1 - fx) + (c10 - c11) * (1 - fz);
+}
+// height of a stair / bridge run piece (linear along its direction)
+function runY(s, fx, fz) {
+  const t = s.dx > 0 ? fx : s.dx < 0 ? 1 - fx : s.dz > 0 ? fz : 1 - fz;
+  return s.y0 + (s.y1 - s.y0) * t;
+}
+
+// ---------------------------------------------------------------------------
+// world generator
+// ---------------------------------------------------------------------------
+function tryGenerate(seed) {
+  const R = mulberry32(seed);
+  const ri = (a, b) => a + Math.floor(R() * (b - a + 1));
+  const noise = makeNoise(R);
+  const fenceNoise = makeNoise(R);
+  const slopeNoise = makeNoise(R);
+
+  const lvl = new Int16Array(N * N);
+  const fluid = new Uint8Array(N * N);
+  const surf = new Int16Array(N * N);
+  const prot = new Uint8Array(N * N);
+  const stair = new Array(N * N).fill(null);
+  const bridge = new Array(N * N).fill(null);
+  const fences = new Map();
+  const fenceList = [];
+  const stairRuns = [], bridgeRuns = [];
+  const stats = { stairs: 0, bridges: 0, fences: 0, slopes: 0, cliffs: 0, fluids: [] };
+
+  // 1) rolling base terrain (terraced noise)
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    let n = noise(x * 0.21 + 0.5, z * 0.21 + 0.5);
+    n = clamp((n - 0.25) / 0.5, 0, 1);
+    lvl[idx(x, z)] = 2 + Math.floor(n * 6.99);
+  }
+  // 2) hills: conical bumps that terrace into rings
+  for (let h = ri(1, 2); h > 0; h--) {
+    const cx = 2 + R() * (N - 4), cz = 2 + R() * (N - 4), rad = 2.2 + R() * 2.5, amp = ri(2, 4);
+    for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+      const d = Math.hypot(x + 0.5 - cx, z + 0.5 - cz);
+      lvl[idx(x, z)] += Math.round(amp * Math.max(0, 1 - d / rad));
+    }
+  }
+  // 3) plateaus: raised blobs with steep cliff sides
+  for (let p = ri(1, 2); p > 0; p--) {
+    const cx = ri(3, N - 4) + 0.5, cz = ri(3, N - 4) + 0.5;
+    const hx = 1.5 + R() * 2.5, hz = 1.5 + R() * 2.5, raise = ri(4, 7);
+    for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+      const dx = Math.abs(x + 0.5 - cx) / hx, dz = Math.abs(z + 0.5 - cz) / hz;
+      const v = dx ** 4 + dz ** 4 + (noise(x * 0.8 + 40, z * 0.8 + 40) - 0.5) * 0.8;
+      if (v < 1) lvl[idx(x, z)] += raise;
+    }
+  }
+  for (let i = 0; i < N * N; i++) lvl[i] = clamp(lvl[i], 1, MAX_L);
+
+  // 4) entry + exit pads on opposite faces of the cube
+  const ez = ri(2, N - 3), xz = ri(2, N - 3);
+  const entryL = clamp(lvl[idx(1, ez)], 2, 16);
+  for (let x = 0; x <= 1; x++) for (let z = ez - 1; z <= ez + 1; z++) { lvl[idx(x, z)] = entryL; prot[idx(x, z)] = 1; }
+  let around = 0;
+  for (let x = N - 4; x < N; x++) for (let z = xz - 2; z <= xz + 2; z++) if (inb(x, z)) around = Math.max(around, lvl[idx(x, z)]);
+  const exitL = clamp(around + ri(0, 2), 3, MAX_L);
+  for (let x = N - 2; x < N; x++) for (let z = xz - 1; z <= xz + 1; z++) { lvl[idx(x, z)] = exitL; prot[idx(x, z)] = 2; }
+
+  // 5) fluids: a river cutting a canyon across the cube + some pools
+  const pickFluid = (w, l) => { const r = R(); return r < w ? WATER : r < w + l ? LAVA : ACID; };
+  const hasRiver = R() < 0.75;
+  if (hasRiver) {
+    const type = pickFluid(0.6, 0.25);
+    let x = ri(5, N - 6); const w = R() < 0.5 ? 1 : 2;
+    const cells = new Set();
+    for (let z = 0; z < N; z++) {
+      for (let k = 0; k < w; k++) cells.add(idx(x + k, z));
+      const r = R(), nx = clamp(x + (r < 0.3 ? -1 : r > 0.7 ? 1 : 0), 4, N - 6);
+      if (nx !== x) { for (let k = 0; k < w; k++) cells.add(idx(nx + k, z)); x = nx; }
+    }
+    const list = [...cells].filter(i => !prot[i]);
+    let S = Infinity; for (const i of list) S = Math.min(S, lvl[i]);
+    S = Math.max(2, S - 1);
+    for (const i of list) { fluid[i] = type; surf[i] = S; lvl[i] = Math.max(0, S - 2); }
+    stats.fluids.push(FLUID_NAME[type] + ' river');
+  }
+  for (let p = hasRiver ? ri(0, 2) : ri(1, 3); p > 0; p--) {
+    const type = pickFluid(0.5, 0.3);
+    const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
+    const cells = [];
+    for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+      const i = idx(x, z);
+      if (!prot[i] && !fluid[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
+    }
+    if (!cells.length) continue;
+    const set = new Set(cells);
+    let S = Infinity;
+    for (const i of cells) {
+      S = Math.min(S, lvl[i]);
+      const x = i % N, z = (i / N) | 0;
+      for (const [dx, dz] of DIRS) {
+        const nx = x + dx, nz = z + dz;
+        if (inb(nx, nz) && !set.has(idx(nx, nz)) && !fluid[idx(nx, nz)]) S = Math.min(S, lvl[idx(nx, nz)]);
+      }
+    }
+    S = Math.max(1, S - 1);
+    for (const i of cells) { fluid[i] = type; surf[i] = S; lvl[i] = Math.max(0, S - 2); }
+    stats.fluids.push(FLUID_NAME[type] + ' pool');
+  }
+
+  // 6) path search: walk (incl. slopes of 1-2 levels) / drop / stairs / bridge moves
+  function movesFrom(i) {
+    const out = [];
+    const x = i % N, z = (i / N) | 0, h = lvl[i];
+    for (const [dx, dz] of DIRS) {
+      const nx = x + dx, nz = z + dz;
+      if (!inb(nx, nz)) continue;
+      const n = idx(nx, nz);
+      if (!fluid[n] && !stair[n] && !bridge[n]) {
+        const dh = lvl[n] - h;
+        if (Math.abs(dh) <= 2) out.push({ kind: 'walk', from: i, to: n, cells: [], cost: 1 + 0.4 * Math.abs(dh) });
+        else if (dh <= -3) out.push({ kind: 'drop', from: i, to: n, cells: [], cost: 2.2 });
+      }
+      // stairs: k stair cells followed by a landing cell, max 2 levels rise per cell
+      const sc = [];
+      for (let k = 1; k <= 4; k++) {
+        const sx = x + dx * k, sz = z + dz * k;
+        if (!inb(sx, sz)) break;
+        const s = idx(sx, sz);
+        if (fluid[s] || prot[s] || stair[s] || bridge[s]) break;
+        sc.push(s);
+        const bx = sx + dx, bz = sz + dz;
+        if (!inb(bx, bz)) break;
+        const b = idx(bx, bz);
+        if (fluid[b] || stair[b] || bridge[b]) continue;
+        const rise = lvl[b] - h, ar = Math.abs(rise);
+        if (ar >= Math.max(3, k) && ar <= 2 * k)
+          out.push({ kind: 'stair', from: i, to: b, cells: sc.slice(), dx, dz, rise, cost: 1.5 + k * 1.6 });
+      }
+      // bridges: straight (possibly sloped) span over fluid or low ground
+      const bc = [];
+      let need = -Infinity;
+      for (let k = 1; k <= 7; k++) {
+        const cx = x + dx * k, cz = z + dz * k;
+        if (!inb(cx, cz)) break;
+        const c = idx(cx, cz);
+        if (prot[c] || stair[c] || bridge[c]) break;
+        need = Math.max(need, fluid[c] ? surf[c] + 1 : lvl[c] + 2);
+        if (need > h) break;
+        bc.push(c);
+        const bx = cx + dx, bz = cz + dz;
+        if (!inb(bx, bz)) break;
+        const b = idx(bx, bz);
+        if (fluid[b] || stair[b] || bridge[b]) continue;
+        const hb = lvl[b];
+        if (Math.abs(hb - h) <= Math.min(2, k) && need <= Math.min(h, hb))
+          out.push({ kind: 'bridge', from: i, to: b, cells: bc.slice(), dx, dz, cost: 1.5 + k * 1.1 + Math.abs(hb - h) * 0.3 });
+      }
+    }
+    return out;
+  }
+
+  const jitter = new Float32Array(N * N).map(() => R() * 0.6);
+  const start = idx(0, ez), goal = idx(N - 1, xz);
+  const g = new Float32Array(N * N).fill(Infinity);
+  const prev = new Array(N * N).fill(null);
+  const closed = new Uint8Array(N * N);
+  const hfn = i => Math.abs((i % N) - (goal % N)) + Math.abs(((i / N) | 0) - ((goal / N) | 0));
+  g[start] = 0;
+  const open = [start];
+  while (open.length) {
+    let bi = 0;
+    for (let k = 1; k < open.length; k++) if (g[open[k]] + hfn(open[k]) < g[open[bi]] + hfn(open[bi])) bi = k;
+    const cur = open.splice(bi, 1)[0];
+    if (cur === goal) break;
+    if (closed[cur]) continue;
+    closed[cur] = 1;
+    for (const mv of movesFrom(cur)) {
+      const ng = g[cur] + mv.cost + jitter[mv.to];
+      if (ng < g[mv.to]) { g[mv.to] = ng; prev[mv.to] = mv; open.push(mv.to); }
+    }
+  }
+  if (!isFinite(g[goal])) return null;
+  const moves = [];
+  for (let c = goal; c !== start; c = prev[c].from) moves.unshift(prev[c]);
+
+  // intermediates (stair / bridge cells) must not be reused elsewhere in the path
+  const count = new Map();
+  const bump = c => count.set(c, (count.get(c) || 0) + 1);
+  bump(start);
+  for (const mv of moves) { mv.cells.forEach(bump); bump(mv.to); }
+  for (const mv of moves) for (const c of mv.cells) if (count.get(c) > 1) return null;
+  const pathSet = new Set(count.keys());
+
+  function applyStair(m) {
+    const h = lvl[m.from], k = m.cells.length;
+    m.cells.forEach((s, j) => {
+      const a = h + m.rise * j / k, b = h + m.rise * (j + 1) / k;
+      stair[s] = { dx: m.dx, dz: m.dz, y0: 0, y1: 0 };
+      lvl[s] = Math.floor(Math.min(a, b));
+      fluid[s] = 0;
+    });
+    stairRuns.push(m);
+    stats.stairs++;
+  }
+  function applyBridge(m) {
+    for (const c of m.cells) bridge[c] = { dx: m.dx, dz: m.dz, axis: m.dx !== 0 ? 'x' : 'z', y0: 0, y1: 0 };
+    bridgeRuns.push(m);
+    stats.bridges++;
+  }
+
+  const pathEdges = new Set();
+  const pathWalks = [];
+  for (const mv of moves) {
+    if (mv.kind === 'stair') applyStair(mv);
+    else if (mv.kind === 'bridge') applyBridge(mv);
+    else {
+      pathEdges.add(edgeKey(mv.from % N, (mv.from / N) | 0, mv.to % N, (mv.to / N) | 0));
+      if (mv.kind === 'walk') pathWalks.push(mv);
+    }
+  }
+
+  // 7) decorative extra stairs + bridges off the critical path
+  let ds = ri(1, 3), db = ri(0, 2), tries = 0;
+  while ((ds > 0 || db > 0) && tries++ < 400) {
+    const i = ri(0, N * N - 1);
+    if (fluid[i] || stair[i] || bridge[i]) continue;
+    const mvs = movesFrom(i).filter(m => (m.kind === 'stair' && ds > 0) || (m.kind === 'bridge' && db > 0));
+    if (!mvs.length) continue;
+    const m = mvs[ri(0, mvs.length - 1)];
+    if (m.cells.some(c => pathSet.has(c) || prot[c])) continue;
+    if (m.kind === 'stair') { applyStair(m); ds--; } else { applyBridge(m); db--; }
+    m.cells.forEach(c => pathSet.add(c));
+  }
+
+  // 8) smoothing links: which neighbouring cells blend into a slope, which stay a cliff
+  const link = new Uint8Array(N * N);
+  // structure endpoints: the two corners facing the stair/bridge are pinned to the cell's level,
+  // so the structure always meets a level edge
+  const pins = new Map();
+  for (const r of stairRuns.concat(bridgeRuns)) {
+    const d = dirIndex(r.dx, r.dz);
+    for (const [c, side] of [[r.from, d], [r.to, OPP[d]]]) {
+      for (const [X, Z] of edgePts(c % N, (c / N) | 0, side)) pins.set(c + ':' + X + ',' + Z, lvl[c] * LH);
+    }
+  }
+  const setLink = (a, d) => {
+    const n = idx(a % N + DIRS[d][0], ((a / N) | 0) + DIRS[d][1]);
+    link[a] |= 1 << d; link[n] |= 1 << OPP[d];
+  };
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    const c = idx(x, z);
+    if (stair[c]) continue;
+    for (const d of [0, 2]) {
+      const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
+      if (!inb(nx, nz)) continue;
+      const n = idx(nx, nz);
+      if (stair[n]) continue;
+      if (fluid[c] || fluid[n]) { if (fluid[c] === fluid[n] && surf[c] === surf[n]) setLink(c, d); continue; }
+      const dh = Math.abs(lvl[c] - lvl[n]);
+      if (dh === 0) { setLink(c, d); continue; }
+      if (prot[c] || prot[n] || dh > 2) continue;
+      const s = slopeNoise(x * 0.3 + 3, z * 0.3 + 3);
+      const p = dh === 1 ? 0.3 + 0.7 * s : 0.05 + 0.55 * s;
+      if (R() < p) setLink(c, d);
+    }
+  }
+  for (const mv of pathWalks) {
+    const d = dirIndex(mv.to % N - mv.from % N, ((mv.to / N) | 0) - ((mv.from / N) | 0));
+    setLink(mv.from, d);
+  }
+
+  // 9) corner heights: every corner averages the cells around it that are linked to this cell
+  const corners = new Float32Array(N * N * 4);
+  const split = new Uint8Array(N * N);
+  function computeCorner(c, ox, oz) {
+    const x = c % N, z = (c / N) | 0, X = x + ox, Z = z + oz;
+    const inBlock = n => { const nx = n % N, nz = (n / N) | 0; return (nx === X - 1 || nx === X) && (nz === Z - 1 || nz === Z); };
+    const group = [c];
+    for (let gi = 0; gi < group.length; gi++) {
+      const gc = group[gi];
+      for (let d = 0; d < 4; d++) {
+        if (!(link[gc] >> d & 1)) continue;
+        const n = idx(gc % N + DIRS[d][0], ((gc / N) | 0) + DIRS[d][1]);
+        if (inBlock(n) && !group.includes(n)) group.push(n);
+      }
+    }
+    const pinned = group.map(gc => pins.get(gc + ':' + X + ',' + Z)).filter(v => v !== undefined);
+    if (pinned.length) return pinned.reduce((a, b) => a + b) / pinned.length;
+    let mean = 0;
+    for (const gc of group) mean += lvl[gc];
+    mean = mean / group.length * LH;
+    if (!group.some(gc => prot[gc] || fluid[gc] || stair[gc]))
+      mean += ((hash32(X * 7919 + Z * 104729 + Math.round(mean * 8) * 31337) % 1000) / 1000 - 0.5) * 0.08;
+    return mean;
+  }
+  for (let c = 0; c < N * N; c++) {
+    for (let k = 0; k < 4; k++) corners[c * 4 + k] = computeCorner(c, k & 1, k >> 1);
+    const k = c * 4;
+    split[c] = Math.abs(corners[k] - corners[k + 3]) <= Math.abs(corners[k + 1] - corners[k + 2]) ? 0 : 1;
+  }
+  const edgeY = (c, d) => { const [a, b] = EDGE_CORNERS[d]; return (corners[c * 4 + a] + corners[c * 4 + b]) / 2; };
+  const tY = (c, fx, fz) => surfY(corners, split, c, fx, fz);
+
+  // 10) fences: posts follow the surface, physics uses the min/max height of the edge
+  function addFence(a, d, hfn) {
+    const x = a % N, z = (a / N) | 0, nx = x + DIRS[d][0], nz = z + DIRS[d][1];
+    const pts = [0.07, 0.5, 0.93].map(t => {
+      const fx = d === 0 ? 0.93 : d === 1 ? 0.07 : t, fz = d === 2 ? 0.93 : d === 3 ? 0.07 : t;
+      return [x + fx, hfn(fx, fz), z + fz];
+    });
+    const ys = pts.map(p => p[1]);
+    const f = { a, ox: x, oz: z, nx, nz, pts, ymin: Math.min(...ys), ymax: Math.max(...ys) };
+    fenceList.push(f);
+    const key = edgeKey(x, z, nx, nz);
+    if (!fences.has(key)) fences.set(key, []);
+    fences.get(key).push(f);
+  }
+
+  // stairs + bridges get their real heights from the smoothed terrain at both ends
+  for (const r of stairRuns) {
+    const d = dirIndex(r.dx, r.dz), k = r.cells.length;
+    const ys = edgeY(r.from, d), ye = edgeY(r.to, OPP[d]);
+    r.cells.forEach((s, j) => {
+      const st = stair[s];
+      st.y0 = ys + (ye - ys) * j / k; st.y1 = ys + (ye - ys) * (j + 1) / k;
+      lvl[s] = Math.max(0, Math.floor(Math.min(st.y0, st.y1) / LH));
+      for (let q = 0; q < 4; q++) corners[s * 4 + q] = lvl[s] * LH;
+    });
+  }
+  for (const r of bridgeRuns) {
+    const d = dirIndex(r.dx, r.dz), k = r.cells.length;
+    const ys = edgeY(r.from, d), ye = edgeY(r.to, OPP[d]);
+    r.cells.forEach((c, j) => {
+      const br = bridge[c];
+      br.y0 = ys + (ye - ys) * j / k; br.y1 = ys + (ye - ys) * (j + 1) / k;
+      const lat = br.axis === 'x' ? [2, 3] : [0, 1];
+      for (const ld of lat) addFence(c, ld, (fx, fz) => runY(br, fx, fz));
+    });
+  }
+
+  // cliff fences, in runs, and around lava. never on path edges.
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    const c = idx(x, z);
+    if (fluid[c] || stair[c] || bridge[c]) continue;
+    const runs = fenceNoise(x * 0.45, z * 0.45) > 0.56;
+    for (let d = 0; d < 4; d++) {
+      const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
+      if (!inb(nx, nz)) continue;
+      const n = idx(nx, nz);
+      if (stair[n] || bridge[n] || (link[c] >> d & 1) || pathEdges.has(edgeKey(x, z, nx, nz))) continue;
+      const [a, b] = EDGE_CORNERS[d], [na, nb] = EDGE_CORNERS[OPP[d]];
+      const my = Math.min(corners[c * 4 + a], corners[c * 4 + b]);
+      const nt = fluid[n] ? surf[n] * LH : Math.max(corners[n * 4 + na], corners[n * 4 + nb]);
+      if (my - nt < 0.9) continue;
+      stats.cliffs++;
+      const p = fluid[n] === LAVA ? 0.85 : runs ? 0.9 : 0.06;
+      if (R() < p) { addFence(c, d, (fx, fz) => tY(c, fx, fz)); stats.fences++; }
+    }
+  }
+  for (let c = 0; c < N * N; c++) for (const d of [0, 2]) if ((link[c] >> d & 1) && !fluid[c]) {
+    const n = idx(c % N + DIRS[d][0], ((c / N) | 0) + DIRS[d][1]);
+    if (lvl[n] !== lvl[c]) stats.slopes++;
+  }
+
+  // debug path through the actual surfaces
+  const center = (i, y) => new THREE.Vector3(i % N + 0.5, y + 0.12, ((i / N) | 0) + 0.5);
+  const pieceY = c => { const s = stair[c] || bridge[c]; return (s.y0 + s.y1) / 2; };
+  const pathPts = [center(start, tY(start, 0.5, 0.5))];
+  for (const mv of moves) {
+    for (const c of mv.cells) pathPts.push(center(c, pieceY(c)));
+    pathPts.push(center(mv.to, tY(mv.to, 0.5, 0.5)));
+  }
+
+  return {
+    seed, lvl, fluid, surf, prot, stair, bridge, link, moves, corners, split, fences, fenceList, stats, pathPts,
+    entry: { x: 0, z: ez, y: entryL * LH },
+    exit: { x: N - 1, z: xz, y: exitL * LH },
+  };
+}
+
+function generate(seed) {
+  for (let a = 0; a < 80; a++) {
+    const m = tryGenerate(hash32(seed + a * 7919));
+    if (m) { m.seed = seed; m.attempts = a + 1; return m; }
+  }
+  throw new Error('generator failed for seed ' + seed);
+}
+
+// ---------------------------------------------------------------------------
+// geometry helpers
+// ---------------------------------------------------------------------------
+class GeoBuilder {
+  constructor() { this.pos = []; this.nor = []; this.col = []; this.smoothKeys = []; }
+  // triangle; `want` is the intended facing (winding gets flipped to match);
+  // smooth=true shares normals with other smooth vertices at the same position
+  tri(a, b, c, col, want, smooth = false) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz);
+    if (len < 1e-9) return;
+    if (want && nx * want[0] + ny * want[1] + nz * want[2] < 0) { [b, c] = [c, b]; nx = -nx; ny = -ny; nz = -nz; }
+    const base = this.pos.length / 3;
+    for (const v of [a, b, c]) {
+      this.pos.push(v[0], v[1], v[2]);
+      this.nor.push(nx / len, ny / len, nz / len);
+      this.col.push(col.r, col.g, col.b);
+    }
+    if (smooth) for (let k = 0; k < 3; k++) {
+      const v = [a, b, c][k];
+      this.smoothKeys.push([base + k, v[0].toFixed(3) + ',' + v[1].toFixed(3) + ',' + v[2].toFixed(3), nx, ny, nz]);
+    }
+  }
+  quad(a, b, c, d, want, col, smooth = false) { this.tri(a, b, c, col, want, smooth); this.tri(a, c, d, col, want, smooth); }
+  box(x0, y0, z0, x1, y1, z1, top, side, skip = {}) {
+    const sd = side.clone().multiplyScalar(0.82);
+    if (!skip.py) this.quad([x0, y1, z0], [x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [0, 1, 0], top);
+    if (!skip.ny) this.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [0, -1, 0], sd);
+    if (!skip.px) this.quad([x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1], [1, 0, 0], side);
+    if (!skip.nx) this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], side);
+    if (!skip.pz) this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], sd);
+    if (!skip.nz) this.quad([x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [x1, y0, z0], [0, 0, -1], sd);
+  }
+  // oriented box between two points with a w x h cross-section (rails, beams)
+  beam(p, q, w, h, col) {
+    const d = new THREE.Vector3(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+    const side = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(w / 2);
+    const up = new THREE.Vector3().crossVectors(side, d).normalize().multiplyScalar(h / 2);
+    const P = new THREE.Vector3(...p), Q = new THREE.Vector3(...q), C0 = P.clone().add(Q).multiplyScalar(0.5);
+    const v = (o, s, u) => o.clone().addScaledVector(side, s).addScaledVector(up, u).toArray();
+    const faces = [
+      [v(P, -1, 1), v(P, 1, 1), v(Q, 1, 1), v(Q, -1, 1)], [v(P, -1, -1), v(P, 1, -1), v(Q, 1, -1), v(Q, -1, -1)],
+      [v(P, 1, -1), v(P, 1, 1), v(Q, 1, 1), v(Q, 1, -1)], [v(P, -1, -1), v(P, -1, 1), v(Q, -1, 1), v(Q, -1, -1)],
+      [v(P, -1, -1), v(P, 1, -1), v(P, 1, 1), v(P, -1, 1)], [v(Q, -1, -1), v(Q, 1, -1), v(Q, 1, 1), v(Q, -1, 1)]];
+    for (const f of faces) {
+      const fc = f.reduce((s, x) => [s[0] + x[0] / 4, s[1] + x[1] / 4, s[2] + x[2] / 4], [0, 0, 0]);
+      this.quad(f[0], f[1], f[2], f[3], [fc[0] - C0.x, fc[1] - C0.y, fc[2] - C0.z], col);
+    }
+  }
+  build() {
+    const acc = new Map();
+    for (const [, key, nx, ny, nz] of this.smoothKeys) {
+      const a = acc.get(key) || [0, 0, 0];
+      a[0] += nx; a[1] += ny; a[2] += nz; acc.set(key, a);
+    }
+    for (const [vi, key] of this.smoothKeys) {
+      const a = acc.get(key), l = Math.hypot(a[0], a[1], a[2]) || 1;
+      this.nor[vi * 3] = a[0] / l; this.nor[vi * 3 + 1] = a[1] / l; this.nor[vi * 3 + 2] = a[2] / l;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    return g;
+  }
+}
+
+// emit the vertical wall area along edge P0->P1 lying above every `lows` line and below every `ups` line.
+// lines are [y at P0, y at P1]; we split at all crossings so each piece is an exact trapezoid.
+function wallRegion(b, P0, P1, lows, ups, nrm, col) {
+  const lines = lows.concat(ups), ts = [0, 1];
+  for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+    const d0 = lines[i][0] - lines[j][0], d1 = lines[i][1] - lines[j][1];
+    if (d0 * d1 < 0) ts.push(d0 / (d0 - d1));
+  }
+  ts.sort((a, b) => a - b);
+  const ev = (L, t) => L[0] + (L[1] - L[0]) * t;
+  const lo = t => Math.max(...lows.map(L => ev(L, t))), hi = t => Math.min(...ups.map(L => ev(L, t)));
+  for (let s = 0; s + 1 < ts.length; s++) {
+    const t0 = ts[s], t1 = ts[s + 1];
+    if (t1 - t0 < 1e-5) continue;
+    const tm = (t0 + t1) / 2;
+    if (hi(tm) - lo(tm) <= 1e-5) continue;
+    const A = [P0[0] + (P1[0] - P0[0]) * t0, P0[1] + (P1[1] - P0[1]) * t0];
+    const B = [P0[0] + (P1[0] - P0[0]) * t1, P0[1] + (P1[1] - P0[1]) * t1];
+    const l0 = lo(t0), l1 = lo(t1), h0 = Math.max(l0, hi(t0)), h1 = Math.max(l1, hi(t1));
+    b.quad([A[0], l0, A[1]], [B[0], l1, B[1]], [B[0], h1, B[1]], [A[0], h0, A[1]], nrm, col);
+  }
+}
+
+function gradient(stops, v) {
+  if (v <= stops[0][0]) return new THREE.Color(stops[0][1]);
+  for (let i = 1; i < stops.length; i++) {
+    if (v <= stops[i][0]) {
+      const t = (v - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]);
+      return new THREE.Color(stops[i - 1][1]).lerp(new THREE.Color(stops[i][1]), t);
+    }
+  }
+  return new THREE.Color(stops[stops.length - 1][1]);
+}
+const TOP_STOPS = [[0, '#3b6532'], [4, '#4c8a3c'], [8, '#76ad50'], [12, '#a3b26a'], [16, '#b7a888'], [20, '#d9d3c5']];
+const SIDE_STOPS = [[0, '#4e382a'], [6, '#7a5638'], [11, '#7a6d62'], [20, '#9a948c']];
+const C = s => new THREE.Color(s);
+const LIP = C('#3f6b2e');
+
+// cliff wall between the top line `up` and the bottom line `low`, coloured in strata bands
+function cliffWall(b, P0, P1, low, up, nrm, lip) {
+  const lipLine = [up[0] - 0.12, up[1] - 0.12];
+  const ymin = Math.min(low[0], low[1]), ymax = Math.max(up[0], up[1]);
+  for (let j = Math.floor(ymin); j < ymax; j++) {
+    const col = gradient(SIDE_STOPS, j / LH).multiplyScalar(j & 1 ? 1 : 0.88);
+    wallRegion(b, P0, P1, [low, [j, j]], lip ? [up, [j + 1, j + 1], lipLine] : [up, [j + 1, j + 1]], nrm, col);
+  }
+  if (lip) wallRegion(b, P0, P1, [low, lipLine], [up], nrm, LIP);
+}
+
+// ---------------------------------------------------------------------------
+// scene setup
+// ---------------------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+{
+  const c = document.createElement('canvas'); c.width = 2; c.height = 256;
+  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, '#2a3242'); gr.addColorStop(1, '#0c0e13');
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  scene.background = tex;
+}
+const camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.1, 500);
+
+scene.add(new THREE.HemisphereLight(0xdfeaff, 0x3a3020, 1.1));
+const sun = new THREE.DirectionalLight(0xfff1dd, 2.4);
+sun.position.set(N / 2 - 12, 34, N / 2 + 8);
+sun.target.position.set(N / 2, 0, N / 2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 90 });
+sun.shadow.bias = -0.0006;
+sun.shadow.normalBias = 0.03;
+scene.add(sun, sun.target);
+
+// the cube itself: always the same size, drawn as a faint glass box
+const cubeGroup = new THREE.Group();
+{
+  const geo = new THREE.BoxGeometry(N, CUBE_H, N);
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0x8fb3d9, transparent: true, opacity: 0.35 }));
+  const glass = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x6d8db5, transparent: true, opacity: 0.05, side: THREE.BackSide, depthWrite: false }));
+  for (const o of [edges, glass]) { o.position.set(N / 2, CUBE_H / 2 - BASE, N / 2); cubeGroup.add(o); }
+}
+scene.add(cubeGroup);
+
+// player
+const player = {
+  x: 0, z: 0, y: 0, vy: 0, vx: 0, vz: 0, r: 0.3, hp: 100,
+  grounded: true, swimming: false, fluid: 0, visY: 0, support: 'terrain',
+  safe: { x: 0, y: 0, z: 0 }, safeTimer: 0, autoDir: null,
+};
+const playerGroup = new THREE.Group();
+const ballGeo = new THREE.IcosahedronGeometry(player.r, 1);
+const ball = new THREE.Mesh(ballGeo, new THREE.MeshStandardMaterial({ color: 0xf2efe6, emissive: 0x3a2f1a, flatShading: true, roughness: 0.5 }));
+ball.castShadow = true;
+const ghost = new THREE.Mesh(ballGeo, new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.45, depthFunc: THREE.GreaterDepth, depthWrite: false }));
+ghost.renderOrder = 999;
+const playerLight = new THREE.PointLight(0xffd9a0, 1.2, 3.5, 2);
+playerLight.position.y = 0.5;
+playerGroup.add(ball, ghost, playerLight);
+scene.add(playerGroup);
+
+// ---------------------------------------------------------------------------
+// world mesh building
+// ---------------------------------------------------------------------------
+let map = null;
+let world = null;
+
+function disposeWorld() {
+  if (!world) return;
+  scene.remove(world.group);
+  world.group.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
+  world = null;
+}
+
+function buildWorld(m) {
+  disposeWorld();
+  const group = new THREE.Group();
+  const { lvl, fluid, surf, stair, bridge, corners: cs } = m;
+  const terrain = new GeoBuilder();
+  const wood = new GeoBuilder();
+  const fluids = { [WATER]: new GeoBuilder(), [LAVA]: new GeoBuilder(), [ACID]: new GeoBuilder() };
+  const shade = (x, z) => ((x + z) & 1 ? 1.0 : 0.95) * (0.97 + (hash32(x * 31 + z * 977) % 100) / 1600);
+
+  // bedrock
+  terrain.box(0, -BASE, 0, N, 0, N, C('#2a2a31'), C('#23232a'));
+
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    const i = idx(x, z), L = lvl[i], k = i * 4;
+    const P = [[x, cs[k], z], [x + 1, cs[k + 1], z], [x, cs[k + 2], z + 1], [x + 1, cs[k + 3], z + 1]];
+
+    // smooth top surface: 2 triangles, shared normals for soft shading
+    let top;
+    if (fluid[i]) top = C(fluid[i] === WATER ? '#7d6f52' : fluid[i] === LAVA ? '#2b1d1a' : '#3e4a2a');
+    else {
+      const avg = (cs[k] + cs[k + 1] + cs[k + 2] + cs[k + 3]) / 4 / LH;
+      top = gradient(TOP_STOPS, avg).multiplyScalar(shade(x, z));
+      for (const [dx, dz] of DIRS) {
+        const nx = x + dx, nz = z + dz;
+        if (!inb(nx, nz)) continue;
+        const f = fluid[idx(nx, nz)];
+        if (f === WATER) top.lerp(C('#c9b98a'), 0.4);
+        else if (f === LAVA) top.lerp(C('#3a2a22'), 0.35);
+        else if (f === ACID) top.lerp(C('#a4a64a'), 0.3);
+      }
+    }
+    const tris = m.split[i] ? [[0, 1, 2], [1, 3, 2]] : [[0, 1, 3], [0, 3, 2]];
+    tris.forEach((t, ti) => {
+      const col = top.clone().multiplyScalar(0.95 + (hash32(i * 2 + ti) % 100) / 1000);
+      terrain.tri(P[t[0]], P[t[1]], P[t[2]], col, [0, 1, 0], true);
+    });
+
+    // cliff walls where this cell's edge is above the neighbour's edge (or the cube boundary)
+    for (let d = 0; d < 4; d++) {
+      const [ea, eb] = EDGE_CORNERS[d];
+      const up = [cs[k + ea], cs[k + eb]];
+      let low = [0, 0];
+      const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
+      if (inb(nx, nz)) {
+        const n = idx(nx, nz), [na, nb] = EDGE_CORNERS[OPP[d]];
+        low = [cs[n * 4 + na], cs[n * 4 + nb]];
+      }
+      if (up[0] <= low[0] + 1e-4 && up[1] <= low[1] + 1e-4) continue;
+      const [P0, P1] = edgePts(x, z, d);
+      cliffWall(terrain, P0, P1, low, up, DIRV[d], !fluid[i] && !stair[i]);
+    }
+
+    // stairs (still blocky; reworked in a later step)
+    const st = stair[i];
+    if (st) {
+      const lo = Math.min(st.y0, st.y1), hi = Math.max(st.y0, st.y1), base = L * LH;
+      const n = Math.max(2, Math.round((hi - lo) / 0.25));
+      const ux = st.y1 >= st.y0 ? st.dx : -st.dx, uz = st.y1 >= st.y0 ? st.dz : -st.dz;
+      for (let s = 0; s < n; s++) {
+        const t0 = s / n, ttop = lo + (hi - lo) * (s + 0.5) / n;
+        let x0 = x, x1 = x + 1, z0 = z, z1 = z + 1;
+        if (ux > 0) x0 = x + t0; else if (ux < 0) x1 = x + 1 - t0;
+        if (uz > 0) z0 = z + t0; else if (uz < 0) z1 = z + 1 - t0;
+        terrain.box(x0, base, z0, x1, ttop, z1, C(s & 1 ? '#c9bfae' : '#b9af9d'), C('#8f8678'), { ny: true });
+      }
+    }
+
+    // fluids
+    if (fluid[i]) {
+      const sy = surf[i] * LH - 0.06, by = L * LH;
+      const hidden = d => {
+        const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
+        if (!inb(nx, nz)) return false;
+        const n = idx(nx, nz), [na, nb] = EDGE_CORNERS[OPP[d]];
+        return fluid[n] ? surf[n] >= surf[i] : Math.min(cs[n * 4 + na], cs[n * 4 + nb]) >= sy;
+      };
+      fluids[fluid[i]].box(x, by, z, x + 1, sy, z + 1, C('#ffffff'), C('#ffffff'), {
+        ny: true, px: hidden(0), nx: hidden(1), pz: hidden(2), nz: hidden(3),
+      });
+    }
+
+    // bridges (deck follows the slope between both ends)
+    const br = bridge[i];
+    if (br) {
+      const gy = Math.min(cs[k], cs[k + 1], cs[k + 2], cs[k + 3]);
+      const plank = p => C(p & 1 ? '#a0703f' : '#8d6136');
+      const beam = C('#5d3d22');
+      const ym = (br.y0 + br.y1) / 2;
+      for (let p = 0; p < 5; p++) {
+        const a = p * 0.2 + 0.01, b = a + 0.18, tc = (a + b) / 2;
+        if (br.axis === 'x') { const y = runY(br, tc, 0.5); wood.box(x + a, y - 0.1, z + 0.04, x + b, y, z + 0.96, plank(p), C('#6e4a28')); }
+        else { const y = runY(br, 0.5, tc); wood.box(x + 0.04, y - 0.1, z + a, x + 0.96, y, z + b, plank(p), C('#6e4a28')); }
+      }
+      if (br.axis === 'x') {
+        const ya = runY(br, 0, 0.5) - 0.16, yb = runY(br, 1, 0.5) - 0.16;
+        wood.beam([x, ya, z + 0.14], [x + 1, yb, z + 0.14], 0.12, 0.12, beam);
+        wood.beam([x, ya, z + 0.86], [x + 1, yb, z + 0.86], 0.12, 0.12, beam);
+        if (ym - 0.22 > gy) for (const pz of [0.14, 0.86]) wood.box(x + 0.44, gy, z + pz - 0.06, x + 0.56, ym - 0.22, z + pz + 0.06, beam, beam);
+      } else {
+        const ya = runY(br, 0.5, 0) - 0.16, yb = runY(br, 0.5, 1) - 0.16;
+        wood.beam([x + 0.14, ya, z], [x + 0.14, yb, z + 1], 0.12, 0.12, beam);
+        wood.beam([x + 0.86, ya, z], [x + 0.86, yb, z + 1], 0.12, 0.12, beam);
+        if (ym - 0.22 > gy) for (const px of [0.14, 0.86]) wood.box(x + px - 0.06, gy, z + 0.44, x + px + 0.06, ym - 0.22, z + 0.56, beam, beam);
+      }
+    }
+  }
+
+  // fences (cliff fences + bridge rails): posts follow the surface, rails are sloped beams
+  const post = C('#6e4420'), rail = C('#8b5a2b');
+  for (const f of m.fenceList) {
+    for (const [px, py, pz] of f.pts) wood.box(px - 0.045, py, pz - 0.045, px + 0.045, py + 0.5, pz + 0.045, post, post);
+    for (let s = 0; s + 1 < f.pts.length; s++) {
+      const p = f.pts[s], q = f.pts[s + 1];
+      for (const ry of [0.2, 0.4]) wood.beam([p[0], p[1] + ry, p[2]], [q[0], q[1] + ry, q[2]], 0.05, 0.06, rail);
+    }
+  }
+
+  const solidMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+  for (const b of [terrain, wood]) {
+    const mesh = new THREE.Mesh(b.build(), solidMat.clone());
+    mesh.castShadow = mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+
+  const fluidMats = {
+    [WATER]: new THREE.MeshStandardMaterial({ color: 0x2e86de, emissive: 0x0a2a4a, transparent: true, opacity: 0.72, roughness: 0.15, metalness: 0.1, depthWrite: false }),
+    [LAVA]: new THREE.MeshStandardMaterial({ color: 0xff6a00, emissive: 0xff3a00, emissiveIntensity: 1.2, roughness: 0.6 }),
+    [ACID]: new THREE.MeshStandardMaterial({ color: 0x7dff3a, emissive: 0x3a9a10, emissiveIntensity: 0.8, transparent: true, opacity: 0.82, roughness: 0.3, depthWrite: false }),
+  };
+  const fluidMeshes = {};
+  for (const t of [WATER, LAVA, ACID]) {
+    if (!fluids[t].pos.length) continue;
+    const mesh = new THREE.Mesh(fluids[t].build(), fluidMats[t]);
+    mesh.receiveShadow = t !== LAVA;
+    group.add(mesh);
+    fluidMeshes[t] = mesh;
+  }
+  // a few glows over lava
+  const lights = [];
+  for (let i = 0; i < N * N; i++) {
+    if (fluid[i] !== LAVA) continue;
+    const x = i % N + 0.5, z = ((i / N) | 0) + 0.5;
+    if (lights.some(l => Math.hypot(l.position.x - x, l.position.z - z) < 4) || lights.length >= 4) continue;
+    const l = new THREE.PointLight(0xff5a1a, 6, 6, 2);
+    l.position.set(x, surf[i] * LH + 0.7, z);
+    lights.push(l); group.add(l);
+  }
+
+  // entry arch on the x=0 face
+  const stone = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });
+  const ey = m.entry.y, ez = m.entry.z;
+  for (const pz of [0.12, 0.88]) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.5, 0.2), stone);
+    p.position.set(0.12, ey + 0.75, ez + pz); p.castShadow = true; group.add(p);
+  }
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.22, 1.0), stone);
+  lintel.position.set(0.12, ey + 1.58, ez + 0.5); lintel.castShadow = true; group.add(lintel);
+  const entryGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 1.45),
+    new THREE.MeshBasicMaterial({ color: 0x5fd3ff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  entryGlow.rotation.y = Math.PI / 2; entryGlow.position.set(0.03, ey + 0.74, ez + 0.5); group.add(entryGlow);
+
+  // exit portal on the x=N face
+  const xy = m.exit.y, xz = m.exit.z;
+  const portal = new THREE.Group();
+  portal.position.set(N - 0.5, xy + 0.8, xz + 0.5);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.07, 10, 32),
+    new THREE.MeshStandardMaterial({ color: 0xffc94a, emissive: 0xffa500, emissiveIntensity: 1.4 }));
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.44, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
+  portal.add(ring, disc);
+  ring.rotation.y = disc.rotation.y = Math.PI / 2;
+  portal.add(new THREE.PointLight(0xffc94a, 8, 6, 2));
+  group.add(portal);
+  const beamH = CUBE_H - BASE - xy;
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, beamH, 20, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffd36a, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
+  beam.position.set(N - 0.5, xy + beamH / 2, xz + 0.5);
+  group.add(beam);
+
+  // door outlines on the cube faces
+  const door = (x, y, z, color) => {
+    const pts = [[x, y, z], [x, y + 1.7, z], [x, y + 1.7, z + 1], [x, y, z + 1], [x, y, z]].map(p => new THREE.Vector3(...p));
+    return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color }));
+  };
+  group.add(door(0, ey, ez, 0x5fd3ff), door(N, xy, xz, 0xffc94a));
+
+  // generator path (debug)
+  const pathLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(m.pathPts),
+    new THREE.LineBasicMaterial({ color: 0xff3df2, depthTest: false, transparent: true }));
+  pathLine.renderOrder = 998;
+  pathLine.visible = showPath;
+  group.add(pathLine);
+
+  scene.add(group);
+  world = { group, fluidMeshes, fluidMats, portal, ring, disc, beam, entryGlow, lights, pathLine };
+}
+
+// ---------------------------------------------------------------------------
+// physics
+// ---------------------------------------------------------------------------
+function cellAt(x, z) {
+  const cx = Math.floor(x), cz = Math.floor(z);
+  return inb(cx, cz) ? idx(cx, cz) : -1;
+}
+const terrainY = (i, fx, fz) => surfY(map.corners, map.split, i, fx, fz);
+// height of a given solid kind in cell i (null if that cell has no such solid)
+function solidY(kind, i, fx, fz) {
+  if (kind === 'terrain') return terrainY(i, fx, fz);
+  const s = kind === 'stair' ? map.stair[i] : map.bridge[i];
+  return s ? runY(s, fx, fz) : null;
+}
+// highest walkable surface at (x,z) that is not above y+step
+function groundAt(x, z, y, step) {
+  const i = cellAt(x, z);
+  if (i < 0) return { h: -Infinity, kind: null };
+  const fx = x - Math.floor(x), fz = z - Math.floor(z);
+  let h = terrainY(i, fx, fz), kind = 'terrain';
+  for (const k of ['stair', 'bridge']) {
+    const s = solidY(k, i, fx, fz);
+    if (s !== null && s <= y + step && s > h) { h = s; kind = k; }
+  }
+  return { h, kind, i };
+}
+// does something solid occupy the ball's body (between y+step and the top of the ball)?
+function blockedAt(x, z, y, step) {
+  const i = cellAt(x, z);
+  if (i < 0) return true;
+  const fx = x - Math.floor(x), fz = z - Math.floor(z);
+  if (terrainY(i, fx, fz) > y + step) return true;
+  const st = solidY('stair', i, fx, fz);
+  if (st !== null && st > y + step) return true;
+  const br = solidY('bridge', i, fx, fz);
+  if (br !== null && br > y + step && br - 0.2 < y + 2 * player.r) return true;
+  return false;
+}
+function fenceBlocks(a, b, y) {
+  if (a < 0 || b < 0 || a === b) return false;
+  const ax = a % N, az = (a / N) | 0, bx = b % N, bz = (b / N) | 0;
+  if (Math.abs(ax - bx) + Math.abs(az - bz) !== 1) return false;
+  const f = map.fences.get(edgeKey(ax, az, bx, bz));
+  return !!f && f.some(e => y > e.ymin - 0.45 && y < e.ymax + 0.6);
+}
+// Surfaces are continuous inside a cell, so the only real obstacles are height jumps across a
+// cell edge (cliffs, stair sides) and decks hanging at body height. (rx,rz) is a reference point
+// on our side, (px,pz) the probe point.
+function hopBlocked(rx, rz, px, pz, y, step) {
+  const ri = cellAt(rx, rz), pi = cellAt(px, pz);
+  if (pi < 0) return true;
+  const br = solidY('bridge', pi, px - Math.floor(px), pz - Math.floor(pz));
+  if (br !== null && br > y + step && br - 0.2 < y + 2 * player.r) return true;
+  if (ri === pi || ri < 0) return false;
+  const e = 0.002;
+  const qx = clamp(px, Math.floor(rx) + e, Math.floor(rx) + 1 - e), qz = clamp(pz, Math.floor(rz) + e, Math.floor(rz) + 1 - e);
+  const ref = Math.max(y, groundAt(qx, qz, y + 0.6, 0).h);
+  const q2x = clamp(qx, Math.floor(px) + e, Math.floor(px) + 1 - e), q2z = clamp(qz, Math.floor(pz) + e, Math.floor(pz) + 1 - e);
+  return blockedAt(q2x, q2z, ref, step);
+}
+function canMove(nx, nz, axis, sign) {
+  const r = player.r, y = player.y, step = player.swimming ? SWIM_STEP : STEP;
+  const ci = cellAt(nx, nz);
+  if (ci < 0) return false;
+  if (fenceBlocks(cellAt(player.x, player.z), ci, y)) return false;
+  const pts = [[nx, nz]];
+  if (axis === 'x') { const lx = nx + sign * r; pts.push([lx, nz], [lx, nz - 0.7 * r], [lx, nz + 0.7 * r]); }
+  else { const lz = nz + sign * r; pts.push([nx, lz], [nx - 0.7 * r, lz], [nx + 0.7 * r, lz]); }
+  for (let k = 0; k < pts.length; k++) {
+    const [sx, sz] = pts[k];
+    const si = cellAt(sx, sz);
+    if (si < 0) return false;
+    const [rx, rz] = k ? [nx, nz] : [player.x, player.z];
+    if (hopBlocked(rx, rz, sx, sz, y, step)) return false;
+    if (fenceBlocks(ci, si, y)) return false;
+  }
+  return true;
+}
+// surface gradient of the solid the ball rests on
+function slopeAt(kind, x, z) {
+  const i = cellAt(x, z);
+  if (i < 0 || !kind) return [0, 0];
+  const e = 0.04;
+  const fx = clamp(x - Math.floor(x), e, 1 - e), fz = clamp(z - Math.floor(z), e, 1 - e);
+  const gx = (solidY(kind, i, fx + e, fz) - solidY(kind, i, fx - e, fz)) / (2 * e);
+  const gz = (solidY(kind, i, fx, fz + e) - solidY(kind, i, fx, fz - e)) / (2 * e);
+  return [gx || 0, gz || 0];
+}
+
+const keys = new Set();
+let yaw = -Math.PI / 4, yawTarget = yaw, zoom = 1, zoomTarget = 1;
+const pitch = THREE.MathUtils.degToRad(44);
+let showPath = false, transitioning = false, time = 0;
+let statusMsg = '', statusUntil = 0;
+function setStatus(s) { statusMsg = s; statusUntil = time + 2.2; }
+
+function spawnAt(x, y, z) {
+  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: 'terrain' });
+  player.safe = { x, y, z };
+}
+function spawnEntry() { spawnAt(map.entry.x + 0.5, map.entry.y, map.entry.z + 0.5); player.hp = 100; }
+
+function hurt(amount, reason) {
+  player.hp -= amount;
+  flash();
+  if (player.hp <= 0) { setStatus('You died (' + reason + ') - back to the entry'); spawnEntry(); }
+  else { setStatus(reason); spawnAt(player.safe.x, player.safe.y, player.safe.z); }
+}
+function flash() { const f = document.getElementById('flash'); f.style.transition = 'none'; f.style.opacity = 0.45; requestAnimationFrame(() => { f.style.transition = 'opacity .5s'; f.style.opacity = 0; }); }
+
+function updatePlayer(dt) {
+  // input relative to camera
+  let ix = 0, iy = 0;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1;
+  if (keys.has('KeyS') || keys.has('ArrowDown')) iy -= 1;
+  if (keys.has('KeyD') || keys.has('ArrowRight')) ix += 1;
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) ix -= 1;
+  const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+  let dx = rx * ix + fx * iy, dz = rz * ix + fz * iy;
+  if (player.autoDir) [dx, dz] = player.autoDir;
+  const len = Math.hypot(dx, dz);
+  if (len > 1) { dx /= len; dz /= len; }
+
+  // rolling ball: input force + downhill gravity + rolling drag
+  const sp = player.fluid === ACID ? 1.4 : player.swimming ? 1.8 : 3.6;
+  const drag = player.swimming ? 6 : player.grounded ? DRAG : 1.2;
+  const accK = player.swimming ? 6 : DRAG;
+  const ctl = player.grounded ? 1 : 0.15;
+  let ax = dx * sp * accK * ctl, az = dz * sp * accK * ctl;
+  if (player.grounded && !player.swimming) {
+    const [gx, gz] = slopeAt(player.support, player.x, player.z);
+    const k = player.support === 'stair' ? 0.25 : 1, den = 1 + gx * gx + gz * gz;
+    ax -= GRAV * ROLL * gx / den * k;
+    az -= GRAV * ROLL * gz / den * k;
+  }
+  player.vx += ax * dt; player.vz += az * dt;
+  const damp = Math.exp(-drag * dt);
+  player.vx *= damp; player.vz *= damp;
+
+  const ox = player.x, oz = player.z;
+  const mx = player.vx * dt, mz = player.vz * dt;
+  if (Math.abs(mx) > 1e-6) { if (canMove(player.x + mx, player.z, 'x', Math.sign(mx))) player.x += mx; else player.vx *= -0.15; }
+  if (Math.abs(mz) > 1e-6) { if (canMove(player.x, player.z + mz, 'z', Math.sign(mz))) player.z += mz; else player.vz *= -0.15; }
+
+  // vertical: stick to slopes while grounded, otherwise fall
+  const step = player.swimming ? SWIM_STEP : STEP;
+  const gr = groundAt(player.x, player.z, player.y, step);
+  if (player.swimming) {
+    if (gr.h > player.y) player.y = gr.h;   // climbing out onto a bank
+    player.vy = 0;
+  } else if (player.grounded && player.vy <= 0 && gr.h >= player.y - SNAP) {
+    player.y = gr.h; player.vy = 0;
+  } else {
+    player.vy -= GRAV * dt;
+    player.y += player.vy * dt;
+    if (player.y <= gr.h) {
+      // hard landings kill most of the horizontal momentum
+      if (player.vy < -6) { const k = clamp(1 + (player.vy + 6) * 0.08, 0.25, 1); player.vx *= k; player.vz *= k; }
+      player.y = gr.h; player.vy = 0; player.grounded = true;
+    }
+    else player.grounded = false;
+  }
+  player.support = gr.kind;
+
+  // fluids
+  const ci = cellAt(player.x, player.z);
+  const ft = ci >= 0 ? map.fluid[ci] : 0;
+  const wasSwimming = player.swimming;
+  player.swimming = false; player.fluid = 0;
+  if (time > statusUntil) statusMsg = '';
+  if (ft && gr.kind === 'terrain' && player.y < map.surf[ci] * LH + 0.05) {
+    const sy = map.surf[ci] * LH;
+    if (ft === LAVA) { hurt(50, 'Fell into lava!'); return; }
+    const fy = sy - 0.24;
+    if (player.y <= fy + 0.01 || wasSwimming) {
+      player.vy = 0;
+      player.y += (fy - player.y) * Math.min(1, dt * 6);
+      player.swimming = true; player.grounded = true; player.fluid = ft;
+      if (ft === ACID) {
+        player.hp -= 30 * dt;
+        if (!statusMsg) statusMsg = 'Acid burns! Get out!';
+        if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return; }
+      } else if (!statusMsg) statusMsg = 'Swimming - find a low bank to climb out';
+    }
+  }
+  if (!player.swimming && player.grounded) player.hp = Math.min(100, player.hp + 6 * dt);
+
+  // remember a safe spot to respawn at
+  player.safeTimer += dt;
+  if (player.grounded && !player.swimming && !ft && gr.kind === 'terrain' && player.safeTimer > 0.4) {
+    player.safeTimer = 0;
+    const cx = (ci % N) + 0.5, cz = ((ci / N) | 0) + 0.5;
+    player.safe = { x: cx, y: terrainY(ci, 0.5, 0.5), z: cz };
+  }
+
+  // rolling visual
+  const dist = Math.hypot(player.x - ox, player.z - oz);
+  if (dist > 1e-5) {
+    const axis = new THREE.Vector3(player.z - oz, 0, -(player.x - ox)).normalize();
+    ball.rotateOnWorldAxis(axis, dist / player.r);
+  }
+
+  // exit
+  const ex = map.exit;
+  if (ci === idx(ex.x, ex.z) && Math.abs(player.y - ex.y) < 0.5 && player.x > N - 0.7) nextCube();
+}
+
+// ---------------------------------------------------------------------------
+// level flow
+// ---------------------------------------------------------------------------
+const params = new URLSearchParams(location.search);
+let baseSeed = params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0;
+let depth = 1;
+const seedFor = d => d === 1 ? baseSeed : hash32(baseSeed + d * 2654435761) % 1000000000;
+
+function loadCube(seed) {
+  map = generate(seed);
+  buildWorld(map);
+  spawnEntry();
+  document.getElementById('depth').textContent = depth;
+  document.getElementById('seed').textContent = seed;
+  const s = map.stats;
+  document.getElementById('stats').textContent =
+    `slopes ${s.slopes} · cliffs ${s.cliffs} · stairs ${s.stairs} · bridges ${s.bridges} · fences ${s.fences} · ${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`;
+  const fade = document.getElementById('fade');
+  requestAnimationFrame(() => fade.style.opacity = 0);
+}
+function nextCube(fresh = false) {
+  if (transitioning) return;
+  transitioning = true;
+  document.getElementById('fade').style.opacity = 1;
+  setTimeout(() => {
+    if (fresh) { baseSeed = (Math.random() * 1e9) >>> 0; depth = 1; } else depth++;
+    loadCube(seedFor(depth));
+    setStatus(fresh ? 'New cube' : `Depth ${depth}`);
+    transitioning = false;
+  }, 380);
+}
+
+addEventListener('keydown', e => {
+  keys.add(e.code);
+  if (e.code === 'KeyQ') yawTarget -= Math.PI / 2;
+  if (e.code === 'KeyE') yawTarget += Math.PI / 2;
+  if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned at entry'); }
+  if (e.code === 'KeyN') nextCube(true);
+  if (e.code === 'KeyP') { showPath = !showPath; if (world) world.pathLine.visible = showPath; }
+  if (e.code.startsWith('Arrow')) e.preventDefault();
+});
+addEventListener('keyup', e => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
+addEventListener('wheel', e => { zoomTarget = clamp(zoomTarget * (e.deltaY > 0 ? 1.1 : 0.9), 0.35, 1.4); }, { passive: true });
+addEventListener('resize', () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ---------------------------------------------------------------------------
+// camera + loop
+// ---------------------------------------------------------------------------
+const cubeCenter = new THREE.Vector3(N / 2, CUBE_H / 2 - BASE - 1.5, N / 2);
+function updateCamera(dt) {
+  yaw += (yawTarget - yaw) * Math.min(1, dt * 8);
+  zoom += (zoomTarget - zoom) * Math.min(1, dt * 8);
+  const follow = clamp((1 - zoom) / 0.6, 0, 1) * 0.9;
+  const target = cubeCenter.clone().lerp(new THREE.Vector3(player.x, player.visY + 0.5, player.z), follow);
+  const fovV = THREE.MathUtils.degToRad(camera.fov);
+  const fovH = 2 * Math.atan(Math.tan(fovV / 2) * camera.aspect);
+  const d = 12.5 / Math.sin(Math.min(fovV, fovH) / 2) * zoom;
+  camera.position.set(
+    target.x + Math.sin(yaw) * Math.cos(pitch) * d,
+    target.y + Math.sin(pitch) * d,
+    target.z + Math.cos(yaw) * Math.cos(pitch) * d);
+  camera.lookAt(target);
+}
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 1 / 30);
+  time += dt;
+  if (map && !transitioning) updatePlayer(dt);
+
+  player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
+  if (Math.abs(player.y - player.visY) > 1.5) player.visY = player.y;
+  playerGroup.position.set(player.x, player.visY + player.r, player.z);
+  ghost.quaternion.copy(ball.quaternion);
+
+  if (world) {
+    const fm = world.fluidMeshes;
+    if (fm[WATER]) fm[WATER].position.y = Math.sin(time * 1.6) * 0.025;
+    if (fm[ACID]) fm[ACID].position.y = Math.sin(time * 2.3 + 1) * 0.02;
+    world.fluidMats[LAVA].emissiveIntensity = 1.1 + Math.sin(time * 3) * 0.3;
+    for (const l of world.lights) l.intensity = 5 + Math.sin(time * 4 + l.position.x) * 1.5;
+    world.ring.rotation.x = time * 1.5;
+    world.disc.material.opacity = 0.35 + Math.sin(time * 4) * 0.15;
+    world.beam.material.opacity = 0.09 + Math.sin(time * 2) * 0.04;
+    world.entryGlow.material.opacity = 0.25 + Math.sin(time * 2.5) * 0.1;
+  }
+
+  document.getElementById('hpbar').style.width = clamp(player.hp, 0, 100) + '%';
+  document.getElementById('status').textContent = statusMsg;
+
+  updateCamera(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+loadCube(seedFor(depth));
+setStatus('Find the golden portal on the far side of the cube');
+window.__game = {
+  get map() { return map; }, player, generate, loadCube, updatePlayer, groundAt,
+  get transitioning() { return transitioning; },
+};
+frame();
+</script>
+</body>
+</html>
