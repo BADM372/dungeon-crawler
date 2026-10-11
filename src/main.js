@@ -18,6 +18,7 @@ import { tickNeighbors, cullNeighbors } from './render/neighbors.js';
 import { tickProps } from './render/props.js';
 import { tickFluidDeath } from './render/fluiddeath.js';
 import { applyLook } from './render/look.js';
+import { tickSky } from './render/sky.js';
 import { depthOf } from './themes/depth.js';
 import './game/dev.js';
 import { updateSpiders, spiders } from './game/spiders.js';
@@ -51,6 +52,7 @@ function frame() {
   applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));
   updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
   cullNeighbors(player.x, player.z, !state.transitioning, state.showNeighbors);
+  tickSky(performance.now() / 1000);   // real time: the stars shimmer on while paused
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

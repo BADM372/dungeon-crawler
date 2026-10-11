@@ -13,17 +13,7 @@ document.body.prepend(renderer.domElement);
 export const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x000000, 1e4, 2e4);   // always present (adding fog later recompiles shaders)
 
-// background gradient (changes with depth, see look.js)
-const sky = document.createElement('canvas'); sky.width = 2; sky.height = 256;
-const skyTex = new THREE.CanvasTexture(sky); skyTex.colorSpace = THREE.SRGBColorSpace;
-scene.background = skyTex;
-export function setSky(top, bottom) {
-  const g = sky.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, top); gr.addColorStop(1, bottom);
-  g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
-  skyTex.needsUpdate = true;
-}
-setSky('#2a3242', '#0c0e13');
+// the backdrop (sky gradient, clouds, stars) is in sky.js
 
 export const camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.1, 500);
 
