@@ -1,0 +1,88 @@
+// The mouse: where the cursor points in the world. Picks the floor under the cursor (by
+// marching the view ray through the collision data, skipping what the cutaway hides), a
+// point at the player's height for aiming, and the enemy under the cursor (hover).
+import * as THREE from 'three';
+import { N, BASE } from '../core/constants.js';
+import { camera, renderer } from '../render/scene.js';
+import { U } from '../render/cutshader.js';
+import { solidTop } from '../physics/collide.js';
+import { mapInfo } from './cutinfo.js';
+import { player, state } from './state.js';
+import { allEnemies } from './enemies.js';
+
+const canvas = renderer.domElement;
+// mode: what the held button does ('move' | 'attack')
+export const pointer = { ndc: new THREE.Vector2(), inside: false, down: false, mode: null };
+const raycaster = new THREE.Raycaster(), ray = raycaster.ray;
+let hovered = null;
+
+canvas.addEventListener('pointermove', e => {
+  pointer.ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  pointer.inside = true;
+});
+canvas.addEventListener('pointerleave', () => { pointer.inside = false; });
+addEventListener('pointerup', e => { if (e.button === 0) pointer.down = false; });
+addEventListener('blur', () => { pointer.down = false; });
+
+function cast() { raycaster.setFromCamera(pointer.ndc, camera); return ray; }
+
+const CUT_REACH = 3.5;   // around the player, surfaces above the cut height are hidden
+// the walkable surface under the cursor: { x, y, z, s } or null
+export function pickFloor() {
+  const m = state.map, r = cast(), o = r.origin, d = r.direction;
+  if (!m || d.y > -1e-3) return null;
+  const top = mapInfo(m).top + 0.5, cut = U.uCutY.value < 999 ? U.uCutY.value : Infinity;
+  let t = o.y > top ? (o.y - top) / -d.y : 0;
+  for (let i = 0; i < 1500; i++, t += 0.04) {
+    const x = o.x + d.x * t, y = o.y + d.y * t, z = o.z + d.z * t;
+    if (y < -BASE - 1) break;
+    if (x < 0 || z < 0 || x >= N || z >= N) continue;
+    const s = solidTop(x, z, y);
+    if (!s || (s.h > cut && Math.hypot(x - player.x, z - player.z) < CUT_REACH)) continue;
+    return { x, y: s.h, z, s: s.s };
+  }
+  return null;
+}
+
+// the cursor on a level plane through the player's chest: where to aim / which way to go
+// (null when the cursor is not over the game)
+export function aimPoint(y = player.y + 0.4) {
+  if (!pointer.inside) return null;
+  const r = cast(), o = r.origin, d = r.direction;
+  if (Math.abs(d.y) < 1e-4) return null;
+  const t = (o.y - y) / -d.y;
+  return t > 0 ? { x: o.x + d.x * t, z: o.z + d.z * t } : null;
+}
+
+const v = new THREE.Vector3();
+// the living enemy under the cursor (in screen space, around its body)
+function pickEnemy() {
+  if (!pointer.inside || state.inventoryOpen || state.transitioning) return null;
+  const px = (pointer.ndc.x + 1) / 2 * innerWidth, py = (1 - pointer.ndc.y) / 2 * innerHeight;
+  const unit = innerHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));   // px per unit at depth 1
+  let best = null, bestD = 1;
+  for (const e of allEnemies()) {
+    if (e.mode === 'dead') continue;
+    const h = e.profile.bodyHeight;
+    v.set(e.x, e.y + h / 2, e.z).applyMatrix4(camera.matrixWorldInverse);
+    const depth = -v.z;
+    if (depth <= 0) continue;
+    v.set(e.x, e.y + h / 2, e.z).project(camera);
+    const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight, ppu = unit / depth;
+    const rx = Math.max(16, (e.profile.radius + 0.2) * ppu), ry = Math.max(16, (h / 2 + 0.2) * ppu);
+    const dn = Math.hypot((px - sx) / rx, (py - sy) / ry);
+    if (dn < bestD) { bestD = dn; best = e; }
+  }
+  return best;
+}
+
+export const hoveredEnemy = () => hovered;
+// once per frame, after the camera moved
+export function updatePointer() {
+  const e = pickEnemy();
+  if (e === hovered) return;
+  if (hovered) hovered.hovered = false;
+  hovered = e;
+  if (e) e.hovered = true;
+  canvas.style.cursor = e ? 'crosshair' : '';
+}

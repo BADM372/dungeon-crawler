@@ -1,4 +1,6 @@
-// Keyboard, sword clicks and mouse wheel. Modal input never enters the game queue.
+// Keyboard, mouse and wheel. Modal input never enters the game queue.
+// Mouse: click the floor to walk there, click an enemy to attack it (hold for more),
+// Shift+click to swing towards the cursor in place. F swings towards the cursor too.
 import { clamp } from '../core/util.js';
 import { player, state, view, setStatus } from './state.js';
 import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
@@ -7,6 +9,10 @@ import { toggleInventory, setInventoryOpen } from './inventory.js';
 import { controls, clearInput } from './inputstate.js';
 import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
 import { requestCollect } from './loot.js';
+import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
+import { orderMove, orderAttack, clearOrder } from './orders.js';
+import { queueAttack } from './sword.js';
+import { toggleMute } from '../audio/sfx.js';
 export { clearInput };
 
 const { keys, lastTap } = controls;
@@ -30,7 +36,8 @@ addEventListener('keydown', e => {
     lastTap[e.code] = now;
   }
   if (e.code === 'Space') { controls.jumpPressed = true; e.preventDefault(); }
-  if (e.code === 'KeyF' && !state.transitioning) { player.sword.requested = true; e.preventDefault(); }
+  if (e.code === 'KeyF' && !state.transitioning) { clearOrder(); queueAttack(attackTarget()); e.preventDefault(); }
+  if (e.code === 'KeyM') setStatus(toggleMute() ? 'Sound off' : 'Sound on');
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
   if (e.code === 'KeyC') requestCollect();
@@ -46,9 +53,21 @@ addEventListener('keyup', e => {
   if (!MOVE.some(k => keys.has(k))) controls.running = false;
 });
 addEventListener('blur', clearInput);
+// what a swing aims at: the enemy under the cursor, else the cursor's spot
+const attackTarget = () => hoveredEnemy() || aimPoint();
 addEventListener('pointerdown', e => {
-  if (e.button === 0 && e.target.tagName === 'CANVAS' && !state.transitioning && !state.inventoryOpen) {
-    player.sword.requested = true; e.preventDefault();
+  if (e.button !== 0 || e.target.tagName !== 'CANVAS' || state.transitioning || state.inventoryOpen) return;
+  e.preventDefault();
+  pointer.down = true;
+  const enemy = hoveredEnemy();
+  if (e.shiftKey) { pointer.mode = 'force'; clearOrder(); queueAttack(attackTarget()); return; }
+  if (enemy) { pointer.mode = 'attack'; orderAttack(enemy); return; }
+  pointer.mode = 'move';
+  const hit = pickFloor();
+  if (hit) orderMove(hit);
+  else {   // off the map: head that way
+    const a = aimPoint();
+    if (a) orderMove({ x: a.x, z: a.z, s: null });
   }
 });
 addEventListener('wheel', e => {
@@ -69,4 +88,3 @@ export function inputDir() {
 }
 export const wantsRun = () => player.autoRun || controls.running || keys.has('ShiftLeft') || keys.has('ShiftRight');
 export function takeJump() { const j = controls.jumpPressed; controls.jumpPressed = false; return j; }
-export function takeAttack() { const a = player.sword.requested; player.sword.requested = false; return a; }

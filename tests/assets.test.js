@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assets } from './paths.js';
-import { SWORD } from '../src/core/combat.js';
+import { SLASH_CLIP } from '../src/core/combat.js';
 import { SPIDER, STUNDER } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
@@ -31,10 +31,10 @@ test('player is unarmed, retains both hand sockets and exports only its own clip
   assert.ok(!j.animations.some(a => /Spider|Stunder/.test(a.name)));
   const slash = j.animations.find(a => a.name === 'Slash');
   assert.ok(slash);
-  assert.ok(Math.abs(duration(slash) - SWORD.duration) < 1e-5);
+  assert.ok(Math.abs(duration(slash) - SLASH_CLIP.duration) < 1e-5);
   assert.equal(slash.extras.weapon_socket, 'hand.R');
-  assert.equal(slash.extras.active_start, SWORD.activeStart);
-  assert.equal(slash.extras.active_end, SWORD.activeEnd);
+  assert.equal(slash.extras.active_start, SLASH_CLIP.activeStart);
+  assert.equal(slash.extras.active_end, SLASH_CLIP.activeEnd);
   assert.equal(j.images?.length || 0, 0);
 });
 test('player climbing is a seamless in-place loop covering two ladder rungs', () => {

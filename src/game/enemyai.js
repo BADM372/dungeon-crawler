@@ -70,8 +70,17 @@ function act(e, dt) {
   e.path = findPath(e.f, spots[Math.floor(Math.random() * spots.length)], 6, cfg.height);
   e.mode = e.path ? 'walk' : 'idle'; e.t = 2;
 }
+// a blow's push, sliding along the floor graph and dying away quickly
+function knockback(e, dt) {
+  if (!e.kbx && !e.kbz) return;
+  stepEnemy(e, e.kbx * dt, e.kbz * dt);
+  const k = Math.exp(-dt * 10);
+  e.kbx *= k; e.kbz *= k;
+  if (Math.hypot(e.kbx, e.kbz) < 0.05) e.kbx = e.kbz = 0;
+}
 export function stepEnemies(list, dt) {
   for (const e of list) {
+    knockback(e, dt);
     if (e.mode === 'dead') { e.deadT += dt; continue; }
     e.cool = Math.max(0, e.cool - dt); e.hurtT = Math.max(0, e.hurtT - dt);
     if (e.stun > 0) { e.stun -= dt; e.speed = 0; continue; }

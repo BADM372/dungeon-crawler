@@ -4,6 +4,7 @@ import { N, CUBE_H, BASE } from '../core/constants.js';
 import { clamp } from '../core/util.js';
 import { camera } from '../render/scene.js';
 import { player, view } from './state.js';
+import { kick } from './juice.js';
 
 const pitch = THREE.MathUtils.degToRad(44);
 const cubeCenter = new THREE.Vector3(N / 2, CUBE_H / 2 - BASE - 1.5, N / 2);
@@ -18,6 +19,10 @@ export function updateCamera(dt) {
   const fovV = THREE.MathUtils.degToRad(camera.fov);
   const fovH = 2 * Math.atan(Math.tan(fovV / 2) * camera.aspect);
   const d = 12.5 / Math.sin(Math.min(fovV, fovH) / 2) * view.zoom;
+  // hit kicks shove the whole view a little and spring back (scaled with the view distance)
+  const decay = Math.exp(-dt * 16), s = d * 0.03;
+  kick.x *= decay; kick.y *= decay; kick.z *= decay;
+  target.x += kick.x * s; target.y += kick.y * s; target.z += kick.z * s;
   camera.position.set(
     target.x + Math.sin(view.yaw) * Math.cos(pitch) * d,
     target.y + Math.sin(pitch) * d,

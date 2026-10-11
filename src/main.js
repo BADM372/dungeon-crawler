@@ -21,7 +21,10 @@ import { applyLook } from './render/look.js';
 import { tickSky } from './render/sky.js';
 import { updatePlayerBar } from './render/playerbar.js';
 import { updateLoot } from './game/loot.js';
-import { tickPops } from './render/loot.js';
+import { tickFloatText } from './render/floattext.js';
+import { tickParticles } from './render/particles.js';
+import { timeScale } from './game/juice.js';
+import { updatePointer } from './game/pointer.js';
 import { depthOf } from './themes/depth.js';
 import './game/dev.js';
 import { updateSpiders, spiders } from './game/spiders.js';
@@ -32,7 +35,8 @@ import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 const clock = new THREE.Clock();
 
 function frame() {
-  const elapsed = Math.min(clock.getDelta(), 1 / 30), dt = state.inventoryOpen ? 0 : elapsed;
+  const elapsed = Math.min(clock.getDelta(), 1 / 30), dt = state.inventoryOpen ? 0 : elapsed * timeScale(elapsed);
+  updatePointer();   // the enemy under the cursor (with last frame's camera)
   state.time += dt;
   if (!state.inventoryOpen && travelling()) updateTravel(dt);
   else if (!state.inventoryOpen && state.map && !state.transitioning) { updatePlayer(dt); if (!state.transitioning) updateEnemies(dt); }
@@ -44,7 +48,8 @@ function frame() {
   tickFluidDeath(dt);
   drawTravelEnemies(dt);
   updateLoot(dt, state.time);
-  tickPops(dt);
+  tickFloatText(dt);
+  tickParticles(dt);
   tickNeighbors(dt);
   tickProps(state.time);
   if (state.world) animateWorld(state.world, dt, state.time);

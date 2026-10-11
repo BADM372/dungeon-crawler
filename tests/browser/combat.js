@@ -18,6 +18,8 @@ import { scene } from '../../src/render/scene.js';
 import { stunderModel } from '../../src/render/stundermodel.js';
 import { spiderModel } from '../../src/render/spidermodel.js';
 import { startTravel, travelling, updateTravel, drawTravelEnemies } from '../../src/game/travel.js';
+import { camera } from '../../src/render/scene.js';
+import { updatePointer, hoveredEnemy } from '../../src/game/pointer.js';
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -72,6 +74,18 @@ function tick(n, freeze = true) {
   scene.updateMatrixWorld(true);
   return maxY;
 }
+// hover the cursor over enemy e and click it once (a real pointer event sequence)
+function clickOn(e) {
+  const canvas = document.querySelector('canvas');
+  scene.updateMatrixWorld(true); camera.updateMatrixWorld();
+  const v = new THREE.Vector3(e.x, e.y + e.profile.bodyHeight / 2, e.z).project(camera);
+  const at = { clientX: (v.x + 1) / 2 * innerWidth, clientY: (1 - v.y) / 2 * innerHeight, button: 0, bubbles: true };
+  canvas.dispatchEvent(new PointerEvent('pointermove', at)); updatePointer();
+  check(hoveredEnemy() === e, 'The cursor must hover the enemy');
+  canvas.dispatchEvent(new PointerEvent('pointerdown', at));
+  dispatchEvent(new PointerEvent('pointerup', at));
+  canvas.dispatchEvent(new PointerEvent('pointerleave', at)); updatePointer();
+}
 function bones(e) {
   const out = [];
   e.view.model.traverse(o => { if (o.isBone) out.push(...o.position.toArray(), ...o.quaternion.toArray()); });
@@ -125,13 +139,13 @@ export async function runCombatChecks() {
 
       hero(); place(stunder, 6.5, 7.4);
       for (let i = 0; i < 4; i++) {
-        if (i === 0) document.querySelector('canvas').dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }));
+        if (i === 0) clickOn(stunder);
         else press('KeyF');
         tick(75);
         check(stunder.hp === 90 - i * 30, 'Stunder should take exactly one hit per swing');
       }
       check(stunder.mode === 'dead' && stunder.view.actions.death.getEffectiveWeight() === 1, 'Stunder must play its real death clip');
-      results.push('left-click slash / Stunder survives 3 hits, dies on 4');
+      results.push('click on enemy attacks it / Stunder survives 3 hits, dies on 4');
 
       tick(260);
       check(!allEnemies().includes(spider) && !allEnemies().includes(stunder), 'Finished corpses must leave the population');

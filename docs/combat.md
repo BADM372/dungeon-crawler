@@ -1,13 +1,27 @@
 # Sword combat and Stunder
 
-- **F / left-click:** one planted sword slash. **Space:** movement-only jump.
-- Blade hits occur during Slash frames 15–21 (30 fps), in a forward arc,
-  within blade reach and vertical overlap, with slab / prop line-of-sight.
-  Each target can be hit once per swing. No contact / landing / stomp damage.
+- **Mouse (Diablo style):** click the floor to walk there (pathing over the floor
+  graph, to the closest reachable floor if the spot cannot be reached), click an enemy
+  to walk up and swing at it. Holding the button keeps following the cursor / keeps
+  attacking. **Shift+click** and **F** swing towards the cursor without moving. WASD
+  still moves and cancels any mouse order. The character only turns when you click
+  (or move), never just from hovering. **Space:** movement-only jump.
+- A swing is fast and buffered (`core/combat.js`, `game/sword.js`): the blade connects
+  0.16–0.27 s after it starts; from 0.3 s moving cuts the recovery short; from 0.42 s
+  a queued click chains into the next swing (clicks are kept for 0.3 s). Heavier
+  swords scale these times. The Slash clip (frames 15–21 are its contact) is retimed
+  to fit (`swingClipTime`). During the wind-up the player steps in towards an enemy
+  that is just out of reach.
+- Blade hits land in a forward arc, within blade reach and vertical overlap, with
+  slab / prop line-of-sight. Each target can be hit once per swing. No contact /
+  landing / stomp damage.
+- Hit feedback (`game/juice.js`): a short hit pause, a camera nudge, sparks and
+  ichor, a knockback, a damage number and generated sounds (`audio/sfx.js`, M mutes).
+  Spider bites are a short flinch; a Stunder ram or a lethal bite knocks you over.
 - Swimming, ladder climbing, stun, knockdown and travel cancel / block slashes.
 - The basic sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
   Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
-  head-down ram. Player/enemy levels and alternative weapons scale these numbers;
+  head-down ram. The enemy under the cursor is highlighted and shows its health. Player/enemy levels and alternative weapons scale these numbers;
   see [progression.md](progression.md). Inventory (`I`) pauses simulation and input.
 - Every cube/level has a separate seeded 0–2 Stunder draw. Spawn sites must be
   dry, clear for its 2.8-cell height, linked to walkable floors, at least four
@@ -72,7 +86,7 @@ in the browser console:
 
 ```js
 const checks = await import('./tests/browser/combat.js');
-await checks.runCombatChecks(); // real input, controller, damage, GLB poses, cleanup
+await checks.runCombatChecks(); // real input (click on an enemy, F), controller, damage, GLB poses, cleanup
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
 const water = await import('./tests/browser/water.js');

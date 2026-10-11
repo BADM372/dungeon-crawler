@@ -1,14 +1,24 @@
 // Pure sword rules. Jumping / body contact never call damageEnemy.
-// Timings match character.glb's Slash (32 frames at 30 fps).
+// A swing is a quick wind-up, a short contact window and a recovery that a new swing
+// (chaining) or movement can cut short. The Slash clip in character.glb is retimed to fit
+// (swingClipTime): its own frames are SLASH_CLIP.
 import { BASIC_SWORD, ITEMS } from './items.js';
 import { equippedItem } from './inventory.js';
 import { damageBonus } from './progression.js';
 
+export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
+// game time (s) for the basic sword; cooldown is the reference that weapon speeds scale by
 export const SWORD = Object.freeze({
   damage: 30, range: 0.85, arc: Math.PI * 0.42,
-  duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30, cooldown: 1.12,
+  activeStart: 0.16, activeEnd: 0.27,   // the blade connects ~0.16 s after the click
+  moveCancel: 0.3, chain: 0.42,         // walk out of the recovery / swing again from here
+  duration: 0.62, cooldown: 1.12,
 });
-export const swordState = () => ({ active: false, requested: false, t: 0, cool: 0, serial: 0, yaw: 0, stats: null, hits: new Set() });
+const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
+// requested: an attack is queued (buffer: for how much longer); target: what it aims at
+// (an enemy, a point {x, z} or null for straight ahead)
+export const swordState = () => ({ active: false, requested: false, buffer: 0, target: null,
+  t: 0, cool: 0, serial: 0, yaw: 0, stats: null, hits: new Set() });
 export const equippedWeapon = p => p.inventory ? ITEMS[equippedItem(p.inventory)?.itemId] || null : BASIC_SWORD;
 export const canChangeWeapon = p => !p.sword.active && !p.ragdoll && !p.climb && !p.swimming && p.stun <= 0 && p.hp > 0;
 export function combatStats(p) {
@@ -16,23 +26,36 @@ export function combatStats(p) {
   if (!weapon) return null;
   const speed = weapon.cooldown / SWORD.cooldown;
   return { ...SWORD, ...weapon, damage: weapon.damage + damageBonus(p.level || 1),
-    duration: SWORD.duration * speed, activeStart: SWORD.activeStart * speed, activeEnd: SWORD.activeEnd * speed };
+    ...Object.fromEntries(TIMES.map(k => [k, SWORD[k] * speed])) };
+}
+
+// the Slash clip's time for swing time t: wind-up, contact and recovery are each mapped
+// onto the clip's own parts, so the blade connects on the clip's contact frames
+export function swingClipTime(stats, t) {
+  const C = SLASH_CLIP, s = stats || SWORD;
+  const seg = (t0, t1, c0, c1) => c0 + (c1 - c0) * Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+  if (t < s.activeStart) return seg(0, s.activeStart, 0, C.activeStart);
+  if (t < s.activeEnd) return seg(s.activeStart, s.activeEnd, C.activeStart, C.activeEnd);
+  return seg(s.activeEnd, s.duration, C.activeEnd, C.duration);
 }
 
 export function cancelSwing(p, resetCooldown = false) {
   p.sword.active = false;
-  p.sword.requested = false;
+  p.sword.requested = false; p.sword.buffer = 0;
   p.sword.hits.clear();
   if (resetCooldown) p.sword.cool = 0;
 }
-export function startSwing(p) {
+// a new swing may start when idle, or once the current one reaches its chain point (cool)
+export function startSwing(p, yaw = p.yaw) {
   const s = p.sword, stats = combatStats(p);
-  if (!stats || s.active || s.cool > 0 || p.ragdoll || p.swimming || p.climb || p.stun > 0 || p.hp <= 0) return false;
+  if (!stats || s.cool > 0 || p.ragdoll || p.swimming || p.climb || p.stun > 0 || p.hp <= 0) return false;
   // Snapshot this swing: a level-up or later equipment change cannot alter a hit midway.
-  Object.assign(s, { active: true, t: 0, cool: stats.cooldown, yaw: p.yaw, serial: s.serial + 1, stats });
+  Object.assign(s, { active: true, t: 0, cool: stats.chain, yaw, serial: s.serial + 1, stats });
   s.hits.clear();
   return true;
 }
+// movement may cut the swing short once the blade has gone through
+export const canMoveCancel = p => p.sword.active && p.sword.t >= (p.sword.stats || SWORD).moveCancel;
 export function advanceSwing(p, dt) {
   const s = p.sword;
   s.cool = Math.max(0, s.cool - dt);

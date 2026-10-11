@@ -8,8 +8,10 @@ import { cellAt, insideSolid } from './collide.js';
 import { containsXZ } from '../core/blockers.js';
 
 const free = new WeakMap();
-export function walkable(f, height = 0.9) {
-  if (!f || f.kind || f.landing || f.fluid || f.covered || state.map.blockers?.[f.c]?.length) return false;
+// enemies keep off stair landings and any cell with a prop in it; for the player (click to
+// move, game/orders.js) only the floor and its headroom count, props are checked there
+export function walkable(f, height = 0.9, player = false) {
+  if (!f || f.kind || f.fluid || f.covered || (!player && (f.landing || state.map.blockers?.[f.c]?.length))) return false;
   let byHeight = free.get(f);
   if (!byHeight) { byHeight = new Map(); free.set(f, byHeight); }
   if (!byHeight.has(height)) {
@@ -26,15 +28,16 @@ export function walkable(f, height = 0.9) {
   return byHeight.get(height);
 }
 const dirOf = (dx, dz) => DIRS.findIndex(([x, z]) => x === dx && z === dz);
-function via(f, d, height) {
+// ok: which floors may be entered (default: walkable for this height)
+function via(f, d, height, ok) {
   const g = f.link[d];
-  if (!walkable(g, height)) return null;
+  if (!(ok ? ok(g) : walkable(g, height))) return null;
   const lo = Math.min(groundY(f, f.x + 0.5, f.z + 0.5), groundY(g, g.x + 0.5, g.z + 0.5));
   const fence = state.map.fences?.get(edgeKey(f.x, f.z, g.x, g.z));
   if (fence?.some(e => e.ymax > lo && e.ymin < lo + height)) return null;
   return g;
 }
-export const neighbors = (f, height = 0.9) => [0, 1, 2, 3].map(d => via(f, d, height)).filter(Boolean);
+export const neighbors = (f, height = 0.9, ok) => [0, 1, 2, 3].map(d => via(f, d, height, ok)).filter(Boolean);
 export function floorAt(f, x, z, height = 0.9) {
   const c = cellAt(x, z);
   if (c < 0) return null;

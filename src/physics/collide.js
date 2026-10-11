@@ -78,6 +78,22 @@ export function insideSolid(x, z, y) {
   return false;
 }
 
+// the walkable top of the floor or structure whose solid contains (x, y, z): { h, s }, or
+// null. Props do not count. Clicks on the ground and on cliff faces resolve to the top.
+export function solidTop(x, z, y) {
+  const i = cellAt(x, z);
+  if (i < 0) return null;
+  const [fx, fz] = local(x, z);
+  let top = null;
+  for (const f of state.map.cols[i]) { const t = floorY(f, fx, fz); if (t > y && f.bottom * LH < y) top = { h: t, s: f }; }
+  for (const p of state.map.pieces[i]) {
+    if (p.kind === 'pillar') continue;
+    const t = runY(p, fx, fz);
+    if (t > y && pieceBottom(p, t) < y) top = { h: t, s: p };
+  }
+  return top;
+}
+
 // surface gradient of a floor or piece at (x,z)
 export function slopeAt(s, x, z) {
   if (!s) return [0, 0];

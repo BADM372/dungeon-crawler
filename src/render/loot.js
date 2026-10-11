@@ -5,7 +5,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ITEMS } from '../core/items.js';
-import { scene } from './scene.js';
 import { player } from '../game/state.js';
 
 const loader = new GLTFLoader(), protos = new Map();   // itemId -> prototype (null while loading)
@@ -81,29 +80,4 @@ export function drawLoot(list, world, time) {
     o.scale.setScalar(scale);
   }
   for (const [id, o] of views) if (!seen.has(id)) { o.removeFromParent(); views.delete(id); }
-}
-
-// "+12c" rising from the player for a moment
-const pops = [];
-export function popText(text) {
-  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 48;
-  const ctx = canvas.getContext('2d');
-  ctx.font = 'bold 30px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.lineWidth = 6; ctx.strokeStyle = '#171c25'; ctx.strokeText(text, 128, 24);
-  ctx.fillStyle = '#ffd56a'; ctx.fillText(text, 128, 24);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false, depthWrite: false }));
-  sprite.scale.set(1.3, 0.244, 1); sprite.renderOrder = 1300;
-  scene.add(sprite);
-  pops.push({ sprite, t: 0 });
-}
-export function tickPops(dt) {
-  for (let i = pops.length - 1; i >= 0; i--) {
-    const p = pops[i];
-    p.t += dt;
-    p.sprite.position.set(player.x, player.visY + 1.55 + p.t * 0.6, player.z);
-    p.sprite.material.opacity = Math.min(1, (1.2 - p.t) / 0.4);
-    if (p.t < 1.2) continue;
-    scene.remove(p.sprite); p.sprite.material.map.dispose(); p.sprite.material.dispose();
-    pops.splice(i, 1);
-  }
 }

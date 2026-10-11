@@ -1,14 +1,38 @@
 // Sword input/timing and geometry-gated damage. Jumping is never an attack.
+// Attacks are queued with a target (an enemy, a point, or null for straight ahead) and stay
+// queued for a moment, so a click during a swing chains into the next one.
 import { player, state, setStatus } from './state.js';
 import { startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
+import { enemyHitFx, swingFx } from './juice.js';
 
-export function updateSword(dt, pressed) {
+const BUFFER = 0.3;   // s a queued attack waits for the current swing to allow the next
+
+export function queueAttack(target = null) {
+  const s = player.sword;
+  s.requested = true; s.buffer = BUFFER; s.target = target;
+}
+
+function aimYaw(target) {
+  if (!target) return player.yaw;
+  const dx = target.x - player.x, dz = target.z - player.z;
+  return Math.hypot(dx, dz) > 0.05 ? Math.atan2(dx, dz) : player.yaw;
+}
+
+export function updateSword(dt) {
   if (state.inventoryOpen) return;
   if (state.transitioning) { cancelSwing(player); return; }
   advanceSwing(player, dt);
-  if (pressed && startSwing(player)) setStatus('Sword slash');
+  const s = player.sword;
+  if (!s.requested) return;
+  if ((s.buffer -= dt) < 0) { s.requested = false; return; }
+  const target = s.target;
+  if (!startSwing(player, aimYaw(target))) return;
+  s.requested = false; s.target = target;
+  setStatus('Sword slash');
+  swingFx();
 }
+
 export function hitWithSword(list) {
   const p = player;
   if (state.inventoryOpen || state.transitioning || p.ragdoll || p.stun > 0 || p.hp <= 0) return;
@@ -16,7 +40,13 @@ export function hitWithSword(list) {
     if (!inSwordArc(p, e)) continue;
     const y = Math.max(e.y + 0.1, Math.min(p.y + 0.4, e.y + e.profile.bodyHeight - 0.05));
     if (!clearLine(p.x, p.y + 0.4, p.z, e.x, y, e.z)) continue;
-    if (swordHit(p, e) && e.hp) setStatus(`Slashed Lv ${e.level} ${e.profile.label} (${e.hp}/${e.profile.hp})`);
+    const before = e.hp;
+    if (!swordHit(p, e)) continue;
+    // knocked back along the blow, heavier bodies less
+    const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1, push = (e.hp ? 2.6 : 3.6) / e.profile.mass;
+    e.kbx = dx / l * push; e.kbz = dz / l * push;
+    enemyHitFx(e, before - e.hp, !e.hp, dx, dz);
+    if (e.hp) setStatus(`Slashed Lv ${e.level} ${e.profile.label} (${e.hp}/${e.profile.hp})`);
   }
 }
 export const cancelSword = (resetCooldown = false) => cancelSwing(player, resetCooldown);

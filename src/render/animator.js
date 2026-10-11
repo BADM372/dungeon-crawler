@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { clamp } from '../core/util.js';
 import { DIRS } from '../core/constants.js';
 import { player } from '../game/state.js';
-import { SWORD } from '../core/combat.js';
+import { SWORD, swingClipTime } from '../core/combat.js';
 import { character } from './character.js';
 import { applyRagdollPose } from './ragdollpose.js';
 import { stretchStride } from './stride.js';
@@ -43,7 +43,7 @@ export function animateCharacter(dt, time) {
   // Ladder motion is driven separately by signed vertical speed in the blend tree.
   const speed = Math.hypot(p.vx, p.vz);
   let yaw = p.yaw;
-  if (p.sword.active) yaw = p.sword.yaw;
+  if (p.sword.active) yaw = angleTo(yaw, p.sword.yaw, Math.min(1, dt * 30));   // snap round into the swing
   else if (p.climb) { const [dx, dz] = DIRS[p.climb.l.d]; yaw = angleTo(yaw, Math.atan2(dx, dz), Math.min(1, dt * 12)); }
   else if (speed > 0.2 && p.stun <= 0) yaw = angleTo(yaw, Math.atan2(p.vx, p.vz), Math.min(1, dt * (p.swimming ? 5 : 12)));
   p.yaw = yaw;
@@ -53,10 +53,10 @@ export function animateCharacter(dt, time) {
 
   updateBlend(dt, speed, time);
   const slash = ch.actions.slash, duration = (p.sword.stats || SWORD).duration;
-  const target = p.sword.active ? Math.min(1, p.sword.t / 0.08, (duration - p.sword.t) / 0.12) : 0;
+  const target = p.sword.active ? Math.min(1, p.sword.t / 0.04, (duration - p.sword.t) / 0.12) : 0;
   ch.swordWeight += (Math.max(0, target) - ch.swordWeight) * Math.min(1, dt * 22);
   for (const n in W) ch.actions[n].setEffectiveWeight(W[n] * (1 - ch.swordWeight));
-  slash.time = Math.min(p.sword.t / duration, 1) * slash.getClip().duration; slash.setEffectiveWeight(ch.swordWeight);
+  slash.time = swingClipTime(p.sword.stats, p.sword.t); slash.setEffectiveWeight(ch.swordWeight);
   if (ch.sword) ch.sword.visible = !p.swimming && !p.climb;
   ch.mixer.update(0);
   stretchStride(blend.stretch, (W.walk + W.run) * (1 - ch.swordWeight));

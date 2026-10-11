@@ -9,7 +9,7 @@ import { player } from '../game/state.js';
 import { makeBar, makeLevelLabel } from './bars.js';
 
 const prefabs = { spider: spiderModel, stunder: stunderModel };
-const white = new THREE.Color(0xffffff), inverseYaw = new THREE.Quaternion();
+const white = new THREE.Color(0xffffff), hover = new THREE.Color(0xffd9a0), inverseYaw = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 const angleTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
 
@@ -76,8 +76,8 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
       A[name].setEffectiveWeight(v.weights[name]);
     }
     const flash = Math.min(0.6, e.hurtT / 0.22 * 0.6);
-    for (const { material, color } of v.materials) material.color.copy(color).lerp(white, flash);
-    v.bar.visible = e.hp < e.profile.hp;
+    for (const { material, color } of v.materials) material.color.copy(color).lerp(flash > 0.1 || !e.hovered ? white : hover, Math.max(flash, e.hovered ? 0.22 : 0));
+    v.bar.visible = e.hp < e.profile.hp || !!e.hovered;
     v.label.visible = v.bar.visible || Math.hypot(e.x - player.x, e.z - player.z) < e.profile.aggro + 1;
     inverseYaw.setFromAxisAngle(up, -v.yaw);
     v.bar.quaternion.copy(inverseYaw).multiply(camera.quaternion);

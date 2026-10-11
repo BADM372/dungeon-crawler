@@ -7,7 +7,9 @@ import { addItem, formatCoins } from '../core/inventory.js';
 import { ITEMS } from '../core/items.js';
 import { groundAt } from '../physics/collide.js';
 import { inFluid } from '../physics/fluid.js';
-import { drawLoot, popText } from '../render/loot.js';
+import { drawLoot } from '../render/loot.js';
+import { floatText } from '../render/floattext.js';
+import { sfx } from '../audio/sfx.js';
 
 export const TOSS_TIME = 0.55;   // the arc out of the body
 let nextId = 1, collectRequested = false;
@@ -45,8 +47,8 @@ function credit(p) {
   if (!addItem(player.inventory, p.itemId, p.count)) return false;
   gained ||= { copper: 0, items: new Map() };
   const def = ITEMS[p.itemId];
-  if (def.category === 'currency') gained.copper += def.value * p.count;
-  else gained.items.set(def.name, (gained.items.get(def.name) || 0) + p.count);
+  if (def.category === 'currency') { gained.copper += def.value * p.count; sfx('coin', { pitch: def.value >= 1000 ? 0.8 : def.value >= 10 ? 0.9 : 1 }); }
+  else { gained.items.set(def.name, (gained.items.get(def.name) || 0) + p.count); sfx('pickup'); }
   quiet = 0;
   return true;
 }
@@ -54,7 +56,7 @@ function credit(p) {
 function announce(dt) {
   if (!gained || (quiet += dt) < 0.25) return;
   const parts = [...gained.copper ? ['+' + formatCoins(gained.copper)] : [], ...[...gained.items].map(([n, c]) => `+${c} ${n}`)];
-  popText(parts.join('  '));
+  floatText(parts.join('  '), q => q.set(player.x, player.visY + 1.55, player.z), { life: 1.2 });
   setStatus('Picked up ' + parts.join(', ').replace(/\+/g, ''));
   gained = null;
 }
