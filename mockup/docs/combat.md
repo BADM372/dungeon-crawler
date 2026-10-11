@@ -19,6 +19,15 @@
   release their skeletons, mixers and instance materials. Portals detach /
   slide / dispose both species, rather than leaving enemies in the old cube.
 
+## Water and falls
+
+- Walking/running stops at water-facing edges; jumps and airborne falls can still
+  enter water. Bridges and dry floors above water remain walkable.
+- Entering water is fatal: the player ragdolls, then respawns at the cube entry
+  with full health. Existing ragdolls can drown too.
+- Falling through a cube into water preserves the landing position, but records
+  a nearby dry entry so death does not cause a drowning/respawn loop.
+
 ## Development
 
 Run the mockup and its tests from any checkout:
@@ -58,6 +67,8 @@ const checks = await import('./tests/browser-checks.js');
 await checks.runCombatChecks(); // real input, controller, damage, GLB poses, cleanup
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
+const water = await import('./tests/water-browser-checks.js');
+await water.runWaterChecks(); // edge guard, jumps/high falls, ragdolls, dry respawn
 const inventory = await import('./tests/inventory-browser-checks.js');
 await inventory.runInventoryChecks(); // resets the run; UI, equipment, rewards, revisits
 ```

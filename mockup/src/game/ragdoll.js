@@ -2,6 +2,7 @@
 // either gets up where the body lies or respawns.
 import { Ragdoll } from '../physics/ragdoll.js';
 import { groundAt } from '../physics/collide.js';
+import { inWater } from '../physics/water.js';
 import { character } from '../render/character.js';
 import { beginRagdoll } from '../render/ragdollpose.js';
 import { characterYaw } from '../render/animator.js';
@@ -27,10 +28,20 @@ export function knockDown({ damage = 0, reason = '', respawn = null, push = 0, h
   player.ragdollThen = respawn;
 }
 
+// Drowning is fatal, including when an existing ragdoll tumbles into water.
+export function drown() {
+  if (player.hp <= 0) return;
+  player.swimming = false; player.fluid = 0;
+  if (!player.ragdoll) { knockDown({ damage: player.hp, reason: 'Drowned!' }); return; }
+  takeDamage(player, player.hp, state.time);
+  flash(); setStatus('Drowned!');
+}
+
 export function stepRagdoll(dt) {
   const r = player.ragdoll, pel = r.p[0];
   r.step(dt);
   player.x = pel[0]; player.z = pel[2]; player.y = pel[1] - 0.35;
+  if (inWater(groundAt(player.x, player.z, player.y, 0), player.y)) drown();
   if (pel[1] < -3) r.done = true;
   if (!r.done) return;
   player.ragdoll = null;

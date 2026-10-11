@@ -1,14 +1,16 @@
-// Fluids (swim / burn), waterfalls, health regeneration and the respawn point.
+// Fluids (drown / burn), waterfalls, health regeneration and the respawn point.
 import { LH, LAVA, ACID, DIRS } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
 import { takeDamage, regenerate } from '../core/progression.js';
 import { player, state } from '../game/state.js';
 import { hurt } from '../game/flow.js';
-import { knockDown } from '../game/ragdoll.js';
+import { knockDown, drown } from '../game/ragdoll.js';
+import { inWater } from './water.js';
 import { startFall } from '../game/fall.js';
 
 // returns false when the player got respawned
 function fluids(dt, gr) {
+  if (inWater(gr, player.y)) { drown(); return false; }
   const fl = gr.s && !gr.s.kind && gr.s.fluid ? gr.s : null;
   const wasSwimming = player.swimming;
   player.swimming = false; player.fluid = 0;
@@ -23,7 +25,7 @@ function fluids(dt, gr) {
     takeDamage(player, 30 * dt, state.time);
     if (!state.statusMsg) state.statusMsg = 'Acid burns! Get out!';
     if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
-  } else if (!state.statusMsg) state.statusMsg = 'Swimming - find a low bank to climb out';
+  }
   return true;
 }
 
