@@ -59,9 +59,9 @@ function spawnPad(p) {
 }
 
 // seen: portal id -> leads somewhere explored
-export function buildMarkers(m, group, showPath, seen = {}) {
+export function buildMarkers(m, group, showPath, seen = {}, open = []) {
   STONE = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });
-  const portalFx = m.portals.map(p => {
+  const portalFx = m.portals.filter(p => p.kind !== 'side' || !open[p.dir]).map(p => {
     const col = COLORS[seen[p.id] ? 'seen' : 'new'];
     const fx = p.kind === 'side' ? gate(p, col) : p.kind === 'down' ? well(p, col) : p.kind === 'up' ? ring(p, col) : spawnPad(p);
     fx.obj.userData.portal = p;   // dev tools: click to take it

@@ -10,7 +10,7 @@ import { addGhosts } from './ghosts.js';
 import { buildMarkers } from './markers.js';
 import { adoptLights, releaseLights } from './lightpool.js';
 import { makeFadable } from './fade.js';
-import { makeGlass } from './glass.js';
+import { makeGlass, setGlassFaces } from './glass.js';
 import { buildProps } from './props.js';
 import { placeProps } from './propplace.js';
 import { themeAt } from '../world/depth.js';
@@ -23,22 +23,32 @@ export function disposeWorld(world) {
 }
 
 // geo: the cube's geometry arrays (from the worker); built here if missing
-export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m)) {
+export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = []) {
   const group = new THREE.Group();
   const fluidMeshes = layerMeshes(geo, group);
   const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
-  const markers = buildMarkers(m, group, showPath, seen);
+  const markers = buildMarkers(m, group, showPath, seen, open);
   // decoration (also sets the colliders of blocking props on the map)
   const placed = placeProps(m, themeAt(m.depth ?? 0));
   m.blockers = placed.blockers.map((list, i) => [...(m.staticBlockers?.[i] || []), ...list]);
   buildProps(placed.out, group);
   addGhosts(group);
-  group.add(makeGlass());
+  const glass = makeGlass(1, open);
+  group.add(glass);
   adoptLights(group);
   makeFadable(group);
   scene.add(group);
-  return { group, fluidMeshes, splashes, lights, ...markers };
+  return { group, glass, fluidMeshes, splashes, lights, ...markers };
+}
+
+// The departing cube is already built when its first side connection opens.
+export function setWorldOpenFaces(world, open) {
+  setGlassFaces(world.glass, open);
+  for (const fx of world.portalFx) {
+    const p = fx.obj.userData.portal;
+    if (p.kind === 'side' && open[p.dir]) fx.obj.visible = false;
+  }
 }
 
 // per-frame animation of fluids, waterfalls, lights and the portal

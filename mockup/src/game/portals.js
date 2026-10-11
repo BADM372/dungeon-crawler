@@ -1,5 +1,6 @@
 // Stepping into a portal: through the face for side portals, onto the centre of a well or ring.
 import { N } from '../core/constants.js';
+import { isFaceOpen, approachingFace, faceDistance } from '../core/boundaries.js';
 import { player, state } from './state.js';
 import { startTravel } from './travel.js';
 
@@ -13,9 +14,14 @@ function inside(q) {
   return Math.abs(along) < 1.5 && out > -0.4;
 }
 
-export function checkPortals() {
+export function checkPortals(dx = 0, dz = 0) {
+  if (state.boundaryLock >= 0 && faceDistance(player, state.boundaryLock) > player.r + 0.25) state.boundaryLock = -1;
   for (const q of state.map.portals) {
     if (q.kind === 'spawn') continue;
+    if (q.kind === 'side' && isFaceOpen(state.openedFaces, state.cubeKey, q.dir)) {
+      if (state.boundaryLock !== q.dir && approachingFace(player, q.dir, dx, dz)) { startTravel(q); return true; }
+      continue;
+    }
     const at = inside(q);
     if (state.portalLock === q.id) { if (!at) state.portalLock = 0; continue; }
     if (at) { startTravel(q); return true; }

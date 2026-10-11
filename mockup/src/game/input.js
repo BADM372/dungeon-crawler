@@ -61,6 +61,6 @@ export function inputDir() {
   const y = view.yaw;
   return [Math.cos(y) * ix - Math.sin(y) * iy, -Math.sin(y) * ix - Math.cos(y) * iy];
 }
-export const wantsRun = () => player.autoRun || controls.running;
+export const wantsRun = () => player.autoRun || controls.running || keys.has('ShiftLeft') || keys.has('ShiftRight');
 export function takeJump() { const j = controls.jumpPressed; controls.jumpPressed = false; return j; }
 export function takeAttack() { const a = player.sword.requested; player.sword.requested = false; return a; }

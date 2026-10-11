@@ -11,7 +11,7 @@ import { makeGlass } from './glass.js';
 
 let current = [];   // [{ key, group, base }]
 
-function proxy(geo) {
+function proxy(geo, open) {
   const g = new THREE.Group(), solids = [], fluids = [];
   const solid = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0x5f6672 });
   const fluid = new THREE.MeshLambertMaterial({ color: 0x2e6aa8, transparent: true, opacity: 0.6, depthWrite: false });
@@ -22,18 +22,19 @@ function proxy(geo) {
   if (solids.length) g.add(new THREE.Mesh(mergeGeometries(solids), solid));
   if (fluids.length) g.add(new THREE.Mesh(mergeGeometries(fluids), fluid));
   solids.forEach(s => s.dispose()); fluids.forEach(f => f.dispose());
-  g.add(makeGlass(0.6));
-  return g;
+  const glass = makeGlass(0.6, open);
+  g.add(glass);
+  return { group: g, glass };
 }
 
-// list: [{ key, geo, dx, dz }] -> proxies, faded out (fade them in with setFade / tickNeighbors)
+// list: [{ key, geo, dx, dz, open }] -> proxies, faded out (fade them in with setFade / tickNeighbors)
 export function buildNeighbors(list) {
-  return list.map(({ key, geo, dx, dz }) => {
-    const group = proxy(geo), base = new THREE.Vector3(dx * N, 0, dz * N);
+  return list.map(({ key, geo, dx, dz, open }) => {
+    const { group, glass } = proxy(geo, open), base = new THREE.Vector3(dx * N, 0, dz * N);
     group.position.copy(base);
     makeFadable(group, 0);
     scene.add(group);
-    return { key, group, base };
+    return { key, group, base, glass };
   });
 }
 

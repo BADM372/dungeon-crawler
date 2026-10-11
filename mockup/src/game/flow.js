@@ -1,6 +1,7 @@
 // Level flow: the world of cubes, entering a cube, travelling through portals, spawning and
 // taking damage.
 import { DIRS } from '../core/constants.js';
+import { isFaceOpen, openedSides } from '../core/boundaries.js';
 import { showNeighbors } from '../render/neighbors.js';
 import { WorldClient } from '../world/client.js';
 import { step } from '../world/coords.js';
@@ -60,11 +61,12 @@ export function enterCube(c, from = null) {
   c.visits++;
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo);
+  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k));
   resetEnemies();
   const p = c.map.portals.find(q => from === null ? q.kind === 'spawn' : q.dir === from);
   state.arrival = arrivalPoint(p);
-  state.portalLock = p.id;   // released once you step off the portal you came through
+  state.portalLock = isFaceOpen(state.openedFaces, k, p.dir) ? 0 : p.id;
+  state.boundaryLock = p.kind === 'side' ? p.dir : -1;
   const hp = player.hp;
   spawnAt(state.arrival.x, state.arrival.y, state.arrival.z);
   player.hp = hp;
@@ -86,7 +88,7 @@ export function settleIn(neighbors = true) {
 export function visitedNeighbors(k) {
   if (!state.showNeighbors) return [];
   return [0, 1, 2, 3].map(d => ({ c: state.cubes.cubes.get(step(k, d)), dx: DIRS[d][0], dz: DIRS[d][1] }))
-    .filter(n => n.c?.visits).map(n => ({ key: n.c.key, geo: n.c.geo, dx: n.dx, dz: n.dz }));
+    .filter(n => n.c?.visits).map(n => ({ key: n.c.key, geo: n.c.geo, dx: n.dx, dz: n.dz, open: openedSides(state.openedFaces, n.c.key) }));
 }
 
 export function updateNeighbors() { showNeighbors(visitedNeighbors(state.cubeKey)); }
@@ -96,7 +98,7 @@ whenPropsReady(() => {
   if (!state.world || state.transitioning) return;
   const c = state.cubes.cubes.get(state.cubeKey);
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo);
+  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey));
   // Props add blockers after a late load. Re-select safe, seeded spawn sites.
   cancelSword(); resetEnemies();
 });
@@ -104,6 +106,7 @@ whenPropsReady(() => {
 export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.cubes?.dispose();
   state.cubes = new WorldClient(seed, { arche: state.dev && new URLSearchParams(location.search).get('arche') });
+  state.openedFaces.clear(); state.boundaryLock = -1;
   state.transitioning = true;
   cancelSword(true);
   clearInput();

@@ -4,6 +4,7 @@
 import { KIND_COLOR } from '../world/tiles.js';
 import { key, parse, step } from '../world/coords.js';
 import { state } from './state.js';
+import { isFaceOpen } from '../core/boundaries.js';
 
 const R = 3, CELL = 24, PAD = 6, SIZE = (2 * R + 1) * CELL + PAD * 2;
 const canvas = Object.assign(document.createElement('canvas'), { id: 'minimap', width: SIZE, height: SIZE + 14 });
@@ -34,9 +35,16 @@ export function drawMinimap() {
       if (!f) continue;
       if (f.river) { const [x, y] = edgePt(px, pz, d, (f.river.pos + f.river.w / 2) / 16); g.fillStyle = '#2e86de'; g.fillRect(x - 2, y - 2, 4, 4); }
       if (f.portal) {
-        const [x, y] = edgePt(px, pz, d, (f.portal.pos + 0.5) / 16);
-        g.fillStyle = visited(step(k, d)) ? '#5fd3ff' : '#ffc94a';
-        g.fillRect(x - 3, y - 3, 6, 6);
+        if (isFaceOpen(state.openedFaces, k, d)) {
+          const [x, y] = edgePt(px, pz, d, 0.5);
+          g.fillStyle = '#70d6aa';
+          if (d < 2) g.fillRect(x - 1, y - CELL / 2 + 3, 2, CELL - 6);
+          else g.fillRect(x - CELL / 2 + 3, y - 1, CELL - 6, 2);
+        } else {
+          const [x, y] = edgePt(px, pz, d, (f.portal.pos + 0.5) / 16);
+          g.fillStyle = visited(step(k, d)) ? '#5fd3ff' : '#ffc94a';
+          g.fillRect(x - 3, y - 3, 6, 6);
+        }
       }
     }
     for (const d of [4, 5]) if (t.faces[d]?.portal)

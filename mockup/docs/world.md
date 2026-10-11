@@ -338,13 +338,42 @@ The new cube is active from the first frame. The player moves in its coordinates
 slide offset, so when the slide ends the offset is zero and nothing jumps. The section cut
 is off during the slide.
 
+### Opened side connections
+
+The first successful crossing of a side portal opens its shared face for the current
+world. Opening is tracked explicitly by `faceKey`, not inferred from visits: visiting
+both cubes via another route does not open the connection. Both gates and both copies
+of the dividing glass pane disappear; cube outlines remain. Re-entry, mesh rebuilds
+and low-detail proxies use the same opened-face state.
+
+An opened side face triggers the same cube slide wherever the player approaches it,
+regardless of the original portal's position or layer. The arrival preserves the
+position along the face, height and motion, with the body placed a little inside the
+next cube. Destination solids still block passage. A boundary lock prevents immediate
+bounce-back. The minimap marks opened connections as green lines along their faces;
+unopened portals retain their gold/cyan markers.
+
+Cubes remain separate simulation spaces: player collision is cube-local, and enemies
+cannot cross their boundaries. Generation, portal metadata, routing and arrival-safety
+logic are unchanged; opened connections simply add paths. Down/up travel always uses
+portals, except falling through voids, and never opens a side connection. Starting a
+new world clears all opened faces.
+
+Checks: `npm test` includes shared-face identity, full-face triggering, arrival
+coordinates and enemy containment. From the browser's devtools, run
+`await (await import('./tests/boundary-browser-checks.js')).runBoundaryChecks()` for
+all four side orientations, rendering/revisits, airborne travel, blocked destinations,
+generation failure, reset and unchanged vertical travel. `runRunKeyChecks()` in that
+module checks left/right Shift running alongside double-tap running and input clearing.
+
 While sliding, the old cube dissolves out and the new one dissolves in (`render/fade.js`).
 The dissolve is an ordered-dither discard per cube, so depth and sorting stay intact.
 
 The cube you leave cross-fades into its low-detail proxy, and the cube you enter out of
 its proxy (if you had been there). The two use complementary dither patterns, so one draws
 exactly the pixels the other drops. Every cube, full or proxy, sits in its own glass box
-(`render/glass.js`) that moves and fades with it (`game/travelfx.js`).
+(`render/glass.js`) that moves and fades with it (`game/travelfx.js`), with panes omitted
+on opened side connections.
 
 The minimap and the low-detail neighbours only show cubes you have visited.
 

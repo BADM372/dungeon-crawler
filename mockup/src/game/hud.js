@@ -2,6 +2,8 @@
 import { clamp } from '../core/util.js';
 import { themeAt } from '../world/depth.js';
 import { xpProgress } from '../core/progression.js';
+import { isFaceOpen } from '../core/boundaries.js';
+import { state } from './state.js';
 
 const $ = id => document.getElementById(id);
 
@@ -9,9 +11,10 @@ export function showStats(map, cube, seed, visits) {
   $('depth').textContent = `${map.depth} · ${map.town ? 'Town' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`;
   $('seed').textContent = seed;
   const s = map.stats;
-  const portals = map.portals.filter(p => p.kind !== 'spawn').map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));
+  const portals = map.portals.filter(p => p.kind !== 'spawn' && !isFaceOpen(state.openedFaces, cube, p.dir)).map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));
+  const open = [0, 1, 2, 3].filter(d => isFaceOpen(state.openedFaces, cube, d)).map(d => ['E', 'W', 'S', 'N'][d]);
   $('stats').innerHTML =
-    `cube ${cube} · ${map.kind} · ${map.archetype} · ${s.layers} layer${s.layers > 1 ? 's' : ''} · portals ${portals.join(' ')} · visit ${visits}<br>` +
+    `cube ${cube} · ${map.kind} · ${map.archetype} · ${s.layers} layer${s.layers > 1 ? 's' : ''} · portals ${portals.join(' ')} · open ${open.join(' ') || '-'} · visit ${visits}<br>` +
     `slopes ${s.slopes} · cliffs ${s.cliffs} · ramps ${s.ramps} · pillars ${s.pillars} · ` +
     `stairs ${s.stairs} · landings ${s.landings} · bridges ${s.bridges} · fences ${s.fences}<br>` +
     `${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`;

@@ -32,5 +32,5 @@ export function updatePlayer(dt) {
   if (gr.landed > SIT_IMPACT) player.stun = 1.5;
 
   if (!applyHazards(dt, gr)) return;
-  checkPortals();
+  checkPortals(dx, dz);
 }
