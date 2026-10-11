@@ -6,6 +6,7 @@ import { knockDown } from './ragdoll.js';
 import { toggleInventory, setInventoryOpen } from './inventory.js';
 import { controls, clearInput } from './inputstate.js';
 import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
+import { requestCollect } from './loot.js';
 export { clearInput };
 
 const { keys, lastTap } = controls;
@@ -32,6 +33,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyF' && !state.transitioning) { player.sword.requested = true; e.preventDefault(); }
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
+  if (e.code === 'KeyC') requestCollect();
   if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned where you came in'); }
   if (e.code === 'KeyN') nextCube();
   if (e.code === 'KeyV') { state.showNeighbors = !state.showNeighbors; updateNeighbors(); }

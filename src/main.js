@@ -20,6 +20,8 @@ import { tickFluidDeath } from './render/fluiddeath.js';
 import { applyLook } from './render/look.js';
 import { tickSky } from './render/sky.js';
 import { updatePlayerBar } from './render/playerbar.js';
+import { updateLoot } from './game/loot.js';
+import { tickPops } from './render/loot.js';
 import { depthOf } from './themes/depth.js';
 import './game/dev.js';
 import { updateSpiders, spiders } from './game/spiders.js';
@@ -41,6 +43,8 @@ function frame() {
   animateCharacter(dt, state.time);
   tickFluidDeath(dt);
   drawTravelEnemies(dt);
+  updateLoot(dt, state.time);
+  tickPops(dt);
   tickNeighbors(dt);
   tickProps(state.time);
   if (state.world) animateWorld(state.world, dt, state.time);

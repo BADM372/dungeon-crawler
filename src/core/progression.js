@@ -1,4 +1,4 @@
-import { createInventory, addItem, equipItem, addCopper, copperTotal, whole } from './inventory.js';
+import { createInventory, addItem, equipItem, whole } from './inventory.js';
 import { BASIC_SWORD } from './items.js';
 
 export const xpToNext = level => 100 + 50 * (level - 1);
@@ -21,7 +21,8 @@ export function createPlayerStats() {
   addItem(inventory, BASIC_SWORD.id); equipItem(inventory, inventory.slots[0].instanceId);
   return { xp: 0, level: 1, maxHp: 100, hp: 100, lastDamageAt: -Infinity, inventory };
 }
-export const createRun = () => ({ defeated: new Set() });
+// defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js)
+export const createRun = () => ({ defeated: new Set(), loot: new Map() });
 export function awardXP(p, amount) {
   whole(amount);
   const xp = whole(p.xp + amount), oldLevel = p.level, oldMax = p.maxHp;
@@ -29,13 +30,13 @@ export function awardXP(p, amount) {
   if (p.hp > 0) p.hp = Math.min(p.maxHp, p.hp + p.maxHp - oldMax);
   return p.level - oldLevel;
 }
+// XP is granted at once; the coins are only returned: they drop as loot to be picked up
 export function awardKill(p, run, enemy) {
   if (enemy.mode !== 'dead' || enemy.hp !== 0 || !enemy.id || run.defeated.has(enemy.id)) return null;
   const xp = whole(enemy.profile.xp), coins = whole(enemy.coinDrop);
-  // Validate both totals before mutating any state.
-  whole(p.xp + xp); whole(copperTotal(p.inventory) + coins);
+  whole(p.xp + xp);   // validate before mutating any state
   const levels = awardXP(p, xp);
-  addCopper(p.inventory, coins); run.defeated.add(enemy.id);
+  run.defeated.add(enemy.id);
   return { xp, coins, levels };
 }
 export function takeDamage(p, amount, time) {

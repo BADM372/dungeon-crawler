@@ -125,12 +125,13 @@ test('death rewards occur once per stable enemy ID, including reconstructed enem
   const e = makeEnemy(roll, STUNDER);
   assert.equal(awardKill(p, run, e), null);
   damageEnemy(e, e.hp); const reward = awardKill(p, run, e);
-  assert.equal(p.xp, e.profile.xp); assert.equal(copperTotal(p.inventory), e.coinDrop);
+  // the coins drop as loot: returned, not credited
+  assert.equal(p.xp, e.profile.xp); assert.equal(reward.coins, e.coinDrop); assert.equal(copperTotal(p.inventory), 0);
   assert.ok(reward && run.defeated.has(e.id));
   assert.equal(awardKill(p, run, e), null);
   const copy = makeEnemy(roll, STUNDER); damageEnemy(copy, copy.hp);
   assert.equal(awardKill(p, run, copy), null);
-  assert.equal(p.xp, e.profile.xp); assert.equal(copperTotal(p.inventory), e.coinDrop);
+  assert.equal(p.xp, e.profile.xp);
   const fresh = createPlayerStats(), nextRun = createRun();
   assert.ok(awardKill(fresh, nextRun, copy));
 });

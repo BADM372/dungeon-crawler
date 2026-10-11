@@ -1,0 +1,28 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { coinDrops, inCollectReach, steppedOn, stackable, COLLECT_RADIUS } from '../src/core/loot.js';
+import { ITEMS, WEAPONS } from '../src/core/items.js';
+import { createInventory, addItem, copperTotal } from '../src/core/inventory.js';
+
+test('coin drops hold exactly the amount, in a few piles per coin kind', () => {
+  assert.deepEqual(coinDrops(0), []);
+  for (let copper = 1; copper < 3000; copper += 7) {
+    const drops = coinDrops(copper), inv = createInventory();
+    assert.equal(drops.reduce((n, d) => n + ITEMS[d.itemId].value * d.count, 0), copper);
+    for (const d of drops) { assert.ok(d.count >= 1); assert.ok(addItem(inv, d.itemId, d.count)); }
+    assert.equal(copperTotal(inv), copper);
+    for (const id of new Set(drops.map(d => d.itemId))) assert.ok(drops.filter(d => d.itemId === id).length <= 4);
+  }
+  assert.equal(coinDrops(6).length, 4);   // a spider's handful scatters
+});
+
+test('C reaches stackable pickups within two cells, walking over takes anything', () => {
+  const coin = { itemId: 'item_coin_copper', x: 5, y: 1, z: 5 };
+  assert.ok(stackable(coin.itemId) && stackable('item_crystal_ruby') && !stackable(WEAPONS[1].id));
+  assert.ok(inCollectReach(coin, 5 + COLLECT_RADIUS, 1, 5));
+  assert.ok(!inCollectReach(coin, 5 + COLLECT_RADIUS + 0.01, 1, 5));
+  assert.ok(!inCollectReach(coin, 5, 3, 5), 'not from a different level');
+  assert.ok(!inCollectReach({ ...coin, itemId: WEAPONS[1].id }, 5, 1, 5), 'only stackables');
+  assert.ok(steppedOn({ ...coin, itemId: WEAPONS[1].id }, 5.3, 1, 5));
+  assert.ok(!steppedOn(coin, 5.6, 1, 5));
+});

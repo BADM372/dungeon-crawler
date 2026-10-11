@@ -6,7 +6,8 @@ import { allEnemies, resetEnemies, updateEnemies } from '../../src/game/enemies.
 import { setInventoryOpen, updateInventory } from '../../src/game/inventory.js';
 import { clearInput, inputDir } from '../../src/game/input.js';
 import { equipOwnedWeapon, devSwapWeapon } from '../../src/game/equipment.js';
-import { WEAPONS } from '../../src/core/items.js';
+import { WEAPONS, ITEMS } from '../../src/core/items.js';
+import { lootHere, updateLoot, requestCollect } from '../../src/game/loot.js';
 import { addItem, addCopper, copperTotal, equippedItem } from '../../src/core/inventory.js';
 import { awardXP } from '../../src/core/progression.js';
 import { startSwing, cancelSwing, damageEnemy } from '../../src/core/combat.js';
@@ -88,7 +89,14 @@ export async function runInventoryChecks() {
       const e = allEnemies()[0]; check(e && e.level === 1, 'Need a level-1 surface enemy');
       const xp = player.xp, coins = copperTotal(player.inventory), expectedCoins = e.coinDrop, id = e.id;
       damageEnemy(e, e.hp); updateEnemies(1/60);
-      check(player.xp === xp + e.profile.xp && copperTotal(player.inventory) === coins + expectedCoins, 'Death must grant XP and seeded coins');
+      const loot = () => lootHere().reduce((n, p) => n + ITEMS[p.itemId].value * p.count, 0);
+      check(player.xp === xp + e.profile.xp && copperTotal(player.inventory) === coins && loot() === expectedCoins, 'Death must grant XP and drop the seeded coins');
+      // C from a cell away pulls them all in; they count once they arrive
+      Object.assign(player, { x: e.x + 1, z: e.z, y: e.y, visY: e.y });
+      for (let i = 0; i < 40; i++) updateLoot(1/60, i / 60);   // let them land
+      requestCollect();
+      for (let i = 0; i < 120 && lootHere().length; i++) updateLoot(1/60, 1 + i / 60);
+      check(!lootHere().length && copperTotal(player.inventory) === coins + expectedCoins, 'C must collect the dropped coins');
       const earnedXP = player.xp, earnedCoins = copperTotal(player.inventory);
       updateEnemies(1/60); resetEnemies(); updateEnemies(1/60);
       check(!allEnemies().some(e=>e.id === id), 'Defeated enemies must not respawn');
