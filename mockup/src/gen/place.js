@@ -2,6 +2,7 @@
 // extras. Claims keep structures apart from each other, from waterfalls and from the route.
 import { N, SHEAD, OPP, DIRS } from '../core/constants.js';
 import { inb, idx } from '../core/util.js';
+import { placeClimb } from './climbs.js';
 
 export function placeStructures(ctx) {
   const { ri, cols, floors, falls, moves, pathFloors, movesFrom, stats } = ctx;
@@ -61,9 +62,10 @@ export function placeStructures(ctx) {
     if (m.kind === 'stair') stats.stairs++; else stats.bridges++;
   }
 
-  const pathEdges = new Set(), pathWalks = [];
+  const pathEdges = new Set(), pathWalks = [], ladders = [];
   for (const m of moves) {
     if (m.cells.length || m.to.landing) { if (!canPlace(m)) return false; place(m); }
+    else if (m.kind === 'ladder' || m.kind === 'jump') { if (!placeClimb(m, claims, pathEdges, ladders)) return false; }
     else {
       pathEdges.add(m.from.id + ':' + m.d); pathEdges.add(m.to.id + ':' + OPP[m.d]);
       if (m.kind === 'walk') pathWalks.push(m);
@@ -83,6 +85,6 @@ export function placeStructures(ctx) {
     place(m);
     if (m.kind === 'stair') ds--; else db--;
   }
-  Object.assign(ctx, { pieces, runs, pathEdges, pathWalks });
+  Object.assign(ctx, { pieces, runs, pathEdges, pathWalks, ladders });
   return true;
 }

@@ -8,7 +8,7 @@ export const player = {
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
   // event counters the animator watches
   jumpCount: 0, landCount: 0, landImpact: 0, getUpCount: 0,
-  ragdoll: null, ragdollThen: null,
+  ragdoll: null, ragdollThen: null, climb: null, climbV: 0,
   safe: { x: 0, y: 0, z: 0 }, safeTimer: 0,
   autoDir: null, autoRun: false,   // override keyboard input (used by test bots)
 };

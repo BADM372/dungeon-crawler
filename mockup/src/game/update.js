@@ -6,13 +6,16 @@ import { checkPortals } from './portals.js';
 import { knockDown, stepRagdoll } from './ragdoll.js';
 import { movePlayer, updateLayer } from '../physics/move.js';
 import { applyHazards } from '../physics/hazards.js';
+import { climb } from '../physics/climb.js';
 
 export function updatePlayer(dt) {
   if (player.ragdoll) { stepRagdoll(dt); return; }
   let [dx, dz] = inputDir();
   const len = Math.hypot(dx, dz);
   if (len > 1) { dx /= len; dz /= len; }
-  const gr = movePlayer(dt, dx, dz, wantsRun(), takeJump());
+  const jump = takeJump();
+  if (climb(dt, dx, dz, jump)) return;   // on a ladder
+  const gr = movePlayer(dt, dx, dz, wantsRun(), jump);
   updateLayer(gr);
 
   // hard landings: tumble over as a ragdoll (and get hurt), or land on your bottom

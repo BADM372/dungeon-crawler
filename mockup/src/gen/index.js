@@ -1,11 +1,12 @@
 // World generator: runs the stages in order and retries with a new seed on failure.
-import { N, LH } from '../core/constants.js';
+import { N, LH, DIRS } from '../core/constants.js';
 import { hash32 } from '../core/util.js';
 import { floorY, runY } from '../core/surfaces.js';
 import { createContext } from './context.js';
 import { chooseLayers, groundHeights } from './ground.js';
 import { placePortals } from './portals.js';
 import { shapeCube } from './archetypes.js';
+import { ladderInfo } from './climbs.js';
 import { carveRiver } from './river.js';
 import { buildSlabs } from './slabs.js';
 import { addRamps, addSupports } from './supports.js';
@@ -40,6 +41,8 @@ function pathPoints(ctx, moves) {
       const pieces = run ? run.pieces : [...back.pieces].reverse();   // a structure used the other way round
       for (const p of pieces) pts.push(center(p.c, runY(p, 0.5, 0.5)));
     }
+    // jumps: a waypoint at the take-off edge (bots jump there)
+    if (m.kind === 'jump') { const c = center(m.from.c, nodeY(m.from)); pts.push({ x: c.x + DIRS[m.d][0] * 0.42, y: c.y, z: c.z + DIRS[m.d][1] * 0.42, takeoff: true }); }
     pts.push(center(m.to.c, nodeY(m.to)));
   }
   return pts;
@@ -70,6 +73,7 @@ function tryGenerate(seed, spec) {
     x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
     seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
+    ladders: ctx.ladders.map(ladderInfo),
     kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, pathPts: pathPoints(ctx, ctx.moves),
     routes: ctx.segments.map(s => pathPoints(ctx, s)),   // first portal -> each other portal
   };

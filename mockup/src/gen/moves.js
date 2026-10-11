@@ -1,6 +1,7 @@
 // Route search moves. Nodes are floors plus free-standing stair landings (cell, level).
 import { N, MAX_L, SHEAD, DIRS } from '../core/constants.js';
 import { idx, inb } from '../core/util.js';
+import { ladderMoves, jumpMoves } from './climbs.js';
 
 const MAX_DROP = 8;   // levels; deeper drops land hard enough to knock the character over
 
@@ -104,6 +105,7 @@ export function makeMoves(ctx) {
       stepMoves(f, d, idx(nx, nz), out);
       stairMoves(f, d, allowLandings, out);
       bridgeMoves(f, d, out);
+      if (allowLandings) { ladderMoves(ctx, f, d, idx(nx, nz), out); jumpMoves(ctx, f, d, out); }
     }
     return out;
   }

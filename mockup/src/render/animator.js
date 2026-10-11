@@ -3,6 +3,7 @@
 // into animation when getting up.
 import * as THREE from 'three';
 import { clamp } from '../core/util.js';
+import { DIRS } from '../core/constants.js';
 import { player } from '../game/state.js';
 import { character } from './character.js';
 import { applyRagdollPose } from './ragdollpose.js';
@@ -38,8 +39,10 @@ export function animateCharacter(dt, time) {
   if (p.ragdoll) { applyRagdollPose(p.ragdoll.p); return; }
   if (p.getUpCount !== seenGetUp) { seenGetUp = p.getUpCount; startGetUp(); resetMode(); }
 
-  const speed = Math.hypot(p.vx, p.vz);
-  if (speed > 0.2 && p.stun <= 0) yaw = angleTo(yaw, Math.atan2(p.vx, p.vz), Math.min(1, dt * (p.swimming ? 5 : 12)));
+  // on a ladder: face the wall, the walk cycle stands in for climbing
+  const speed = p.climb ? Math.abs(p.climbV) * 0.8 : Math.hypot(p.vx, p.vz);
+  if (p.climb) { const [dx, dz] = DIRS[p.climb.l.d]; yaw = angleTo(yaw, Math.atan2(dx, dz), Math.min(1, dt * 12)); }
+  else if (speed > 0.2 && p.stun <= 0) yaw = angleTo(yaw, Math.atan2(p.vx, p.vz), Math.min(1, dt * (p.swimming ? 5 : 12)));
   ch.group.position.set(p.x, p.visY, p.z);
   ch.group.rotation.y = yaw;
   ch.group.updateMatrixWorld(true);

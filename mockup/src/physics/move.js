@@ -26,6 +26,8 @@ function horizontal(dt, dx, dz, run) {
   if (Math.abs(mz) > 1e-6) { if (canMove(p.x, p.z + mz, 'z', Math.sign(mz))) p.z += mz; else p.vz = 0; }
 }
 
+const LEAP = 3.4;   // horizontal speed of a jump while moving
+
 // jump with a little coyote time (just walked off a ledge) and a short input buffer
 function jumping(dt, jump) {
   const p = player;
@@ -33,6 +35,9 @@ function jumping(dt, jump) {
   p.jumpBuf = jump ? 0.15 : p.jumpBuf - dt;
   if (p.jumpBuf <= 0 || !(p.coyote > 0 || p.swimming)) return;
   p.vy = p.swimming ? 4.8 : JUMP_V;
+  // jumping while moving is a leap: enough speed to clear a one-cell gap
+  const s = Math.hypot(p.vx, p.vz);
+  if (!p.swimming && s > 0.8 && s < LEAP) { p.vx *= LEAP / s; p.vz *= LEAP / s; }
   p.grounded = p.swimming = false;
   p.coyote = p.jumpBuf = 0;
   p.jumpCount++;

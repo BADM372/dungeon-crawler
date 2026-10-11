@@ -2,6 +2,7 @@
 import { buildStair, buildLanding } from './stairs.js';
 import { buildStoneBridge, buildPlankBridge } from './bridges.js';
 import { POST, RAIL } from './palette.js';
+import { buildLadder } from './ladders.js';
 
 export function buildStructures(m, layers) {
   for (const r of m.runs) {
@@ -11,6 +12,7 @@ export function buildStructures(m, layers) {
     else if (r.style === 'stone') buildStoneBridge(r, L);
     else buildPlankBridge(r, L);
   }
+  for (const l of m.ladders || []) buildLadder(l, layers[l.layer]);
   // wooden fences: posts follow the surface, rails are sloped beams
   for (const f of m.fenceList) {
     if (!f.show) continue;

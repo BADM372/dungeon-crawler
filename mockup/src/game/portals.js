@@ -6,7 +6,8 @@ import { startTravel } from './travel.js';
 function inside(q) {
   const p = player;
   if (Math.abs(p.y - q.y) > 0.6) return false;
-  if (q.kind !== 'side') return Math.hypot(p.x - q.x - 0.5, p.z - q.z - 0.5) < 0.42 && p.grounded;
+  // wells and rings only take you when you step on them yourself (not stunned or knocked there)
+  if (q.kind !== 'side') return Math.hypot(p.x - q.x - 0.5, p.z - q.z - 0.5) < 0.42 && p.grounded && p.stun <= 0 && Math.hypot(p.vx, p.vz) < 4.4;
   const along = q.dir < 2 ? p.z - q.z - 0.5 : p.x - q.x - 0.5;
   const out = [p.x - N, -p.x, p.z - N, -p.z][q.dir];   // distance past the face (negative inside)
   return Math.abs(along) < 1.5 && out > -0.4;

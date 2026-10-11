@@ -14,7 +14,7 @@ import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
 
 export function spawnAt(x, y, z) {
-  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, stun: 0 });
+  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, stun: 0, climb: null });
   player.safe = { x, y, z };
   const gr = groundAt(x, z, y + 0.05, 0);
   player.support = gr.s;

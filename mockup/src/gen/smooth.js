@@ -33,6 +33,9 @@ export function smooth(ctx) {
   const pins = new Map();
   for (const r of runs) if (r.kind !== 'landing') for (const [f, side] of [[r.from, r.d], [r.to, OPP[r.d]]])
     if (!f.landing) for (const [X, Z] of edgePts(f.x, f.z, side)) pins.set(f.id + ':' + X + ',' + Z, f.top * LH);
+  // ladders: the foot and the top edge stay flat, so the ladder meets both exactly
+  for (const l of ctx.ladders) for (const [f, side] of [[l.lo, l.d], [l.hi, OPP[l.d]]])
+    for (const [X, Z] of edgePts(f.x, f.z, side)) pins.set(f.id + ':' + X + ',' + Z, f.top * LH);
 
   function computeCorner(f, ox, oz) {
     const X = f.x + ox, Z = f.z + oz;

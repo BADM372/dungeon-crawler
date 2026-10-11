@@ -114,6 +114,27 @@ everywhere.
 Structures: a stair never runs right beside a bridge at a similar height, and timber legs
 under plank bridges never stand where another structure passes underneath.
 
+## Ladders and jumps (`gen/climbs.js`, `physics/climb.js`)
+
+Routes can now also use these moves:
+
+- **Ladder:** up or down a cliff face of 3–14 levels between neighbouring columns. The
+  ladder stands in the lower cell against the higher column's wall.
+  - Both floor edges are pinned flat, so the ladder meets them exactly, and fences stay off
+    them.
+  - The ladder claims the space in front of the wall.
+  - You get on by pushing into the wall at its foot, or by walking over the edge above it.
+  - Pushing towards the wall climbs, pulling away climbs down, and Space lets go.
+  - At the top you step onto the upper floor.
+  - There is no climb animation yet: the walk cycle stands in.
+- **Jump:** over one or two cells of open drop (or void).
+  - The target is at most 1 level higher and at most 2 lower. Over two cells it must be
+    exactly 2 lower, for the time in the air.
+  - There must be level run-up ground behind the take-off.
+  - The air over the gap is claimed, so no structure crosses it.
+  - Jumping while moving is a leap of at least 3.4 units/s.
+  - Routes keep a take-off waypoint for the test bots.
+
 ## Props (`render/props.js`, `render/propplace.js`)
 
 Decoration comes from `blender/props.glb` (built by `blender/props.py` from
