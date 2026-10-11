@@ -3,15 +3,22 @@ import { spiders, resetSpiders, updateSpiders, detachSpiders } from './spiders.j
 import { stunders, resetStunders, updateStunders, detachStunders } from './stunders.js';
 import { snakes, resetSnakes, updateSnakes, detachSnakes } from './snakes.js';
 import { octonauts, resetOctonauts, updateOctonauts, detachOctonauts } from './octonauts.js';
-import { contactEnemies, resetEnemyCombat } from './enemycombat.js';
+import { fireFaces, resetFireFaces, updateFireFaces, detachFireFaces } from './firefaces.js';
+import { triangles, resetTriangles, updateTriangles, detachTriangles } from './triangles.js';
+import { fireCats, resetFireCats, updateFireCats, detachFireCats } from './firecats.js';
+import { contactEnemies, resetEnemyCombat, updateBurning } from './enemycombat.js';
+import { updateProjectiles, drawAllProjectiles, clearProjectiles } from './projectiles.js';
 import { hitWithSword } from './sword.js';
 import { animateEnemies } from '../render/enemies.js';
 import { player, state, setStatus } from './state.js';
 import { awardKill } from '../core/progression.js';
 import { dropLoot } from './loot.js';
 
-export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts];
-export function resetEnemies() { resetEnemyCombat(); resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); }
+export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats];
+export function resetEnemies() {
+  resetEnemyCombat(); clearProjectiles();
+  resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats();
+}
 export function updateEnemies(dt) {
   if (state.inventoryOpen || state.transitioning) return;
   const list = allEnemies();
@@ -23,7 +30,14 @@ export function updateEnemies(dt) {
   }
   if (killed) setStatus(`Defeated ${killed} enem${killed === 1 ? 'y' : 'ies'} · +${xp} XP${levels ? ` · Level ${player.level}!` : ''}`);
   updateSpiders(dt); updateStunders(dt); updateSnakes(dt); updateOctonauts(dt);
+  updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt);
+  updateProjectiles(dt); updateBurning(dt);
   contactEnemies(allEnemies(), dt);
 }
-export const drawEnemies = (dt, off) => animateEnemies(allEnemies(), dt, off);
-export const detachEnemies = () => [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts()];
+export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); }
+// projectiles in flight do not travel along
+export function detachEnemies() {
+  clearProjectiles();
+  return [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts(),
+    ...detachFireFaces(), ...detachTriangles(), ...detachFireCats()];
+}

@@ -37,7 +37,8 @@ see `docs/combat.md`.
 ## Re-exporting assets
 
 ```sh
-Blender -b --python blender/props.py          # likewise character, spider, stunder, snake, octonaut, sword
+Blender -b --python blender/props.py          # likewise character, spider, stunder, snake, octonaut,
+                                              # fireface, triangle, firecat, sword
 Blender -b --python blender/clutter.py        # libraries: clutter, items, town, town_trees
 Blender -b --python blender/tests/test_clutter.py
 npm run prop-metadata                         # after props/clutter changes

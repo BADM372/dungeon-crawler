@@ -22,7 +22,7 @@ import { clearInput } from './inputstate.js';
 
 export function spawnAt(x, y, z) {
   cancelSword(true);
-  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, fluidDeath: 0, stun: 0, climb: null });
+  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, fluidDeath: 0, stun: 0, climb: null, burning: null });
   player.safe = { x, y, z };
   const gr = groundAt(x, z, y + 0.05, 0);
   player.support = gr.s;

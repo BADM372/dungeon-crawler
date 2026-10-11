@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { SLASH_CLIP } from '../src/core/combat.js';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
 function glb(name) {
@@ -28,7 +28,7 @@ test('player is unarmed, retains both hand sockets and exports only its own clip
     assert.equal(socket.children?.length || 0, 0, 'hand socket must be empty');
   }
   assert.equal(j.meshes.length, 1); assert.equal(j.skins.length, 1);
-  assert.ok(!j.animations.some(a => /Spider|Stunder|Snake|Octo/.test(a.name)));
+  assert.ok(!j.animations.some(a => /Spider|Stunder|Snake|Octo|Fire|Tri|Cat/.test(a.name)));
   const slash = j.animations.find(a => a.name === 'Slash');
   assert.ok(slash);
   assert.ok(Math.abs(duration(slash) - SLASH_CLIP.duration) < 1e-5);
@@ -115,6 +115,59 @@ test('the new enemies have shining purple eyes', () => {
     assert.ok(b === 1 && r > 2 * g && b > r, name);
     assert.ok(eyes.extensions.KHR_materials_emissive_strength.emissiveStrength > 1, name);
   }
+});
+// clips by name, and the clip contract every enemy shares: an idle / walk loop at its
+// wander speed, an attack whose hit frame and length match the profile, a held death
+function enemyClips(name, profile, { walk, attack, death, fast }) {
+  const { json: j, duration } = glb(name), a = Object.fromEntries(j.animations.map(c => [c.name, c]));
+  assert.deepEqual(Object.keys(a).sort(), [walk, attack, death, fast].filter(Boolean).sort());
+  assert.equal(a[walk].extras.speed, profile.wander);
+  assert.equal(a[walk].extras.loop, true);
+  assert.equal(a[attack].extras.hit_frame / 30, profile.hitAt);
+  assert.ok(Math.abs(duration(a[attack]) - profile.attackTime) < 1e-5);
+  assert.ok(Math.abs(duration(a[death]) - profile.deathTime) < 1e-5);
+  assert.equal(a[death].extras.hold_last_frame, true);
+  return { j, a };
+}
+// a standalone, unskinned projectile mesh beside the rig
+function projectileProp(j, name, kind) {
+  const node = j.nodes.find(n => n.name === name);
+  assert.ok(node && j.scenes[0].nodes.includes(j.nodes.indexOf(node)), name);
+  assert.equal(node.skin, undefined); assert.ok(node.mesh !== undefined);
+  assert.equal(node.extras.projectile, kind);
+}
+const glowing = j => j.materials.filter(m => /_glow/.test(m.name) && !/Eyes/.test(m.name)).map(m => [m.name, m.emissiveFactor]);
+test('Fire-face hovers, spits its fireball from the profile muzzle and glows red and orange', () => {
+  const { j, a } = enemyClips('fireface', FIREFACE, { walk: 'FireFloat', attack: 'FireAttack', death: 'FireDeath' });
+  assert.equal(a.FireFloat.extras.hover, true); assert.equal(FIREFACE.hover, true);
+  assert.deepEqual(a.FireAttack.extras.muzzle, [...FIREFACE.projectile.muzzle]);
+  projectileProp(j, 'FireFaceBall', 'fireball');
+  assert.ok(j.nodes.filter(n => /^flame\d_[ab]$/.test(n.name)).length >= 10, 'flickering flame tongues');
+  const mats = glowing(j);
+  assert.ok(mats.length >= 4);
+  for (const [name, [r, g, b]] of mats) assert.ok(r === 1 && g < 0.4 && b < 0.05, name);   // red .. orange
+});
+test('Triangle hovers, punches with its inner triangles from the profile muzzle and glows purple', () => {
+  const { j, a } = enemyClips('triangle', TRIANGLE, { walk: 'TriFloat', attack: 'TriPunch', death: 'TriDeath' });
+  assert.equal(a.TriFloat.extras.hover, true); assert.equal(TRIANGLE.hover, true);
+  assert.deepEqual(a.TriPunch.extras.muzzle, [...TRIANGLE.projectile.muzzle]);
+  projectileProp(j, 'TrianglePunch', 'triangle_punch');
+  for (const bone of ['body', 'ring', 'core']) assert.ok(j.nodes.some(n => n.name === bone), bone);
+  const mats = glowing(j);
+  assert.equal(mats.length, 3);
+  for (const [name, [r, g, b]] of mats) assert.ok(b >= r && b > 3 * g, name);   // purple
+});
+test('Fire-cat prowls and gallops at its speeds, pounces over the profile window and is on fire', () => {
+  const { j, a } = enemyClips('firecat', FIRECAT, { walk: 'CatWalk', fast: 'CatRun', attack: 'CatPounce', death: 'CatDeath' });
+  assert.equal(a.CatRun.extras.speed, FIRECAT.chase);
+  assert.equal(a.CatPounce.extras.lunge_from, FIRECAT.lunge.from);
+  assert.equal(a.CatPounce.extras.lunge_to, FIRECAT.lunge.to);
+  assert.ok(j.nodes.filter(n => /^flame_/.test(n.name)).length >= 9, 'flames on the tail, back and head');
+  for (const bone of ['jaw', 'tail_5', 'upperarm.L', 'thigh.R']) assert.ok(j.nodes.some(n => n.name === bone), bone);
+  const body = j.materials.find(m => m.name === 'FireCatBody').pbrMetallicRoughness.baseColorFactor;
+  assert.ok(body[0] > 4 * body[1] && body[0] < 0.4, 'dark red');
+  assert.ok(!j.materials.find(m => m.name === 'FireCatBody').emissiveFactor);
+  for (const [name, [r, g, b]] of glowing(j).filter(([n]) => /Flame/.test(n))) assert.ok(r === 1 && g < 0.5 && b < 0.05, name);
 });
 test('standalone sword is a small untextured, unskinned prop', () => {
   const { json: j } = glb('sword');

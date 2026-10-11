@@ -1,17 +1,37 @@
 // Physics owns attack/death timers. Animation is sampled from those same timers,
 // so loading late, interrupting a swing or sliding a cube cannot desynchronise hits.
+// Hovering species run their idle loop on time. Fire and the Triangle's glow live here
+// too (GLOW): a light that follows the body, flames (bones named flame*) that keep
+// flickering over whatever clip plays, an emissive pulse and drifting embers.
 import * as THREE from 'three';
 import { scene, camera } from './scene.js';
 import { spiderModel } from './spidermodel.js';
 import { stunderModel } from './stundermodel.js';
 import { snakeModel } from './snakemodel.js';
 import { octonautModel } from './octonautmodel.js';
+import { fireFaceModel } from './firefacemodel.js';
+import { triangleModel } from './trianglemodel.js';
+import { fireCatModel } from './firecatmodel.js';
+import { trackLight, untrackLight } from './lightpool.js';
+import { glow, emit, rand } from './particles.js';
 import { cloneEnemy } from './enemymodel.js';
 import { attackOf } from '../core/enemies.js';
 import { player } from '../game/state.js';
 import { makeBar, makeLevelLabel } from './bars.js';
 
-const prefabs = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel };
+const prefabs = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel,
+  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel };
+// light: [color, intensity, distance, height]; pulse: emissive / light swing with the
+// clip's beat (twice per hover loop); embers: per second, rising from `from` (a bone, or
+// a height above the body); flicker: extra flame motion
+const GLOW = {
+  fireface: { light: [0xff6a20, 4, 4.5, 0.75], flicker: 1, embers: { rate: 7, from: 0.95, spread: 0.25 } },
+  triangle: { light: [0xa45cff, 2.6, 3.5, 0.85], pulse: 0.7 },
+  firecat: { light: [0xff7a2a, 1.6, 2.6, 0.75], flicker: 1, embers: { rate: 5, from: 'flame_tail', spread: 0.06 } },
+};
+const EMBERS = ['#ffd25a', '#ff8a2a', '#ff5a14'];
+const tmp = new THREE.Vector3(), wobble = new THREE.Quaternion(), axis = new THREE.Vector3(1, 0, 0);
+let clock = 0;
 const white = new THREE.Color(0xffffff), hover = new THREE.Color(0xffd9a0), inverseYaw = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 const angleTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
@@ -22,7 +42,7 @@ function makeView(e, prefab) {
   const materials = [];
   model.traverse(o => {
     if (!o.isMesh) return;
-    const own = m => { const c = m.clone(); c.transparent = true; materials.push({ material: c, color: c.color.clone() }); return c; };
+    const own = m => { const c = m.clone(); c.transparent = true; materials.push({ material: c, color: c.color.clone(), glow: c.emissiveIntensity ?? 0 }); return c; };
     o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material);
   });
   // actions: walk, fast?, death and one per attack clip (keyed like attack.clip, else 'attack')
@@ -37,8 +57,37 @@ function makeView(e, prefab) {
   const hpBar = makeBar(), bar = hpBar.group;
   bar.position.y = e.profile.height + 0.12; group.add(bar);
   const label = makeLevelLabel(e.level); label.position.y = e.profile.height + .3; group.add(label);
+  const fx = GLOW[e.type], flames = [];
+  model.traverse(o => { if (o.isBone && /^flame/.test(o.name)) flames.push(o); });
+  let light = null;
+  if (fx?.light) {
+    const [color, intensity, distance, y] = fx.light;
+    light = new THREE.PointLight(color, intensity, distance, 2); light.position.y = y;
+    trackLight(light, group);
+  }
+  const embers = typeof fx?.embers?.from === 'string' ? model.getObjectByName(fx.embers.from) : null;
   return { group, model, mixer, actions, prefab, materials, bar, hpBar, label, yaw: e.yaw, phase: e.phase,
-    attacks: -1, dead: false, weights };
+    attacks: -1, dead: false, weights, fx, flames, light, embers, seed: Math.random() * 100 };
+}
+// the hover clip's beat (matches blender/triangle.py): sharp, twice per loop
+const beat = phase => (0.5 + 0.5 * Math.cos(2 * Math.PI * 2 * phase)) ** 6;
+function glowFx(v, e, dt, life) {
+  const fx = v.fx, t = clock + v.seed;
+  if (!fx) return;
+  if (fx.flicker && life > 0) v.flames.forEach((b, i) => {   // on top of the clip's own flicker
+    b.scale.multiplyScalar(1 + 0.1 * Math.sin(t * 13 + i * 2.1) * Math.sin(t * 5.3 + i));
+    b.quaternion.multiply(wobble.setFromAxisAngle(axis, 0.12 * Math.sin(t * 9 + i * 1.7)));
+  });
+  const swing = fx.pulse ? 1 + fx.pulse * (beat(v.phase) - 0.3) : 0.82 + 0.18 * Math.sin(t * 23) * Math.sin(t * 7.1);
+  if (v.light) v.light.intensity = fx.light[1] * swing * life;
+  if (fx.pulse) for (const m of v.materials) if (m.glow) m.material.emissiveIntensity = m.glow * (0.6 + 0.4 * life) * swing;
+  if (fx.embers && life > 0.3 && Math.hypot(e.x - player.x, e.z - player.z) < 12)
+    for (let i = Math.floor(fx.embers.rate * dt * life + Math.random()); i > 0; i--) {
+      const s = fx.embers.spread;
+      if (v.embers) v.embers.getWorldPosition(tmp); else tmp.set(v.group.position.x, v.group.position.y + fx.embers.from, v.group.position.z);
+      emit(glow, tmp.x + rand(-s, s), tmp.y + rand(0, s), tmp.z + rand(-s, s), { v: [rand(-0.2, 0.2), rand(0.6, 1.3), rand(-0.2, 0.2)],
+        spread: 0.2, life: rand(0.5, 0.9), size: rand(0.04, 0.07), color: EMBERS[i % 3], gravity: -0.3, drag: 0.8 });
+    }
 }
 function dying(v, e) {
   if (!v.dead) {
@@ -53,8 +102,10 @@ function dying(v, e) {
   v.bar.visible = false; v.label.visible = false;
   v.group.visible = fade > 0;
   v.mixer.update(0);
+  glowFx(v, e, 0, Math.max(0, 1 - e.deadT / e.profile.deathTime) * fade);   // the glow dies with it
 }
 export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
+  clock += dt;
   for (const e of list) {
     const prefab = prefabs[e.type];
     if (!prefab?.ready) continue;
@@ -71,7 +122,8 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     const fast = A.fast ? THREE.MathUtils.clamp((e.speed - prefab.walkSpeed) / (prefab.fastSpeed - prefab.walkSpeed), 0, 1) : 0;
     const stride = prefab.walkSpeed * A.walk.getClip().duration * (1 - fast)
       + (A.fast ? prefab.fastSpeed * A.fast.getClip().duration * fast : 0);
-    if (!attack && e.speed > 0.01) v.phase = (v.phase + dt * e.speed / stride) % 1;
+    if (e.profile.hover) v.phase = (v.phase + dt / A.walk.getClip().duration) % 1;   // keeps hovering
+    else if (!attack && e.speed > 0.01) v.phase = (v.phase + dt * e.speed / stride) % 1;
     else if (!attack) v.phase = 0; // idle on both planted feet, not frozen mid-step
     A.walk.time = v.phase * A.walk.getClip().duration;
     if (A.fast) A.fast.time = v.phase * A.fast.getClip().duration;
@@ -89,12 +141,14 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     v.bar.quaternion.copy(inverseYaw).multiply(camera.quaternion);
     v.hpBar.set(e.hp / e.profile.hp);
     v.mixer.update(0);
+    glowFx(v, e, dt, 1);
   }
 }
 export function removeEnemyViews(list) {
   for (const e of list) if (e.view) {
     const v = e.view;
     scene.remove(v.group);
+    if (v.light) untrackLight(v.light);
     v.mixer.stopAllAction(); v.mixer.uncacheRoot(v.model);
     v.materials.forEach(({ material }) => material.dispose());
     v.label.material.map.dispose(); v.label.material.dispose();

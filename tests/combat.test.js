@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT, makeEnemy, attackOf, pickAttack } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy, attackOf, pickAttack,
+  blowOf, lungeDistance, lungeAt } from '../src/core/enemies.js';
+import { launch, touches, stepProjectile, ignite, burnStep, burntOut } from '../src/core/projectiles.js';
 import { SWORD, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit } from '../src/core/combat.js';
 
 const hero = () => ({ x: 0, y: 0, z: 0, yaw: 0, hp: 100, stun: 0, sword: swordState() });
@@ -93,4 +95,62 @@ test('Octonaut picks slaps about twice as often as spin kicks; single-attack spe
   o.attack = 0;
   assert.equal(attackOf(o).name, 'slap');
   assert.equal(attackOf(o).knockDown, false);
+});
+
+test('the fire species and the Triangle outclass every older enemy', () => {
+  for (const strong of [FIREFACE, TRIANGLE, FIRECAT]) for (const old of [SPIDER, STUNDER, SNAKE, OCTONAUT]) {
+    assert.ok(strong.xp > old.xp && strong.coins[1] > old.coins[1], strong.type + ' vs ' + old.type);
+    if (old !== STUNDER) assert.ok(strong.hp > old.hp && strong.damage > old.damage, strong.type + ' vs ' + old.type);
+  }
+  // the basic sword (30) needs at least four hits on any of them
+  for (const p of [FIREFACE, TRIANGLE, FIRECAT]) assert.ok(p.hp > 90);
+});
+test('a projectile leaves the muzzle along the heading, pitched at the target', () => {
+  const e = { x: 5, y: 1, z: 5, yaw: Math.PI / 2 };   // facing +x
+  const pr = launch(e, FIREFACE.projectile, { x: 9, y: 2, z: 7 });
+  const [mx, my, mz] = FIREFACE.projectile.muzzle;
+  assert.ok(Math.abs(pr.x - (5 + mz)) < 1e-9 && Math.abs(pr.z - (5 - mx)) < 1e-9 && Math.abs(pr.y - (1 + my)) < 1e-9);
+  assert.ok(Math.abs(Math.hypot(pr.vx, pr.vy, pr.vz) - FIREFACE.projectile.speed) < 1e-9);
+  assert.ok(Math.abs(pr.vz) < 1e-9 && pr.vx > 0, 'flies along the heading, not at the player');
+  assert.ok(pr.vy > 0, 'pitched up towards the chest height');
+  const steep = launch(e, FIREFACE.projectile, { x: 6, y: 9, z: 5 });
+  assert.ok(steep.vy / Math.hypot(steep.vx, steep.vz) <= 0.45 + 1e-9);
+});
+test('projectiles hit the player, stop at walls and fizzle out of range', () => {
+  const p = { x: 5, y: 0, z: 0, r: 0.22, h: 0.85 }, none = () => false;
+  const e = { x: 0, y: 0, z: 0, yaw: Math.PI / 2 };
+  let pr = launch(e, TRIANGLE.projectile, { x: 5, y: 0.45, z: 0 }), end = null, t = 0;
+  for (; !end && t < 3; t += 1 / 60) end = stepProjectile(pr, 1 / 60, p, none);
+  assert.equal(end, 'hit');
+  assert.ok(Math.abs(t - (5 - TRIANGLE.projectile.muzzle[2] - p.r - TRIANGLE.projectile.radius) / TRIANGLE.projectile.speed) < 0.05);
+  assert.ok(touches(pr, p));
+  pr = launch(e, TRIANGLE.projectile, { x: 5, y: 0.45, z: 0 }); end = null;
+  for (let i = 0; !end && i < 200; i++) end = stepProjectile(pr, 1 / 60, p, x => x > 2.5);
+  assert.equal(end, 'blocked'); assert.ok(pr.x > 2.5 && pr.x < 2.7);
+  pr = launch(e, TRIANGLE.projectile, { x: 5, y: 0.45, z: 0 }); end = null;
+  for (let i = 0; !end && i < 200; i++) end = stepProjectile(pr, 1 / 60, null, none);
+  assert.equal(end, 'spent'); assert.ok(Math.abs(pr.travelled - TRIANGLE.projectile.range) < 0.15);
+  // a big step cannot tunnel through the player
+  pr = launch(e, TRIANGLE.projectile, { x: 5, y: 0.45, z: 0 });
+  assert.equal(stepProjectile(pr, 1, p, none), 'hit');
+});
+test('a fireball burns for half a second; the Triangle punch knocks down instead', () => {
+  const fire = blowOf(FIREFACE, FIREFACE), punch = blowOf(TRIANGLE, TRIANGLE);
+  assert.equal(fire.damage, 22); assert.equal(fire.knockDown, false); assert.equal(fire.burn.time, 0.5);
+  assert.equal(punch.damage, 28); assert.equal(punch.knockDown, true); assert.equal(punch.burn, null);
+  assert.equal(blowOf(FIRECAT, FIRECAT).burn, null, 'the Fire-cat is on fire, but its bite is not');
+  const b = ignite(fire.burn, fire.reason);
+  let total = 0, t = 0;
+  for (; !burntOut(b); t += 1 / 60) total += burnStep(b, 1 / 60);
+  assert.equal(total, FIREFACE.projectile.burn.damage);
+  assert.ok(Math.abs(t - 0.5) < 1.5 / 60, 'burns out after half a second: ' + t);
+});
+test('the Fire-cat pounce stops short of its target and eases through the leap', () => {
+  const { lunge } = FIRECAT;
+  assert.equal(lungeDistance(lunge, 0.3), 0);
+  assert.ok(Math.abs(lungeDistance(lunge, 1.6) - 1.05) < 1e-9);
+  assert.equal(lungeDistance(lunge, 9), lunge.max);
+  assert.ok(FIRECAT.reach <= lunge.max + lunge.stop + 0.05, 'it never pounces from further than it can leap');
+  assert.equal(lungeAt(lunge, 0), 0); assert.equal(lungeAt(lunge, lunge.to), 1);
+  assert.ok(lunge.to < FIRECAT.hitAt && lunge.from > FIRECAT.trackUntil, 'commits to a heading, lands, then bites');
 });

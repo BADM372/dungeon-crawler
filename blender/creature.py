@@ -1,5 +1,6 @@
 """
-Shared building blocks for the smaller SDF clay enemies (snake.py, octonaut.py).
+Shared building blocks for the SDF clay enemies (snake.py, octonaut.py,
+fireface.py, triangle.py, firecat.py).
 
 Same construction as stunder.py / spider.py: every part is a signed distance
 field meshed with OpenVDB (figure._sdf_to_mesh), all parts are joined into
@@ -149,6 +150,8 @@ class Parts:
         self.co, self.quads, self.mats, self.owners, self.n = [], [], [], [], 0
 
     def add(self, kind, sdf, lo, hi, voxel, mat=0, **meta):
+        """mat: a material index, or a function of the quad centres (N x 3) that
+        returns one index per quad (bands, stripes)."""
         me = F._sdf_to_mesh("CreaturePart", sdf, lo, hi, voxel)
         co = np.empty(len(me.vertices) * 3, np.float32)
         q = np.empty(len(me.loops), np.int32)
@@ -159,7 +162,8 @@ class Parts:
         assert len(co), f"empty part {kind}"
         self.co.append(co)
         self.quads.append(q + self.n)
-        self.mats.append(np.full(len(q), mat, np.int32))
+        self.mats.append(np.asarray(mat(co[q].mean(axis=1)), np.int32) if callable(mat)
+                         else np.full(len(q), mat, np.int32))
         self.owners.append(dict(kind=kind, lo=self.n, hi=self.n + len(co), **meta))
         self.n += len(co)
 
@@ -260,6 +264,33 @@ def aim_at(skel, name, poses, head, direction, spin=None):
     desired = Matrix.Translation(head) @ rot.to_4x4()
     poses[name] = desired
     return base.inverted() @ desired
+
+
+def pose_local(skel, name, poses, basis):
+    """Give a bone an explicit local basis (relative to its parent-driven rest)."""
+    poses[name] = skel.base(name, poses) @ basis
+    return basis
+
+
+def flicker(i, t, period, amp=1.0):
+    """Flame tongue i at time t: two sway angles (radians) and a stretch factor.
+    Every frequency is a whole multiple of 1 / period, so loops of that period
+    close seamlessly; the per-tongue phases keep neighbours out of step."""
+    f = TAU * t / period
+    a = amp * (D(8) * math.sin(3 * f + 1.7 * i) + D(4) * math.sin(7 * f + 0.9 * i * i))
+    b = amp * (D(6) * math.sin(4 * f + 2.3 * i + 0.5) + D(3) * math.sin(9 * f + 1.3 * i))
+    s = 1 + amp * (0.10 * math.sin(5 * f + 0.7 * i) + 0.05 * math.sin(11 * f + 2.1 * i))
+    return a, b, s
+
+
+def flame_tongue(base, up, side, length, r0, curl, waves=1.2, tip=0.012, n=12):
+    """Centre line and radii of an S-curved flame tongue (base wide, tip sharp)."""
+    pts, radii = [], []
+    for k in range(n + 1):
+        u = k / n
+        pts.append(base + up * (length * u) + side * (curl * math.sin(math.pi * waves * u) * u))
+        radii.append(tip + (r0 - tip) * (1 - u) ** 0.9)
+    return pts, radii
 
 
 def about(point, rotation):
@@ -448,7 +479,8 @@ def contact_sheet(scene, rig, shots, path, target, size=360, cols=4):
         scene.frame_set(saved[5])
 
 
-def export_gltf(rig, obj, path):
+def export_gltf(rig, obj, path, extra=()):
+    """Export rig + skinned mesh, plus `extra` standalone objects (projectile props)."""
     path = str(Path(path).resolve())
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     view_layer = bpy.context.view_layer
@@ -458,6 +490,8 @@ def export_gltf(rig, obj, path):
             o.select_set(False)
     rig.select_set(True)
     obj.select_set(True)
+    for o in extra:
+        o.select_set(True)
     view_layer.objects.active = rig
     try:
         bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True,

@@ -31,6 +31,11 @@ import { updateSpiders, spiders } from './game/spiders.js';
 import { stunders } from './game/stunders.js';
 import { snakes } from './game/snakes.js';
 import { octonauts } from './game/octonauts.js';
+import { fireFaces } from './game/firefaces.js';
+import { triangles } from './game/triangles.js';
+import { fireCats } from './game/firecats.js';
+import { projectiles } from './game/projectiles.js';
+import { tickBurning } from './render/burning.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
 import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
@@ -48,6 +53,7 @@ function frame() {
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
   tickFluidDeath(dt);
+  tickBurning(dt);
   drawTravelEnemies(dt);
   updateLoot(dt, state.time);
   tickFloatText(dt);
@@ -77,6 +83,8 @@ window.__game = {
   get map() { return state.map; }, player, generate, loadCube, updatePlayer, groundAt,
   get transitioning() { return state.transitioning; }, get spiders() { return spiders; }, updateSpiders, state,
   get stunders() { return stunders; }, get snakes() { return snakes; }, get octonauts() { return octonauts; },
+  get fireFaces() { return fireFaces; }, get triangles() { return triangles; }, get fireCats() { return fireCats; },
+  get projectiles() { return projectiles; },
   get enemies() { return allEnemies(); }, updateEnemies,
   devSwapWeapon: state.dev ? devSwapWeapon : undefined,
 };

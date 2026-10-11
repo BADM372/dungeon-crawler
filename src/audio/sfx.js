@@ -1,5 +1,5 @@
 // Generated sound effects (Web Audio, no sample files): a sword whoosh, hits, kills,
-// getting hurt and pickups. The audio context starts on the first key or click, as browsers
+// getting hurt, pickups, and thrown fireballs / punches and burning. The audio context starts on the first key or click, as browsers
 // require. M toggles mute (remembered).
 import * as THREE from 'three';
 import { camera } from '../render/scene.js';
@@ -88,6 +88,29 @@ const SOUNDS = {
   coin(t, out, p) {    // two quick bright notes; rapid pickups climb in pitch
     tone('triangle', 1568 * p, 1568 * p, t, 0.08, amp(t, 0.002, 0.32, 0.07, out));
     tone('triangle', 2093 * p, 2093 * p, t + 0.055, 0.2, amp(t + 0.055, 0.002, 0.3, 0.18, out));
+  },
+  fireball(t, out, p) {   // a breathy roar: low-passed noise swelling, with a low rumble
+    const f = filter('lowpass', 600 * p, 1, amp(t, 0.06, 1, 0.35, out));
+    f.frequency.setValueAtTime(400 * p, t); f.frequency.exponentialRampToValueAtTime(1800 * p, t + 0.12);
+    f.frequency.exponentialRampToValueAtTime(500 * p, t + 0.4);
+    noise(t, 0.42, f);
+    tone('sawtooth', 90 * p, 55 * p, t, 0.3, filter('lowpass', 300, 1, amp(t, 0.03, 0.35, 0.28, out)));
+  },
+  whump(t, out, p) {      // a fireball bursting: a soft thud and crackle
+    tone('sine', 140 * p, 45 * p, t, 0.2, amp(t, 0.003, 0.8, 0.2, out));
+    noise(t, 0.3, filter('bandpass', 1400 * p, 0.6, amp(t, 0.005, 0.6, 0.28, out)));
+  },
+  sizzle(t, out, p) {     // burning: hissing high noise
+    noise(t, 0.22, filter('highpass', 3000 * p, 0.7, amp(t, 0.01, 0.35, 0.2, out)));
+  },
+  zap(t, out, p) {        // the Triangle's punch: a falling buzzy chirp
+    tone('square', 900 * p, 160 * p, t, 0.22, filter('lowpass', 2400, 2, amp(t, 0.004, 0.25, 0.22, out)));
+    tone('sine', 300 * p, 90 * p, t, 0.18, amp(t, 0.004, 0.5, 0.18, out));
+  },
+  shatter(t, out, p) {    // the punch landing: a glassy ping over a thump
+    tone('triangle', 1760 * p, 1320 * p, t, 0.25, amp(t, 0.002, 0.25, 0.25, out));
+    tone('sine', 160 * p, 60 * p, t, 0.15, amp(t, 0.002, 0.7, 0.15, out));
+    noise(t, 0.08, filter('highpass', 2500, 0.7, amp(t, 0.001, 0.35, 0.07, out)));
   },
   pickup(t, out, p) {
     tone('sine', 660 * p, 990 * p, t, 0.1, amp(t, 0.004, 0.3, 0.1, out));

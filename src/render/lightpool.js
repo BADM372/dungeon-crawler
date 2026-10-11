@@ -19,6 +19,11 @@ export function adoptLights(group) {
 
 export function releaseLights(group) { sources = sources.filter(s => s.group !== group); }
 
+// a light that moves with `object` (an enemy, a projectile): light.position is local to it;
+// it shines while the object is visible, at whatever intensity the owner sets
+export function trackLight(light, object) { sources.push({ l: light, parent: object, group: object, pos: new THREE.Vector3() }); }
+export function untrackLight(light) { sources = sources.filter(s => s.l !== light); }
+
 export function updateLightPool(focus) {
   for (const s of sources) {
     s.parent.updateWorldMatrix(true, false);

@@ -1,0 +1,48 @@
+// Thrown attacks (fireballs, Triangle punches) and burning, as pure rules; game/projectiles.js
+// runs them against the live level and the player, render/projectiles.js draws them.
+
+// A projectile leaves the muzzle (model space: x, up, forward) of enemy e and flies straight
+// along e's heading, pitched towards the target's height (at most ~24 degrees), so stepping
+// aside during the wind-up dodges it.
+export function launch(e, spec, target) {
+  const [mx, my, mz] = spec.muzzle, s = Math.sin(e.yaw), c = Math.cos(e.yaw);
+  const x = e.x + mx * c + mz * s, y = e.y + my, z = e.z - mx * s + mz * c;
+  const flat = Math.max(0.5, Math.hypot(target.x - x, target.z - z));
+  const slope = Math.max(-0.45, Math.min(0.45, (target.y - y) / flat)), l = Math.hypot(1, slope);
+  return { kind: spec.kind, spec, x, y, z, vx: s * spec.speed / l, vy: slope * spec.speed / l, vz: c * spec.speed / l,
+    travelled: 0, t: 0 };
+}
+
+// does projectile pr overlap the player's body p (a vertical capsule of radius r, height h)?
+export function touches(pr, p) {
+  const lo = p.y + p.r, hi = p.y + p.h - p.r;
+  const dy = pr.y < lo ? lo - pr.y : pr.y > hi ? pr.y - hi : 0;
+  return Math.hypot(pr.x - p.x, pr.z - p.z, dy) < pr.spec.radius + p.r;
+}
+
+// Advance by dt in small steps. Returns 'hit' (touched the player p; pass null for none),
+// 'blocked' (solid(x, y, z) says it ran into the level), 'spent' (out of range) or null.
+export function stepProjectile(pr, dt, p, solid) {
+  const n = Math.max(1, Math.ceil(pr.spec.speed * dt / 0.08)), h = dt / n;
+  pr.t += dt;
+  for (let i = 0; i < n; i++) {
+    pr.x += pr.vx * h; pr.y += pr.vy * h; pr.z += pr.vz * h;
+    pr.travelled += pr.spec.speed * h;
+    if (p && touches(pr, p)) return 'hit';
+    if (solid(pr.x, pr.y, pr.z)) return 'blocked';
+    if (pr.travelled >= pr.spec.range) return 'spent';
+  }
+  return null;
+}
+
+// Burning: `burn` ({ time, damage, ticks }) deals its damage in equal ticks over its time.
+// Catching fire again restarts it.
+export const ignite = (burn, reason) => ({ time: burn.time, damage: burn.damage, ticks: burn.ticks, t: 0, done: 0, reason });
+// advance a burn by dt; returns the damage due in this step
+export function burnStep(b, dt) {
+  b.t += dt;
+  const due = Math.min(b.ticks, Math.floor(b.t * b.ticks / b.time + 1e-9)), n = due - b.done;
+  b.done = due;
+  return n * b.damage / b.ticks;
+}
+export const burntOut = b => b.done >= b.ticks;

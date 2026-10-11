@@ -11,7 +11,11 @@ import { spiders } from '../../src/game/spiders.js';
 import { stunders } from '../../src/game/stunders.js';
 import { snakes } from '../../src/game/snakes.js';
 import { octonauts } from '../../src/game/octonauts.js';
-import { SNAKE, OCTONAUT, makeEnemy } from '../../src/core/enemies.js';
+import { fireFaces } from '../../src/game/firefaces.js';
+import { triangles } from '../../src/game/triangles.js';
+import { fireCats } from '../../src/game/firecats.js';
+import { projectiles, clearProjectiles } from '../../src/game/projectiles.js';
+import { SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy } from '../../src/core/enemies.js';
 import { updatePlayer } from '../../src/game/update.js';
 import { climb } from '../../src/physics/climb.js';
 import { W, resetMode } from '../../src/render/blendtree.js';
@@ -22,6 +26,10 @@ import { stunderModel } from '../../src/render/stundermodel.js';
 import { spiderModel } from '../../src/render/spidermodel.js';
 import { snakeModel } from '../../src/render/snakemodel.js';
 import { octonautModel } from '../../src/render/octonautmodel.js';
+import { fireFaceModel } from '../../src/render/firefacemodel.js';
+import { triangleModel } from '../../src/render/trianglemodel.js';
+import { fireCatModel } from '../../src/render/firecatmodel.js';
+import { tickBurning, burningLit } from '../../src/render/burning.js';
 import { startTravel, travelling, updateTravel, drawTravelEnemies } from '../../src/game/travel.js';
 import { camera } from '../../src/render/scene.js';
 import { updatePointer, hoveredEnemy } from '../../src/game/pointer.js';
@@ -58,7 +66,7 @@ function place(e, x, z) {
 function hero() {
   cancelSwing(player, true);
   Object.assign(player, { x: 6.5, y: 0, visY: 0, z: 6.5, yaw: 0, vx: 0, vy: 0, vz: 0,
-    ...createPlayerStats(), grounded: true, swimming: false, climb: null, ragdoll: null, stun: 0,
+    ...createPlayerStats(), grounded: true, swimming: false, climb: null, ragdoll: null, stun: 0, burning: null,
     support: at(6.5, 6.5), safe: { x: 6.5, y: 0, z: 6.5 }, coyote: 0, jumpBuf: 0 });
 }
 function press(code) {
@@ -234,6 +242,113 @@ export async function runNewEnemyChecks() {
       state.map = originalMap; state.run = savedRun;
       Object.assign(player, saved); cancelSwing(player, true);
       resetEnemies();
+    }
+  });
+}
+
+// Fire-face fireball (and burning), Triangle punch (knockdown, dodging, walls), Fire-cat
+// chase and pounce: real AI timers, projectiles flying over the level, the matching clips,
+// glow lights, and corpses.
+export async function runFireChecks() {
+  check(fireFaceModel.ready && triangleModel.ready && fireCatModel.ready, 'Wait for the Fire-face / Triangle / Fire-cat assets to load');
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, savedRun = state.run, results = [];
+    const run = (n, each) => { for (let i = 0; i < n; i++) { updateEnemies(1 / 60); drawEnemies(1 / 60); tickBurning(1 / 60); if (each?.(i)) return i; } return n; };
+    const attack = (e, t = 0) => Object.assign(e, { mode: 'attack', t, bit: false, attacks: e.attacks + 1, attack: 0, think: 1e6, leap: 0 });
+    const muzzle = (e, [mx, my, mz]) => new THREE.Vector3(e.x + mx * Math.cos(e.yaw) + mz * Math.sin(e.yaw), e.y + my, e.z - mx * Math.sin(e.yaw) + mz * Math.cos(e.yaw));
+    const wall = on => { for (let x = 4; x < 9; x++) state.map.blockers[8 * N + x] = on ? [{ shape: 'box', x0: 4, x1: 9, z0: 8.4, z1: 8.6, bottom: -1, top: 3 }] : []; };
+    try {
+      state.run = createRun(); state.map = arena(); resetEnemies();
+      for (const e of allEnemies()) place(e, 2.5, 2.5);   // the arena's own population waits in a corner
+      const ff = makeEnemy({ f: at(6.5, 10.5), x: 6.5, y: 0, z: 10.5, yaw: Math.PI }, FIREFACE);
+      const tri = makeEnemy({ f: at(6.5, 10), x: 6.5, y: 0, z: 10, yaw: Math.PI }, TRIANGLE);
+      const cat = makeEnemy({ f: at(6.5, 8.5), x: 6.5, y: 0, z: 8.5, yaw: Math.PI }, FIRECAT);
+      fireFaces.push(ff); triangles.push(tri); fireCats.push(cat);
+      place(tri, 13.5, 2.5); place(cat, 13.5, 13.5); place(ff, 6.5, 10.5); hero();
+      drawEnemies(1 / 60);
+      const walkTime = ff.view.actions.walk.time;
+      drawEnemies(0.25);
+      check(ff.view.actions.walk.time !== walkTime && ff.speed === 0, 'A hovering Fire-face keeps its loop running while idle');
+      check(ff.view.light.intensity > 2 && tri.view.light.intensity > 1 && cat.view.light.intensity > 0.5, 'Fire and the Triangle must light their surroundings');
+      check(ff.view.flames.length >= 12 && cat.view.flames.length >= 9, 'Flame bones must be found for the flicker');
+
+      // the ball in the clip sits where the thrown fireball starts
+      attack(ff, FIREFACE.hitAt - 1 / 30);
+      for (let i = 0; i < 40; i++) drawEnemies(1 / 60);
+      scene.updateMatrixWorld(true);
+      const ball = ff.view.model.getObjectByName('charge').getWorldPosition(new THREE.Vector3());
+      check(ball.distanceTo(muzzle(ff, FIREFACE.projectile.muzzle)) < 0.05, 'FireAttack ball must leave from the muzzle: ' + ball.distanceTo(muzzle(ff, FIREFACE.projectile.muzzle)));
+      place(ff, 6.5, 10.5); attack(ff);
+      run(Math.ceil(FIREFACE.hitAt * 60));
+      check(ff.view.actions.attack.getEffectiveWeight() > 0.99, 'FireAttack must play');
+      check(projectiles.length === 1 && projectiles[0].kind === 'fireball' && projectiles[0].view, 'The Fire-face must spit one fireball');
+      const fired = run(90, () => player.hp < 100);
+      check(player.hp === 100 - FIREFACE.damage && !player.ragdoll && player.burning && burningLit(), 'A fireball deals 22 and sets the player on fire: ' + player.hp);
+      check(!projectiles.length, 'The fireball must burst on the player');
+      const burnt = run(60, () => !player.burning);
+      check(player.hp === 100 - FIREFACE.damage - FIREFACE.projectile.burn.damage && Math.abs(burnt / 60 - 0.5) < 0.05,
+        'Burning lasts half a second and deals its damage: ' + player.hp + ' after ' + burnt / 60);
+      results.push(`fireball: from the muzzle, hit after ${(fired / 60).toFixed(2)}s, 22 + 6 burn over 0.5s`);
+
+      hero(); place(ff, 6.5, 10.5); wall(true);
+      attack(ff); run(120);
+      check(player.hp === 100 && !projectiles.length, 'A wall must stop a fireball');
+      place(ff, 6.5, 10.5); Object.assign(ff, { mode: 'chase', path: [ff.f], cool: 0 });
+      run(40);
+      check(ff.mode === 'chase' && ff.attacks === 3, 'No clear shot, no throw');
+      wall(false); place(ff, 6.5, 10.5); Object.assign(ff, { mode: 'chase', path: [ff.f], cool: 0 });
+      run(40);
+      check(ff.mode === 'attack', 'With a clear shot in reach it throws by itself');
+      place(ff, 13.5, 6.5); clearProjectiles();
+      results.push('walls stop fireballs and block the shot; a clear line starts one');
+
+      hero(); place(tri, 6.5, 10); attack(tri);
+      run(Math.ceil(TRIANGLE.hitAt * 60) + 1);
+      check(tri.view.actions.attack.getEffectiveWeight() > 0.99 && projectiles.length === 1 && projectiles[0].kind === 'punch', 'TriPunch must throw its inner triangles');
+      check(tri.view.model.getObjectByName('ring').scale.x < 0.1, 'The thrown triangles must leave the frame');
+      run(60, () => player.ragdoll);
+      check(player.hp === 100 - TRIANGLE.damage && player.ragdoll, 'A Triangle punch deals 28 and knocks down: ' + player.hp);
+      hero(); place(tri, 6.5, 10); attack(tri);
+      run(Math.ceil(TRIANGLE.trackUntil * 60) + 2);
+      player.x = 8.2;   // step aside after it stopped aiming
+      run(90);
+      check(player.hp === 100 && !projectiles.length, 'Stepping aside after the wind-up dodges the punch');
+      check(tri.view.model.getObjectByName('ring').scale.x > 0.9, 'New inner triangles grow back');
+      place(tri, 13.5, 2.5);
+      results.push('Triangle punch: knockdown, dodgeable after it stops aiming, triangles regrow');
+
+      hero(); place(cat, 6.5, 8.5); attack(cat);
+      run(Math.ceil(FIRECAT.hitAt * 60) + 2);
+      check(Math.abs(cat.z - (6.5 + FIRECAT.lunge.stop)) < 0.06, 'The pounce must land lunge.stop short of the player: ' + cat.z);
+      check(cat.view.actions.attack.getEffectiveWeight() > 0.99, 'CatPounce must play');
+      check(player.hp === 100 - FIRECAT.damage && !player.ragdoll && !player.burning, 'A Fire-cat bite deals 26, no knockdown, no burn: ' + player.hp);
+      hero(); place(cat, 6.5, 13.5); Object.assign(cat, { mode: 'chase', think: 0 });
+      let fastest = 0, runWeight = 0;
+      run(240, () => { fastest = Math.max(fastest, cat.speed); runWeight = Math.max(runWeight, cat.view.actions.fast.getEffectiveWeight()); return cat.mode === 'attack'; });
+      check(cat.mode === 'attack' && fastest > FIRECAT.chase * 0.9 && runWeight > 0.9, `The cat must run in (CatRun) and pounce: ${fastest} ${runWeight}`);
+      const from = cat.z;
+      run(80, () => player.hp < 100);
+      check(player.hp === 100 - FIRECAT.damage && from - cat.z > 0.9, 'The real chase ends in a leap and a bite: ' + (from - cat.z));
+      results.push('Fire-cat: runs at chase speed with CatRun, pounces lunge.stop short and bites');
+
+      hero(); place(ff, 6.5, 9.5); place(tri, 4.5, 9.5); place(cat, 8.5, 9.5);
+      for (const e of [ff, tri, cat]) damageEnemy(e, e.hp);
+      run(1);
+      check([ff, tri, cat].every(e => e.view.actions.death.getEffectiveWeight() === 1), 'Death clips must play');
+      for (const time of [0.5, 1.2, 1.9, 2.4]) {
+        for (const e of [ff, tri, cat]) e.deadT = time;
+        drawEnemies(1 / 60);
+        for (const e of [ff, tri, cat]) check(minimumY(e.view.model) >= -0.003, e.type + ' corpse below the floor at ' + time);
+      }
+      check(ff.view.light.intensity === 0 && tri.view.light.intensity === 0, 'The glow must die with them');
+      run(Math.ceil(FIRECAT.corpseTime * 60) + 60);
+      check(![ff, tri, cat].some(e => allEnemies().includes(e) || e.view), 'Corpses must leave and release their views');
+      results.push('death clips on the floor, the glow dies, views released');
+      return results;
+    } finally {
+      state.map = originalMap; state.run = savedRun;
+      Object.assign(player, saved); cancelSwing(player, true);
+      resetEnemies(); tickBurning(1);
     }
   });
 }

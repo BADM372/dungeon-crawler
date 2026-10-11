@@ -55,3 +55,26 @@ export function playerHurtFx(dmg, fx, fz) {
   cameraKick(player.x - fx, player.z - fz, 0.12, -0.05);
   sfx('hurt', { at: player });
 }
+
+// burn damage ticking while the player is on fire
+export function burnHurtFx(dmg) {
+  floatText('-' + Math.ceil(dmg), q => q.set(player.x, player.visY + 1.15, player.z), { color: '#ffa040', size: 0.2, life: 0.7, rise: 0.8,
+    drift: rand(-0.3, 0.3), pop: 0.4 });
+  sfx('sizzle', { at: player, volume: 0.7 });
+}
+
+// a projectile was thrown ('launch'), or ended: 'hit' (the player), 'blocked' (the level), 'spent'
+export function projectileFx(pr, what) {
+  const fire = pr.kind === 'fireball', { x, y, z } = pr;
+  if (what === 'launch') { sfx(fire ? 'fireball' : 'zap', { at: pr }); return; }
+  const colors = fire ? ['#ffd25a', '#ff8a2a', '#ff4a17'] : ['#f0d0ff', '#b57aff', '#7a3cff'];
+  const n = what === 'spent' ? 6 : 18, s = what === 'spent' ? 1 : 2.6;
+  emit(glow, x, y, z, { life: 0.18, size: what === 'spent' ? 0.35 : 0.7, grow: 1, color: colors[1], alpha: 0.9 });
+  for (let i = 0; i < n; i++)
+    emit(glow, x, y, z, { v: [rand(-s, s), rand(0.3, s), rand(-s, s)], life: rand(0.25, 0.5), size: rand(0.06, 0.12),
+      color: colors[i % 3], gravity: fire ? 3 : 6, drag: 2 });
+  if (fire) for (let i = 0; i < 3; i++)
+    emit(soft, x, y + 0.1, z, { v: [rand(-0.3, 0.3), rand(0.4, 0.8), rand(-0.3, 0.3)], life: rand(0.8, 1.2), size: rand(0.2, 0.3),
+      grow: 0.8, color: '#4a403a', alpha: 0.4, drag: 0.6 });
+  if (what !== 'spent') sfx(fire ? 'whump' : 'shatter', { at: pr, volume: 0.8 });
+}

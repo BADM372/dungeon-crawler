@@ -10,6 +10,7 @@ export const player = {
   sword: swordState(),
   grounded: true, swimming: false, fluid: 0, fluidDeath: 0, support: null,
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
+  burning: null,   // on fire (core/projectiles.js ignite)
   // event counters the animator watches
   jumpCount: 0, landCount: 0, landImpact: 0, getUpCount: 0,
   ragdoll: null, ragdollThen: null, climb: null, climbV: 0,

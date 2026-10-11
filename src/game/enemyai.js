@@ -1,10 +1,12 @@
 // Shared floor-bound behaviour. Species tuning controls health, speed, clearance,
 // wind-up / strike / recovery, and what a hit does; a species with several attacks
-// picks one each time it strikes.
+// picks one each time it strikes. A ranged species throws from `reach` away when it has a
+// clear shot; a pouncing one is carried forward through its leap.
 import { player, state } from './state.js';
 import { playerFloor, strikePlayer } from './enemycombat.js';
 import { stepEnemy, findPath, around, clearLine } from '../physics/enemynav.js';
-import { attackOf, pickAttack } from '../core/enemies.js';
+import { attackOf, pickAttack, lungeDistance, lungeAt } from '../core/enemies.js';
+import { launchProjectile } from './projectiles.js';
 
 const turn = (e, yaw, dt, rate = 8) => { e.yaw += Math.atan2(Math.sin(yaw - e.yaw), Math.cos(yaw - e.yaw)) * Math.min(1, dt * rate); };
 function steer(e, x, z, speed, dt) {
@@ -40,22 +42,33 @@ function decide(e) {
   e.lost = !e.path || dist > cfg.giveUp ? e.lost + 0.2 : 0;
   if (e.lost > 1.4) { e.mode = 'home'; e.path = findPath(e.f, e.home, 40, cfg.height) || [e.f]; }
 }
+// a thrown attack needs a free line from its muzzle height to the player's chest
+const clearShot = e => clearLine(e.x, e.y + e.profile.projectile.muzzle[1], e.z, player.x, player.y + player.h * 0.55, player.z);
+// The leap of a pounce: once it takes off it commits to a distance (along its heading, up to
+// lunge.stop short of the player) and covers it between lunge.from and lunge.to.
+function leap(e, lunge, t0, dx, dz) {
+  const fx = Math.sin(e.yaw), fz = Math.cos(e.yaw);
+  if (t0 < lunge.from && e.t >= lunge.from) e.leap = lungeDistance(lunge, Math.max(0, fx * dx + fz * dz));
+  const step = (lungeAt(lunge, e.t) - lungeAt(lunge, t0)) * e.leap;
+  if (step > 0) stepEnemy(e, fx * step, fz * step);
+}
 function act(e, dt) {
   const p = player, cfg = e.profile, dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
   if (e.mode === 'attack') {
-    const a = attackOf(e);
+    const a = attackOf(e), t0 = e.t;
     e.t += dt; e.speed = 0;
     if (e.t < a.trackUntil) turn(e, Math.atan2(dx, dz), dt, 6);
-    if (!e.bit && e.t >= a.hitAt) { e.bit = true; strikePlayer(e); }
+    if (a.lunge) leap(e, a.lunge, t0, dx, dz);
+    if (!e.bit && e.t >= a.hitAt) { e.bit = true; if (a.projectile) launchProjectile(e, a); else strikePlayer(e); }
     if (e.t >= a.attackTime) { e.mode = 'chase'; e.cool = cfg.cooldown; }
     return;
   }
   if (e.mode === 'chase') {
     if (!e.path) { e.speed = 0; return; }
     const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7;
-    if (d < cfg.reach && Math.abs(p.y - e.y) < 0.5 && !p.ragdoll) {
+    if (d < cfg.reach && Math.abs(p.y - e.y) < (cfg.projectile ? 1.5 : 0.5) && !p.ragdoll && (!cfg.projectile || clearShot(e))) {
       e.speed = 0; turn(e, Math.atan2(dx, dz), dt);
-      if (e.cool <= 0 && facing) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); }
+      if (e.cool <= 0 && facing) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); e.leap = 0; }
       return;
     }
     follow(e, cfg.chase, dt, [p.x, p.z]); return;
