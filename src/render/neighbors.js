@@ -16,7 +16,7 @@ const MAX_CACHE = 64, MAX_BYTES = 32 * 1024 * 1024;
 let cacheBytes = 0;
 const frustum = new THREE.Frustum(), projection = new THREE.Matrix4();
 const bounds = new THREE.Box3(), point = new THREE.Vector3(), center = new THREE.Vector3();
-const reveal = { value: 1 };
+const reveal = { value: 1 }, revealFloor = { value: -1e3 };
 
 function trimCache() {
   for (const [source, entry] of cache) {
@@ -54,14 +54,16 @@ function geometryFor(geo) {
 
 // Foreground proxies reveal the player even when no active-cube terrain needs cutting.
 // Unlike cave walls, this uses only screen region/view depth, never cube-local wall tests.
+// Like real terrain they are only cut above a height: the active cut, or just over the
+// player's feet when there is none (nothing lower can hide the player).
 function proxyMaterial(mat) {
   inject(mat, fs => fs.replace('#include <clipping_planes_fragment>',
-    'if (uProxyReveal > 0.5 && cutRegion(false) > 0.5) discard;\n#include <clipping_planes_fragment>'), 'proxy-reveal');
+    'if (uProxyReveal > 0.5 && vCutW.y > (uCutY < 999.0 ? uCutY : uProxyFloor) && cutRegion(false) > 0.5) discard;\n#include <clipping_planes_fragment>'), 'proxy-reveal');
   const compile = mat.onBeforeCompile;
   mat.onBeforeCompile = (sh, r) => {
     compile.call(mat, sh, r);
-    sh.uniforms.uProxyReveal = reveal;
-    sh.fragmentShader = 'uniform float uProxyReveal;\n' + sh.fragmentShader;
+    sh.uniforms.uProxyReveal = reveal; sh.uniforms.uProxyFloor = revealFloor;
+    sh.fragmentShader = 'uniform float uProxyReveal, uProxyFloor;\n' + sh.fragmentShader;
   };
   return mat;
 }
@@ -128,8 +130,10 @@ export function tickNeighbors(dt) {
 }
 
 // After camera, look/fog and cut updates, including both old/new sets during travel.
-export function cullNeighbors(x, z, revealPlayer = true, enabled = true) {
+// floor: the lowest height the player reveal may cut proxies at (see proxyMaterial)
+export function cullNeighbors(x, z, revealPlayer = true, enabled = true, floor = -1e3) {
   reveal.value = revealPlayer ? 1 : 0;
+  revealFloor.value = floor;
   camera.updateMatrixWorld();
   projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
   frustum.setFromProjectionMatrix(projection);

@@ -56,7 +56,7 @@ function frame() {
   if (state.cubeKey) state.lookDepth += (depthOf(state.cubeKey) - state.lookDepth) * Math.min(1, dt * 2.5);
   applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));
   updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
-  cullNeighbors(player.x, player.z, !state.transitioning, state.showNeighbors);
+  cullNeighbors(player.x, player.z, !state.transitioning, state.showNeighbors, player.visY + (player.swimming ? 0.6 : 0.3));
   updatePlayerBar();
   tickSky(performance.now() / 1000);   // real time: the stars shimmer on while paused
   renderer.render(scene, camera);
