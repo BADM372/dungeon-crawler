@@ -10,6 +10,9 @@ import { buildMarkers } from './markers.js';
 import { adoptLights, releaseLights } from './lightpool.js';
 import { makeFadable } from './fade.js';
 import { makeGlass } from './glass.js';
+import { buildProps } from './props.js';
+import { placeProps } from './propplace.js';
+import { themeAt } from '../world/depth.js';
 
 export function disposeWorld(world) {
   if (!world) return;
@@ -25,6 +28,10 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m)) {
   const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
   const markers = buildMarkers(m, group, showPath, seen);
+  // decoration (also sets the colliders of blocking props on the map)
+  const placed = placeProps(m, themeAt(m.depth ?? 0));
+  m.blockers = placed.blockers;
+  buildProps(placed.out, group);
   group.add(makeGlass());
   adoptLights(group);
   makeFadable(group);

@@ -5,6 +5,7 @@ const T = (at, name, o) => ({ at, name, tiles: {}, cave: true, ...o });
 
 export const CAVES = [
   T(5, 'Root caves', {
+    props: 'roots',
     void: 0.08, relief: 0.5,
     arche: { plain: 2, sinkhole: 2, chasm: 1, crater: 1 },
     top: [[0, '#4a3e2e'], [6, '#5e4c35'], [12, '#705c40'], [20, '#82704e']],
@@ -14,6 +15,7 @@ export const CAVES = [
     light: { sky: ['#0e0d0f', '#050506'], hemi: ['#8a8f9a', '#2a2014', 0.8], sun: ['#9aa4c0', 0.85], fog: 0.3 },
   }),
   T(7, 'Frozen caves', {
+    props: 'frozen',
     void: 0.08, relief: 0.6,
     arche: { crater: 2, sinkhole: 2, plain: 2 },
     top: [[0, '#5d7f93'], [6, '#82a6b8'], [12, '#aacbd7'], [20, '#d8ecf2']],
@@ -23,6 +25,7 @@ export const CAVES = [
     light: { sky: ['#06090e', '#020305'], hemi: ['#6a8fb0', '#101820', 0.72], sun: ['#8fb8ff', 0.75], fog: 0.38 },
   }),
   T(9, 'Fungal swamp', {
+    props: 'swamp',
     void: 0.06, relief: 0.4,
     arche: { archipelago: 2, plain: 2, crater: 1 },
     top: [[0, '#3a4826'], [6, '#4b5a2e'], [12, '#5c6a36'], [20, '#6d7a3e']],
@@ -32,6 +35,7 @@ export const CAVES = [
     light: { sky: ['#070a06', '#020302'], hemi: ['#7a8f6a', '#141a0e', 0.66], sun: ['#a0c890', 0.65], fog: 0.45 },
   }),
   T(11, 'Spider nests', {
+    props: 'nests',
     void: 0.1, relief: 0.7,
     arche: { chasm: 2, sinkhole: 2, spire: 1, plain: 1 },
     top: [[0, '#4a444a'], [6, '#565058'], [12, '#625c66'], [20, '#6e6874']],
@@ -41,6 +45,7 @@ export const CAVES = [
     light: { sky: ['#060508', '#020203'], hemi: ['#6a6070', '#100c12', 0.6], sun: ['#b0a0c0', 0.6], fog: 0.5 },
   }),
   T(13, 'Crystal mines', {
+    props: 'mines',
     void: 0.08, relief: 0.8,
     arche: { chasm: 2, mesa: 2, spire: 2, plain: 1 },
     top: [[0, '#4a4a52'], [6, '#5a5a64'], [12, '#6a6a76'], [20, '#7a7a88']],
@@ -50,6 +55,7 @@ export const CAVES = [
     light: { sky: ['#05060a', '#020203'], hemi: ['#6a7aa0', '#0c0e16', 0.56], sun: ['#90a8ff', 0.55], fog: 0.55 },
   }),
   T(15, 'Buried ruins', {
+    props: 'ruins',
     void: 0.1, relief: 0.6,
     arche: { mesa: 3, sinkhole: 1, plain: 2 },
     top: [[0, '#7a6648'], [6, '#8c7650'], [12, '#9e8658'], [20, '#b09660']],
@@ -59,6 +65,7 @@ export const CAVES = [
     light: { sky: ['#0a0704', '#030201'], hemi: ['#a08a60', '#140e08', 0.52], sun: ['#ffcf8a', 0.5], fog: 0.55 },
   }),
   T(17, 'Volcanic depths', {
+    props: 'volcanic',
     void: 0.12, relief: 0.8,
     arche: { crater: 3, chasm: 2, spire: 1 },
     top: [[0, '#2a2626'], [6, '#363030'], [12, '#423a38'], [20, '#4e4440']],
@@ -68,6 +75,7 @@ export const CAVES = [
     light: { sky: ['#1a0604', '#050101'], hemi: ['#a05030', '#1a0806', 0.5], sun: ['#ff7a40', 0.55], fog: 0.55 },
   }),
   T(19, 'Obsidian abyss', {
+    props: 'abyss',
     void: 0.6, relief: 0.6,
     arche: { archipelago: 4, spire: 2, chasm: 1 },
     top: [[0, '#1a1820'], [6, '#22202a'], [12, '#2a2834'], [20, '#32303e']],

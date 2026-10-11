@@ -5,7 +5,7 @@
 //   fluids: weights [water, lava, acid] for pools and falls; river: fluid of the rivers
 //   tiles: weight multipliers for the WFC kinds; cave: below the ground (no sun, no sky)
 //   void: how much of a cube may be open to the depth below; relief: how tall highlands get
-//   arche: weights of the cube archetypes (gen/archetypes.js)
+//   arche: weights of the cube archetypes (gen/archetypes.js); props: prop set (blender/props.glb)
 //   light: sky [top, bottom], hemi [sky, ground, intensity], sun [colour, intensity], fog 0..1
 import { WATER } from '../core/constants.js';
 import { CAVES } from './cavethemes.js';
@@ -14,6 +14,7 @@ const T = (at, name, o) => ({ at, name, tiles: {}, cave: false, ...o });
 
 export const THEMES = [
   T(0, 'Meadow islands', {
+    props: 'meadow',
     void: 0.5, relief: 0.5,
     arche: { plain: 3, archipelago: 3, spire: 1, mesa: 1, chasm: 1 },
     top: [[0, '#3b6532'], [4, '#4c8a3c'], [8, '#76ad50'], [12, '#a3b26a'], [16, '#b7a888'], [20, '#d9d3c5']],
@@ -22,6 +23,7 @@ export const THEMES = [
     light: { sky: ['#2a3242', '#0c0e13'], hemi: ['#dfeaff', '#3a3020', 1.1], sun: ['#fff1dd', 2.4], fog: 0 },
   }),
   T(3, 'Snowy peaks', {
+    props: 'peaks',
     void: 0.42, relief: 1.0,
     arche: { spire: 3, chasm: 2, mesa: 2, plain: 1 },
     top: [[0, '#8fa4ab'], [6, '#c3d3d8'], [12, '#e6eef1'], [20, '#ffffff']],
@@ -31,6 +33,7 @@ export const THEMES = [
     light: { sky: ['#34415a', '#10141c'], hemi: ['#e6f0ff', '#565c6c', 1.15], sun: ['#f4f8ff', 2.2], fog: 0.15 },
   }),
   T(4, 'Badlands', {
+    props: 'badlands',
     void: 0.12, relief: 0.8,
     arche: { chasm: 3, mesa: 3, spire: 1, plain: 1 },
     top: [[0, '#9a6a3c'], [6, '#b9864f'], [12, '#d3a466'], [20, '#e8cf9a']],

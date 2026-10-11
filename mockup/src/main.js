@@ -13,6 +13,7 @@ import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
 import { tickNeighbors } from './render/neighbors.js';
+import { tickProps } from './render/props.js';
 import { applyLook } from './render/look.js';
 import { depthOf } from './world/depth.js';
 import './game/dev.js';
@@ -33,6 +34,7 @@ function frame() {
   animateCharacter(dt, state.time);
   drawTravelSpiders(dt);
   tickNeighbors(dt);
+  tickProps(state.time);
   if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
   updateCamera(dt);

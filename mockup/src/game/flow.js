@@ -11,6 +11,7 @@ import { showStats, flash, fadeOut, fadeIn, whenReady } from './hud.js';
 import { resetCut } from './cut.js';
 import { resetSpiders } from './spiders.js';
 import { drawMinimap } from './minimap.js';
+import { whenPropsReady } from '../render/props.js';
 
 export function spawnAt(x, y, z) {
   Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, stun: 0 });
@@ -83,6 +84,14 @@ export function visitedNeighbors(k) {
 }
 
 export function updateNeighbors() { showNeighbors(visitedNeighbors(state.cubeKey)); }
+
+// the props library may arrive after the first cube was built: build that cube again
+whenPropsReady(() => {
+  if (!state.world || state.transitioning) return;
+  const c = state.cubes.cubes.get(state.cubeKey);
+  disposeWorld(state.world);
+  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo);
+});
 
 export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.cubes?.dispose();

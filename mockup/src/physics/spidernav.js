@@ -9,7 +9,7 @@ const CLEAR = 0.9;   // free height a spider needs above a floor
 const free = new WeakMap();
 
 export function walkable(f) {
-  if (!f || f.kind || f.landing || f.fluid || f.covered) return false;
+  if (!f || f.kind || f.landing || f.fluid || f.covered || state.map.blockers?.[f.c]?.length) return false;
   let ok = free.get(f);
   if (ok === undefined) {
     const lo = floorY(f, 0.5, 0.5), hi = lo + CLEAR;

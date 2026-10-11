@@ -33,6 +33,8 @@ export function blockedAt(x, z, y, step, piecesOnly = false) {
   const i = cellAt(x, z);
   if (i < 0) return true;
   const [fx, fz] = local(x, z), head = y + player.h;
+  // blocking props (trees, boulders, columns): round colliders
+  for (const b of state.map.blockers?.[i] || []) if (Math.hypot(x - b.x, z - b.z) < b.r && b.bottom < head && b.top > y + step) return true;
   if (!piecesOnly) for (const f of state.map.cols[i]) if (floorY(f, fx, fz) > y + step && f.bottom * LH < head) return true;
   for (const p of state.map.pieces[i]) {
     if (p.kind === 'pillar') {

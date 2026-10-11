@@ -30,7 +30,7 @@ function inject(mat, fragCode, key) {
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vCutW;\nvarying float vCutZ;\n' + sh.vertexShader.replace('#include <project_vertex>',
-      '#include <project_vertex>\n  vCutW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n  vCutZ = -mvPosition.z;');
+      '#include <project_vertex>\n#ifdef USE_INSTANCING\n  vCutW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;\n#else\n  vCutW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#endif\n  vCutZ = -mvPosition.z;');
     sh.fragmentShader = 'varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth;\nuniform vec2 uCenter, uRes;\n'
       + REGION + '\n' + fragCode(sh.fragmentShader);
   };

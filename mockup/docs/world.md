@@ -114,6 +114,24 @@ everywhere.
 Structures: a stair never runs right beside a bridge at a similar height, and timber legs
 under plank bridges never stand where another structure passes underneath.
 
+## Props (`render/props.js`, `render/propplace.js`)
+
+Decoration comes from `blender/props.glb` (built by `blender/props.py` from
+`blender/wants.txt`). Each theme names its prop set (`props`); neutral `any_*` rocks are
+tinted with the theme's rock colour. Placement runs on the main thread when a cube's meshes
+are built, seeded by the cube.
+
+- **Ground props:** on dry floors without structures, only where they fit under the floor
+  above.
+- **Blocking props** (trees, boulders, columns): never in or next to route columns or near
+  portals. They get round colliders (`map.blockers`) that the player and the spiders respect.
+- **Ceiling props:** hang under floating slabs.
+- **Wall props:** sit on cliff faces at least 1.5 high.
+
+They are drawn as one instanced mesh per prop (and per material part), with per-cube
+material clones so they fade and get cut with their cube. Props with `sway` bend in the
+wind in the vertex shader. Up to six glowing props per cube add light sources for the pool.
+
 ## Generator changes
 
 - Input is a spec (`world.spec(k)`) instead of a seed. Retries vary the seed but never the spec.
