@@ -14,7 +14,7 @@ export const isCramped = (ctx, f) => { const a = !f.landing && ctx.nextAbove(f);
 function graph(ctx, real) {
   const { cols, floors, headOK, moves, fences } = ctx, adj = new Map();
   const memo = new Map(), cramped = f => real && (memo.get(f) ?? memo.set(f, isCramped(ctx, f)).get(f));
-  const stand = f => (!f.fluid || f.fluid === WATER) && !cramped(f);
+  const stand = f => !f.siteBlocked && (!f.fluid || f.fluid === WATER) && !cramped(f);
   const add = (a, b) => { if (cramped(a) || cramped(b)) return; let s = adj.get(a.id); if (!s) adj.set(a.id, s = []); s.push(b); };
   const fenced = (f, n, h) => real && (fences.get(edgeKey(f.x, f.z, n % N, (n / N) | 0)) || []).some(e => e.ymin < h + 0.6 && e.ymax > h - 0.6);
   for (const f of floors) {

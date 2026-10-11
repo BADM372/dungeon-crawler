@@ -5,7 +5,8 @@
 111 prop types × 2 variants = **222 meshes, 40,102 triangles**, built and inspected
 through Blender MCP. Same low-poly, flat-shaded, vertex-coloured style and contract
 as `../props.py` / `../props.glb`; this is an *addition*, not a replacement.
-**Not hooked up to the world generator yet**; see "Generator integration" below.
+**Hooked up to the game**, including cover, shore, fluid-surface and cliff-lip placement.
+Signature props are reserved for deliberate destination arrangements.
 
 ## Files
 
@@ -78,23 +79,27 @@ ruins masonry is neutral as in `props.glb`; everything else, including `relics`,
 | `lip` | origin on the cliff's top edge; cliff body is glTF z>0 & y<0. May lie on the top (y≥0, ≤ 0.25 high, up to 0.35 back) and drapes down the face; `drop` = hang depth, `radius` = half-width along the edge | NEW: top edge of a cliff ≥ `drop` + 0.2 high (or a void edge), yaw like walls, at the top corner height |
 | `water` | origin on the surface, ≈ ±0.2 around it; `fluid` = water/lava/acid | NEW: on fluid cells at `surf * LH`, matching fluid; may bob slowly |
 
-## Generator integration (later)
+## Generator integration
 
-Not done yet. Suggested steps in `mockup/src/render/props.js` / `propplace.js`:
+`mockup/src/render/props.js` loads both libraries and the closed-chest preview.
+`propplace.js` supports all five attachments and preserves the new extras:
 
-1. Load `blender/clutter.glb` next to `props.glb` with the same `registerProps()`; keep
-   `cover`, `shore`, `fluid` and `drop` from the extras.
-2. Cover pass: per dry floor, 0–3 cover props from `theme.props` and `any`, independent
-   of the existing one-prop draw. Cover ignores `walkCols` and slope.
-3. Shore: allow `shore` props only where a 4-neighbour is fluid; water: per fluid cell with
-   a low chance, matching `fluid`.
-4. Lip: alongside the wall loop, place at the top of the drop when `top - low > drop + 0.2`
-   or over void.
-5. Add `relics` at a low weight to every cave theme (`theme.cave`), like `any`.
-6. Optional borrowing, no new models: peaks can use `frozen` icicles on ceilings and `ice_floe`
-   on water; roots can use `meadow` ferns.
-7. Lights: cover props with a `light` hint are meant as emissive only (do not create
-   PointLights for them, or count them separately).
+- Cover is a separate 0–2-per-floor draw, allowed on terrain routes and slopes;
+  slope placements tilt to the local floor normal. It does not cover structure decks.
+- Shore props require a nearby fluid bank; surface props match the fluid type.
+- Lip props require sufficient hanging clearance, accounting for instance scale.
+- Non-signature `relics` appear at low weight in caves.
+- Glowing cover remains emissive-only, outside the six-point-light budget.
+- Destination reservations keep ambient clutter away from rewards and approaches.
+  Focal assets such as altars, ritual circles and abandoned expeditions are recipe-only.
+
+`mockup/src/gen/sites.js` authors destination arrangements before reachability
+validation, using worker-safe bounds/collider metadata. Regenerate the metadata with
+`node mockup/tools/prop-metadata.mjs` after re-exporting models. The game tests verify
+that the metadata still matches actual GLBs.
+
+Cross-biome borrowing (e.g. ice floes in peaks or meadow ferns in roots) is not yet
+implemented. See `mockup/docs/generation-plan.md` for the destination roadmap.
 
 ## Rebuild / validate
 

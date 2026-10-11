@@ -56,6 +56,7 @@ export class World {
     return {
       key: k, X, Y, Z, kind: t.kind, exit: this.layout(-Y).exit.get(k) ?? null, K: t.K, B: LAYER_BASE.slice(0, t.K), faces, portals,
       spawn: k === this.start, town: isTown(k), merchantCamp: isMerchantCamp(k, this.seed), enemyFree: enemyFreeAt(k), noise: this.noise, depth: -Y, cave: theme.cave,
+      biome: theme.props, roomRole: this.layout(-Y).roles.get(k), rewardSites: this.layout(-Y).sitePlans.get(k) || [],
       fluid: theme.river, fluidMix: theme.fluids, voidOK: voidAllowed(this, k), fallIn: fallMask(this, k),
       outflow: this.faces.get(faceKey(k, 4))?.fall || null, inflow: this.faces.get(faceKey(k, 5))?.fall || null, relief: theme.relief,
       // islands without pillars: lakes, the sky islands near the top and the abyss

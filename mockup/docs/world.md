@@ -263,8 +263,8 @@ Routes can now also use these moves:
 
 ## Props (`render/props.js`, `render/propplace.js`)
 
-Decoration comes from `blender/props.glb` (built by `blender/props.py` from
-`blender/wants.txt`). Each theme names its prop set (`props`); neutral `any_*` rocks are
+Decoration comes from `blender/props.glb` (133 models) and `blender/clutter.glb`
+(222 additional models). Each theme names its prop set (`props`); neutral `any_*` rocks are
 tinted with the theme's rock colour. Placement runs on the main thread when a cube's meshes
 are built, seeded by the cube.
 
@@ -273,11 +273,39 @@ are built, seeded by the cube.
 - **Blocking props** (trees, boulders, columns): never in or next to route columns or near
   portals. They get round colliders (`map.blockers`) that the player and the spiders respect.
 - **Ceiling props:** hang under floating slabs.
-- **Wall props:** sit on cliff faces at least 1.5 high.
+- **Wall props:** fit within exposed cliff faces.
+- **Cover:** a separate dense, non-blocking pass on dry terrain, including routes and
+  slopes; tilted to the floor normal. Glowing cover is emissive only.
+- **Shore:** only beside fluids; **water props:** only on matching fluid surfaces.
+- **Lip props:** drape over cliff tops with sufficient hanging clearance.
+- **Signature assets:** reserved for deliberate destination recipes, not uniform scatter.
 
 They are drawn as one instanced mesh per prop (and per material part), with per-cube
 material clones so they fade and get cut with their cube. Props with `sway` bend in the
 wind in the vertex shader. Up to six glowing props per cube add light sources for the pool.
+
+## Reward sites (`world/sites.js`, `gen/sites.js`)
+
+Each stratum budgets four optional destinations, preferring branch cubes: two basic,
+one uncommon, and one rare (occasionally exceptional). Prestige and site identity are
+fixed before terrain retries and are independent of asset loading. Larger prestige
+reserves more space; difficulty/encounter selection is a separate concern.
+
+Mines have storage rooms, galleries and excavation pits; ruins have burial alcoves,
+halls and courtyards. The generator reserves their interior footprints before slabs,
+shapes terrain, routes to an interaction approach and back onward, then validates the
+final slopes, fences and structural blockers. Required portal routes remain intact.
+Upper-layer destinations leave shared rivers and cascade shafts undisturbed.
+
+`map.rewardSites` exposes stable spawn IDs, prestige, setting, reward anchors and
+approach/floor records. `sitePlacements` contains deliberate dressing and closed-chest
+previews, with worker-authored `staticBlockers`. Chests are collidable but do not yet
+open or grant loot. Ambient blockers and clutter stay out of these reserved spaces.
+Optional placements that cannot fit are reported in `siteFailures`, never downgraded.
+
+See [the generation plan](generation-plan.md) for subsequent biome/district work.
+Run `await (await import('./tests/generation-browser-checks.js')).runGenerationChecks()`
+in game devtools for real worker, asset, shader and collision checks.
 
 ## Generator changes
 

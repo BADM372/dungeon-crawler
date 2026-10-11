@@ -5,8 +5,8 @@ Same contract as props.py: one Blender unit = one game cell, Z up, flat normals,
 linear COLOR_0, ONE mesh per prop named "<set>_<prop>_<variant>" at the origin,
 glTF extras (attach, radius, blocking, priority, light, intensity, sway), an
 optional "<name>_glow" emissive material. Neutral "any" props stay grey for the
-game's per-theme tint. New placement slots for the world generator (NOT hooked
-up yet; see clutter/README.md):
+game's per-theme tint. New placement slots for the world generator (hooked
+up through render/propplace.js; see clutter/README.md):
 
     attach "ground"   origin at the base centre, base at z = 0
         cover: true   tiny ground cover (<= 0.3 tall, radius <= 0.35) for a separate

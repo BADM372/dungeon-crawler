@@ -7,7 +7,7 @@ import { poolAround } from './pools.js';
 // candidate channels on layer k: straight runs with banks on both sides, ending at an edge
 function channels(ctx, k) {
   const { cols, layerFloor, nextAbove } = ctx;
-  const ok = f => f && f.layer === k && !f.prot && !f.ramp && !f.fluid;
+  const ok = f => f && f.layer === k && !f.prot && !f.ramp && !f.fluid && !f.site;
   const at = (x, z) => inb(x, z) ? layerFloor(idx(x, z), k) : null;
   const cands = [];
   for (let c = 0; c < N * N; c++) {
@@ -31,7 +31,7 @@ function channels(ctx, k) {
       let g = null;
       for (const f of cols[bc]) if (f.top < e.top - 3) g = f;
       const above = g && nextAbove(g);
-      if (!g || g.prot || g.ramp || (above && above.bottom < e.top + 1)) continue;
+      if (!g || g.prot || g.ramp || g.site || (above && above.bottom < e.top + 1)) continue;
       cands.push({ chan, d, g, bc });
     }
   }

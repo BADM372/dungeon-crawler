@@ -12,7 +12,7 @@ export function makeMoves(ctx) {
   // can a structure occupy column c between levels lo..hi? floors must be clearly below or above
   const colClear = (c, lo, hi, gapSolid) => {
     for (const g of cols[c]) {
-      if (g.prot) return false;
+      if (g.prot || (g.siteBlocked && g.top + 3 > lo && g.bottom < hi + SHEAD)) return false;
       if (g.bottom >= hi + SHEAD) continue;
       if (g.fluid ? (g.surf <= lo - 1) : (g.top <= lo - gapSolid)) continue;
       return false;
@@ -31,7 +31,7 @@ export function makeMoves(ctx) {
   const landingOK = (c, h) => {
     if (h > MAX_L) return false;
     for (const g of cols[c]) {
-      if (g.prot || g.top === h) return false;
+      if (g.prot || g.siteBlocked || g.top === h) return false;
       if (g.bottom >= h + SHEAD) continue;
       if (g.top <= h - 1 && (!g.fluid || g.surf <= h - 1)) continue;
       return false;
@@ -48,6 +48,7 @@ export function makeMoves(ctx) {
     }
     let below = null, walked = false;
     for (const g of cols[n]) {
+      if (g.siteBlocked) continue;
       const dh = g.top - h;
       if (Math.abs(dh) <= 2 && !g.fluid && headOK(g, h) && headOK(f, g.top)) {
         out.push({ kind: 'walk', from: f, to: g, d, cells: [], cost: 1 + 0.4 * Math.abs(dh) }); walked = true;
@@ -65,7 +66,7 @@ export function makeMoves(ctx) {
       if (!inb(ex, ez)) break;
       flight.push(idx(sx, sz));
       const e = idx(ex, ez), targets = [];
-      for (const g of cols[e]) if (!g.fluid && headOK(g, g.top)) targets.push(g);
+      for (const g of cols[e]) if (!g.fluid && !g.siteBlocked && headOK(g, g.top)) targets.push(g);
       if (allowLandings) for (const r of new Set([2 * k, 2 * k - 1])) if (r >= 2 && landingOK(e, h + r)) targets.push(landingAt(e, h + r));
       for (const g of targets) {
         const rise = g.top - h, ar = Math.abs(rise);
@@ -89,7 +90,7 @@ export function makeMoves(ctx) {
       span.push(idx(cx, cz));
       if (!colClear(span[k - 1], h, h, 2)) break;
       for (const g of cols[idx(ex, ez)]) {
-        if (g.fluid || Math.abs(g.top - h) > Math.min(2, k)) continue;
+        if (g.fluid || g.siteBlocked || Math.abs(g.top - h) > Math.min(2, k)) continue;
         const lo = Math.min(h, g.top), hi = Math.max(h, g.top);
         if (span.every(c => colClear(c, lo, hi, 2)))
           out.push({ kind: 'bridge', from: f, to: g, d, dx, dz, cells: span.slice(), cost: 1.5 + k * 1.1 + Math.abs(g.top - h) * 0.3 });
@@ -99,6 +100,7 @@ export function makeMoves(ctx) {
 
   function movesFrom(f, allowLandings = true) {
     const out = [];
+    if (f.siteBlocked) return out;
     for (let d = 0; d < 4; d++) {
       const nx = f.x + DIRS[d][0], nz = f.z + DIRS[d][1];
       if (!inb(nx, nz)) continue;

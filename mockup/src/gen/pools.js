@@ -5,7 +5,7 @@ import { idx, inb } from '../core/util.js';
 // turn floors into a fluid body with surface S (bed 2 levels lower); false if a slab gets too thin
 function flood(ctx, cells, type, S) {
   const bed = S - 2;
-  if (bed < 0 || cells.some(ctx.border) || cells.some(f => { const b = ctx.nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) return false;
+  if (bed < 0 || cells.some(f => ctx.border(f) || f.site) || cells.some(f => { const b = ctx.nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) return false;
   for (const f of cells) { f.top = bed; f.fluid = type; f.surf = S; if (!f.merged) f.bottom = Math.min(f.bottom, bed - 1); }
   return true;
 }
@@ -15,7 +15,7 @@ export function addPools(ctx) {
   for (let k = 1; k < K; k++) {
     if (R() > 0.6) continue;
     const type = pickFluid();
-    const ok = c => { const f = layerFloor(c, k); return f && !f.prot && !f.ramp; };
+    const ok = c => { const f = layerFloor(c, k); return f && !f.prot && !f.ramp && !f.site; };
     const centers = [];
     for (let c = 0; c < N * N; c++) {
       if (!ok(c)) continue;
@@ -52,7 +52,7 @@ export function poolAround(ctx, center, rad, type) {
   const cells = [];
   for (let z = center.z - 2; z <= center.z + 2; z++) for (let x = center.x - 2; x <= center.x + 2; x++) {
     if (!inb(x, z) || !x || !z || x === N - 1 || z === N - 1 || Math.hypot(x - center.x, z - center.z) > rad) continue;
-    const g = ctx.cols[idx(x, z)].find(f => f.layer === center.layer && !f.fluid && !f.prot && !f.ramp && Math.abs(f.top - center.top) <= 2);
+    const g = ctx.cols[idx(x, z)].find(f => f.layer === center.layer && !f.fluid && !f.prot && !f.ramp && !f.site && Math.abs(f.top - center.top) <= 2);
     if (g) cells.push(g);
   }
   if (!cells.includes(center)) return 0;

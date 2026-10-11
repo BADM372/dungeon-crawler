@@ -8,7 +8,7 @@ import { idx, inb } from '../core/util.js';
 export function ladderMoves(ctx, f, d, n, out) {
   if (f.landing || f.fluid) return;
   for (const g of ctx.cols[n]) {
-    if (g.fluid) continue;
+    if (g.fluid || g.siteBlocked) continue;
     const lo = g.top > f.top ? f : g, hi = lo === f ? g : f, rise = hi.top - lo.top;
     if (rise < 3 || rise > 14 || hi.bottom > lo.top + 1) continue;   // the wall reaches the lower floor
     const above = ctx.nextAbove(lo);
@@ -25,7 +25,7 @@ export function jumpMoves(ctx, f, d, out) {
   if (f.landing || f.fluid || !ctx.headOK(f, f.top + 2)) return;
   const [dx, dz] = DIRS[d], bx = f.x - dx, bz = f.z - dz;
   // a run-up: level ground right behind the take-off (not a ledge you only drop onto)
-  if (!inb(bx, bz) || !ctx.cols[idx(bx, bz)].some(b => !b.fluid && Math.abs(b.top - f.top) <= 1)) return;
+  if (!inb(bx, bz) || !ctx.cols[idx(bx, bz)].some(b => !b.fluid && !b.siteBlocked && Math.abs(b.top - f.top) <= 1)) return;
   for (let gap = 1; gap <= 2; gap++) {
     const gx = f.x + dx * gap, gz = f.z + dz * gap, ex = gx + dx, ez = gz + dz;
     if (!inb(ex, ez)) return;
@@ -33,7 +33,7 @@ export function jumpMoves(ctx, f, d, out) {
     if (ctx.cols[idx(gx, gz)].some(h => h.top > f.top - 4 && h.bottom < f.top + 6)) return;
     for (const g of ctx.cols[idx(ex, ez)]) {
       const dh = g.top - f.top;
-      if (g.fluid || dh > (gap === 1 ? 1 : -2) || dh < -2 || !ctx.headOK(g, f.top + 2)) continue;   // soft landings only
+      if (g.fluid || g.siteBlocked || dh > (gap === 1 ? 1 : -2) || dh < -2 || !ctx.headOK(g, f.top + 2)) continue;   // soft landings only
       out.push({ kind: 'jump', from: f, to: g, d, gap, cells: [], cost: 1.6 + 0.6 * gap });
     }
   }

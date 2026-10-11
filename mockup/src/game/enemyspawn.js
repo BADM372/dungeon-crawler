@@ -11,7 +11,7 @@ export function enemySpots(map, profile) {
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt));
   const count = profile.minCount + Math.floor(R() * (profile.maxCount - profile.minCount + 1));
   if (!count) return [];
-  const cand = map.floors.filter(f => walkable(f, profile.height)
+  const cand = map.floors.filter(f => !f.siteAnchor && !f.siteAccess && walkable(f, profile.height)
     && f.x > 0 && f.z > 0 && f.x < N - 1 && f.z < N - 1
     && map.portals.every(p => Math.hypot(f.x - p.x, f.z - p.z) >= 4)
     && neighbors(f, profile.height).length >= 2

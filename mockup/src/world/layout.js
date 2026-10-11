@@ -10,6 +10,7 @@
 import { mulberry32, hash32 } from '../core/util.js';
 import { key, faceKey } from './coords.js';
 import { MAX_DEPTH } from './depth.js';
+import { planSites } from './sites.js';
 
 const RADIUS = d => d === 0 || d >= MAX_DEPTH ? 0 : d <= 5 ? 3 : d <= 12 ? 2 : 1;
 const AXES = [[1, 0], [-1, 0], [0, 1], [0, -1]];   // same order as the face directions
@@ -81,8 +82,11 @@ function build(seed, d, above) {
     });
     front = next;
   }
-  return { depth: d, cells, start, end, spine: spine.length, exists: new Set(cells.map(K)), portals, exit,
+  const layout = { depth: d, cells, start, end, spine: spine.length, exists: new Set(cells.map(K)), portals, exit,
     up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null };
+  const sites = planSites(seed, layout, new Map([...dist].map(([c, n]) => [K(c.split(',').map(Number)), n])));
+  layout.sitePlans = sites.plans; layout.roles = sites.roles;
+  return layout;
 }
 
 // layouts for one world (each depth builds on the one above)

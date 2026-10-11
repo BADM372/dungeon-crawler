@@ -10,6 +10,9 @@ export function buildSlabs(ctx) {
     if (ctx.void0[c]) continue;   // open to the depth below: no ground here
     const f = mk(c, ctx.lvl0[c], 0, 0);
     f.fluid = ctx.fluid0[c]; f.surf = ctx.surf0[c]; f.prot = ctx.prot0[c];
+    const reserved = ctx.siteSpace?.get(c);
+    if (reserved?.layer === 0) Object.assign(f, { site: reserved.site.id,
+      siteAnchor: c === reserved.site.anchorCell, siteAccess: c === reserved.site.accessCell });
     cols[c].push(f);
   }
 
@@ -24,6 +27,7 @@ export function buildSlabs(ctx) {
     for (let b = ri(1, 3); b > 0; b--) blob(ri(2, N - 3) + 0.5, ri(2, N - 3) + 0.5, 1.8 + R() * 3, 1.8 + R() * 3);
     // slabs only touch the cube faces at portal pads, so the edges match the neighbours
     for (let c = 0; c < N * N; c++) { const x = c % N, z = (c / N) | 0; if (!x || !z || x === N - 1 || z === N - 1 || ctx.sky?.has(c)) mask[c] = 0; }
+    for (const [c, reserved] of ctx.siteSpace || []) mask[c] = reserved.layer === k ? 1 : 0;
     const padOf = new Map();
     for (const p of ctx.portals) if (p.layer === k) for (const c of p.cells) { mask[c] = 1; padOf.set(c, p.id); }
     spoutSlabs(ctx, k, mask, padOf);
@@ -31,8 +35,11 @@ export function buildSlabs(ctx) {
     for (let c = 0; c < N * N; c++) {
       if (!mask[c]) continue;
       const x = c % N, z = (c / N) | 0;
-      const top = padOf.has(c) ? B[k] : B[k] + (topNoise(x * 0.35 + k * 5, z * 0.35) > 0.6 ? 1 : 0);
+      const reserved = ctx.siteSpace?.get(c);
+      const top = reserved?.layer === k ? reserved.top : padOf.has(c) ? B[k] : B[k] + (topNoise(x * 0.35 + k * 5, z * 0.35) > 0.6 ? 1 : 0);
       const u = mk(c, top, top - 2, k);
+      if (reserved?.layer === k) Object.assign(u, { site: reserved.site.id,
+        siteAnchor: c === reserved.site.anchorCell, siteAccess: c === reserved.site.accessCell });
       u.prot = padOf.get(c) || 0;
       const below = topFloor(c);
       if (below && below.top + HEAD > u.bottom) {

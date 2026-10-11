@@ -23,6 +23,7 @@ import { smooth } from './smooth.js';
 import { shapeStructures } from './shape.js';
 import { addFences } from './fences.js';
 import { generateClearing } from './town.js';
+import { reserveSites, prepareSites, routeSites, finishSites } from './sites.js';
 
 function indexFloors(ctx) {
   const floors = ctx.floors = [];
@@ -64,7 +65,9 @@ function tryGenerate(seed, spec) {
   carveRiver(ctx);
   cascadeGround(ctx);
   spoutGround(ctx);
+  reserveSites(ctx);
   buildSlabs(ctx);
+  prepareSites(ctx);
   addRamps(ctx);
   addSupports(ctx);
   addPools(ctx);
@@ -75,6 +78,7 @@ function tryGenerate(seed, spec) {
   if (ctx.portalFloors.some(f => !f)) return null;
   makeMoves(ctx);
   if (!findRoute(ctx)) return null;
+  routeSites(ctx);
   addEscapes(ctx);
   finishRoute(ctx);
   if (!placeStructures(ctx)) return null;
@@ -85,11 +89,13 @@ function tryGenerate(seed, spec) {
   const safe = reachTo(ctx, ctx.hub, true);
   if (safe && ctx.portalFloors.some(f => !safe.has(f.id))) return null;
   if (ctx.moves.some(m => isCramped(ctx, m.from) || isCramped(ctx, m.to))) return null;   // a route squeezes under a slab
+  const sites = finishSites(ctx);
   const { K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves } = ctx;
   const portals = ctx.portals.map(p => ({ id: p.id, kind: p.kind, dir: p.dir, layer: p.layer, cells: p.cells,
     x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
-    seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
+    seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals, ...sites,
+    roomRole: spec.roomRole, biome: spec.biome,
     ladders: ctx.ladders.map(ladderInfo), exit: spec.exit,
     safe: Uint8Array.from(floors, f => !safe || safe.has(f.id) ? 1 : 0),   // floors that lead to the exit
     kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, cave: !!spec.cave, enemyFree: !!spec.enemyFree,
@@ -100,9 +106,17 @@ function tryGenerate(seed, spec) {
 // spec: what the world fixes for this cube (faces, portals, layers; see world/world.js)
 export function generate(spec) {
   if (spec.town || spec.merchantCamp) return generateClearing(spec);
+  let best = null;
   for (let a = 0; a < 200; a++) {
     const m = tryGenerate(hash32(spec.seed + a * 7919), spec);
-    if (m) { m.seed = spec.seed; m.attempts = a + 1; return m; }
+    if (m) {
+      m.seed = spec.seed; m.attempts = a + 1;
+      if (!m.siteFailures.length) return m;
+      if (!best || m.rewardSites.length > best.rewardSites.length) best = m;
+    }
+    // Optional destinations cannot make an otherwise valid cube fail indefinitely.
+    if (best && a >= 23) { best.siteAttempts = a + 1; return best; }
   }
+  if (best) return best;
   throw new Error('generator failed for cube ' + spec.key);
 }

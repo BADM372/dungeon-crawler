@@ -10,7 +10,7 @@ export function addRamps(ctx) {
     const cands = [];
     for (let c = 0; c < N * N; c++) {
       const e = layerFloor(c, k);
-      if (!e || e.prot || e.fluid) continue;
+      if (!e || e.prot || e.fluid || e.site) continue;
       for (let d = 0; d < 4; d++) {
         const nx = e.x + DIRS[d][0], nz = e.z + DIRS[d][1];
         if (inb(nx, nz) && !layerFloor(idx(nx, nz), k)) cands.push([e, d]);
@@ -28,7 +28,7 @@ export function addRamps(ctx) {
         if (!inb(x, z)) continue;
         let g = null;
         for (const f of cols[idx(x, z)]) if (f.top < e.top - 1) g = f;
-        if (!g || g.fluid || g.prot || g.top >= target || ctx.border(g)) continue;
+        if (!g || g.fluid || g.prot || g.site || g.top >= target || ctx.border(g)) continue;
         const a = nextAbove(g);
         if (a && a.bottom < target + HEAD) continue;
         g.top = target; g.ramp = true; any = true; made++;
@@ -57,10 +57,10 @@ export function addSupports(ctx) {
           if (g && !seen.has(g)) { seen.add(g); comp.push(g); }
         }
       }
-      const prot = comp.some(f => f.prot);
+      const prot = comp.some(f => f.prot || f.site);
       if (comp.length < 3 && !prot && !comp.some(f => f.merged)) { comp.forEach(removeFloor); continue; }
       if (comp.some(f => f.merged) || floating) continue;
-      const cands = comp.filter(f => { const b = nextBelow(f); return b && !b.fluid && !b.prot && !b.ramp && !f.prot; });
+      const cands = comp.filter(f => { const b = nextBelow(f); return b && !b.fluid && !b.prot && !b.ramp && !b.site && !f.prot && !f.site; });
       // nothing to stand a pillar on: keep it as a floating island if it is over the void
       if (!cands.length) { if (!prot && !comp.some(f => !nextBelow(f))) comp.forEach(removeFloor); continue; }
       for (let n = Math.min(cands.length, comp.length > 12 ? 2 : 1); n > 0; n--) {
