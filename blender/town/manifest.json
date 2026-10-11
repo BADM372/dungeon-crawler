@@ -1,0 +1,189 @@
+{
+  "units": "cells",
+  "up": "Y",
+  "front": "+Z",
+  "assets": [
+    {
+      "name": "town_merchant_a",
+      "service": "merchant",
+      "stock": "provisions",
+      "triangles": 1906,
+      "size": [
+        3.334,
+        2.901,
+        2.628
+      ],
+      "bounds_blender": [
+        [
+          -1.5499999523162842,
+          -1.6265000104904175,
+          0.0
+        ],
+        [
+          1.7842999696731567,
+          1.274999976158142,
+          2.62803316116333
+        ]
+      ],
+      "radius": 2.1605,
+      "front_gltf": "+Z",
+      "glb": "town/town_merchant_a.glb"
+    },
+    {
+      "name": "town_merchant_b",
+      "service": "merchant",
+      "stock": "herbs",
+      "triangles": 1486,
+      "size": [
+        3.31,
+        2.917,
+        2.695
+      ],
+      "bounds_blender": [
+        [
+          -1.7000000476837158,
+          -1.642253041267395,
+          0.0
+        ],
+        [
+          1.6100000143051147,
+          1.274999976158142,
+          2.695233106613159
+        ]
+      ],
+      "radius": 2.2039,
+      "front_gltf": "+Z",
+      "glb": "town/town_merchant_b.glb"
+    },
+    {
+      "name": "town_merchant_c",
+      "service": "merchant",
+      "stock": "potions",
+      "triangles": 1692,
+      "size": [
+        3.47,
+        2.91,
+        2.755
+      ],
+      "bounds_blender": [
+        [
+          -1.6699999570846558,
+          -1.6348999738693237,
+          0.0
+        ],
+        [
+          1.7999999523162842,
+          1.274999976158142,
+          2.7552330493927
+        ]
+      ],
+      "radius": 2.2481,
+      "front_gltf": "+Z",
+      "glb": "town/town_merchant_c.glb"
+    },
+    {
+      "name": "town_inn_a",
+      "service": "inn",
+      "stock": "sleep_heal",
+      "triangles": 3588,
+      "size": [
+        4.382,
+        4.22,
+        4.789
+      ],
+      "bounds_blender": [
+        [
+          -2.309299945831299,
+          -2.4577107429504395,
+          0.0
+        ],
+        [
+          2.072781801223755,
+          1.762710690498352,
+          4.789000034332275
+        ]
+      ],
+      "radius": 2.6927,
+      "front_gltf": "+Z",
+      "glb": "town/town_inn_a.glb"
+    },
+    {
+      "name": "town_stable_a",
+      "service": "stable",
+      "stock": "horses",
+      "triangles": 2730,
+      "size": [
+        4.662,
+        3.703,
+        3.292
+      ],
+      "bounds_blender": [
+        [
+          -2.439199924468994,
+          -2.140104055404663,
+          0.0
+        ],
+        [
+          2.2227816581726074,
+          1.5627106428146362,
+          3.291923999786377
+        ]
+      ],
+      "radius": 2.752,
+      "front_gltf": "+Z",
+      "glb": "town/town_stable_a.glb"
+    },
+    {
+      "name": "town_pet_shop_a",
+      "service": "pet_shop",
+      "stock": "pets",
+      "triangles": 3688,
+      "size": [
+        4.263,
+        3.608,
+        3.332
+      ],
+      "bounds_blender": [
+        [
+          -1.7699999809265137,
+          -2.1201040744781494,
+          0.0
+        ],
+        [
+          2.492781639099121,
+          1.48771071434021,
+          3.3319239616394043
+        ]
+      ],
+      "radius": 2.7623,
+      "front_gltf": "+Z",
+      "glb": "town/town_pet_shop_a.glb"
+    },
+    {
+      "name": "town_blacksmith_a",
+      "service": "blacksmith",
+      "stock": "equipment",
+      "triangles": 2622,
+      "size": [
+        5.021,
+        3.293,
+        3.374
+      ],
+      "bounds_blender": [
+        [
+          -2.444999933242798,
+          -1.7300000190734863,
+          0.0
+        ],
+        [
+          2.576066017150879,
+          1.5627106428146362,
+          3.3742499351501465
+        ]
+      ],
+      "radius": 2.8816,
+      "front_gltf": "+Z",
+      "glb": "town/town_blacksmith_a.glb"
+    }
+  ]
+}
