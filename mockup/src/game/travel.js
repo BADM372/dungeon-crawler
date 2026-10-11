@@ -75,7 +75,9 @@ function slide(p, c) {
   state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k));
   state.world.group.position.copy(D);
   setFade(state.world.group, 0);
-  tr.ghosts = buildNeighbors(visitedNeighbors(k));   // includes the cube we are leaving
+  tr.ghosts = buildNeighbors(visitedNeighbors(k), tr.old.ghosts);   // common cubes stay visible
+  // Reused proxies now use destination-local coordinates, but start beside the old cube.
+  for (const g of tr.ghosts) g.group.position.copy(g.base).add(D);
   for (const g of tr.old.ghosts) {
     g.fade0 = g.group.userData.fade;
     setGlassFaces(g.glass, openedSides(state.openedFaces, g.key));
@@ -120,6 +122,6 @@ function finish() {
   }
   if (falling) { player.safe = { ...state.arrival }; Object.assign(player, { grounded: false, vy: -6, support: null }); }
   if (landed) { player.landImpact = 4; player.landCount++; }
-  settleIn(false);
+  settleIn();   // reconcile toggles made during travel; unchanged proxies are reused
   state.transitioning = false;
 }

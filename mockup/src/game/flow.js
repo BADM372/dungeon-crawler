@@ -2,7 +2,8 @@
 // taking damage.
 import { DIRS } from '../core/constants.js';
 import { isFaceOpen, openedSides } from '../core/boundaries.js';
-import { showNeighbors } from '../render/neighbors.js';
+import { showNeighbors, clearNeighbors, clearNeighborCache } from '../render/neighbors.js';
+import { discoveredCubes } from '../core/viewdistance.js';
 import { WorldClient } from '../world/client.js';
 import { step } from '../world/coords.js';
 import { buildWorld, disposeWorld } from '../render/world.js';
@@ -79,19 +80,22 @@ export function settleIn(neighbors = true) {
   const c = state.cubes.cubes.get(state.cubeKey);
   showStats(c.map, state.cubeKey, state.cubes.seed, c.visits);
   drawMinimap();
-  if (neighbors) updateNeighbors();
+  if (neighbors) showNeighbors(visitedNeighbors(state.cubeKey));
   // get the cubes behind our portals ready in the background
   state.cubes.prefetch(c.map.portals.filter(p => p.kind !== 'spawn').map(p => step(state.cubeKey, p.dir)));
 }
 
-// the visited cubes next to cube k (for the low-detail proxies)
+// Discovered cubes within the render budget, on the active stratum only.
 export function visitedNeighbors(k) {
   if (!state.showNeighbors) return [];
-  return [0, 1, 2, 3].map(d => ({ c: state.cubes.cubes.get(step(k, d)), dx: DIRS[d][0], dz: DIRS[d][1] }))
-    .filter(n => n.c?.visits).map(n => ({ key: n.c.key, geo: n.c.geo, dx: n.dx, dz: n.dz, open: openedSides(state.openedFaces, n.c.key) }));
+  return discoveredCubes(state.cubes.cubes, k)
+    .map(c => ({ ...c, open: openedSides(state.openedFaces, c.key) }));
 }
 
-export function updateNeighbors() { showNeighbors(visitedNeighbors(state.cubeKey)); }
+export function updateNeighbors() {
+  // Travel owns detached proxy sets; do not build a third set on a V-key toggle.
+  if (!state.transitioning) showNeighbors(visitedNeighbors(state.cubeKey));
+}
 
 // the props library may arrive after the first cube was built: build that cube again
 whenPropsReady(() => {
@@ -104,6 +108,7 @@ whenPropsReady(() => {
 });
 
 export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
+  clearNeighbors(); clearNeighborCache();
   state.cubes?.dispose();
   state.cubes = new WorldClient(seed, { arche: state.dev && new URLSearchParams(location.search).get('arche') });
   state.openedFaces.clear(); state.boundaryLock = -1;

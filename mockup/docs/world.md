@@ -375,15 +375,39 @@ exactly the pixels the other drops. Every cube, full or proxy, sits in its own g
 (`render/glass.js`) that moves and fades with it (`game/travelfx.js`), with panes omitted
 on opened side connections.
 
-The minimap and the low-detail neighbours only show cubes you have visited.
+The minimap and the low-detail surroundings only show cubes you have visited; prefetching
+never discovers a cube. Surroundings include diagonals and distant cubes on the active
+stratum, within 48 world units (three cube widths) of the player's horizontal position.
+Distance is measured to cube bounds, with an eight-unit dither fade at the outer edge.
+`core/viewdistance.js` holds the radius and discovery selection.
+
+`render/neighbors.js` merges terrain/wood and fluids into render-only proxies, without
+props, enemies, lights or shadows. Whole-cube bounds are frustum-culled after the camera
+updates, including both sets during travel; fully fogged cubes are skipped too. A separate
+culling parent preserves travel's fade visibility. Foreground proxy solids/fluids use the
+screen-space cutaway region to reveal the player, independent of the active cube's cut
+height; this reveal is disabled during travel.
+
+Merged proxy geometry uses an LRU cache keyed by worker geometry identity, with a
+64-entry / 32 MiB budget. Live proxies pin their geometry (so the live set can exceed the
+budget); unused entries are evicted and world resets clear the cache. Each proxy retains
+independent materials for fades. Refreshes and travel reuse overlapping proxies rather
+than merging/drawing duplicate geometry or fading the surroundings out and back in.
+
+Checks: `npm test` covers discovery, stratum filtering, conservative selection and distance
+fades. Run `await (await import('./tests/neighbor-browser-checks.js')).runNeighborChecks()`
+for geometry/material ownership, refresh/revisit reuse, opened panes, frustum rotation,
+distance culling, fade isolation, shader compilation, travel rebasing and cache eviction.
+`runExpandedTravelChecks()` in the same module verifies continuous proxy reuse and cleanup
+during real travel through a fully explored stratum.
 
 ## Off the main thread (`world/worker.js`, `world/client.js`)
 
 The world lives in a module worker. That covers WFC, faces, map generation and the cube
 geometry (`render/cubegeo.js`, which builds typed arrays per layer). The main thread
 receives each map by structured clone (the object graph survives) and the geometry as
-transferred buffers, and only wraps them into meshes. The neighbour view reuses those
-buffers.
+transferred buffers, and only wraps them into meshes. The surroundings view merges those
+buffers once per cached cube; the merged arrays are additional memory.
 
 After entering a cube, the cubes behind its portals are prefetched, so travel usually
 starts at once. If a cube is not ready, the player waits in the portal and a
@@ -400,7 +424,9 @@ three.js recompile every lit shader on each cube change, which was the biggest s
   and the worst took 5.
 - **Routes:** a bot walks every route (portal to exit, the ways back, escapes). 1487 of
   1488 routes pass (780 cubes, 40 worlds).
-- **Rendering:** active cube plus four low-detail neighbors at 60 fps, 57 draw calls.
+- **Rendering (original four-neighbor baseline):** active cube plus four low-detail
+  neighbors at 60 fps, 57 draw calls. Expanded surroundings are distance/frustum/fog culled;
+  draw count now depends on exploration, camera orientation and zoom.
 
 ## Known issues / open questions
 

@@ -4,20 +4,21 @@
 // Inverted, a group draws exactly the pixels a normal group with the same value drops: two
 // versions of one cube cross-fade without gaps or overlap.
 const DITHER = `
-  if (uFade < 0.999 || uFadeInv > 0.5) {
+  if (uFade < 0.999 || uFadeInv > 0.5 || uRangeFade < 0.999) {
     const float B[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
     ivec2 q = ivec2(mod(gl_FragCoord.xy, 4.0));
-    bool keep = (B[q.x + q.y * 4] + 0.5) / 16.0 < uFade;
-    if (keep == (uFadeInv > 0.5)) discard;
+    float threshold = (B[q.x + q.y * 4] + 0.5) / 16.0;
+    bool keep = threshold < uFade;
+    if (keep == (uFadeInv > 0.5) || threshold >= uRangeFade) discard;
   }`;
 
-function patch(mat, u, inv) {
+function patch(mat, u, inv, range) {
   if (mat.userData.fadeU) return;
   const prev = mat.onBeforeCompile, key = mat.customProgramCacheKey();
   mat.onBeforeCompile = (sh, r) => {
     prev.call(mat, sh, r);
-    sh.uniforms.uFade = u; sh.uniforms.uFadeInv = inv;
-    sh.fragmentShader = 'uniform float uFade, uFadeInv;\n' + sh.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>' + DITHER);
+    sh.uniforms.uFade = u; sh.uniforms.uFadeInv = inv; sh.uniforms.uRangeFade = range;
+    sh.fragmentShader = 'uniform float uFade, uFadeInv, uRangeFade;\n' + sh.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>' + DITHER);
   };
   mat.customProgramCacheKey = () => key + '|fade';
   mat.userData.fadeU = u;
@@ -25,11 +26,14 @@ function patch(mat, u, inv) {
 }
 
 export function makeFadable(group, value = 1) {
-  const u = { value }, inv = { value: 0 };
-  group.userData.fadeU = u; group.userData.fadeInv = inv;
-  group.traverse(o => { if (o.material) for (const m of [].concat(o.material)) patch(m, u, inv); });
+  const u = { value }, inv = { value: 0 }, range = { value: 1 };
+  group.userData.fadeU = u; group.userData.fadeInv = inv; group.userData.rangeFadeU = range;
+  group.traverse(o => { if (o.material) for (const m of [].concat(o.material)) patch(m, u, inv, range); });
   setFade(group, value);
 }
+
+// Distance fading is independent of travel's complementary dissolve.
+export function setRangeFade(group, value) { group.userData.rangeFadeU.value = value; }
 
 // faded-out parts stop casting shadows halfway through; invert: show what `f` would hide
 export function setFade(group, f, invert = false) {

@@ -14,7 +14,7 @@ import { updateHud } from './game/hud.js';
 import { updateInventory } from './game/inventory.js';
 import { devSwapWeapon } from './game/equipment.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
-import { tickNeighbors } from './render/neighbors.js';
+import { tickNeighbors, cullNeighbors } from './render/neighbors.js';
 import { tickProps } from './render/props.js';
 import { applyLook } from './render/look.js';
 import { depthOf } from './world/depth.js';
@@ -48,6 +48,7 @@ function frame() {
   if (state.cubeKey) state.lookDepth += (depthOf(state.cubeKey) - state.lookDepth) * Math.min(1, dt * 2.5);
   applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));
   updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
+  cullNeighbors(player.x, player.z, !state.transitioning, state.showNeighbors);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

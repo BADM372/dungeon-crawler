@@ -18,7 +18,8 @@ function ghosts(tr, fadeOld, fadeNew, off, oldOff) {
   }
   for (const g of tr.ghosts) {
     g.group.position.copy(g.base).add(off);
-    if (g.key === tr.oldKey) setFade(g.group, fadeOld, true); else setFade(g.group, fadeNew);
+    if (g.key === tr.oldKey) setFade(g.group, fadeOld, true);
+    else setFade(g.group, g.continuing ? Math.max(g.group.userData.fade, fadeNew) : fadeNew);
   }
 }
 
@@ -39,7 +40,7 @@ export function endVisuals(tr) {
   disposeWorld(tr.old.world);
   removeEnemyViews(tr.old.enemies);
   disposeNeighbors(tr.old.ghosts);
-  for (const g of tr.ghosts) { g.group.position.copy(g.base); setFade(g.group, 1); }
+  for (const g of tr.ghosts) { g.group.position.copy(g.base); g.continuing = false; setFade(g.group, 1); }
   adoptNeighbors(tr.ghosts);
   state.world.group.position.set(0, 0, 0);
   setFade(state.world.group, 1);
