@@ -25,10 +25,12 @@ function pool(ctx, cx, cz, rad, type) {
 export function cascadeGround(ctx) {
   const { spec, void0, prot0 } = ctx, list = ctx.cascades = [], sky = ctx.sky = new Set();   // sky: no slabs
   const out = spec.outflow, inn = spec.inflow;
+  // an open shaft around the falling water (3x3 around cell c)
+  const shaft = c => { for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) sky.add(c + dx + dz * N); };
   if (out) {
     const fc = idx(out.x, out.z), [dx, dz] = DIRS[out.d], src = fc - dx - dz * N;
     if (!prot0[src] && !prot0[fc]) {
-      void0[fc] = 1; ctx.fluid0[fc] = 0; void0[src] = 0; sky.add(fc);
+      void0[fc] = 1; ctx.fluid0[fc] = 0; void0[src] = 0; shaft(fc);
       const [cells, S] = pool(ctx, out.x + 0.5 - dx, out.z + 0.5 - dz, 1.3, out.type);
       for (const c of cells) sky.add(c);
       list.push({ c: fc, d: out.d, top: S, bot: BOTTOM, type: out.type, layer: 0, out: true });
@@ -40,6 +42,7 @@ export function cascadeGround(ctx) {
     for (let z = inn.z - 2; z <= inn.z + 2; z++) for (let x = inn.x - 2; x <= inn.x + 2; x++) void0[idx(x, z)] = 0;
     const [cells, S] = pool(ctx, inn.x + 0.5 - dx * 0.5, inn.z + 0.5 - dz * 0.5, 1.7, inn.type);
     for (const c of cells) sky.add(c);
+    shaft(fc); shaft(fc - dx - dz * N);
     list.push({ c: fc, d: inn.d, top: TOP, bot: S, type: inn.type, layer: 0, in: true });
   }
 }
