@@ -36,6 +36,11 @@ function decide(world, up) {
     DIRS.forEach(([dx, dz], dir) => { if (!open(x - dx, z - dz)) cands.push({ x, z, d: dir }); });
   }
   if (!cands.length) return null;
-  const c = cands[Math.floor(R() * cands.length)], t = themeAt(d), [w, l, a] = t.fluids, r = R() * (w + l + a);
-  return { ...c, type: R() < 0.6 ? t.river : r < w ? WATER : r < w + l ? LAVA : ACID };
+  return { ...cands[Math.floor(R() * cands.length)], type: fallFluid(d, R) };
+}
+
+// the fluid of a fall at depth d: mostly the river fluid, else from the depth's mix
+export function fallFluid(d, R) {
+  const t = themeAt(d), [w, l, a] = t.fluids, r = R() * (w + l + a);
+  return R() < 0.6 ? t.river : r < w ? WATER : r < w + l ? LAVA : ACID;
 }

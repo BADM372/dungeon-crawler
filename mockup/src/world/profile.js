@@ -50,7 +50,7 @@ export function caveWall(world, fk, f) {
   if (!themeAt(-Y).cave) return null;
   const out = new Int16Array(N);
   for (let t = 0; t < N; t++) {
-    if (f.portal && Math.abs(t - f.portal.pos) <= 2) continue;
+    if ((f.portal && Math.abs(t - f.portal.pos) <= 2) || (f.spout && Math.abs(t - f.spout.pos) <= 2)) continue;
     if (f.river && t >= f.river.pos - 1 && t <= f.river.pos + f.river.w) continue;
     const a = t === 0 ? 0 : t === N - 1 ? N : t + 0.5;
     const wx = d === '0' ? (X + 1) * N : X * N + a, wz = d === '0' ? Z * N + a : (Z + 1) * N;

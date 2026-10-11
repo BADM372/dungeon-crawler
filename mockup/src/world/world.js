@@ -43,7 +43,7 @@ export class World {
     const [X, Y, Z] = parse(k), t = this.wfc.tiles.get(k), theme = themeAt(-Y);
     const faces = [0, 1, 2, 3].map(d => {
       const f = this.faces.get(faceKey(k, d));
-      return { sock: t.sock[d], profile: Int16Array.from(f.profile), river: f.river, portal: f.portal, wall: f.wall };
+      return { sock: t.sock[d], profile: Int16Array.from(f.profile), river: f.river, portal: f.portal, wall: f.wall, spout: f.spout };
     });
     const portals = [];
     faces.forEach((f, d) => { if (f.portal) portals.push({ dir: d, ...f.portal }); });

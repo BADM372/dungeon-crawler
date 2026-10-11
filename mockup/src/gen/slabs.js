@@ -2,6 +2,7 @@
 // pads) that merge into whatever pokes up from below (hills become overhangs / pillars).
 import { N, HEAD } from '../core/constants.js';
 import { idx } from '../core/util.js';
+import { spoutSlabs } from './spouts.js';
 
 export function buildSlabs(ctx) {
   const { R, ri, noise, topNoise, K, B, cols, mk, topFloor, removeFloor } = ctx;
@@ -25,6 +26,7 @@ export function buildSlabs(ctx) {
     for (let c = 0; c < N * N; c++) { const x = c % N, z = (c / N) | 0; if (!x || !z || x === N - 1 || z === N - 1 || ctx.sky?.has(c)) mask[c] = 0; }
     const padOf = new Map();
     for (const p of ctx.portals) if (p.layer === k) for (const c of p.cells) { mask[c] = 1; padOf.set(c, p.id); }
+    spoutSlabs(ctx, k, mask, padOf);
 
     for (let c = 0; c < N * N; c++) {
       if (!mask[c]) continue;

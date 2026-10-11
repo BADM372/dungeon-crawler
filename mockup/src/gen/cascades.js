@@ -7,7 +7,7 @@ import { idx } from '../core/util.js';
 const TOP = (CUBE_H - BASE) / LH, BOTTOM = -BASE / LH;   // the glass box's top / bottom (levels)
 
 // a pool of radius rad around (cx, cz), surface a level below its lowest bank: [cells, S]
-function pool(ctx, cx, cz, rad, type) {
+export function pool(ctx, cx, cz, rad, type) {
   const { lvl0, prot0, void0, fluid0, surf0 } = ctx, cells = [];
   for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++)
     if (Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad && !prot0[idx(x, z)] && !void0[idx(x, z)]) cells.push(idx(x, z));

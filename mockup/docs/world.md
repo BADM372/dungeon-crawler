@@ -107,8 +107,31 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
   slabs above it.
 - **Lower cube:** clears the void around the spot, floods the catch pool and keeps slabs
   off it. The sheet's column is claimed, so no structure crosses it.
+- **Open shaft:** the 3×3 around the fall cell (and for inflows around the cell upstream)
+  stays free of slabs on every layer, so the water never seems to pass through a floor.
 - **Results:** about 7% of cubes, mostly in the sky islands and the abyss. Over 8 worlds,
   all 270 falls have a matching end in the cube below.
+
+## Falls across a side face (`world/spouts.js`, `gen/spouts.js`)
+
+- **The look:** a stream on an upper layer of one cube runs to a side face and over it onto
+  a short lip in the neighbour. From the lip's inner edge it falls into a pool on the
+  ground there.
+- **Face record:** the side face holds the spout: `{ pos, layer, from, type }`.
+  - Both cubes must exist and have the layer.
+  - The spot keeps 5 cells from the face's portal and clear of its river crossing.
+  - The ground under the lip lies at least 7 levels below the layer.
+  - Falls through the void in either cube keep their shafts.
+  - Cave walls open around it.
+  - Chance 30%. It has its own random stream, so the other face decisions do not change.
+- **Source cube:** a strip of the layer 3 wide and 5 deep from the face, with a channel down
+  its middle. The surface is a level under the banks, with a bank at the back.
+- **Receiving cube:** a 3×1 lip on its outer ring at the same level, the catch pool just
+  inside, and open air between them.
+- **Matching edges:** spout slabs are pad-like (`prot` 99: flat, kept, no structures
+  through them), so the layer lines up across the face just as at upper-layer portal pads.
+  Over 3 worlds, no upper-layer edge cell differs on any of 1943 faces.
+- **How many:** about one cube in ten gets one.
 
 ## Cube archetypes (`gen/archetypes.js`)
 
