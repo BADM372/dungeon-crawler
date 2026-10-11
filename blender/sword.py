@@ -4,8 +4,8 @@ Chunky clay-world sword, carried on the player's hand.R bone socket.
 Plain steel / brass / leather materials, flat faceted blade, rounded grip.
 Origin = centre of the grip, +Z runs towards the blade tip; units are the
 same ~2-metre rig units as character.py (game scales everything by 0.55).
-The grip is angled 60 degrees from the forearm to keep the idle blade off
-the ground. character.py embeds this mesh, so the game needs no extra load.
+The runtime angles the grip 60 degrees from the forearm to keep the idle
+blade off the ground. This is a separate prop, never embedded in character.glb.
 
 Standalone export:
     Blender -b --python blender/sword.py -- blender/sword.glb

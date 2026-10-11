@@ -5,10 +5,28 @@ import { CHAR_SCALE } from '../core/constants.js';
 import { scene } from './scene.js';
 
 const URL = '../blender/character.glb';
+const SWORD_URL = '../blender/sword.glb';
 const FPS = 30;
 const STAND_HIPS = 0.69;   // hips height of the standing pose (rig units)
 
 export const character = { ready: false };
+
+// Weapons are separate props. The character GLB contains only the body and hand sockets.
+export function equipSword(weapon) {
+  if (character.sword) character.sword.removeFromParent();
+  character.sword = weapon;
+  if (!weapon) return;
+  character.bones['hand.R'].add(weapon);
+  weapon.position.set(0, 0, 0);   // glTF bone origins are socket heads, not Blender tails
+  weapon.rotation.set(Math.PI / 3, 0, 0);   // +Y blade axis -> 60 degrees from forearm
+  weapon.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+}
+
+export async function loadSword(url = SWORD_URL) {
+  const gltf = await new GLTFLoader().loadAsync(url);
+  equipSword(gltf.scene);
+  return gltf.scene;
+}
 
 // a frame range of a clip; the hips never rise above standing height in it, because in the
 // game the controller moves the body through the air, not the animation
@@ -52,6 +70,7 @@ function setup(gltf) {
     walk: clips.Walk, run: clips.Run,
     slash: clips.Slash,
     swim: clips.Swim, swimIdle: clips.SwimIdle,   // authored for floating chest deep
+    climb: clips.Climb,   // in-place ladder grips and steps
     jump: part(J, 'JumpUp', 15, 27),      // push-off into the rising pose
     fall: part(J, 'Fall', 26, 31),        // tucked pose around the apex
     land: part(J, 'Land', 37, 58),        // compression + recovery
@@ -74,9 +93,12 @@ function setup(gltf) {
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
     ready: true, group, model, mesh, bones, mixer, actions, standing, light,
-    sword: model.getObjectByName('Sword'), swordWeight: 0,
+    sword: null, swordWeight: 0,
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
+    climbStride: extras('Climb').distance * CHAR_SCALE,
   });
+  // The mockup starts equipped; future inventory changes can replace / clear this prop.
+  loadSword().catch(e => console.error('sword failed to load', e));
 }
 
 new GLTFLoader().load(URL, setup, undefined, e => console.error('character failed to load', e));

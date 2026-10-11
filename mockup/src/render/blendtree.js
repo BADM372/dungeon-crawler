@@ -1,15 +1,15 @@
 // Animation state machine and blend trees: which clips play with what weight and at what
 // time. On land: idle -> walk -> run by speed; in water: treading water -> paddling by speed;
-// jump / fall / land / sit are cross-faded one-shots.
+// ladders use a reversible, distance-driven climb cycle; jump / fall / land / sit are one-shots.
 import { WALK_SPEED, RUN_SPEED, WALK_ANIM, RUN_ANIM, SWIM_SPEED, SIT_IMPACT } from '../core/constants.js';
 import { clamp } from '../core/util.js';
 import { player } from '../game/state.js';
 import { character } from './character.js';
 
-export const W = { idle: 1, walk: 0, run: 0, swimIdle: 0, swim: 0, jump: 0, fall: 0, land: 0, sit: 0 };
-const RATE = { loco: 10, swim: 6, jump: 18, fall: 7, land: 20, sit: 14 };   // cross-fade speeds
+export const W = { idle: 1, walk: 0, run: 0, swimIdle: 0, swim: 0, climb: 0, jump: 0, fall: 0, land: 0, sit: 0 };
+const RATE = { loco: 10, swim: 6, climb: 14, jump: 18, fall: 7, land: 20, sit: 14 };   // cross-fade speeds
 const seen = { jump: 0, land: 0 };
-let mode = 'loco', modeT = 0, phase = 0, swimPhase = 0, slow = 0;
+let mode = 'loco', modeT = 0, phase = 0, swimPhase = 0, climbPhase = 0, slow = 0;
 export const blend = { stretch: 1 };   // stride stretch for the walk / run cycle
 
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -18,6 +18,14 @@ export const resetMode = () => { mode = 'loco'; };
 function nextMode(dt, speed) {
   const p = player;
   modeT += dt;
+  // A ladder grab takes priority over landing / recovery; stationary climbing holds a grip.
+  if (p.climb) {
+    if (mode !== 'climb') { climbPhase = 0; modeT = 0; }
+    mode = 'climb'; slow = 0;
+    seen.jump = p.jumpCount; seen.land = p.landCount;
+    return;
+  }
+  if (mode === 'climb') { mode = p.grounded ? 'loco' : 'fall'; modeT = 0; }
   if (p.jumpCount !== seen.jump) { seen.jump = p.jumpCount; mode = 'jump'; modeT = 0; }
   if (p.landCount !== seen.land) {
     seen.land = p.landCount;
@@ -52,6 +60,10 @@ export function updateBlend(dt, speed, time) {
     const s = smooth(0.08, 0.5, speed / SWIM_SPEED);
     T.swimIdle = 1 - s; T.swim = s;
     swimPhase = (swimPhase + dt * Math.max(speed, 0.25) / character.swimStride) % 1;
+  } else if (mode === 'climb') {
+    T.climb = 1;
+    // Signed speed reverses descent; zero speed freezes the same pose, not idle.
+    climbPhase = ((climbPhase + dt * player.climbV / character.climbStride) % 1 + 1) % 1;
   } else T[mode] = 1;
   slow -= dt;
   const k = Math.min(1, dt * (slow > 0 ? 2.5 : RATE[mode]));   // standing up from sitting is slow
@@ -62,6 +74,7 @@ export function updateBlend(dt, speed, time) {
   A.run.time = phase * dur('run');
   A.swim.time = swimPhase * dur('swim');
   A.swimIdle.time = time % dur('swimIdle');
+  A.climb.time = climbPhase * dur('climb');
   if (mode === 'jump') A.jump.time = Math.min(modeT * 1.4, dur('jump'));
   A.fall.time = dur('fall') * (0.5 + 0.5 * Math.sin(time * 3));
   if (mode === 'land') A.land.time = Math.min(modeT, dur('land'));

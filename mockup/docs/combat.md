@@ -34,9 +34,13 @@ worktree. Asset tests follow the same convention (`CRAWLER_ASSETS_ROOT` can
 point them at a different checkout).
 
 Use `--assets-root /path/to/repo` to override asset location. The player GLB
-embeds the sword on `hand.R` and uses the existing `Slash` clip; no extra load
-or runtime weapon-attachment approximation is needed. `blender/sword.py`
-also exports a standalone sword GLB. Regenerate via the Blender commands in
+is unarmed: just the skinned body, clips and empty `hand.L` / `hand.R` sockets.
+The mockup separately loads `blender/sword.glb` and mounts it on `hand.R` at
+runtime. `render/character.js` exposes `loadSword(url)` to swap separate sword
+assets and `equipSword(null)` to unequip. Swimming / climbing hides the prop.
+`Climb` is an in-place IK loop covering two ladder rungs (0.56 game units);
+vertical speed advances its phase, descent reverses it, and stopping holds
+the grip. Regenerate via the Blender commands in
 `character.py`, `spider.py` and `sword.py`. Tests check balance, hit timing,
 direction / reach / height, cancellations, deterministic spawns, clearance,
 navigation and the exported asset/clip contract.
@@ -47,5 +51,6 @@ in the browser console:
 ```js
 const checks = await import('./tests/browser-checks.js');
 await checks.runCombatChecks(); // real input, controller, damage, GLB poses, cleanup
+await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
 ```

@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { SWORD } from '../src/core/combat.js';
 import { SPIDER, STUNDER } from '../src/core/enemies.js';
+import { CHAR_SCALE } from '../src/core/constants.js';
 
 // Same shared-asset convention as serve.py; explicit override for CI.
 const repo = resolve(import.meta.dirname, '../..');
@@ -22,13 +23,15 @@ function glb(name) {
   };
   return { json, floats, duration: clip => Math.max(...clip.samplers.flatMap(s => floats(s.input))) };
 }
-test('player embeds sword on the hand socket and exports only its own clips', () => {
+test('player is unarmed, retains both hand sockets and exports only its own clips', () => {
   const { json: j, duration } = glb('character');
-  const sword = j.nodes.findIndex(n => n.name === 'Sword');
-  assert.ok(sword >= 0);
-  assert.equal(j.nodes.find(n => n.children?.includes(sword)).name, 'hand.R');
-  assert.equal(j.nodes[sword].extras.weapon, 'sword');
-  assert.equal(j.meshes.length, 2); assert.equal(j.skins.length, 1);
+  assert.ok(!j.nodes.some(n => n.name === 'Sword' || n.extras?.weapon));
+  for (const name of ['hand.L', 'hand.R']) {
+    const socket = j.nodes.find(n => n.name === name);
+    assert.ok(socket);
+    assert.equal(socket.children?.length || 0, 0, 'hand socket must be empty');
+  }
+  assert.equal(j.meshes.length, 1); assert.equal(j.skins.length, 1);
   assert.ok(!j.animations.some(a => /Spider|Stunder/.test(a.name)));
   const slash = j.animations.find(a => a.name === 'Slash');
   assert.ok(slash);
@@ -37,6 +40,30 @@ test('player embeds sword on the hand socket and exports only its own clips', ()
   assert.equal(slash.extras.active_start, SWORD.activeStart);
   assert.equal(slash.extras.active_end, SWORD.activeEnd);
   assert.equal(j.images?.length || 0, 0);
+});
+test('player climbing is a seamless in-place loop covering two ladder rungs', () => {
+  const { json: j, floats, duration } = glb('character');
+  const clip = j.animations.find(a => a.name === 'Climb');
+  assert.ok(clip);
+  assert.ok(Math.abs(duration(clip) - 1.2) < 1e-5);
+  assert.ok(Math.abs(clip.extras.distance * CHAR_SCALE - 0.56) < 1e-6);
+  assert.ok(Math.abs(clip.extras.speed * duration(clip) - clip.extras.distance) < 1e-6);
+  const moving = new Set();
+  for (const channel of clip.channels) {
+    const sampler = clip.samplers[channel.sampler], a = j.accessors[sampler.output];
+    const values = floats(sampler.output), n = a.type === 'VEC4' ? 4 : 3;
+    const name = j.nodes[channel.target.node].name;
+    for (let k = 0; k < n; k++) {
+      assert.ok(Math.abs(values[k] - values[values.length - n + k]) < 1e-5, name + ' loop seam');
+      const component = values.filter((_, i) => i % n === k);
+      const span = Math.max(...component) - Math.min(...component);
+      if (channel.target.path === 'rotation' && span > 0.1) moving.add(name);
+      if (channel.target.path === 'translation') assert.ok(span < 0.05, name + ' must stay in place');
+    }
+  }
+  for (const name of ['upper_arm.L', 'upper_arm.R', 'thigh.L', 'thigh.R', 'shin.L', 'shin.R']) {
+    assert.ok(moving.has(name), name + ' must reach / step');
+  }
 });
 test('spider has exactly walk, bite and a held 2-second death animation', () => {
   const { json: j, duration } = glb('spider');

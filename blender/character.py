@@ -7,6 +7,7 @@ end in the neutral standing pose so they can be cross-faded from anything):
     Run          -- loop, 20 frames @ 30 fps, ground speed RUN_SPEED (extras: speed)
     Swim         -- loop, doggy paddle at SWIM_SPEED (extras: speed, water_level)
     SwimIdle     -- loop, treading water (extras: water_level)
+    Climb        -- loop, alternating ladder grips / steps (extras: distance, speed)
     Jump         -- crouch, push-off, ballistic flight, landing, recovery; the
                     game slices it by frame number (see JUMP_V0), keep timing
     JumpLandSit  -- jump, lose balance, land on the bottom, bounce, stay sitting
@@ -36,7 +37,7 @@ How the motion is made:
 Units are metres, the figure is ~2 m tall, +Z up, the character faces -Y,
 +X is the character's left (".L").
 
-Headless regeneration (also saves the editable rig and embedded sword):
+Headless regeneration (also saves the editable, unarmed rig):
     Blender -b --python blender/character.py -- blender/character.glb blender/character.blend
 
 Usage inside Blender (e.g. via MCP):
@@ -56,7 +57,6 @@ import numpy as np
 from mathutils import Matrix, Quaternion, Vector
 
 import figure
-import sword
 
 FPS = 30
 G = 9.81
@@ -84,6 +84,8 @@ SOLE_R = figure.LIMB_R - figure.SOLE_ROUND   # radius of the flat sole disc
 
 WALK_FRAMES, WALK_SPEED = 28, 0.95
 RUN_FRAMES, RUN_SPEED = 20, 2.4
+CLIMB_FRAMES = 36
+CLIMB_DISTANCE = 2 * 0.28 / 0.55   # two game ladder rungs, in rig units
 
 
 # ============================================================================
@@ -1111,6 +1113,55 @@ def _smooth(x, sigma):
     return np.convolve(np.pad(x, 4, mode="edge"), k, mode="valid")
 
 
+def make_climb_animation(rig):
+    """In-place ladder cycle. Analytic IK keeps grips firm (no arm springs).
+
+    Each hand / foot stays on a rung for half a cycle, travelling down at
+    constant speed relative to the moving body; it then retracts and reaches
+    the next rung. Opposite hand and foot recover together. The game advances
+    or reverses the phase by vertical distance and freezes it while hanging.
+    """
+    skel = Skeleton(rig)
+    frames = []
+    for f in range(CLIMB_FRAMES + 1):
+        phase = (f / CLIMB_FRAMES) % 1
+        w = 2 * math.pi * phase
+        ps, bs = {}, {}
+        bs["root"] = skel.set("root", ps, skel.base("root", ps))
+        hips = Matrix.Translation((0.018 * math.sin(w), 0, STAND_Z))
+        bs["hips"] = skel.set("hips", ps, hips @ skel.rest_rot["hips"].to_4x4())
+        bs["spine"] = skel.aim("spine", ps, Vector((0, -0.045, 1)), D(3) * math.sin(w))
+        bs["head"] = skel.aim("head", ps, Vector((0, 0.10, 1)))
+
+        def contact(ph, high, depth):
+            if ph < 0.5:   # planted: exactly cancels the controller's ascent
+                return depth, high - CLIMB_DISTANCE * ph
+            u = (ph - 0.5) * 2
+            z = high - CLIMB_DISTANCE * 0.5 * (1 - smoothstep(0, 1, u))
+            return depth + 0.14 * math.sin(math.pi * u) ** 2, z
+
+        for side, s, off in (("L", 1, 0.0), ("R", -1, 0.5)):
+            ph = (phase + off) % 1
+            y, z = contact(ph, 1.84, -0.34)   # fist surface clears the wall behind the rungs
+            shoulder = skel.base(f"upper_arm.{side}", ps).translation
+            elbow, hand = two_bone_ik(shoulder, Vector((s * 0.30, y, z)),
+                                      figure.UPPER_ARM_LEN, figure.FOREARM_LEN,
+                                      Vector((s, 0.25, -0.15)))
+            bs[f"upper_arm.{side}"] = skel.aim(f"upper_arm.{side}", ps, elbow - shoulder)
+            bs[f"forearm.{side}"] = skel.aim(f"forearm.{side}", ps, hand - elbow)
+            y, z = contact((ph + 0.5) % 1, 0.61, -0.30)
+            hip = skel.base(f"thigh.{side}", ps).translation
+            knee, foot = two_bone_ik(hip, Vector((s * figure.LEG_X, y, z)),
+                                     THIGH_LEN, SHIN_LEN, Vector((0, -1, 0)))
+            bs[f"thigh.{side}"] = skel.aim(f"thigh.{side}", ps, knee - hip)
+            bs[f"shin.{side}"] = skel.aim(f"shin.{side}", ps, foot - knee)
+        frames.append(bs)
+    return bake_action(rig, "Climb", frames, True,
+                       {"distance": CLIMB_DISTANCE,
+                        "speed": CLIMB_DISTANCE / (CLIMB_FRAMES / FPS),
+                        "rung_spacing": 0.28 / 0.55})
+
+
 def make_animations(rig, ob):
     skel = Skeleton(rig)
     cycles = 6
@@ -1170,6 +1221,7 @@ def make_animations(rig, ob):
         contact="always")
     one("JumpLandSit", jump_land_sit_params(), 200.0, 0.35, 260.0, 0.4)
 
+    make_climb_animation(rig)
     bake_action(rig, "Flex", [flex_pose(skel)], False)
 
 
@@ -1186,6 +1238,11 @@ def main(scene=None, export_path=None, active_action="Walk"):
     if old is not None:
         bpy.data.objects.remove(old)
 
+    # Remove the legacy embedded weapon when regenerating an old character scene.
+    old_weapon = bpy.data.objects.get("Sword")
+    if old_weapon is not None and old_weapon.parent and old_weapon.parent.name == RIG_NAME:
+        bpy.data.objects.remove(old_weapon, do_unlink=True)
+
     rig = build_rig(scene)
     ob = build_mesh(scene)
     ob.parent = rig
@@ -1194,16 +1251,15 @@ def main(scene=None, export_path=None, active_action="Walk"):
     compute_weights(ob)
 
     make_animations(rig, ob)
-    register_actions(rig, ("Walk", "Run", "Swim", "SwimIdle", "Jump", "JumpLandSit",
+    register_actions(rig, ("Walk", "Run", "Swim", "SwimIdle", "Climb", "Jump", "JumpLandSit",
                            "Kick", "Punch", "Slash", "Roll", "Flex"))
-    weapon = sword.attach(rig, scene)
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act
     scene.frame_start = int(act.frame_start)
     scene.frame_end = int(act.frame_end) - (1 if act.use_cyclic else 0)
 
     if export_path:
-        export_gltf(rig, ob, export_path, (weapon,))
+        export_gltf(rig, ob, export_path)
     return rig, ob
 
 
@@ -1219,11 +1275,11 @@ def register_actions(rig, names):
         track.mute = True
 
 
-def export_gltf(rig, ob, path, extra_objects=()):
+def export_gltf(rig, ob, path):
     vl = bpy.context.view_layer
     for o in vl.objects:
         o.select_set(False)
-    for obj in (rig, ob, *extra_objects):
+    for obj in (rig, ob):
         obj.select_set(True)
     vl.objects.active = rig
     bpy.ops.export_scene.gltf(

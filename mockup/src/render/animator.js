@@ -39,8 +39,8 @@ export function animateCharacter(dt, time) {
   if (p.ragdoll) { applyRagdollPose(p.ragdoll.p); return; }
   if (p.getUpCount !== seenGetUp) { seenGetUp = p.getUpCount; startGetUp(); resetMode(); }
 
-  // on a ladder: face the wall, the walk cycle stands in for climbing
-  const speed = p.climb ? Math.abs(p.climbV) * 0.8 : Math.hypot(p.vx, p.vz);
+  // Ladder motion is driven separately by signed vertical speed in the blend tree.
+  const speed = Math.hypot(p.vx, p.vz);
   let yaw = p.yaw;
   if (p.sword.active) yaw = p.sword.yaw;
   else if (p.climb) { const [dx, dz] = DIRS[p.climb.l.d]; yaw = angleTo(yaw, Math.atan2(dx, dz), Math.min(1, dt * 12)); }

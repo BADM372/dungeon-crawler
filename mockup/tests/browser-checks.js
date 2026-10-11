@@ -9,7 +9,9 @@ import { resetEnemies, allEnemies, updateEnemies, drawEnemies } from '../src/gam
 import { spiders } from '../src/game/spiders.js';
 import { stunders } from '../src/game/stunders.js';
 import { updatePlayer } from '../src/game/update.js';
-import { character } from '../src/render/character.js';
+import { climb } from '../src/physics/climb.js';
+import { W, resetMode } from '../src/render/blendtree.js';
+import { character, equipSword } from '../src/render/character.js';
 import { animateCharacter } from '../src/render/animator.js';
 import { scene } from '../src/render/scene.js';
 import { stunderModel } from '../src/render/stundermodel.js';
@@ -82,7 +84,7 @@ function minimumY(model) {
 }
 
 export async function runCombatChecks() {
-  check(character.ready && spiderModel.ready && stunderModel.ready, 'Wait for all character assets to load');
+  check(character.ready && character.sword && spiderModel.ready && stunderModel.ready, 'Wait for all character / weapon assets to load');
   check(!state.transitioning, 'Wait for portal travel to finish');
   return paused(async () => {
     const originalMap = state.map, saved = { ...player }, results = [];
@@ -93,7 +95,7 @@ export async function runCombatChecks() {
       const spider = spiders[0], stunder = stunders[0];
       tick(60); // settle the real blend tree after moving to the test floor
       const swordBottom = minimumY(character.sword);
-      check(character.sword && swordBottom >= -0.002, 'Idle sword must be attached and off the floor: ' + swordBottom);
+      check(character.sword.parent === character.bones['hand.R'] && swordBottom >= -0.002, 'Separate sword must be mounted on hand.R and off the floor: ' + swordBottom);
       check(stunders[0].view.model.getObjectByName('head') !== stunders[1].view.model.getObjectByName('head'), 'Instances must own independent bones');
       results.push('loaded sword / independent enemy skeletons');
 
@@ -153,6 +155,79 @@ export async function runCombatChecks() {
       state.map = originalMap;
       Object.assign(player, saved); cancelSwing(player, true);
       resetEnemies();
+    }
+  });
+}
+
+// Real ladder controller, exported Climb action and blend tree (no keyboard timing).
+export async function runClimbChecks() {
+  check(character.ready && character.sword, 'Wait for the player and separate weapon assets to load');
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, weapon = character.sword, results = [];
+    let time = 0;
+    const step = (dx = 0, dz = 0, jump = false) => {
+      climb(1 / 60, dx, dz, jump); player.visY = player.y;
+      animateCharacter(1 / 60, time += 1 / 60);
+    };
+    const pose = () => Object.values(character.bones).flatMap(b => [...b.position.toArray(), ...b.quaternion.toArray()]);
+    const samePose = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-5);
+    try {
+      state.map = arena(); hero(); resetMode();
+      const l = { x: 6, z: 6, d: 2, y0: 0, y1: 4, layer: 0 };
+      state.map.ladders = [l];
+      Object.assign(at(6.5, 7.5), { top: 8, cs: [4, 4, 4, 4] });   // top is in levels, corners in game units
+      player.z = 6.74;
+      for (let i = 0; i < 40; i++) step(0, 1);
+      check(player.climb && W.climb > 0.99 && W.walk < 0.01, 'Ladder must use Climb, not Walk');
+      check(!character.sword.visible, 'Climbing needs both hands free');
+      results.push('ladder grab selects exported Climb and hides sword');
+
+      for (let i = 0; i < 90; i++) step();
+      const held = pose(), phase = character.actions.climb.time, y = player.y;
+      for (let i = 0; i < 30; i++) step();
+      check(player.y === y && character.actions.climb.time === phase && samePose(held, pose()), 'Idle on ladder must hold the same grip');
+      results.push('stationary ladder grip freezes pose');
+
+      step(0, 1); const forward = pose();
+      step(0, -1);
+      check(Math.abs(character.actions.climb.time - phase) < 1e-8 && samePose(held, pose()), 'Descent must reverse the same cycle');
+      check(!samePose(held, forward), 'Ascent must animate hands and feet');
+      results.push('ascent advances / descent reverses distance-driven phase');
+
+      step(0, 0, true);
+      check(!player.climb && !player.grounded && player.vy > 0 && character.sword.visible, 'Jump-off must release ladder and restore sword');
+      for (let i = 0; i < 40; i++) animateCharacter(1 / 60, time += 1 / 60);
+      check(W.fall > 0.99 && W.climb < 0.01, 'Jump-off must blend to airborne animation');
+      results.push('jump-off blends to falling and restores sword');
+
+      // Both exits must leave the climb mode (including after reverse phase wrap).
+      Object.assign(player, { climb: { l, side: 0 }, y: l.y1 - 0.01, grounded: true, vy: 0 });
+      step(0, 1);
+      check(!player.climb && player.y === l.y1, 'Top exit must stand on the upper floor');
+      for (let i = 0; i < 90; i++) animateCharacter(1 / 60, time += 1 / 60);
+      check(W.idle > 0.99 && W.climb < 0.01, 'Top exit must return to locomotion');
+      Object.assign(player, { climb: { l, side: 0 }, y: 0.01 });
+      step(0, -1);
+      check(!player.climb && player.y === 0, 'Bottom exit must return to ground');
+      results.push('top and bottom exits return to grounded animation');
+
+      for (let d = 0; d < DIRS.length; d++) {
+        l.d = d; Object.assign(player, { climb: { l, side: 0 }, y: 2, climbV: 0 });
+        for (let i = 0; i < 90; i++) step();
+        const [dx, dz] = DIRS[d];
+        check(Math.abs(Math.sin(player.yaw) - dx) < 1e-5 && Math.abs(Math.cos(player.yaw) - dz) < 1e-5, 'Climber must face wall in direction ' + d);
+      }
+      results.push('faces the wall in all four ladder orientations');
+      equipSword(null); step();
+      check(!character.sword && !weapon.parent && W.climb > 0.99, 'Unarmed character must climb without any weapon');
+      equipSword(weapon); step();
+      check(weapon.parent === character.bones['hand.R'] && !weapon.visible, 'Dynamically re-equipped sword must stay hidden while climbing');
+      results.push('unarmed climbing / dynamic weapon attachment');
+      return results;
+    } finally {
+      equipSword(weapon);
+      state.map = originalMap; Object.assign(player, saved); resetMode();
+      animateCharacter(1 / 60, time);
     }
   });
 }
