@@ -1,53 +1,22 @@
-// Cutaway: a circle on screen centred on the character. Inside it, everything above the cut
-// height that is closer to the camera than the character is discarded (soft dithered edge);
-// nothing behind the character is touched. Cut solids show their insides: back faces are
-// drawn as a dark hatched cap. Cut fluids get flat caps.
+// Cutaway: a slowly turning nine-cornered shape on screen around the character (cutshader.js).
+// Inside it, everything above the cut height that is closer to the camera than the character
+// is discarded; nothing behind the character is touched. Cut solids show their insides: back
+// faces are drawn as a dark hatched cap, and the cut-away part as faint glass (ghosts.js).
+// Cut fluids get flat caps.
 import * as THREE from 'three';
 import { N, LH, CUBE_H, LAVA, ACID } from '../core/constants.js';
 import { GeoBuilder } from './builder.js';
 import { C } from './palette.js';
 import { scene, camera, renderer } from './scene.js';
+import { U, inject, turnShape } from './cutshader.js';
 
 const RADIUS = 2.8;   // world units around the character
 
-const U = {
-  uCutY: { value: 1e3 }, uCenter: { value: new THREE.Vector2() }, uRadius: { value: 1 },
-  uAspect: { value: 1 }, uDepth: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
-  uFront: { value: new THREE.Vector4() }, uWallY: { value: 1e3 },
-};
-// 1 inside the cutaway (with a dithered rim), 0 outside; y-test optional
-const REGION = `
-  float cutRegion(bool testY) {
-    if (testY && vCutW.y <= uCutY) return 0.0;
-    if (vCutZ > uDepth - 0.15) return 0.0;
-    vec2 ndc = gl_FragCoord.xy / uRes * 2.0 - 1.0;
-    float d = length((ndc - uCenter) * vec2(uAspect, 1.0)) / uRadius;
-    float rim = smoothstep(0.85, 1.0, d);
-    float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
-    return n >= rim ? 1.0 : 0.0;
-  }
-  // caves: the walls on the faces towards the camera are cut down (+x, -x, +z, -z flags)
-  bool frontWall() {
-    if (vCutW.y <= uWallY) return false;
-    vec4 d = vec4(16.0 - vCutW.x, vCutW.x, 16.0 - vCutW.z, vCutW.z);
-    return any(bvec4(d.x < 2.2 && uFront.x > 0.5, d.y < 2.2 && uFront.y > 0.5, d.z < 2.2 && uFront.z > 0.5, d.w < 2.2 && uFront.w > 0.5));
-  }`;
-
-function inject(mat, fragCode, key) {
-  mat.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, U);
-    sh.vertexShader = 'varying vec3 vCutW;\nvarying float vCutZ;\n' + sh.vertexShader.replace('#include <project_vertex>',
-      '#include <project_vertex>\n#ifdef USE_INSTANCING\n  vCutW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;\n#else\n  vCutW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#endif\n  vCutZ = -mvPosition.z;');
-    sh.fragmentShader = 'varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth, uWallY;\nuniform vec2 uCenter, uRes;\nuniform vec4 uFront;\n'
-      + REGION + '\n' + fragCode(sh.fragmentShader);
-  };
-  mat.customProgramCacheKey = () => key;
-  return mat;
-}
-
-// a material that gets cut away; with caps, its back faces show as the dark hatched cap
-export function cutMaterial(mat, caps = false) {
+// a material that gets cut away; with caps, its back faces show as the dark hatched cap;
+// ghost: the cut-away part is drawn again as glass (ghosts.js)
+export function cutMaterial(mat, caps = false, ghost = caps) {
   if (caps) { mat.side = THREE.DoubleSide; mat.shadowSide = THREE.BackSide; }
+  mat.userData.ghost = ghost;
   return inject(mat, fs => {
     fs = fs.replace('#include <clipping_planes_fragment>', 'if (cutRegion(true) > 0.5 || frontWall()) discard;\n#include <clipping_planes_fragment>');
     if (caps) fs = fs.replace('#include <dithering_fragment>', `#include <dithering_fragment>
@@ -71,6 +40,7 @@ let key = '';
 // y = height of the cut (Infinity for none), (px, py, pz) = the point to keep visible
 export function setCut(y, map, px, py, pz) {
   const on = y < CUBE_H;
+  turnShape(performance.now() / 1000);
   U.uCutY.value = on ? y : 1e3;
   // cave walls on the camera's side come down to a little over the character
   const cx = camera.position.x - N / 2, cz = camera.position.z - N / 2, cave = !!map?.cave;

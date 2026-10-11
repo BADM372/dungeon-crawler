@@ -168,7 +168,7 @@ under plank bridges never stand where another structure passes underneath.
   vertex point, so the four faces meeting there agree.
 - **Pillars:** one to three rock columns rise to the top level in every cave cube.
 - **Walls down:** the faces towards the camera are cut down to just over the character in the
-  cutaway shader (`frontWall` in `render/section.js`). The cut rock shows as hatched
+  cutaway shader (`frontWall` in `render/cutshader.js`). The cut rock shows as hatched
   cross-section, like a cutaway model.
 
 ## Themed structures (`world/builds.js`, `render/bridges2.js`)
@@ -270,6 +270,23 @@ The world guarantees that from anywhere you can arrive, you can get to depth 20.
   worlds could be finished; four of them trapped you in the town. Now 64 of 64 test worlds
   reach depth 20 from the town (Node check over all 21 depths, about 3 ms per cube, 1.07
   attempts per cube on average).
+
+## Cutaway (`game/cut.js`, `render/section.js`, `render/cutshader.js`, `render/ghosts.js`)
+
+- **When and how deep:** rays from the character to the camera find what hides it, and the
+  cut height drops just below that (`game/cut.js`).
+- **The shape:** a nine-cornered polygon on a circle 2.8 units around the character on
+  screen. The corners sit at irregular angles and the shape turns slowly (0.18 rad/s). The
+  edge is hard; there is no dither.
+- **What gets cut:** everything above the cut height, closer to the camera than the
+  character and inside the shape, is discarded.
+- **What you see instead:**
+  - The back faces of cut solids show as a dark hatched section cap.
+  - Fluids get flat caps.
+  - What was removed (terrain, structures, props) is drawn again as very faint glass: a
+    twin of every cut solid that shares its geometry, draws only inside the cutaway, writes
+    no depth and grows a little more opaque at grazing angles, so the shapes read. There is
+    one glass material per cube, because fading patches materials per cube.
 
 ## Travel and what you see (`game/travel.js`)
 

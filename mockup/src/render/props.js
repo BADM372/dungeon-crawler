@@ -61,7 +61,7 @@ export function buildProps(placed, group) {
   for (const [name, list] of byName) {
     const p = props.byName.get(name);
     for (const part of p.parts) {
-      const c = cutMaterial(part.material.clone());
+      const c = cutMaterial(part.material.clone(), false, true);
       const mesh = new THREE.InstancedMesh(part.geometry, p.sway ? swayMaterial(c, p.sway) : c, list.length);
       mesh.userData.sharedGeo = true;   // the catalog owns the geometry
       list.forEach((q, i) => {

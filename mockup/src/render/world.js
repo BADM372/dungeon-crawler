@@ -6,6 +6,7 @@ import { fallTex } from './materials.js';
 import { layerMeshes } from './layers.js';
 import { buildCubeGeometry } from './cubegeo.js';
 import { buildFalls, lavaLights } from './falls.js';
+import { addGhosts } from './ghosts.js';
 import { buildMarkers } from './markers.js';
 import { adoptLights, releaseLights } from './lightpool.js';
 import { makeFadable } from './fade.js';
@@ -32,6 +33,7 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m)) {
   const placed = placeProps(m, themeAt(m.depth ?? 0));
   m.blockers = placed.blockers;
   buildProps(placed.out, group);
+  addGhosts(group);
   group.add(makeGlass());
   adoptLights(group);
   makeFadable(group);
