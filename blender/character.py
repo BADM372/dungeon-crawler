@@ -36,6 +36,9 @@ How the motion is made:
 Units are metres, the figure is ~2 m tall, +Z up, the character faces -Y,
 +X is the character's left (".L").
 
+Headless regeneration (also saves the editable rig and embedded sword):
+    Blender -b --python blender/character.py -- blender/character.glb blender/character.blend
+
 Usage inside Blender (e.g. via MCP):
     import sys; sys.path.insert(0, "<repo>/blender")
     import importlib, figure, character
@@ -43,12 +46,17 @@ Usage inside Blender (e.g. via MCP):
     character.main(export_path="<repo>/blender/character.glb")
 """
 import math
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import bpy
 import numpy as np
 from mathutils import Matrix, Quaternion, Vector
 
 import figure
+import sword
 
 FPS = 30
 G = 9.81
@@ -1155,7 +1163,9 @@ def make_animations(rig, ob):
     one("Punch", punch_params(), {"L": 320.0, "R": 750.0}, {"L": 0.5, "R": 0.6},
         {"L": 420.0, "R": 950.0}, {"L": 0.5, "R": 0.65})
     one("Slash", slash_params(), {"L": 220.0, "R": 480.0}, {"L": 0.45, "R": 0.5},
-        {"L": 300.0, "R": 650.0}, {"L": 0.45, "R": 0.55}, {"weapon_socket": "hand.R"})
+        {"L": 300.0, "R": 650.0}, {"L": 0.45, "R": 0.55},
+        {"weapon_socket": "hand.R", "contact_frame": 16, "hit_time": 16 / FPS,
+         "active_start": 15 / FPS, "active_end": 21 / FPS})
     one("Roll", roll_params(), 900.0, 0.7, 1100.0, 0.7, {"distance": round(2 * math.pi * ROLL_RADIUS, 3)},
         contact="always")
     one("JumpLandSit", jump_land_sit_params(), 200.0, 0.35, 260.0, 0.4)
@@ -1184,30 +1194,62 @@ def main(scene=None, export_path=None, active_action="Walk"):
     compute_weights(ob)
 
     make_animations(rig, ob)
+    register_actions(rig, ("Walk", "Run", "Swim", "SwimIdle", "Jump", "JumpLandSit",
+                           "Kick", "Punch", "Slash", "Roll", "Flex"))
+    weapon = sword.attach(rig, scene)
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act
     scene.frame_start = int(act.frame_start)
     scene.frame_end = int(act.frame_end) - (1 if act.use_cyclic else 0)
 
     if export_path:
-        export_gltf(rig, ob, export_path)
+        export_gltf(rig, ob, export_path, (weapon,))
     return rig, ob
 
 
-def export_gltf(rig, ob, path):
+def register_actions(rig, names):
+    """Explicit clip ownership, including in a shared Blender MCP session."""
+    rig.animation_data_create()
+    for track in list(rig.animation_data.nla_tracks):
+        rig.animation_data.nla_tracks.remove(track)
+    for name in names:
+        track = rig.animation_data.nla_tracks.new()
+        track.name = name
+        track.strips.new(name, 0, bpy.data.actions[name])
+        track.mute = True
+
+
+def export_gltf(rig, ob, path, extra_objects=()):
     vl = bpy.context.view_layer
     for o in vl.objects:
         o.select_set(False)
-    rig.select_set(True)
-    ob.select_set(True)
+    for obj in (rig, ob, *extra_objects):
+        obj.select_set(True)
     vl.objects.active = rig
     bpy.ops.export_scene.gltf(
         filepath=path,
         export_format="GLB",
         use_selection=True,
+        use_active_scene=True,
         export_animation_mode="ACTIONS",
+        export_anim_single_armature=False,
+        export_rest_position_armature=True,
+        export_texcoords=False,
+        export_cameras=False,
+        export_lights=False,
         export_force_sampling=True,
         export_frame_step=1,
         export_extras=True,
         export_yup=True,
     )
+
+
+if __name__ == "__main__":
+    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    rig, mesh = main(export_path=str(Path(args[0] if args else __file__.replace(".py", ".glb")).resolve()))
+    if len(args) > 1:
+        figure.setup_stage(bpy.context.scene)
+        bpy.context.scene.frame_set(0)
+        bpy.context.preferences.filepaths.save_version = 0
+        bpy.ops.wm.save_as_mainfile(filepath=str(Path(args[1]).resolve()))

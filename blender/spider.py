@@ -20,6 +20,11 @@ Animations (in place, 30 fps):
     Walk    -- loop, alternating tetrapod gait at WALK_SPEED (extras: speed)
     Attack  -- rear up with the front legs raised and the jaw open, lunge,
                slam the front legs down and snap the jaw shut, recover
+    Death   -- topple onto its back, fold / twitch the legs, drop the face,
+               settle into a held corpse pose (2 seconds, extras: hold_last_frame)
+
+Headless regeneration (saves a clean, editable project with all three clips):
+    Blender -b --python blender/spider.py -- blender/spider.glb blender/spider.blend
 
 Usage inside Blender (e.g. via MCP):
     import sys; sys.path.insert(0, "<repo>/blender")
@@ -28,6 +33,10 @@ Usage inside Blender (e.g. via MCP):
     spider.main(export_path="<repo>/blender/spider.glb")
 """
 import math
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import bpy
 import numpy as np
@@ -475,7 +484,45 @@ def attack_params():
 PRE = int(0.6 * FPS)
 
 
-def make_animations(rig):
+def death_frames(skel):
+    """A floor-bound back-flop with curled legs; all motion ends by 1.35s."""
+    kf = C.keyframes
+    pitch = kf((0.03, 0.0), (0.15, D(-8)), (0.68, D(177)), (0.95, D(183)), (1.25, D(180)))
+    height = kf((0.0, BODY_C.z), (0.22, 0.54), (0.70, 0.23), (0.84, 0.28), (1.25, 0.24))
+    jaw = kf((0.0, D(6)), (0.2, D(45)), (1.2, D(20)))
+    rest_dir = (FACE_C - BODY_C).normalized()
+    frames = []
+    for f in range(2 * FPS + 1):
+        t = f / FPS
+        ps, bs = {}, {}
+        bs["root"] = skel.set("root", ps, skel.base("root", ps))
+        rotation = C.rot_x(pitch(t))
+        pos = Vector((0, 0.08 * C.smoothstep(0.1, 0.8, t), height(t)))
+        bs["body"] = skel.set("body", ps, Matrix.Translation(pos) @ (rotation @ skel.rest_rot["body"]).to_4x4())
+        collapse = C.smoothstep(0.08, 0.85, t)
+        twitch = (1 - C.smoothstep(0.55, 1.25, t)) * C.smoothstep(0.08, 0.4, t)
+        for side, sign, i, (root, knee, foot) in all_legs():
+            upper, lower = leg_bone(side, i, "upper"), leg_bone(side, i, "lower")
+            hip = skel.base(upper, ps).translation
+            folded = pos + rotation @ Vector((foot.x * 0.7, foot.y * 0.7, -0.65))
+            target = foot.lerp(folded, collapse)
+            target += Vector((sign * 0.035, 0, 0.065)) * (math.sin(t * 32 + i * 1.7) * twitch)
+            out = rotation @ Vector((sign * math.sin(D(LEG_YAW[i])), -math.cos(D(LEG_YAW[i])), 0))
+            pole = Vector((0, 0, 1)) + out * 0.2
+            k, end = C.two_bone_ik(hip, target, (knee - root).length, (foot - knee).length, pole)
+            bs[upper] = skel.aim(upper, ps, k - hip)
+            bs[lower] = skel.aim(lower, ps, end - k)
+        direction = (rotation @ rest_dir).lerp(Vector((0, -1, 0.24)).normalized(), C.smoothstep(0.1, 0.7, t))
+        bs["face"] = skel.aim("face", ps, direction.normalized())
+        base = skel.base("jaw", ps)
+        opening = jaw(t)
+        bs["jaw"] = skel.set("jaw", ps, base @ Matrix.Translation((0, 0, -JAW_DROP * opening / D(55)))
+                            @ Matrix.Rotation(-0.3 * opening, 4, "X"))
+        frames.append(bs)
+    return frames
+
+
+def make_animations(rig, ob):
     skel = C.Skeleton(rig)
     cycles = 6
     n = WALK_FRAMES
@@ -484,7 +531,18 @@ def make_animations(rig):
                   loc_bones=("body", "jaw"))
     params, n = attack_params()
     frames = solve(skel, params, n + PRE, face_spring=ATTACK_FACE_SPRING)
-    C.bake_action(rig, "SpiderAttack", frames[PRE:], False, loc_bones=("body", "jaw"))
+    C.bake_action(rig, "SpiderAttack", frames[PRE:], False,
+                  {"hit_time": 0.42, "contact_frame": 13}, loc_bones=("body", "jaw"))
+    frames = death_frames(skel)
+    props = {"duration": 2.0, "hold_last_frame": True, "hold_from": 1.35}
+    act = C.bake_action(rig, "SpiderDeath", frames, False, props, loc_bones=("body", "jaw"))
+    minima = C.mesh_min_z(rig, ob, act)
+    # Every surface part is under body, so this uniform lift preserves the curl
+    # while preventing thin feet, teeth or the abdomen from penetrating ground.
+    for f, minimum in enumerate(minima):
+        frames[f]["body"].translation.z += max(0.0, -float(minimum))
+    C.bake_action(rig, "SpiderDeath", frames, False, props, loc_bones=("body", "jaw"))
+    C.register_actions(rig, ("SpiderWalk", "SpiderAttack", "SpiderDeath"))
 
 
 def add_eye_lights(rig):
@@ -519,7 +577,7 @@ def main(scene=None, export_path=None, active_action="SpiderWalk"):
     ob.parent = rig
     ob.modifiers.new("Armature", "ARMATURE").object = rig
     compute_weights(ob, owners)
-    make_animations(rig)
+    make_animations(rig, ob)
     add_eye_lights(rig)
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act
@@ -528,3 +586,18 @@ def main(scene=None, export_path=None, active_action="SpiderWalk"):
     if export_path:
         C.export_gltf(rig, ob, export_path)
     return rig, ob
+
+
+if __name__ == "__main__":
+    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    rig, mesh = main(export_path=str(Path(args[0] if args else __file__.replace(".py", ".glb")).resolve()))
+    minima = C.mesh_min_z(rig, mesh, bpy.data.actions["SpiderDeath"])
+    assert minima.min() > -0.002, ("SpiderDeath floor contact", float(minima.min()))
+    rig.animation_data.action = bpy.data.actions["SpiderWalk"]
+    bpy.context.scene.frame_set(0)
+    if len(args) > 1:
+        F.setup_stage(bpy.context.scene)
+        bpy.context.scene.camera.data.ortho_scale = 3.3
+        bpy.context.preferences.filepaths.save_version = 0
+        bpy.ops.wm.save_as_mainfile(filepath=str(Path(args[1]).resolve()))
