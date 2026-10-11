@@ -61,5 +61,10 @@ export function shapeCube(ctx) {
       else if (d < r + 1.8) raise(i, w0, h * (1 - Math.abs(d - r - 0.6) / 2.4));
     });
   }
+  // caves: a few rock columns from the floor up into the dark (the ceiling is implied)
+  if (spec.cave) for (let n = ri(1, 3); n > 0; n--) {
+    const cx = 4 + R() * 8, cz = 4 + R() * 8, r = 0.7 + R() * 0.6;
+    each((x, z, i) => { if (Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < r) { lvl0[i] = MAX_L; void0[i] = 0; } });
+  }
   ctx.stats.mode = spec.kind + ' / ' + kind;
 }

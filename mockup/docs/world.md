@@ -114,6 +114,18 @@ everywhere.
 Structures: a stair never runs right beside a bridge at a similar height, and timber legs
 under plank bridges never stand where another structure passes underneath.
 
+## Caves (depth 5 and deeper)
+
+- **Chamber walls:** cave cubes are enclosed by rock walls. A side face's `wall` (in
+  `world/profile.js`) is shared by both cubes. Each cube raises its outer ring to the wall
+  height (levels 17–23) and the ring inside it to a rough half-height foot.
+- **Openings:** walls open around portals and river crossings. Corners come from the shared
+  vertex point, so the four faces meeting there agree.
+- **Pillars:** one to three rock columns rise to the top level in every cave cube.
+- **Walls down:** the faces towards the camera are cut down to just over the character in the
+  cutaway shader (`frontWall` in `render/section.js`). The cut rock shows as hatched
+  cross-section, like a cutaway model.
+
 ## Ladders and jumps (`gen/climbs.js`, `physics/climb.js`)
 
 Routes can now also use these moves:

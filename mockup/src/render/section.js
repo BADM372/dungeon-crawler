@@ -3,7 +3,7 @@
 // nothing behind the character is touched. Cut solids show their insides: back faces are
 // drawn as a dark hatched cap. Cut fluids get flat caps.
 import * as THREE from 'three';
-import { LH, CUBE_H, LAVA, ACID } from '../core/constants.js';
+import { N, LH, CUBE_H, LAVA, ACID } from '../core/constants.js';
 import { GeoBuilder } from './builder.js';
 import { C } from './palette.js';
 import { scene, camera, renderer } from './scene.js';
@@ -13,6 +13,7 @@ const RADIUS = 2.8;   // world units around the character
 const U = {
   uCutY: { value: 1e3 }, uCenter: { value: new THREE.Vector2() }, uRadius: { value: 1 },
   uAspect: { value: 1 }, uDepth: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
+  uFront: { value: new THREE.Vector4() }, uWallY: { value: 1e3 },
 };
 // 1 inside the cutaway (with a dithered rim), 0 outside; y-test optional
 const REGION = `
@@ -24,6 +25,12 @@ const REGION = `
     float rim = smoothstep(0.85, 1.0, d);
     float n = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
     return n >= rim ? 1.0 : 0.0;
+  }
+  // caves: the walls on the faces towards the camera are cut down (+x, -x, +z, -z flags)
+  bool frontWall() {
+    if (vCutW.y <= uWallY) return false;
+    vec4 d = vec4(16.0 - vCutW.x, vCutW.x, 16.0 - vCutW.z, vCutW.z);
+    return any(bvec4(d.x < 2.2 && uFront.x > 0.5, d.y < 2.2 && uFront.y > 0.5, d.z < 2.2 && uFront.z > 0.5, d.w < 2.2 && uFront.w > 0.5));
   }`;
 
 function inject(mat, fragCode, key) {
@@ -31,7 +38,7 @@ function inject(mat, fragCode, key) {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vCutW;\nvarying float vCutZ;\n' + sh.vertexShader.replace('#include <project_vertex>',
       '#include <project_vertex>\n#ifdef USE_INSTANCING\n  vCutW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;\n#else\n  vCutW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#endif\n  vCutZ = -mvPosition.z;');
-    sh.fragmentShader = 'varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth;\nuniform vec2 uCenter, uRes;\n'
+    sh.fragmentShader = 'varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth, uWallY;\nuniform vec2 uCenter, uRes;\nuniform vec4 uFront;\n'
       + REGION + '\n' + fragCode(sh.fragmentShader);
   };
   mat.customProgramCacheKey = () => key;
@@ -42,7 +49,7 @@ function inject(mat, fragCode, key) {
 export function cutMaterial(mat, caps = false) {
   if (caps) { mat.side = THREE.DoubleSide; mat.shadowSide = THREE.BackSide; }
   return inject(mat, fs => {
-    fs = fs.replace('#include <clipping_planes_fragment>', 'if (cutRegion(true) > 0.5) discard;\n#include <clipping_planes_fragment>');
+    fs = fs.replace('#include <clipping_planes_fragment>', 'if (cutRegion(true) > 0.5 || frontWall()) discard;\n#include <clipping_planes_fragment>');
     if (caps) fs = fs.replace('#include <dithering_fragment>', `#include <dithering_fragment>
       if (!gl_FrontFacing) {
         float h = step(0.6, fract((vCutW.x + vCutW.z) * 2.5));
@@ -65,6 +72,10 @@ let key = '';
 export function setCut(y, map, px, py, pz) {
   const on = y < CUBE_H;
   U.uCutY.value = on ? y : 1e3;
+  // cave walls on the camera's side come down to a little over the character
+  const cx = camera.position.x - N / 2, cz = camera.position.z - N / 2, cave = !!map?.cave;
+  U.uFront.value.set(cave && cx > 6 ? 1 : 0, cave && cx < -6 ? 1 : 0, cave && cz > 6 ? 1 : 0, cave && cz < -6 ? 1 : 0);
+  U.uWallY.value = py + 1;
   camera.updateMatrixWorld();
   renderer.getDrawingBufferSize(U.uRes.value);
   U.uAspect.value = camera.aspect;

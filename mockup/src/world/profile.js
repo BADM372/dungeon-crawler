@@ -41,3 +41,20 @@ export function profile(world, fk, sock) {
   out[N - 1] = vertexLevel(world, X + 1, Y, Z + 1);
   return out;
 }
+
+// cave depths: a rock wall along the face (both cubes build their half of it), open around the
+// portal and the river crossing. Heights come from world noise sampled at the face (corners at
+// the shared vertex), so the four faces meeting at a corner agree.
+export function caveWall(world, fk, f) {
+  const [k, d] = fk.split('/'), [X, Y, Z] = parse(k);
+  if (!themeAt(-Y).cave) return null;
+  const out = new Int16Array(N);
+  for (let t = 0; t < N; t++) {
+    if (f.portal && Math.abs(t - f.portal.pos) <= 2) continue;
+    if (f.river && t >= f.river.pos - 1 && t <= f.river.pos + f.river.w) continue;
+    const a = t === 0 ? 0 : t === N - 1 ? N : t + 0.5;
+    const wx = d === '0' ? (X + 1) * N : X * N + a, wz = d === '0' ? Z * N + a : (Z + 1) * N;
+    out[t] = 17 + Math.floor(world.noise(wx * 0.3 + 77, wz * 0.3 + Y * 13) * 7);
+  }
+  return out;
+}

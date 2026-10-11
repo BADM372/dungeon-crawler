@@ -4,7 +4,7 @@
 // by whichever of its two cubes gets prepared first; its layout comes from the face's own
 // random stream, so it does not depend on who decided it.
 import { parse, step, faceKey } from './coords.js';
-import { profile, VOID } from './profile.js';
+import { profile, caveWall, VOID } from './profile.js';
 
 export const LAYER_BASE = [0, 10, 16, 22];   // the levels of the world-wide layers
 
@@ -16,7 +16,7 @@ function sideFace(world, k, d, withPortal) {
     f.river = { pos: 4 + Math.floor(R() * 7), w: R() < 0.5 ? 1 : 2 };
     for (let t = f.river.pos; t < f.river.pos + f.river.w; t++) if (f.profile[t] === VOID) f.profile[t] = 3;
   }
-  if (!withPortal) return f;
+  if (!withPortal) { f.wall = caveWall(world, fk, f); return f; }
   let pos;
   do pos = 3 + Math.floor(R() * 10); while (f.river && Math.abs(pos - f.river.pos - (f.river.w - 1) / 2) < 3.5);
   // the portal's layer: any layer both cubes have, mostly the highest one (sky routes)
@@ -28,6 +28,7 @@ function sideFace(world, k, d, withPortal) {
     for (let t = pos - 1; t <= pos + 1; t++) f.profile[t] = level;
   }
   f.portal = { pos, layer, level };
+  f.wall = caveWall(world, fk, f);
   return f;
 }
 

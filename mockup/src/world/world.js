@@ -43,7 +43,7 @@ export class World {
     const [X, Y, Z] = parse(k), t = this.wfc.tiles.get(k), theme = themeAt(-Y);
     const faces = [0, 1, 2, 3].map(d => {
       const f = this.faces.get(faceKey(k, d));
-      return { sock: t.sock[d], profile: Int16Array.from(f.profile), river: f.river, portal: f.portal };
+      return { sock: t.sock[d], profile: Int16Array.from(f.profile), river: f.river, portal: f.portal, wall: f.wall };
     });
     const portals = [];
     faces.forEach((f, d) => { if (f.portal) portals.push({ dir: d, ...f.portal }); });
@@ -53,7 +53,7 @@ export class World {
     }
     return {
       key: k, X, Y, Z, kind: t.kind, K: t.K, B: LAYER_BASE.slice(0, t.K), faces, portals,
-      spawn: k === this.start, noise: this.noise, depth: -Y,
+      spawn: k === this.start, noise: this.noise, depth: -Y, cave: theme.cave,
       fluid: theme.river, fluidMix: theme.fluids, voidOK: voidAllowed(this, k), relief: theme.relief,
       // islands without pillars: lakes, the sky islands near the top and the abyss
       floating: t.kind === 'lake' || ((-Y <= 3 || -Y >= 19) && this.wfc.rng(k, 0xf10a7)() < 0.5),

@@ -45,7 +45,10 @@ export function groundHeights(ctx) {
     const base = ws ? s / ws : 4, e = clamp(d[near] / 3, 0, 1);
     if (d[near] === 0) void0[i] = p[near] === VOID ? 1 : 0;
     else void0[i] = spec.voidOK && isVoid(spec.noise, spec.X * N + x + 0.5, spec.Z * N + z + 0.5, spec.depth) ? 1 : 0;
-    const v = d[near] === 0 && p[near] !== VOID ? p[near] : Math.round(base + e * ((noise(x * 0.21 + 0.5, z * 0.21 + 0.5) - 0.5) * 3 + extra[i]));
+    let v = d[near] === 0 && p[near] !== VOID ? p[near] : Math.round(base + e * ((noise(x * 0.21 + 0.5, z * 0.21 + 0.5) - 0.5) * 3 + extra[i]));
+    // cave walls: the outer ring is rock, the ring inside it a rough half-height foot
+    const wall = d[near] <= 1 ? spec.faces[near].wall?.[near < 2 ? z : x] : 0;
+    if (wall) { void0[i] = 0; v = d[near] === 0 ? wall : Math.max(v, Math.round(v + (wall - v) * (0.25 + noise(x * 1.3, z * 1.3) * 0.4))); }
     lvl0[i] = clamp(v, 2, MAX_L);
   }
   ctx.lvl0 = lvl0; ctx.void0 = void0; ctx.flat = ctx.K > 1;
