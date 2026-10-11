@@ -6,7 +6,7 @@ import { mulberry32, hash32 } from '../core/util.js';
 import { TILES, layersOf } from './tiles.js';
 import { OPP6, step, hashKey } from './coords.js';
 import { themeAt, depthOf } from './depth.js';
-import { TOWN_KEY } from './town.js';
+import { TOWN_KEY, merchantCampKey } from './town.js';
 
 // tile weight at cube k: the base weight scaled by the depth's theme
 const weightAt = k => { const m = themeAt(depthOf(k)).tiles; return t => t.weight * (m[t.kind] ?? 1); };
@@ -14,9 +14,9 @@ const weightAt = k => { const m = themeAt(depthOf(k)).tiles; return t => t.weigh
 export class WFC {
   constructor(seed) {
     this.seed = seed;
-    // Pin before any collapse, including neighbours prepared before the town.
-    const town = TILES.find(t => t.kind === 'meadow' && t.sock.every(s => s === 'L'));
-    this.tiles = new Map([[TOWN_KEY, { ...town, K: 1 }]]);
+    // Pin both clearings before any collapse, even when countryside is visited first.
+    const meadow = TILES.find(t => t.kind === 'meadow' && t.sock.every(s => s === 'L'));
+    this.tiles = new Map([TOWN_KEY, merchantCampKey(seed)].map(k => [k, { ...meadow, K: 1 }]));
   }
 
   domain(k) {

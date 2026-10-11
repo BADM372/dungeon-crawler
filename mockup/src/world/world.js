@@ -9,7 +9,7 @@ import { decideFaces, LAYER_BASE } from './faces.js';
 import { themeAt } from './depth.js';
 import { makeLayouts } from './layout.js';
 import { voidAllowed, fallMask } from './voids.js';
-import { isTown, enemyFreeAt } from './town.js';
+import { isTown, isMerchantCamp, isClearing, enemyFreeAt } from './town.js';
 
 // how much each WFC kind leans towards an archetype (times the theme's weights)
 const LEAN = { highland: { mesa: 2, spire: 2, archipelago: 0.3 }, lake: { archipelago: 3, crater: 2 }, gorge: { chasm: 3 },
@@ -45,7 +45,7 @@ export class World {
     const faces = [0, 1, 2, 3].map(d => {
       const f = this.faces.get(faceKey(k, d));
       return { sock: t.sock[d], profile: Int16Array.from(f.profile), river: f.river, portal: f.portal, wall: f.wall, spout: f.spout,
-        townBoundary: isTown(k) || isTown(step(k, d)) };
+        clearingBoundary: isClearing(k, this.seed) || isClearing(step(k, d), this.seed) };
     });
     const portals = [];
     faces.forEach((f, d) => { if (f.portal) portals.push({ dir: d, ...f.portal }); });
@@ -55,11 +55,11 @@ export class World {
     }
     return {
       key: k, X, Y, Z, kind: t.kind, exit: this.layout(-Y).exit.get(k) ?? null, K: t.K, B: LAYER_BASE.slice(0, t.K), faces, portals,
-      spawn: k === this.start, town: isTown(k), enemyFree: enemyFreeAt(k), noise: this.noise, depth: -Y, cave: theme.cave,
+      spawn: k === this.start, town: isTown(k), merchantCamp: isMerchantCamp(k, this.seed), enemyFree: enemyFreeAt(k), noise: this.noise, depth: -Y, cave: theme.cave,
       fluid: theme.river, fluidMix: theme.fluids, voidOK: voidAllowed(this, k), fallIn: fallMask(this, k),
       outflow: this.faces.get(faceKey(k, 4))?.fall || null, inflow: this.faces.get(faceKey(k, 5))?.fall || null, relief: theme.relief,
       // islands without pillars: lakes, the sky islands near the top and the abyss
-      floating: !isTown(k) && (t.kind === 'lake' || ((-Y <= 3 || -Y >= 19) && this.wfc.rng(k, 0xf10a7)() < 0.5)),
+      floating: !isClearing(k, this.seed) && (t.kind === 'lake' || ((-Y <= 3 || -Y >= 19) && this.wfc.rng(k, 0xf10a7)() < 0.5)),
       seed: hash32(this.seed ^ hashKey(k)),
       archetype: -Y === 0 ? 'plain' : this.opts.arche || archetype(theme, t.kind, this.wfc.rng(k, 0xa7c4)),
     };

@@ -25,9 +25,9 @@ function blockedAt(x, y, z, top) {
     const px = x + dx * t, py = y + dy * t, pz = z + dz * t;
     if (py > top) break;
     const inCube = px >= 0 && pz >= 0 && px < N && pz < N;
-    // Town crowns can overhang the cube; keep probing their foliage outside it,
+    // Clearing crowns can overhang the cube; keep probing their foliage outside it,
     // without mistaking the out-of-bounds terrain query for a solid wall.
-    if (!inCube && !state.map.town) break;
+    if (!inCube && !state.map.authoredProps) break;
     if ((inCube && insideSolid(px, pz, py)) || viewBlockedAt(state.map, px, py, pz)) return py;
   }
   return Infinity;

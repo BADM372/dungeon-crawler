@@ -22,7 +22,7 @@ import { placeStructures } from './place.js';
 import { smooth } from './smooth.js';
 import { shapeStructures } from './shape.js';
 import { addFences } from './fences.js';
-import { generateTown } from './town.js';
+import { generateClearing } from './town.js';
 
 function indexFloors(ctx) {
   const floors = ctx.floors = [];
@@ -99,7 +99,7 @@ function tryGenerate(seed, spec) {
 
 // spec: what the world fixes for this cube (faces, portals, layers; see world/world.js)
 export function generate(spec) {
-  if (spec.town) return generateTown(spec);
+  if (spec.town || spec.merchantCamp) return generateClearing(spec);
   for (let a = 0; a < 200; a++) {
     const m = tryGenerate(hash32(spec.seed + a * 7919), spec);
     if (m) { m.seed = spec.seed; m.attempts = a + 1; return m; }

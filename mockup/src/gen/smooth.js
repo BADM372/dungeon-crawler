@@ -31,9 +31,9 @@ export function smooth(ctx) {
 
   // structure endpoints: the two corners facing the stair/bridge are pinned to the floor level
   const pins = new Map();
-  // A town edge is a shared, exactly flat boundary, including its corner vertices.
+  // A clearing edge is a shared, exactly flat boundary, including its corner vertices.
   ctx.spec.faces.forEach((face, d) => {
-    if (!face.townBoundary) return;
+    if (!face.clearingBoundary) return;
     for (const f of floors) if (f.layer === 0 && [f.x === N - 1, f.x === 0, f.z === N - 1, f.z === 0][d])
       for (const [X, Z] of edgePts(f.x, f.z, d)) pins.set(f.id + ':' + X + ',' + Z, face.profile[d < 2 ? f.z : f.x] * LH);
   });

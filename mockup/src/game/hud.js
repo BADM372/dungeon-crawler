@@ -8,7 +8,7 @@ import { state } from './state.js';
 const $ = id => document.getElementById(id);
 
 export function showStats(map, cube, seed, visits) {
-  $('depth').textContent = `${map.depth} · ${map.town ? 'Town' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`;
+  $('depth').textContent = `${map.depth} · ${map.town ? 'Town' : map.merchantCamp ? 'Merchant camp' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`;
   $('seed').textContent = seed;
   const s = map.stats;
   const portals = map.portals.filter(p => p.kind !== 'spawn' && !isFaceOpen(state.openedFaces, cube, p.dir)).map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));

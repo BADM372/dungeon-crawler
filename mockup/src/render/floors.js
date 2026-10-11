@@ -1,5 +1,5 @@
 // Terrain geometry for every floor: smooth top, cliff walls, slab underside, fluid volume.
-import { LH, DIRS, OPP, DIRV, EDGE_CORNERS, edgePts } from '../core/constants.js';
+import { N, LH, DIRS, OPP, DIRV, EDGE_CORNERS, edgePts } from '../core/constants.js';
 import { idx, inb, hash32 } from '../core/util.js';
 import { C, gradient, TOP_STOPS, UNDERSIDE, fluidBed, fluidBank } from './palette.js';
 import { cliffWall } from './walls.js';
@@ -9,7 +9,6 @@ const shade = (x, z) => ((x + z) & 1 ? 1.0 : 0.95) * (0.97 + (hash32(x * 31 + z 
 function topColor(m, f) {
   const cs = f.cs;
   if (f.fluid) return fluidBed(f.fluid);
-  if (f.townPath) return C('#b3a58a').multiplyScalar(shade(f.x, f.z));
   const top = gradient(TOP_STOPS, (cs[0] + cs[1] + cs[2] + cs[3]) / 4 / LH).multiplyScalar(shade(f.x, f.z));
   // sandy / scorched banks next to fluids
   for (const g of f.link) if (g && g.fluid) top.lerp(fluidBank(g.fluid), 0.4);
@@ -69,6 +68,25 @@ export function buildFloors(m, layers) {
     const fb = f.bottom * LH;
     L.terrain.quad([x, fb, z], [x + 1, fb, z], [x + 1, fb, z + 1], [x, fb, z + 1], [0, -1, 0], UNDERSIDE);
     if (f.fluid) fluidVolume(m, f, L.fluids[f.fluid]);
+  }
+  const clearing = m.town || m.merchantCamp;
+  if (clearing) buildClearingPaths(m, clearing.paths, layers[0].terrain);
+}
+
+// Flat clearings use narrow curved ribbons, not whole-cell paving. These are baked
+// into the worker's terrain mesh, so cutaways, shadows and neighbour proxies agree.
+function buildClearingPaths(m, paths, builder) {
+  const y = m.floors[0].top * LH + .012, color = C('#b3a58a');
+  const bounded = v => Math.max(0, Math.min(N, v));
+  for (const { points, width } of paths) {
+    const edges = points.map(([x, z], i) => {
+      const a = points[Math.max(0, i - 1)], b = points[Math.min(points.length - 1, i + 1)];
+      const dx = b[0] - a[0], dz = b[1] - a[1], scale = width / Math.hypot(dx, dz);
+      return [[bounded(x - dz * scale), y, bounded(z + dx * scale)],
+        [bounded(x + dz * scale), y, bounded(z - dx * scale)]];
+    });
+    for (let i = 1; i < edges.length; i++)
+      builder.quad(edges[i - 1][0], edges[i - 1][1], edges[i][1], edges[i][0], [0, 1, 0], color);
   }
 }
 

@@ -39,9 +39,10 @@ Large pitched roofs and raised pictogram signs keep services readable at game sc
 - `light`/`intensity` are optional runtime lighting hints, not exported light objects.
 - Showroom positions, labels, floor, camera and lights are excluded from every GLB.
 
-These are **exterior visual assets only**. The game now places all seven in the
-starting town, with non-interactive footprint box colliders and a reserved walking
-layout. Sleeping/healing, trading, pet ownership and horse interactions are not
+These are **exterior visual assets only**. The game places the four permanent
+buildings in an asymmetric starting town and the three merchant tents in the
+next cube along its outgoing road. Both clearings use non-interactive footprint
+box colliders and reserved curved walking paths. Sleeping/healing, trading, pet ownership and horse interactions are not
 implemented. Animals are static decoration joined into the buildings.
 Buildings are wider than the one-cell scatter props; they are placed explicitly,
 not randomly through the decoration generator. `radius` is a spacing hint, not a collider.

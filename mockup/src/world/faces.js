@@ -7,7 +7,7 @@ import { parse, step, faceKey } from './coords.js';
 import { profile, caveWall, VOID } from './profile.js';
 import { cascade } from './cascades.js';
 import { spout } from './spouts.js';
-import { isTown, townExitPosition } from './town.js';
+import { isTown, isMerchantCamp, townExitPosition } from './town.js';
 
 export const LAYER_BASE = [0, 10, 16, 22];   // the levels of the world-wide layers
 
@@ -21,8 +21,10 @@ function sideFace(world, k, d, withPortal) {
   }
   if (!withPortal) { f.spout = spout(world, fk, f, LAYER_BASE); f.wall = caveWall(world, fk, f); return f; }
   const townDir = isTown(k) ? d : isTown(step(k, d)) ? d ^ 1 : null;
+  const campDir = isMerchantCamp(k, world.seed) ? d : isMerchantCamp(step(k, d), world.seed) ? d ^ 1 : null;
   let pos;
   if (townDir !== null) pos = townExitPosition(townDir);
+  else if (campDir !== null) pos = townExitPosition(campDir);
   else do pos = 3 + Math.floor(R() * 10); while (f.river && Math.abs(pos - f.river.pos - (f.river.w - 1) / 2) < 3.5);
   // the portal's layer: any layer both cubes have, mostly the highest one (sky routes)
   const maxL = Math.min(world.wfc.tiles.get(k).K, world.wfc.tiles.get(step(k, d)).K) - 1;

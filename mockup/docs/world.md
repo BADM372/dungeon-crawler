@@ -16,19 +16,31 @@ near them, and stay around after that.
 ## Starting town (`world/town.js`, `gen/town.js`)
 
 The spawn cube `(0,0,0)` is an authored clearing, rotated to match its **single
-outgoing side portal**. It contains all seven `blender/town.glb` buildings: three
-merchant tents, inn, stable, pet shop and blacksmith. They are non-interactive,
-with simple rotated footprint box colliders including their attached props.
-Spawn is in a paved central square; a dry walking path leads through the grove's
-opening to the outgoing road. No well, voids or extra exits exist inside town.
+outgoing side portal**. It contains the four permanent `blender/town.glb`
+buildings: inn, stable, pet shop and blacksmith. Their staggered positions and
+individual oblique rotations form an asymmetric clearing, not a street grid.
+They are non-interactive, with conservative axis-aligned envelopes of their
+rotated footprints, including attached props. Spawn is in the central clearing;
+branching curved paths connect the frontages and lead through the grove's opening.
+Paths are rendered as continuous ribbons rather than whole-cell paving. No well,
+voids or extra exits exist inside town.
 
-The town tile is pinned to lowland sockets and one layer **before any WFC collapse**.
-All dry ground is exactly level 4 (2 game units); a reserved five-cell pond has a
-lower bed and water surface. Town face profiles and corner levels are fixed, and
-neighbouring terrain's shared boundary corners are pinned during smoothing. Town
-layout and water do not depend on generation retries, exploration order or the
-`?arche=` debug override. Buildings, pond, spawn and paths are reserved before
-placing vegetation or validating reachability.
+All three merchant tents are in a separate **merchant camp one cube in front of
+town**, along its outgoing road: `step(TOWN_KEY, seed % 4)`. They flank a winding
+through-path at different offsets and angles. The camp has two side portals, one
+back to town and one onward; it has no spawn portal, pond or permanent houses.
+Authored prop placements are shared by worker metadata and rendering without
+marking the camp as town. Both gates and every building/tent frontage are validated
+by a body-radius-aware flood-fill before rendering.
+
+Both clearing tiles are pinned to lowland sockets and one layer **before any WFC
+collapse**. All dry ground is exactly level 4 (2 game units); the town's reserved
+five-cell pond has a lower bed and water surface. Clearing face profiles and corner
+levels are fixed, and neighbouring terrain's shared boundary corners are pinned
+during smoothing, including the camp-to-countryside edge. Neither clearing depends
+on generation retries, exploration order or the `?arche=` debug override. Buildings,
+pond, spawn and paths are reserved before placing vegetation or validating
+reachability.
 
 Sixteen large oak/elm/birch trees from `blender/town_trees.glb` form an irregular
 perimeter grove, with smaller shrubs and flowers in reserved pockets. The trees
@@ -40,18 +52,21 @@ of body colliders, so foreground roofs/foliage reveal the player as the camera t
 `enemyFree` is generation metadata, retained on cached maps and checked before any
 species-specific spawn selection. The town and the one-cube-wide **surface** buffer
 (`Y=0`, `max(abs(X), abs(Z)) <= 1`, including diagonals if they exist) have no enemies.
-Along the current surface road: **town → safe countryside → enemies → well**.
+Along the current surface road: **town → safe merchant camp → enemies → well**.
 This is not temporary spawn protection and does not make the underground safe.
 
 The initial loading screen waits for both the ordinary prop library and the town
-building/tree libraries. Static town colliders are generated in the worker,
+building/tree libraries. Static building/tent colliders are generated in the worker,
 independent of download timing; rendering cannot accidentally remove them.
 
 `npm test` in `mockup/` includes town checks across seeds and all four exit
-orientations: flat dry ground, guaranteed pond, seven non-overlapping assets,
-dry reachable exit using actual movement probes, generation-order-independent
-boundaries, safe-buffer spawns/revisits, box/trunk collision, canopy occlusion,
-and matching Blender exports.
+orientations: flat dry ground, guaranteed town pond, four houses inside town and
+three tents only in the adjacent road cube, non-overlapping assets, dry reachable
+gates/frontages using actual movement probes, generation-order-independent
+boundaries, curved path geometry, safe-buffer spawns/revisits, box/trunk collision,
+canopy occlusion, and matching Blender exports. For real worker/asset/render checks,
+run `await (await import('./tests/town-browser-checks.js')).runTownChecks()` from
+`game.html`'s devtools.
 
 ## Wave function collapse (`world/tiles.js`, `world/wfc.js`)
 
