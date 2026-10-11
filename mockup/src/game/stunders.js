@@ -7,7 +7,7 @@ import { removeEnemyViews } from '../render/enemies.js';
 export let stunders = [];
 export function resetStunders() {
   removeEnemyViews(stunders);
-  stunders = enemySpots(state.map, STUNDER).map((spot, i) => makeEnemy(spot, STUNDER, i));
+  stunders = enemySpots(state.map, STUNDER).filter(spot => !state.run.defeated.has(spot.id)).map((spot, i) => makeEnemy(spot, STUNDER, i));
 }
 export function updateStunders(dt) {
   stepEnemies(stunders, dt);

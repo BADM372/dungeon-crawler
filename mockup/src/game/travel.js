@@ -26,7 +26,7 @@ export const travelling = () => !!tr;
 
 // the cube behind the portal may still be generating: wait for it (frozen in the portal)
 export function startTravel(p) {
-  if (state.transitioning) return;
+  if (state.transitioning || state.inventoryOpen) return;
   state.transitioning = true;
   cancelSword();
   const k = step(state.cubeKey, p.dir);

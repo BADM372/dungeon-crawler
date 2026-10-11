@@ -1,6 +1,7 @@
 // HUD text, health bar and screen fades.
 import { clamp } from '../core/util.js';
 import { themeAt } from '../world/depth.js';
+import { xpProgress } from '../core/progression.js';
 
 const $ = id => document.getElementById(id);
 
@@ -17,7 +18,11 @@ export function showStats(map, cube, seed, visits) {
 }
 
 export function updateHud(player, map, statusMsg) {
-  $('hpbar').style.width = clamp(player.hp, 0, 100) + '%';
+  const xp = xpProgress(player);
+  $('hpbar').style.width = clamp(player.hp / player.maxHp * 100, 0, 100) + '%';
+  $('player-stats').textContent = `Level ${player.level} · HP ${Math.ceil(player.hp)}/${player.maxHp}`;
+  $('xpbar').style.width = clamp(xp.current / xp.required * 100, 0, 100) + '%';
+  $('xp-text').textContent = `XP ${xp.current}/${xp.required}`;
   $('status').textContent = statusMsg;
   $('layer').textContent = map ? `${player.layer + 1}/${map.K}` : '-';
 }

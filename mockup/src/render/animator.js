@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { clamp } from '../core/util.js';
 import { DIRS } from '../core/constants.js';
 import { player } from '../game/state.js';
+import { SWORD } from '../core/combat.js';
 import { character } from './character.js';
 import { applyRagdollPose } from './ragdollpose.js';
 import { stretchStride } from './stride.js';
@@ -51,11 +52,11 @@ export function animateCharacter(dt, time) {
   ch.group.updateMatrixWorld(true);
 
   updateBlend(dt, speed, time);
-  const slash = ch.actions.slash, duration = slash.getClip().duration;
+  const slash = ch.actions.slash, duration = (p.sword.stats || SWORD).duration;
   const target = p.sword.active ? Math.min(1, p.sword.t / 0.08, (duration - p.sword.t) / 0.12) : 0;
   ch.swordWeight += (Math.max(0, target) - ch.swordWeight) * Math.min(1, dt * 22);
   for (const n in W) ch.actions[n].setEffectiveWeight(W[n] * (1 - ch.swordWeight));
-  slash.time = Math.min(p.sword.t, duration); slash.setEffectiveWeight(ch.swordWeight);
+  slash.time = Math.min(p.sword.t / duration, 1) * slash.getClip().duration; slash.setEffectiveWeight(ch.swordWeight);
   if (ch.sword) ch.sword.visible = !p.swimming && !p.climb;
   ch.mixer.update(0);
   stretchStride(blend.stretch, (W.walk + W.run) * (1 - ch.swordWeight));

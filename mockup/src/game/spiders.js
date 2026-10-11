@@ -9,7 +9,7 @@ export const SPIDER_R = SPIDER.radius;
 export let spiders = [];
 export function resetSpiders() {
   removeSpiderViews(spiders);
-  spiders = spiderSpots(state.map).map((spot, i) => makeEnemy(spot, SPIDER, i));
+  spiders = spiderSpots(state.map).filter(spot => !state.run.defeated.has(spot.id)).map((spot, i) => makeEnemy(spot, SPIDER, i));
 }
 export function updateSpiders(dt) {
   stepEnemies(spiders, dt);

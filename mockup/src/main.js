@@ -11,6 +11,8 @@ import { updatePlayer } from './game/update.js';
 import { updateCamera } from './game/camera.js';
 import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
+import { updateInventory } from './game/inventory.js';
+import { devSwapWeapon } from './game/equipment.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
 import { tickNeighbors } from './render/neighbors.js';
 import { tickProps } from './render/props.js';
@@ -25,10 +27,10 @@ import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 const clock = new THREE.Clock();
 
 function frame() {
-  const dt = Math.min(clock.getDelta(), 1 / 30);
+  const elapsed = Math.min(clock.getDelta(), 1 / 30), dt = state.inventoryOpen ? 0 : elapsed;
   state.time += dt;
-  if (travelling()) updateTravel(dt);
-  else if (state.map && !state.transitioning) { updatePlayer(dt); if (!state.transitioning) updateEnemies(dt); }
+  if (!state.inventoryOpen && travelling()) updateTravel(dt);
+  else if (!state.inventoryOpen && state.map && !state.transitioning) { updatePlayer(dt); if (!state.transitioning) updateEnemies(dt); }
 
   // smooth out small vertical snaps (steps), but not falls
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
@@ -39,6 +41,7 @@ function frame() {
   tickProps(state.time);
   if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
+  updateInventory();
   updateCamera(dt);
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
   // the look follows the depth smoothly (also while sliding down / up)
@@ -56,5 +59,6 @@ window.__game = {
   get map() { return state.map; }, player, generate, loadCube, updatePlayer, groundAt,
   get transitioning() { return state.transitioning; }, get spiders() { return spiders; }, updateSpiders, state,
   get stunders() { return stunders; }, get enemies() { return allEnemies(); }, updateEnemies,
+  devSwapWeapon: state.dev ? devSwapWeapon : undefined,
 };
 frame();

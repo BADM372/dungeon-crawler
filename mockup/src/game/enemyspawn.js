@@ -2,6 +2,7 @@
 // A level is a cube in the existing level flow. Each gets 0-2 Stunders, on
 // dry, spacious floors, away from entrances and one another.
 import { N } from '../core/constants.js';
+import { enemyRoll } from '../core/enemies.js';
 import { mulberry32, hash32 } from '../core/util.js';
 import { walkable, neighbors, groundY, floorAt } from '../physics/enemynav.js';
 
@@ -25,5 +26,5 @@ export function enemySpots(map, profile) {
     if (spots.some(g => Math.hypot(g.x - f.x, g.z - f.z) < profile.spacing && Math.abs(g.top - f.top) < 6)) continue;
     spots.push(f);
   }
-  return spots.map(f => ({ f, x: f.x + 0.5, z: f.z + 0.5, y: groundY(f, f.x + 0.5, f.z + 0.5), yaw: R() * Math.PI * 2 }));
+  return spots.map(f => ({ ...enemyRoll(map, profile, f.id), f, x: f.x + 0.5, z: f.z + 0.5, y: groundY(f, f.x + 0.5, f.z + 0.5), yaw: R() * Math.PI * 2 }));
 }

@@ -10,9 +10,12 @@ const FPS = 30;
 const STAND_HIPS = 0.69;   // hips height of the standing pose (rig units)
 
 export const character = { ready: false };
+const weapons = new Map();
+let loadRequest = 0;
 
 // Weapons are separate props. The character GLB contains only the body and hand sockets.
 export function equipSword(weapon) {
+  loadRequest++;
   if (character.sword) character.sword.removeFromParent();
   character.sword = weapon;
   if (!weapon) return;
@@ -22,10 +25,16 @@ export function equipSword(weapon) {
   weapon.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
 }
 
+export async function prepareSword(url = SWORD_URL) {
+  await characterReady;
+  if (!weapons.has(url)) weapons.set(url, new GLTFLoader().loadAsync(url).then(g => g.scene)
+    .catch(error => { weapons.delete(url); throw error; }));
+  return weapons.get(url);
+}
 export async function loadSword(url = SWORD_URL) {
-  const gltf = await new GLTFLoader().loadAsync(url);
-  equipSword(gltf.scene);
-  return gltf.scene;
+  const request = ++loadRequest, weapon = await prepareSword(url);
+  if (request === loadRequest) equipSword(weapon);
+  return weapon;
 }
 
 // a frame range of a clip; the hips never rise above standing height in it, because in the
@@ -97,8 +106,7 @@ function setup(gltf) {
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
     climbStride: extras('Climb').distance * CHAR_SCALE,
   });
-  // The mockup starts equipped; future inventory changes can replace / clear this prop.
-  loadSword().catch(e => console.error('sword failed to load', e));
 }
 
-new GLTFLoader().load(URL, setup, undefined, e => console.error('character failed to load', e));
+export const characterReady = new GLTFLoader().loadAsync(URL).then(setup);
+characterReady.catch(e => console.error('character failed to load', e));

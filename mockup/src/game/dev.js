@@ -13,13 +13,14 @@ const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
 const D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 export function takePortal(q) {
-  if (state.transitioning || q.kind === 'spawn') return;
+  if (state.transitioning || state.inventoryOpen || q.kind === 'spawn') return;
   const [x, z] = q.kind === 'side' ? [q.x + 0.5 + D[q.dir][0] * 0.3, q.z + 0.5 + D[q.dir][1] * 0.3] : [q.x + 0.5, q.z + 0.5];
   Object.assign(player, { x, z, y: q.y, visY: q.y, vx: 0, vy: 0, vz: 0, grounded: true, ragdoll: null });
   startTravel(q);
 }
 
 function portalAt(e) {
+  if (state.inventoryOpen) return null;
   if (!state.world) return null;
   mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   ray.setFromCamera(mouse, camera);
@@ -43,7 +44,7 @@ async function findCube(kind) {
 }
 
 async function goTo(kind, take) {
-  if (state.transitioning) return;
+  if (state.transitioning || state.inventoryOpen) return;
   state.transitioning = true;
   const c = await whenReady(findCube(kind)).catch(() => null);
   state.transitioning = false;
@@ -62,7 +63,7 @@ if (state.dev) {
   addEventListener('click', e => { const q = portalAt(e); if (q) takePortal(q); });
   addEventListener('mousemove', e => { document.body.style.cursor = portalAt(e) ? 'pointer' : ''; });
   addEventListener('keydown', e => {
-    if (e.repeat) return;
+    if (e.repeat || state.inventoryOpen) return;
     if (e.code === 'KeyG') goTo('down', false);
     if (e.code === 'PageDown') { e.preventDefault(); goTo('down', true); }
     if (e.code === 'PageUp') { e.preventDefault(); goTo('up', true); }

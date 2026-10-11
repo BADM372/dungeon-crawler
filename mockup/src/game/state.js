@@ -1,10 +1,12 @@
 // Mutable game state shared between modules.
 import { CHAR_R, CHAR_H } from '../core/constants.js';
 import { swordState } from '../core/combat.js';
+import { createPlayerStats, createRun } from '../core/progression.js';
 
 export const player = {
   x: 0, z: 0, y: 0, vx: 0, vy: 0, vz: 0, visY: 0,
-  r: CHAR_R, h: CHAR_H, hp: 100, layer: 0, yaw: 0,
+  r: CHAR_R, h: CHAR_H, layer: 0, yaw: 0,
+  ...createPlayerStats(),
   sword: swordState(),
   grounded: true, swimming: false, fluid: 0, support: null,
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
@@ -19,11 +21,12 @@ const params = new URLSearchParams(location.search);
 
 export const state = {
   map: null, world: null, time: 0,
-  showPath: false, transitioning: false,
+  showPath: false, transitioning: false, inventoryOpen: false, equipping: false,
+  run: createRun(),
   statusMsg: '', statusUntil: 0,
   // the world of cubes and where we are in it; lookDepth: the depth the lighting shows
   cubes: null, cubeKey: '', arrival: null, portalLock: 0, showNeighbors: true, lookDepth: 0,
-  dev: params.has('dev'),   // debug tools (?dev)
+  dev: params.get('dev') === '1',   // debug tools (?dev=1)
   baseSeed: params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0,
 };
 

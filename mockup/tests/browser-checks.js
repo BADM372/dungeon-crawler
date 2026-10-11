@@ -5,13 +5,14 @@ import * as THREE from 'three';
 import { N, DIRS } from '../src/core/constants.js';
 import { player, state } from '../src/game/state.js';
 import { SWORD, cancelSwing, startSwing, damageEnemy } from '../src/core/combat.js';
+import { createPlayerStats, createRun } from '../src/core/progression.js';
 import { resetEnemies, allEnemies, updateEnemies, drawEnemies } from '../src/game/enemies.js';
 import { spiders } from '../src/game/spiders.js';
 import { stunders } from '../src/game/stunders.js';
 import { updatePlayer } from '../src/game/update.js';
 import { climb } from '../src/physics/climb.js';
 import { W, resetMode } from '../src/render/blendtree.js';
-import { character, equipSword } from '../src/render/character.js';
+import { character, equipSword, loadSword } from '../src/render/character.js';
 import { animateCharacter } from '../src/render/animator.js';
 import { scene } from '../src/render/scene.js';
 import { stunderModel } from '../src/render/stundermodel.js';
@@ -20,12 +21,17 @@ import { startTravel, travelling, updateTravel, drawTravelEnemies } from '../src
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-async function paused(fn) {
-  const raf = window.requestAnimationFrame;
-  let next;
-  window.requestAnimationFrame = callback => { next = callback; return 0; };
+export async function paused(fn) {
+  const raf = window.requestAnimationFrame, cancel = window.cancelAnimationFrame;
+  const pending = new Map(); let id = 0;
+  window.requestAnimationFrame = callback => { pending.set(--id, callback); return id; };
+  window.cancelAnimationFrame = token => { if (token < 0) pending.delete(token); else cancel.call(window, token); };
   try { await delay(150); return await fn(); }
-  finally { window.requestAnimationFrame = raf; if (next) raf.call(window, next); }
+  finally {
+    window.requestAnimationFrame = raf; window.cancelAnimationFrame = cancel;
+    // Fade/flash callbacks must not overwrite the queued main frame and stop the game.
+    for (const callback of pending.values()) raf.call(window, callback);
+  }
 }
 function arena() {
   const floors = Array.from({ length: N * N }, (_, c) => ({ c, id: c, x: c % N, z: Math.floor(c / N),
@@ -45,7 +51,7 @@ function place(e, x, z) {
 function hero() {
   cancelSwing(player, true);
   Object.assign(player, { x: 6.5, y: 0, visY: 0, z: 6.5, yaw: 0, vx: 0, vy: 0, vz: 0,
-    hp: 100, grounded: true, swimming: false, climb: null, ragdoll: null, stun: 0,
+    ...createPlayerStats(), grounded: true, swimming: false, climb: null, ragdoll: null, stun: 0,
     support: at(6.5, 6.5), safe: { x: 6.5, y: 0, z: 6.5 }, coyote: 0, jumpBuf: 0 });
 }
 function press(code) {
@@ -85,15 +91,16 @@ function minimumY(model) {
 
 export async function runCombatChecks() {
   check(character.ready && character.sword && spiderModel.ready && stunderModel.ready, 'Wait for all character / weapon assets to load');
-  check(!state.transitioning, 'Wait for portal travel to finish');
+  check(!state.transitioning && !state.inventoryOpen, 'Close inventory and wait for portal travel to finish');
   return paused(async () => {
-    const originalMap = state.map, saved = { ...player }, results = [];
+    const originalMap = state.map, saved = { ...player }, savedRun = state.run, savedWeapon = character.sword, results = [];
     try {
-      state.map = arena(); resetEnemies(); hero();
+      state.run = createRun();
+      state.map = arena(); resetEnemies(); hero(); await loadSword();
       for (const [i, e] of allEnemies().entries()) place(e, 2.5 + i * 0.03, 2.5);
       check(spiders.length > 0 && stunders.length === 2, 'Fixture must provide both species');
       const spider = spiders[0], stunder = stunders[0];
-      tick(60); // settle the real blend tree after moving to the test floor
+      resetMode(); tick(180); // settle any prior landing/sit/get-up blend on the test floor
       const swordBottom = minimumY(character.sword);
       check(character.sword.parent === character.bones['hand.R'] && swordBottom >= -0.002, 'Separate sword must be mounted on hand.R and off the floor: ' + swordBottom);
       check(stunders[0].view.model.getObjectByName('head') !== stunders[1].view.model.getObjectByName('head'), 'Instances must own independent bones');
@@ -131,18 +138,18 @@ export async function runCombatChecks() {
       check(!spider.view && !stunder.view, 'Corpse mixers / materials / skeletons must be disposed');
       results.push('corpse view and population cleanup');
 
-      resetEnemies(); hero();
+      state.run = createRun(); resetEnemies(); hero();
       for (const [i, e] of allEnemies().entries()) place(e, 2.5 + i * 0.03, 2.5);
       const heavy = stunders[0]; place(heavy, 6.5, 7.5);
       Object.assign(heavy, { mode: 'attack', t: 0, bit: false, attacks: 1, think: 1e6 });
       for (let i = 0; i < 33; i++) { updateEnemies(1 / 60); drawEnemies(1 / 60); }
-      check(player.hp === 60 && player.ragdoll, 'Stunder ram must deal 40 damage and knock down');
+      check(player.hp === 70 && player.ragdoll, 'Level-1 Stunder ram must deal 30 damage and knock down');
       const sourceHead = stunderModel.source.getObjectByName('head'), head = heavy.view.model.getObjectByName('head');
       scene.updateMatrixWorld(true);
       const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(sourceHead.getWorldQuaternion(new THREE.Quaternion()).invert())
         .applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
       check(forward.y < -0.85, 'Stunder ram must strike head-down');
-      results.push('40-damage knockdown synced with head-down animation');
+      results.push('30-damage knockdown synced with head-down animation');
 
       hero(); place(heavy, 6.5, 7.4);
       Object.assign(heavy, { mode: 'attack', t: 0.5, bit: false, attacks: 2, think: 1e6 });
@@ -152,8 +159,8 @@ export async function runCombatChecks() {
       results.push('sword interrupts enemy attack');
       return results;
     } finally {
-      state.map = originalMap;
-      Object.assign(player, saved); cancelSwing(player, true);
+      state.map = originalMap; state.run = savedRun;
+      Object.assign(player, saved); cancelSwing(player, true); equipSword(savedWeapon);
       resetEnemies();
     }
   });
@@ -239,7 +246,7 @@ export async function runTravelCheck() {
     drawEnemies(1 / 60);
     const old = allEnemies(), portal = state.map.portals.find(p => p.kind !== 'spawn');
     check(portal, 'Need an exit portal');
-    if (old[0]) damageEnemy(old[0], old[0].hp); // cleanup must include a dead enemy too
+    if (old[0]) { damageEnemy(old[0], old[0].hp); updateEnemies(1 / 60); } // reward + cleanup include a dead enemy too
     player.sword.requested = true;
     startTravel(portal);
     for (let i = 0; i < 100 && !travelling(); i++) await delay(30);

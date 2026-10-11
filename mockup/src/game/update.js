@@ -10,6 +10,7 @@ import { applyHazards } from '../physics/hazards.js';
 import { climb } from '../physics/climb.js';
 
 export function updatePlayer(dt) {
+  if (state.inventoryOpen || state.transitioning) return;
   const attack = takeAttack();
   if (player.ragdoll) { cancelSword(); stepRagdoll(dt); return; }
   updateSword(dt, attack);

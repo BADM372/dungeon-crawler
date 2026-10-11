@@ -1,27 +1,30 @@
-// Keyboard, sword clicks and mouse wheel.
+// Keyboard, sword clicks and mouse wheel. Modal input never enters the game queue.
 import { clamp } from '../core/util.js';
 import { player, state, view, setStatus } from './state.js';
 import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
 import { knockDown } from './ragdoll.js';
+import { toggleInventory, setInventoryOpen } from './inventory.js';
+import { controls, clearInput } from './inputstate.js';
+export { clearInput };
 
-const keys = new Set();
-let jumpPressed = false;
-
-// double-tapping a direction key starts running; it lasts while any direction key is held
+const { keys, lastTap } = controls;
+// double-tapping a direction starts running while any direction is held
 const MOVE = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
-const DOUBLE_TAP = 0.3;   // seconds
-const lastTap = {};
-let running = false;
+const DOUBLE_TAP = 0.3;
 
 addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.code === 'KeyI') { if (!e.repeat) toggleInventory(); e.preventDefault(); return; }
+  if (e.code === 'Escape' && state.inventoryOpen) { setInventoryOpen(false); e.preventDefault(); return; }
+  if (state.inventoryOpen) return;
   keys.add(e.code);
   if (e.repeat) return;
   if (MOVE.includes(e.code)) {
     const now = performance.now() / 1000;
-    if (now - (lastTap[e.code] ?? -1) < DOUBLE_TAP) running = true;
+    if (now - (lastTap[e.code] ?? -1) < DOUBLE_TAP) controls.running = true;
     lastTap[e.code] = now;
   }
-  if (e.code === 'Space') { jumpPressed = true; e.preventDefault(); }
+  if (e.code === 'Space') { controls.jumpPressed = true; e.preventDefault(); }
   if (e.code === 'KeyF' && !state.transitioning) { player.sword.requested = true; e.preventDefault(); }
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
@@ -34,18 +37,21 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => {
   keys.delete(e.code);
-  if (!MOVE.some(k => keys.has(k))) running = false;
+  if (!MOVE.some(k => keys.has(k))) controls.running = false;
 });
-addEventListener('blur', () => { keys.clear(); running = false; jumpPressed = false; player.sword.requested = false; });
+addEventListener('blur', clearInput);
 addEventListener('pointerdown', e => {
-  if (e.button === 0 && e.target.tagName === 'CANVAS' && !state.transitioning) {
+  if (e.button === 0 && e.target.tagName === 'CANVAS' && !state.transitioning && !state.inventoryOpen) {
     player.sword.requested = true; e.preventDefault();
   }
 });
-addEventListener('wheel', e => { view.zoomTarget = clamp(view.zoomTarget * (e.deltaY > 0 ? 1.1 : 0.9), 0.15, 1.4); }, { passive: true });
+addEventListener('wheel', e => {
+  if (!state.inventoryOpen) view.zoomTarget = clamp(view.zoomTarget * (e.deltaY > 0 ? 1.1 : 0.9), 0.15, 1.4);
+}, { passive: true });
 
-// desired move direction in world space (WASD relative to the camera), length <= 1
+// desired direction in world space (WASD relative to the camera)
 export function inputDir() {
+  if (state.inventoryOpen) return [0, 0];
   if (player.autoDir) return player.autoDir;
   let ix = 0, iy = 0;
   if (keys.has('KeyW') || keys.has('ArrowUp')) iy += 1;
@@ -55,9 +61,6 @@ export function inputDir() {
   const y = view.yaw;
   return [Math.cos(y) * ix - Math.sin(y) * iy, -Math.sin(y) * ix - Math.cos(y) * iy];
 }
-
-export const wantsRun = () => player.autoRun || running;
-
-// true once per key press
-export function takeJump() { const j = jumpPressed; jumpPressed = false; return j; }
+export const wantsRun = () => player.autoRun || controls.running;
+export function takeJump() { const j = controls.jumpPressed; controls.jumpPressed = false; return j; }
 export function takeAttack() { const a = player.sword.requested; player.sword.requested = false; return a; }

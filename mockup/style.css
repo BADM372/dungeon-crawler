@@ -22,3 +22,47 @@ canvas { display: block; }
 #loading.on { opacity: 1; }
 #loading span { width: 12px; height: 12px; border: 2px solid #5fd3ff55; border-top-color: #5fd3ff; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.xp { width: 220px; height: 4px; background: #2a2f3a; margin: 4px 0; }
+#xpbar { height: 100%; width: 0; background: #83b887; transition: width .15s; }
+#player-stats, #xp-text { font-size: 11px; color: #b8c2d0; }
+[hidden] { display: none !important; }
+#inventory-overlay { position: fixed; inset: 0; z-index: 20; background: #080c13b8; display: grid; place-items: center; padding: 16px; }
+#inventory-panel { box-sizing: border-box; width: min(760px, 100%); max-height: calc(100dvh - 32px); overflow: auto; padding: 22px;
+  background: #202631; border: 1px solid #68715e; border-radius: 8px; box-shadow: 0 16px 80px #0009; }
+#inventory-panel header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#inventory-panel h1 { margin: 0 0 5px; color: #ffe4ae; font-size: 22px; letter-spacing: 2px; }
+#inventory-panel h2 { font-size: 13px; margin: 12px 0 8px; color: #c5cdbc; }
+#inventory-panel button, #inventory-panel select { font: inherit; color: #e7dfcf; background: #343d46; border: 1px solid #69746d; border-radius: 4px; padding: 7px 10px; cursor: pointer; }
+#inventory-panel button:hover:not(:disabled) { background: #465249; }
+#inventory-panel button:focus-visible, #inventory-panel select:focus-visible { outline: 2px solid #ffcf7a; outline-offset: 2px; }
+#inventory-panel button:disabled { opacity: .5; cursor: default; }
+#inventory-equipped { margin-top: 12px; color: #ffcf7a; }
+#inventory-currency { display: flex; gap: 12px; margin: 14px 0 6px; }
+.coin-slot { flex: 1; display: flex; align-items: center; gap: 8px; background: #181e28; border: 1px solid #444e5e; padding: 4px 10px; border-radius: 4px; }
+.coin-slot img { width: 42px; height: 42px; object-fit: contain; }
+.coin-slot small { display: block; color: #a4b0ba; }
+.inventory-body { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 18px; }
+#inventory-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+#inventory-panel .inventory-slot { aspect-ratio: 1; position: relative; background: #181e28; padding: 2px; min-width: 0; overflow: hidden; }
+.inventory-slot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.inventory-slot .count { position: absolute; right: 5px; bottom: 2px; color: #fff; text-shadow: 0 1px 3px #000; }
+.inventory-slot .equipped { position: absolute; left: 4px; top: 2px; color: #ffcf7a; font-size: 10px; }
+#inventory-panel .inventory-slot.selected { border-color: #ffcf7a; box-shadow: inset 0 0 0 1px #ffcf7a; }
+#inventory-details { padding: 6px 12px; background: #181e28; border-radius: 4px; }
+#inventory-item-icon { width: 100%; height: 120px; object-fit: contain; }
+#inventory-item-stats { color: #b8c2d0; white-space: pre-line; font-size: 12px; }
+#inventory-dev { margin: 18px 0 0; border: 1px solid #555c50; border-radius: 4px; }
+#inventory-dev legend { color: #ffcf7a; }
+#inventory-dev p, #inventory-panel footer { font-size: 11px; color: #9ea9b6; }
+#inventory-feedback { min-height: 18px; color: #ffcf7a; }
+@media (max-width: 540px) {
+  #inventory-panel { padding: 12px; }
+  .inventory-body { grid-template-columns: 1fr; }
+  #inventory-details { display: grid; grid-template-columns: 60px 1fr; column-gap: 10px; }
+  #inventory-item-icon { grid-row: 1 / 4; height: 70px; }
+  #inventory-details h2, #inventory-details p { margin: 4px 0; }
+  #inventory-currency { gap: 4px; }
+  .coin-slot { padding: 3px; gap: 3px; }
+  .coin-slot img { width: 28px; height: 28px; }
+}

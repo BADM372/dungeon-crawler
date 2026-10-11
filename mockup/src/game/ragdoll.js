@@ -5,7 +5,8 @@ import { groundAt } from '../physics/collide.js';
 import { character } from '../render/character.js';
 import { beginRagdoll } from '../render/ragdollpose.js';
 import { characterYaw } from '../render/animator.js';
-import { player, setStatus } from './state.js';
+import { player, state, setStatus } from './state.js';
+import { takeDamage } from '../core/progression.js';
 import { flash } from './hud.js';
 import { hurt, spawnAt, spawnEntry } from './flow.js';
 import { cancelSword } from './sword.js';
@@ -15,7 +16,7 @@ export function knockDown({ damage = 0, reason = '', respawn = null, push = 0, h
   player.climb = null;
   cancelSword();
   if (!character.ready) { hurt(damage, reason); return; }
-  player.hp -= damage;
+  takeDamage(player, damage, state.time);
   if (damage > 0) flash();
   if (reason) setStatus(reason);
   const yaw = characterYaw(), fx = Math.sin(yaw), fz = Math.cos(yaw);

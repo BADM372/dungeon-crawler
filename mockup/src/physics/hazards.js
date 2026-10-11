@@ -1,6 +1,7 @@
 // Fluids (swim / burn), waterfalls, health regeneration and the respawn point.
 import { LH, LAVA, ACID, DIRS } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
+import { takeDamage, regenerate } from '../core/progression.js';
 import { player, state } from '../game/state.js';
 import { hurt } from '../game/flow.js';
 import { knockDown } from '../game/ragdoll.js';
@@ -19,7 +20,7 @@ function fluids(dt, gr) {
   player.y += (fy - player.y) * Math.min(1, dt * 6);
   player.swimming = true; player.grounded = true; player.fluid = fl.fluid;
   if (fl.fluid === ACID) {
-    player.hp -= 30 * dt;
+    takeDamage(player, 30 * dt, state.time);
     if (!state.statusMsg) state.statusMsg = 'Acid burns! Get out!';
     if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
   } else if (!state.statusMsg) state.statusMsg = 'Swimming - find a low bank to climb out';
@@ -35,7 +36,7 @@ function falls(dt, ci) {
     if (dist > 0.45 || lat < 0.06 || lat > 0.94 || player.y > f.top * LH || player.y < f.bot * LH - 0.5) continue;
     if (f.type === LAVA) { knockDown({ damage: 50, reason: 'Burned by a lavafall!', respawn: 'safe' }); return false; }
     if (f.type === ACID) {
-      player.hp -= 40 * dt;
+      takeDamage(player, 40 * dt, state.time);
       if (!state.statusMsg) state.statusMsg = 'Acid rain!';
       if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
     }
@@ -51,7 +52,7 @@ export function applyHazards(dt, gr) {
   if (player.y < -3) { hurt(25, 'Fell out of the cube'); return false; }
   if (state.time > state.statusUntil) state.statusMsg = '';
   if (!fluids(dt, gr) || !falls(dt, gr.i)) return false;
-  if (!player.swimming && player.grounded) player.hp = Math.min(100, player.hp + 6 * dt);
+  if (!player.swimming && player.grounded) regenerate(player, dt, state.time);
 
   // remember a safe spot to respawn at
   player.safeTimer += dt;

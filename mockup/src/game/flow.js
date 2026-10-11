@@ -14,6 +14,9 @@ import { cancelSword } from './sword.js';
 import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
 import { townAssetsReady } from '../render/townassets.js';
+import { createPlayerStats, createRun, takeDamage } from '../core/progression.js';
+import { syncEquippedWeapon } from './equipment.js';
+import { clearInput } from './inputstate.js';
 
 export function spawnAt(x, y, z) {
   cancelSword(true);
@@ -37,11 +40,11 @@ export function arrivalPoint(p) {
 export function spawnEntry() {
   const a = state.arrival;
   spawnAt(a.x, a.y, a.z);
-  player.hp = 100;
+  player.hp = player.maxHp;
 }
 
 export function hurt(amount, reason) {
-  player.hp -= amount;
+  takeDamage(player, amount, state.time);
   flash();
   if (player.hp <= 0) { setStatus('You died (' + reason + ') - back to where you came in'); spawnEntry(); }
   else { setStatus(reason); spawnAt(player.safe.x, player.safe.y, player.safe.z); }
@@ -103,8 +106,10 @@ export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.cubes = new WorldClient(seed, { arche: state.dev && new URLSearchParams(location.search).get('arche') });
   state.transitioning = true;
   cancelSword(true);
-  player.hp = 100;
-  return whenReady(Promise.all([state.cubes.get(state.cubes.start), townAssetsReady]))
+  clearInput();
+  Object.assign(player, createPlayerStats());
+  state.run = createRun(); state.inventoryOpen = false;
+  return whenReady(Promise.all([state.cubes.get(state.cubes.start), townAssetsReady, syncEquippedWeapon()]))
     .then(([c]) => { enterCube(c); state.transitioning = false; });
 }
 

@@ -1,5 +1,6 @@
 // Bites / head-down rams and solid bodies. Contact never damages an enemy.
-import { player, setStatus } from './state.js';
+import { player, state, setStatus } from './state.js';
+import { takeDamage } from '../core/progression.js';
 import { flash } from './hud.js';
 import { knockDown } from './ragdoll.js';
 import { canMove } from '../physics/canmove.js';
@@ -18,7 +19,7 @@ export function strikePlayer(e) {
   if (e.type === 'stunder' || ++bites % 3 === 0 || p.hp <= cfg.damage) {
     knockDown({ damage: cfg.damage, hop: e.type === 'stunder' ? 4 : 3.5, reason }); return;
   }
-  p.hp -= cfg.damage; flash(); setStatus(reason);
+  takeDamage(p, cfg.damage, state.time); flash(); setStatus(reason);
   p.vy = 3; p.grounded = false; p.stun = 0.35;
 }
 function pushPlayer(dx, dz) {

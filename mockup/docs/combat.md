@@ -5,8 +5,10 @@
   within blade reach and vertical overlap, with slab / prop line-of-sight.
   Each target can be hit once per swing. No contact / landing / stomp damage.
 - Swimming, ladder climbing, stun, knockdown and travel cancel / block slashes.
-- Sword deals 30 damage: spider has 30 HP / 20 damage; Stunder has 120 HP /
-  40 damage, a heavier collision body and an always-knockdown head-down ram.
+- The basic sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
+  Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
+  head-down ram. Player/enemy levels and alternative weapons scale these numbers;
+  see [progression.md](progression.md). Inventory (`I`) pauses simulation and input.
 - Every cube/level has a separate seeded 0–2 Stunder draw. Spawn sites must be
   dry, clear for its 2.8-cell height, linked to walkable floors, at least four
   cells from portals and spaced apart. If no safe site exists, spawn fewer.
@@ -36,8 +38,11 @@ point them at a different checkout).
 Use `--assets-root /path/to/repo` to override asset location. The player GLB
 is unarmed: just the skinned body, clips and empty `hand.L` / `hand.R` sockets.
 The mockup separately loads `blender/sword.glb` and mounts it on `hand.R` at
-runtime. `render/character.js` exposes `loadSword(url)` to swap separate sword
-assets and `equipSword(null)` to unequip. Swimming / climbing hides the prop.
+runtime. Gameplay equipment uses `game/equipment.js`: it loads a weapon first,
+then atomically updates inventory equipment and the hand-held model. `?dev=1`
+adds a grant-and-equip sword selector to inventory. `render/character.js` also
+exposes low-level `loadSword(url)` / `equipSword(null)` for renderer tests only;
+these do not change inventory or combat stats. Swimming / climbing hides the prop.
 `Climb` is an in-place IK loop covering two ladder rungs (0.56 game units);
 vertical speed advances its phase, descent reverses it, and stopping holds
 the grip. Regenerate via the Blender commands in
@@ -53,4 +58,6 @@ const checks = await import('./tests/browser-checks.js');
 await checks.runCombatChecks(); // real input, controller, damage, GLB poses, cleanup
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
+const inventory = await import('./tests/inventory-browser-checks.js');
+await inventory.runInventoryChecks(); // resets the run; UI, equipment, rewards, revisits
 ```
