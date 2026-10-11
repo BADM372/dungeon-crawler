@@ -7,26 +7,11 @@ import { setCut } from '../render/section.js';
 import { insideSolid } from '../physics/collide.js';
 import { player, state } from './state.js';
 import { updateCamera } from './camera.js';
+import { mapInfo, inSlab, outOfSlabs } from './cutinfo.js';
 
 const REVEAL = 0.07, RESTORE = 0.12, RESTORE_DELAY = 1;   // spring times (s), wait before restoring
 const STEP = 0.12;
 let cut = Infinity, vel = 0, hold = 0, lastMap = null;
-
-function mapInfo(m) {
-  if (!m.cutInfo) {
-    // clean cut heights: just below the lowest underside of each upper layer (pools are cut
-    // below their bed, pillars don't count)
-    const bases = m.B.slice(1).map((b, i) => {
-      let lo = b - 2;
-      for (const f of m.floors) if (f.layer === i + 1) lo = Math.min(lo, f.merged ? Infinity : f.bottom, f.fluid ? f.top - 1 : Infinity);
-      return lo * LH - 0.02;
-    });
-    // never cut through a slab: the band from a layer's underside to its highest top is off limits
-    const bands = bases.map((lo, i) => [lo, Math.max(...m.floors.filter(f => f.layer === i + 1 && !f.ramp).map(f => f.top)) * LH + 0.05]);
-    m.cutInfo = { bases, bands, top: Math.max(...m.floors.map(f => f.top)) * LH + 0.8 };   // "no cut" = above everything
-  }
-  return m.cutInfo;
-}
 
 // height of the first solid on the way from (x,y,z) to the camera (Infinity if the view is clear)
 function blockedAt(x, y, z, top) {
@@ -61,17 +46,13 @@ function target(m) {
   let best = -Infinity;
   for (const b of info.bases) if (b <= need && b >= floor) best = Math.max(best, b);
   if (best === -Infinity) {
-    // something on our own layer (hill, pillar, cliff): cut it at a terrain level, unless that
-    // would slice a slab (e.g. climbing the stairs into a layer); then keep it and rely on the
-    // silhouette
-    const g = Math.max(floor, Math.floor(need / LH) * LH - 0.02);
-    best = info.bands.some(([lo, hi]) => g > lo + 0.01 && g < hi) ? info.top : g;
+    // something on our own layer (hill, pillar, cliff): cut it at a terrain level, moved out of
+    // any slab nearby; only if that is impossible keep it and rely on the silhouette
+    const g = outOfSlabs(m, Math.max(floor, Math.floor(need / LH) * LH - 0.02), floor, need, player);
+    best = g ?? info.top;
   }
   return Math.min(best, info.top);
 }
-
-// is height c inside a slab (cutting there would slice it)?
-const inSlab = (m, c) => mapInfo(m).bands.some(([lo, hi]) => c > lo + 0.01 && c < hi);
 
 function apply(m) { setCut(cut >= mapInfo(m).top - 0.01 ? Infinity : cut, m, player.x, player.visY + 0.6, player.z); }
 
@@ -83,7 +64,7 @@ export function updateCut(dt) {
   if (t > cut + 1e-3) {
     // restoring hidden geometry: only once the character has been in clear view for a moment;
     // right away if the cut is below our feet (climbing into the layer) or halfway through a slab
-    if ((hold -= dt) > 0 && cut >= player.visY + 0.3 && !inSlab(m, cut)) return apply(m);
+    if ((hold -= dt) > 0 && cut >= player.visY + 0.3 && !inSlab(m, cut, player)) return apply(m);
   } else hold = RESTORE_DELAY;
   // critically damped spring towards the target
   const omega = 2 / (t > cut ? RESTORE : REVEAL), x = omega * dt;
@@ -105,3 +86,4 @@ export function resetCut() {
   cut = target(m);
   apply(m);
 }
+export const cutTargetFor = m => target(m);   // tests
