@@ -63,7 +63,9 @@ export function shapeStructures(ctx) {
     } else if (k >= 3) {
       r.pieces.forEach((p, j) => {
         const top = runY(p, 0.5, 0.5) - 0.2;
-        if (j % 2 === 1 && top - p.ground < 3.5 && !pathCols.has(p.c))
+        // not where another structure passes underneath (the legs would stand in its way)
+        const under = pieces[p.c].some(q => q.run !== r && q.kind !== 'pillar' && Math.min(q.y0, q.y1) < top);
+        if (j % 2 === 1 && top - p.ground < 3.5 && !pathCols.has(p.c) && !under)
           for (const w of [-0.38, 0.38]) pillar(r, p.c, 0.5 + (r.dz ? w : 0), 0.5 + (r.dx ? w : 0), 0.06, 0.06, p.ground, top);
       });
     }

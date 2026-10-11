@@ -88,6 +88,32 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 - **Relief:** themes also have a `relief` that stretches highland faces (up to level ~18 in
   the snowy peaks) and makes hills and plateaus taller.
 
+## Cube archetypes (`gen/archetypes.js`)
+
+Every cube gets a big shape on top of the blended ground. The shaping fades out towards the
+faces, so the outer ring still matches the neighbours.
+
+| Archetype | Shape |
+|---|---|
+| plain | nothing extra |
+| chasm | a winding split across the cube with raised rims |
+| spire | a tall needle on a raised base |
+| sinkhole | a round pit with a raised rim |
+| archipelago | islands |
+| mesa | one big flat-topped block |
+| crater | a ring wall around a lake of the depth's fluid |
+
+Chasms, sinkholes and archipelagos open to the void where the world allows it. Elsewhere
+they hold the depth's fluid instead: a river gorge, an acid canal or a lava sea.
+
+The archetype is chosen by the theme's weights (`arche`), scaled by how the WFC kind leans:
+highland towards mesa and spire, lake towards archipelago and crater, gorge towards chasm.
+The town and its road stay plain. In dev mode, `?arche=<name>` forces one archetype
+everywhere.
+
+Structures: a stair never runs right beside a bridge at a similar height, and timber legs
+under plank bridges never stand where another structure passes underneath.
+
 ## Generator changes
 
 - Input is a spec (`world.spec(k)`) instead of a seed. Retries vary the seed but never the spec.

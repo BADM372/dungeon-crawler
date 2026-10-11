@@ -1,11 +1,12 @@
 // Turn route moves into structures (stair / bridge runs, landings) plus a few decorative
 // extras. Claims keep structures apart from each other, from waterfalls and from the route.
-import { N, SHEAD, OPP } from '../core/constants.js';
+import { N, SHEAD, OPP, DIRS } from '../core/constants.js';
+import { inb, idx } from '../core/util.js';
 
 export function placeStructures(ctx) {
   const { ri, cols, floors, falls, moves, pathFloors, movesFrom, stats } = ctx;
   const cellLists = () => Array.from({ length: N * N }, () => []);
-  const pieces = cellLists(), claims = cellLists(), walkedIn = cellLists(), sweeps = cellLists();
+  const pieces = cellLists(), claims = cellLists(), walkedIn = cellLists(), sweeps = cellLists(), runCells = cellLists();
   for (const f of falls) claims[f.c].push({ c: f.c, lo: f.bot, hi: f.top });
   for (const f of pathFloors) walkedIn[f.c].push(f);
   // vertical space the ball sweeps through when it walks or drops into a column
@@ -21,8 +22,14 @@ export function placeStructures(ctx) {
     if (m.to.landing && !landings.has(m.to.id)) out.push({ c: m.to.c, lo: m.to.top - 1, hi: m.to.top });
     return out;
   };
-  const canPlace = m => runClaims(m).every(cl =>
-    claims[cl.c].every(o => o.hi + SHEAD <= cl.lo || cl.hi + SHEAD <= o.lo) &&
+  const apart = (a, b) => a.hi + SHEAD <= b.lo || b.hi + SHEAD <= a.lo;
+  // a stair never runs right beside a bridge (or the other way round) at a similar height
+  const besideOther = (m, cl) => {
+    const x = cl.c % N, z = (cl.c / N) | 0;
+    return DIRS.some(([dx, dz]) => inb(x + dx, z + dz) && runCells[idx(x + dx, z + dz)].some(o => o.kind !== m.kind && !apart(o, cl)));
+  };
+  const canPlace = m => runClaims(m).every((cl, j) =>
+    claims[cl.c].every(o => apart(o, cl)) && !(j < m.cells.length && besideOther(m, cl)) &&
     walkedIn[cl.c].every(g => !(g.top > cl.lo - SHEAD && g.top <= cl.hi + 1)) &&   // room for the character's head
     sweeps[cl.c].every(([a, b]) => !(cl.lo <= b && cl.hi >= a)));
   // floors right under a stair / landing are covered by it: they must not be smoothed up through it
@@ -37,7 +44,7 @@ export function placeStructures(ctx) {
     runs.push(run);
   }
   function place(m) {
-    for (const cl of runClaims(m)) claims[cl.c].push(cl);
+    runClaims(m).forEach((cl, j) => { claims[cl.c].push(cl); if (j < m.cells.length) runCells[cl.c].push({ kind: m.kind, lo: cl.lo, hi: cl.hi }); });
     if (m.to.landing && !landings.has(m.to.id)) placeLanding(m.to);
     if (m.kind === 'walkway') {
       landings.get(m.from.id).conn.add(m.d); landings.get(m.to.id).conn.add(OPP[m.d]);

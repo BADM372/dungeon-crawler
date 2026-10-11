@@ -44,5 +44,5 @@ export function placePortals(ctx) {
     add({ kind: 'spawn', dir: -1, layer: 0, level: groundLevel(cells), cells, c: idx(x, z) });
   }
   ctx.portals = portals; ctx.prot0 = prot0;
-  ctx.stats.mode = spec.kind; void R;
+  void R;
 }

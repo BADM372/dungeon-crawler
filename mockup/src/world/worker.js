@@ -18,7 +18,7 @@ function info(k) {
 }
 
 onmessage = ({ data }) => {
-  if (data.type === 'init') { world = new World(data.seed); return; }
+  if (data.type === 'init') { world = new World(data.seed, data.opts); return; }
   if (data.type === 'cube') {
     try {
       const c = world.cube(data.key);

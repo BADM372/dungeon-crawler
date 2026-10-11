@@ -5,7 +5,7 @@ import { key } from './coords.js';
 import { makeLayouts } from './layout.js';
 
 export class WorldClient {
-  constructor(seed) {
+  constructor(seed, opts = {}) {
     this.seed = seed;
     this.start = key(0, 0, 0);
     this.layout = makeLayouts(seed);   // which cubes exist (cheap, also needed here)
@@ -13,7 +13,7 @@ export class WorldClient {
     this.waiting = new Map();   // key -> [resolve, reject][]
     this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
     this.worker.onmessage = ({ data }) => this.receive(data);
-    this.worker.postMessage({ type: 'init', seed });
+    this.worker.postMessage({ type: 'init', seed, opts });
   }
 
   receive(data) {

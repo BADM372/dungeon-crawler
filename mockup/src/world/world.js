@@ -10,9 +10,21 @@ import { themeAt } from './depth.js';
 import { makeLayouts } from './layout.js';
 import { voidAllowed } from './voids.js';
 
+// how much each WFC kind leans towards an archetype (times the theme's weights)
+const LEAN = { highland: { mesa: 2, spire: 2, archipelago: 0.3 }, lake: { archipelago: 3, crater: 2 }, gorge: { chasm: 3 },
+  river: { chasm: 1.5, archipelago: 0.5 }, meadow: { plain: 1.5 }, slope: { mesa: 1.5 } };
+function archetype(theme, kind, R) {
+  const w = Object.entries(theme.arche).map(([a, v]) => [a, v * (LEAN[kind]?.[a] ?? 1)]);
+  let r = R() * w.reduce((s, [, v]) => s + v, 0);
+  for (const [a, v] of w) if ((r -= v) < 0) return a;
+  return 'plain';
+}
+
 export class World {
-  constructor(seed) {
+  // opts.arche: force one archetype everywhere (dev)
+  constructor(seed, opts = {}) {
     this.seed = seed;
+    this.opts = opts;
     this.wfc = new WFC(seed);
     this.noise = worldNoise(seed);
     this.faces = new Map();
@@ -46,6 +58,7 @@ export class World {
       // islands without pillars: lakes, the sky islands near the top and the abyss
       floating: t.kind === 'lake' || ((-Y <= 3 || -Y >= 19) && this.wfc.rng(k, 0xf10a7)() < 0.5),
       seed: hash32(this.seed ^ hashKey(k)),
+      archetype: -Y === 0 ? 'plain' : this.opts.arche || archetype(theme, t.kind, this.wfc.rng(k, 0xa7c4)),
     };
   }
 

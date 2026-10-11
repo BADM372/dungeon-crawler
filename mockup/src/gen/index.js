@@ -5,6 +5,7 @@ import { floorY, runY } from '../core/surfaces.js';
 import { createContext } from './context.js';
 import { chooseLayers, groundHeights } from './ground.js';
 import { placePortals } from './portals.js';
+import { shapeCube } from './archetypes.js';
 import { carveRiver } from './river.js';
 import { buildSlabs } from './slabs.js';
 import { addRamps, addSupports } from './supports.js';
@@ -49,6 +50,7 @@ function tryGenerate(seed, spec) {
   ctx.spec = spec;
   chooseLayers(ctx);
   groundHeights(ctx);
+  shapeCube(ctx);
   placePortals(ctx);
   carveRiver(ctx);
   buildSlabs(ctx);
@@ -68,7 +70,7 @@ function tryGenerate(seed, spec) {
     x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
     seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
-    kind: spec.kind, key: spec.key, depth: spec.depth, pathPts: pathPoints(ctx, ctx.moves),
+    kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, pathPts: pathPoints(ctx, ctx.moves),
     routes: ctx.segments.map(s => pathPoints(ctx, s)),   // first portal -> each other portal
   };
 }

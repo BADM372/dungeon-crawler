@@ -86,7 +86,7 @@ export function updateNeighbors() { showNeighbors(visitedNeighbors(state.cubeKey
 
 export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.cubes?.dispose();
-  state.cubes = new WorldClient(seed);
+  state.cubes = new WorldClient(seed, { arche: state.dev && new URLSearchParams(location.search).get('arche') });
   state.transitioning = true;
   player.hp = 100;
   return whenReady(state.cubes.get(state.cubes.start)).then(c => { enterCube(c); state.transitioning = false; });

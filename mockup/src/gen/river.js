@@ -35,6 +35,10 @@ export function carveRiver(ctx) {
     stats.fluids.push(FLUID_NAME[spec.fluid] + (lake ? ' lake' : ' river'));
   }
 
+  // archetype seas and crater lakes (where the cube could not open to the void)
+  const sea = (ctx.seaCells || []).filter(i => !prot0[i] && !fluid0[i]);
+  if (sea.length) { fill(sea, spec.fluid, RIVER_SURF); stats.fluids.push(FLUID_NAME[spec.fluid] + ' sea'); }
+
   for (let p = ri(0, 2); p > 0; p--) {
     const type = pickFluid();
     const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
