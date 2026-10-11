@@ -13,7 +13,9 @@ export function mapInfo(m) {
     });
     const slabs = m.floors.filter(f => f.layer > 0 && !f.merged && !f.ramp)
       .map(f => ({ x: f.x + 0.5, z: f.z + 0.5, lo: f.bottom * LH - 0.02, hi: f.top * LH + 0.05 }));
-    m.cutInfo = { bases, slabs, top: Math.max(...m.floors.map(f => f.top)) * LH + 0.8 };
+    const terrainTop = Math.max(...m.floors.map(f => f.top)) * LH;
+    const propTop = Math.max(terrainTop, ...(m.occluders || []).map(b => b.top));
+    m.cutInfo = { bases, slabs, top: propTop + 0.8 };
   }
   return m.cutInfo;
 }

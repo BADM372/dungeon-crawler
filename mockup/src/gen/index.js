@@ -22,6 +22,7 @@ import { placeStructures } from './place.js';
 import { smooth } from './smooth.js';
 import { shapeStructures } from './shape.js';
 import { addFences } from './fences.js';
+import { generateTown } from './town.js';
 
 function indexFloors(ctx) {
   const floors = ctx.floors = [];
@@ -91,13 +92,14 @@ function tryGenerate(seed, spec) {
     seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
     ladders: ctx.ladders.map(ladderInfo), exit: spec.exit,
     safe: Uint8Array.from(floors, f => !safe || safe.has(f.id) ? 1 : 0),   // floors that lead to the exit
-    kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, cave: !!spec.cave,
+    kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, cave: !!spec.cave, enemyFree: !!spec.enemyFree,
     routes: ctx.segments.map(s => pathPoints(ctx, s)),   // each portal -> the exit, then the way back
   };
 }
 
 // spec: what the world fixes for this cube (faces, portals, layers; see world/world.js)
 export function generate(spec) {
+  if (spec.town) return generateTown(spec);
   for (let a = 0; a < 200; a++) {
     const m = tryGenerate(hash32(spec.seed + a * 7919), spec);
     if (m) { m.seed = spec.seed; m.attempts = a + 1; return m; }

@@ -50,7 +50,7 @@ function frame() {
 }
 
 loadCube();
-setStatus('Find the golden portal on the far side of the cube');
+setStatus('Welcome to town. Follow the path through the grove to leave.');
 // debug / test hooks
 window.__game = {
   get map() { return state.map; }, player, generate, loadCube, updatePlayer, groundAt,

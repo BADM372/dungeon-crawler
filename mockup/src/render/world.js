@@ -31,7 +31,7 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m)) {
   const markers = buildMarkers(m, group, showPath, seen);
   // decoration (also sets the colliders of blocking props on the map)
   const placed = placeProps(m, themeAt(m.depth ?? 0));
-  m.blockers = placed.blockers;
+  m.blockers = placed.blockers.map((list, i) => [...(m.staticBlockers?.[i] || []), ...list]);
   buildProps(placed.out, group);
   addGhosts(group);
   group.add(makeGlass());

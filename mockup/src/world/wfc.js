@@ -6,12 +6,18 @@ import { mulberry32, hash32 } from '../core/util.js';
 import { TILES, layersOf } from './tiles.js';
 import { OPP6, step, hashKey } from './coords.js';
 import { themeAt, depthOf } from './depth.js';
+import { TOWN_KEY } from './town.js';
 
 // tile weight at cube k: the base weight scaled by the depth's theme
 const weightAt = k => { const m = themeAt(depthOf(k)).tiles; return t => t.weight * (m[t.kind] ?? 1); };
 
 export class WFC {
-  constructor(seed) { this.seed = seed; this.tiles = new Map(); }
+  constructor(seed) {
+    this.seed = seed;
+    // Pin before any collapse, including neighbours prepared before the town.
+    const town = TILES.find(t => t.kind === 'meadow' && t.sock.every(s => s === 'L'));
+    this.tiles = new Map([[TOWN_KEY, { ...town, K: 1 }]]);
+  }
 
   domain(k) {
     const nb = [0, 1, 2, 3].map(d => this.tiles.get(step(k, d)));

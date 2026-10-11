@@ -1,6 +1,6 @@
 // Smoothing: decide which neighbouring floors blend into a slope (links), then give every
 // floor four corner heights averaged over the linked floors around each corner.
-import { LH, DIRS, OPP, edgePts } from '../core/constants.js';
+import { N, LH, DIRS, OPP, edgePts } from '../core/constants.js';
 import { idx, inb, hash32 } from '../core/util.js';
 
 function makeLinks(ctx) {
@@ -31,6 +31,12 @@ export function smooth(ctx) {
 
   // structure endpoints: the two corners facing the stair/bridge are pinned to the floor level
   const pins = new Map();
+  // A town edge is a shared, exactly flat boundary, including its corner vertices.
+  ctx.spec.faces.forEach((face, d) => {
+    if (!face.townBoundary) return;
+    for (const f of floors) if (f.layer === 0 && [f.x === N - 1, f.x === 0, f.z === N - 1, f.z === 0][d])
+      for (const [X, Z] of edgePts(f.x, f.z, d)) pins.set(f.id + ':' + X + ',' + Z, face.profile[d < 2 ? f.z : f.x] * LH);
+  });
   for (const r of runs) if (r.kind !== 'landing') for (const [f, side] of [[r.from, r.d], [r.to, OPP[r.d]]])
     if (!f.landing) for (const [X, Z] of edgePts(f.x, f.z, side)) pins.set(f.id + ':' + X + ',' + Z, f.top * LH);
   // ladders: the foot and the top edge stay flat, so the ladder meets both exactly

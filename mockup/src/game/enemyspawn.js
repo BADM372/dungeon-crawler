@@ -6,6 +6,7 @@ import { mulberry32, hash32 } from '../core/util.js';
 import { walkable, neighbors, groundY, floorAt } from '../physics/enemynav.js';
 
 export function enemySpots(map, profile) {
+  if (map.enemyFree) return [];
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt));
   const count = profile.minCount + Math.floor(R() * (profile.maxCount - profile.minCount + 1));
   if (!count) return [];

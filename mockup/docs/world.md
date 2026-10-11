@@ -13,6 +13,46 @@ near them, and stay around after that.
 | Game | `src/game/flow.js`, `portals.js`, `minimap.js` | entering cubes, portal travel, the overview |
 | Render | `src/render/markers.js`, `neighbors.js` | portal looks, low-detail neighbors |
 
+## Starting town (`world/town.js`, `gen/town.js`)
+
+The spawn cube `(0,0,0)` is an authored clearing, rotated to match its **single
+outgoing side portal**. It contains all seven `blender/town.glb` buildings: three
+merchant tents, inn, stable, pet shop and blacksmith. They are non-interactive,
+with simple rotated footprint box colliders including their attached props.
+Spawn is in a paved central square; a dry walking path leads through the grove's
+opening to the outgoing road. No well, voids or extra exits exist inside town.
+
+The town tile is pinned to lowland sockets and one layer **before any WFC collapse**.
+All dry ground is exactly level 4 (2 game units); a reserved five-cell pond has a
+lower bed and water surface. Town face profiles and corner levels are fixed, and
+neighbouring terrain's shared boundary corners are pinned during smoothing. Town
+layout and water do not depend on generation retries, exploration order or the
+`?arche=` debug override. Buildings, pond, spawn and paths are reserved before
+placing vegetation or validating reachability.
+
+Sixteen large oak/elm/birch trees from `blender/town_trees.glb` form an irregular
+perimeter grove, with smaller shrubs and flowers in reserved pockets. The trees
+are 6–7 units tall, higher than the inn; their crowns may overhang the clearing,
+but only the trunks block movement. Tree species and scale/yaw vary deterministically.
+The existing cutaway includes building and canopy occlusion volumes, independently
+of body colliders, so foreground roofs/foliage reveal the player as the camera turns.
+
+`enemyFree` is generation metadata, retained on cached maps and checked before any
+species-specific spawn selection. The town and the one-cube-wide **surface** buffer
+(`Y=0`, `max(abs(X), abs(Z)) <= 1`, including diagonals if they exist) have no enemies.
+Along the current surface road: **town → safe countryside → enemies → well**.
+This is not temporary spawn protection and does not make the underground safe.
+
+The initial loading screen waits for both the ordinary prop library and the town
+building/tree libraries. Static town colliders are generated in the worker,
+independent of download timing; rendering cannot accidentally remove them.
+
+`npm test` in `mockup/` includes town checks across seeds and all four exit
+orientations: flat dry ground, guaranteed pond, seven non-overlapping assets,
+dry reachable exit using actual movement probes, generation-order-independent
+boundaries, safe-buffer spawns/revisits, box/trunk collision, canopy occlusion,
+and matching Blender exports.
+
 ## Wave function collapse (`world/tiles.js`, `world/wfc.js`)
 
 Each cube collapses to a **tile** with four side sockets:

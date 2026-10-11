@@ -9,6 +9,7 @@ const shade = (x, z) => ((x + z) & 1 ? 1.0 : 0.95) * (0.97 + (hash32(x * 31 + z 
 function topColor(m, f) {
   const cs = f.cs;
   if (f.fluid) return fluidBed(f.fluid);
+  if (f.townPath) return C('#b3a58a').multiplyScalar(shade(f.x, f.z));
   const top = gradient(TOP_STOPS, (cs[0] + cs[1] + cs[2] + cs[3]) / 4 / LH).multiplyScalar(shade(f.x, f.z));
   // sandy / scorched banks next to fluids
   for (const g of f.link) if (g && g.fluid) top.lerp(fluidBank(g.fluid), 0.4);

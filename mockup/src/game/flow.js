@@ -13,6 +13,7 @@ import { resetEnemies } from './enemies.js';
 import { cancelSword } from './sword.js';
 import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
+import { townAssetsReady } from '../render/townassets.js';
 
 export function spawnAt(x, y, z) {
   cancelSword(true);
@@ -103,7 +104,8 @@ export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.transitioning = true;
   cancelSword(true);
   player.hp = 100;
-  return whenReady(state.cubes.get(state.cubes.start)).then(c => { enterCube(c); state.transitioning = false; });
+  return whenReady(Promise.all([state.cubes.get(state.cubes.start), townAssetsReady]))
+    .then(([c]) => { enterCube(c); state.transitioning = false; });
 }
 
 export function nextCube() {

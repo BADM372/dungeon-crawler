@@ -26,6 +26,7 @@ function picker(theme, R) {
 
 export function placeProps(m, theme) {
   const out = [], blockers = Array.from({ length: N * N }, () => []);
+  if (m.town) return { out: m.town.placements, blockers };
   if (!props.ready || !theme.props) return { out, blockers };
   const R = mulberry32(hash32(m.seed ^ 0x9a0b5)), pick = picker(theme, R);
   // where people walk: the route, every stair / bridge / landing and the floors at their ends.

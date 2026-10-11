@@ -7,6 +7,7 @@ import { clamp } from '../core/util.js';
 import { key, parse } from './coords.js';
 import { themeAt } from './depth.js';
 import { voidAllowed, isVoid } from './voids.js';
+import { isTown, TOWN_LEVEL } from './town.js';
 
 export const VOID = -1;
 
@@ -25,6 +26,7 @@ function sockAt(world, X, Y, Z, d) {
 // highland if most of the four faces there are
 function vertexLevel(world, vx, Y, vz) {
   const cubes = [key(vx - 1, Y, vz - 1), key(vx, Y, vz - 1), key(vx - 1, Y, vz), key(vx, Y, vz)];
+  if (cubes.some(isTown)) return TOWN_LEVEL;
   if (cubes.every(c => voidAllowed(world, c)) && isVoid(world.noise, vx * N, vz * N, -Y)) return VOID;
   const s = [sockAt(world, vx - 1, Y, vz - 1, 0), sockAt(world, vx - 1, Y, vz, 0), sockAt(world, vx - 1, Y, vz - 1, 2), sockAt(world, vx, Y, vz - 1, 2)];
   return levelAt(world.noise, s.filter(x => x === 'H').length > 2 ? 'H' : 'L', vx * N, vz * N, Y);
@@ -32,6 +34,8 @@ function vertexLevel(world, vx, Y, vz) {
 
 export function profile(world, fk, sock) {
   const [k, d] = fk.split('/'), [X, Y, Z] = parse(k), out = new Int16Array(N);
+  const other = d === '0' ? key(X + 1, Y, Z) : key(X, Y, Z + 1);
+  if (isTown(k) || isTown(other)) return out.fill(TOWN_LEVEL);
   const open = voidAllowed(world, k) && voidAllowed(world, d === '0' ? key(X + 1, Y, Z) : key(X, Y, Z + 1));
   for (let t = 0; t < N; t++) {
     const wx = d === '0' ? (X + 1) * N : X * N + t + 0.5, wz = d === '0' ? Z * N + t + 0.5 : (Z + 1) * N;

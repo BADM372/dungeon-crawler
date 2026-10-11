@@ -4,10 +4,11 @@
 import { N } from '../core/constants.js';
 import { key, parse } from './coords.js';
 import { themeAt, MAX_DEPTH } from './depth.js';
+import { isTown } from './town.js';
 
 export function voidAllowed(world, k) {
   const [X, Y, Z] = parse(k), d = -Y;
-  return d < MAX_DEPTH && themeAt(d).void > 0 && world.layout(d + 1).exists.has(key(X, Y - 1, Z));
+  return !isTown(k) && d < MAX_DEPTH && themeAt(d).void > 0 && world.layout(d + 1).exists.has(key(X, Y - 1, Z));
 }
 
 // is the world-space cell centre (wx, wz) at depth d open?

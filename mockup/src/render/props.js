@@ -12,7 +12,7 @@ const onReady = [];
 export const whenPropsReady = fn => props.ready ? fn() : onReady.push(fn);
 export const tickProps = t => { wind.value = t; };
 
-function load(gltf) {
+export function registerProps(gltf) {
   for (const o of gltf.scene.children) {
     // a prop is one mesh, or a group of meshes when it has a glowing material as well
     const parts = (o.isMesh ? [o] : o.children.filter(c => c.isMesh)).map(c => ({ geometry: c.geometry, material: c.material }));
@@ -29,8 +29,6 @@ function load(gltf) {
     if (!props.sets.has(key)) props.sets.set(key, []);
     props.sets.get(key).push(p);
   }
-  props.ready = true;
-  onReady.splice(0).forEach(fn => fn());
 }
 
 // sway: bend with the wind, more the further from the attachment point; per-instance phase
@@ -84,4 +82,9 @@ export function buildProps(placed, group) {
   }
 }
 
-new GLTFLoader().load(URL, load, undefined, e => console.error('props failed to load', e));
+export const propsReady = new GLTFLoader().loadAsync(URL).then(gltf => {
+  registerProps(gltf);
+  props.ready = true;
+  onReady.splice(0).forEach(fn => fn());
+});
+propsReady.catch(e => console.error('props failed to load', e));

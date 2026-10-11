@@ -5,7 +5,7 @@ import { themeAt } from '../world/depth.js';
 const $ = id => document.getElementById(id);
 
 export function showStats(map, cube, seed, visits) {
-  $('depth').textContent = `${map.depth} · ${themeAt(map.depth).name}`;
+  $('depth').textContent = `${map.depth} · ${map.town ? 'Town' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`;
   $('seed').textContent = seed;
   const s = map.stats;
   const portals = map.portals.filter(p => p.kind !== 'spawn').map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));

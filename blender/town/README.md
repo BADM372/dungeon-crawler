@@ -39,11 +39,19 @@ Large pitched roofs and raised pictogram signs keep services readable at game sc
 - `light`/`intensity` are optional runtime lighting hints, not exported light objects.
 - Showroom positions, labels, floor, camera and lights are excluded from every GLB.
 
-These are **exterior visual assets only**. Sleeping/healing, trading, pet ownership,
-horse interactions, placement and collision are not wired into the game. Animals are
-static decoration joined into the buildings, not separate animated characters.
-Buildings are wider than the one-cell scatter props; place explicitly, not randomly
-through the decoration generator. `radius` is a coarse spacing hint, not a collider.
+These are **exterior visual assets only**. The game now places all seven in the
+starting town, with non-interactive footprint box colliders and a reserved walking
+layout. Sleeping/healing, trading, pet ownership and horse interactions are not
+implemented. Animals are static decoration joined into the buildings.
+Buildings are wider than the one-cell scatter props; they are placed explicitly,
+not randomly through the decoration generator. `radius` is a spacing hint, not a collider.
+
+The surrounding grove uses three larger trees from `../town_trees.glb`, generated
+by `../town_trees.py` (editable source `../town_trees.blend`, preview
+`../town_trees-preview.png`). These are 6–7 units tall, with broad faceted crowns.
+Their `trunk_radius` / `trunk_height` metadata distinguishes collision from foliage;
+canopies overhang paths and are handled by the player's cutaway. The town plan
+and safety rules live in `mockup/src/world/town.js`; see `mockup/docs/world.md`.
 
 ## Rebuild / validate
 

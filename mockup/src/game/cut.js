@@ -8,6 +8,7 @@ import { insideSolid } from '../physics/collide.js';
 import { player, state } from './state.js';
 import { updateCamera } from './camera.js';
 import { mapInfo, inSlab, outOfSlabs } from './cutinfo.js';
+import { viewBlockedAt } from '../core/blockers.js';
 
 const REVEAL = 0.07, RESTORE = 0.12, RESTORE_DELAY = 1;   // spring times (s), wait before restoring
 const STEP = 0.12;
@@ -22,8 +23,12 @@ function blockedAt(x, y, z, top) {
   if (insideSolid(x, z, y)) return Infinity;   // probe point is inside a wall: ignore it
   for (let t = STEP; t < len; t += STEP) {
     const px = x + dx * t, py = y + dy * t, pz = z + dz * t;
-    if (py > top || px < 0 || pz < 0 || px >= N || pz >= N) break;
-    if (insideSolid(px, pz, py)) return py;
+    if (py > top) break;
+    const inCube = px >= 0 && pz >= 0 && px < N && pz < N;
+    // Town crowns can overhang the cube; keep probing their foliage outside it,
+    // without mistaking the out-of-bounds terrain query for a solid wall.
+    if (!inCube && !state.map.town) break;
+    if ((inCube && insideSolid(px, pz, py)) || viewBlockedAt(state.map, px, py, pz)) return py;
   }
   return Infinity;
 }

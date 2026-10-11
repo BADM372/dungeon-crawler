@@ -3,6 +3,7 @@ import { LH } from '../core/constants.js';
 import { idx, inb, clamp } from '../core/util.js';
 import { floorY, runY, topOf } from '../core/surfaces.js';
 import { player, state } from '../game/state.js';
+import { containsXZ } from '../core/blockers.js';
 
 export function cellAt(x, z) {
   const cx = Math.floor(x), cz = Math.floor(z);
@@ -33,8 +34,8 @@ export function blockedAt(x, z, y, step, piecesOnly = false) {
   const i = cellAt(x, z);
   if (i < 0) return true;
   const [fx, fz] = local(x, z), head = y + player.h;
-  // blocking props (trees, boulders, columns): round colliders
-  for (const b of state.map.blockers?.[i] || []) if (Math.hypot(x - b.x, z - b.z) < b.r && b.bottom < head && b.top > y + step) return true;
+  // Trees use trunk circles; town buildings use their rotated footprint boxes.
+  for (const b of state.map.blockers?.[i] || []) if (containsXZ(b, x, z) && b.bottom < head && b.top > y + step) return true;
   if (!piecesOnly) for (const f of state.map.cols[i]) if (floorY(f, fx, fz) > y + step && f.bottom * LH < head) return true;
   for (const p of state.map.pieces[i]) {
     if (p.kind === 'pillar') {
@@ -53,6 +54,7 @@ export function ceilingAt(x, z, y) {
   if (i < 0) return Infinity;
   const [fx, fz] = local(x, z);
   let c = Infinity;
+  for (const b of state.map.blockers?.[i] || []) if (b.bottom > y && containsXZ(b, x, z)) c = Math.min(c, b.bottom);
   for (const f of state.map.cols[i]) if (f.bottom * LH > y) c = Math.min(c, f.bottom * LH);
   for (const p of state.map.pieces[i]) {
     const b = p.kind === 'pillar' ? (inPillar(p, fx, fz) ? p.bottom : Infinity) : pieceBottom(p, runY(p, fx, fz));
@@ -65,6 +67,7 @@ export function ceilingAt(x, z, y) {
 export function insideSolid(x, z, y) {
   const i = cellAt(x, z);
   if (i < 0) return true;
+  for (const b of state.map.blockers?.[i] || []) if (y > b.bottom && y < b.top && containsXZ(b, x, z)) return true;
   const [fx, fz] = local(x, z);
   for (const f of state.map.cols[i]) if (floorY(f, fx, fz) > y && f.bottom * LH < y) return true;
   for (const p of state.map.pieces[i]) {

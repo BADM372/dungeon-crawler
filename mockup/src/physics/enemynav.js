@@ -5,6 +5,7 @@ import { edgeKey } from '../core/util.js';
 import { floorY, runY } from '../core/surfaces.js';
 import { state } from '../game/state.js';
 import { cellAt, insideSolid } from './collide.js';
+import { containsXZ } from '../core/blockers.js';
 
 const free = new WeakMap();
 export function walkable(f, height = 0.9) {
@@ -86,7 +87,7 @@ export function clearLine(ax, ay, az, bx, by, bz) {
     const t = i / n, x = ax + (bx - ax) * t, y = ay + (by - ay) * t, z = az + (bz - az) * t;
     if (insideSolid(x, z, y)) return false;
     const c = cellAt(x, z);
-    if ((state.map.blockers?.[c] || []).some(b => y > b.bottom && y < b.top && Math.hypot(x - b.x, z - b.z) < b.r)) return false;
+    if ((state.map.blockers?.[c] || []).some(b => y > b.bottom && y < b.top && containsXZ(b, x, z))) return false;
   }
   return true;
 }
