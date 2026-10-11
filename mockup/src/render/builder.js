@@ -1,0 +1,72 @@
+// Accumulates triangles with vertex colours into one BufferGeometry.
+import * as THREE from 'three';
+
+export class GeoBuilder {
+  constructor() { this.pos = []; this.nor = []; this.col = []; this.smoothKeys = []; }
+
+  // triangle; `want` is the intended facing (winding gets flipped to match);
+  // smooth=true shares normals with other smooth vertices at the same position
+  tri(a, b, c, col, want, smooth = false) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const len = Math.hypot(nx, ny, nz);
+    if (len < 1e-9) return;
+    if (want && nx * want[0] + ny * want[1] + nz * want[2] < 0) { [b, c] = [c, b]; nx = -nx; ny = -ny; nz = -nz; }
+    const base = this.pos.length / 3;
+    for (const v of [a, b, c]) {
+      this.pos.push(v[0], v[1], v[2]);
+      this.nor.push(nx / len, ny / len, nz / len);
+      this.col.push(col.r, col.g, col.b);
+    }
+    if (smooth) [a, b, c].forEach((v, k) =>
+      this.smoothKeys.push([base + k, v[0].toFixed(3) + ',' + v[1].toFixed(3) + ',' + v[2].toFixed(3), nx, ny, nz]));
+  }
+
+  quad(a, b, c, d, want, col, smooth = false) { this.tri(a, b, c, col, want, smooth); this.tri(a, c, d, col, want, smooth); }
+
+  // axis aligned box; skip: {px,nx,py,ny,pz,nz} -> true to omit that face
+  box(x0, y0, z0, x1, y1, z1, top, side, skip = {}) {
+    const sd = side.clone().multiplyScalar(0.82);
+    if (!skip.py) this.quad([x0, y1, z0], [x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [0, 1, 0], top);
+    if (!skip.ny) this.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [0, -1, 0], sd);
+    if (!skip.px) this.quad([x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1], [1, 0, 0], side);
+    if (!skip.nx) this.quad([x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0], [-1, 0, 0], side);
+    if (!skip.pz) this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], [0, 0, 1], sd);
+    if (!skip.nz) this.quad([x0, y0, z0], [x0, y1, z0], [x1, y1, z0], [x1, y0, z0], [0, 0, -1], sd);
+  }
+
+  // oriented box between two points with a w x h cross-section (rails, beams)
+  beam(p, q, w, h, col) {
+    const d = new THREE.Vector3(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+    const side = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(w / 2);
+    const up = new THREE.Vector3().crossVectors(side, d).normalize().multiplyScalar(h / 2);
+    const P = new THREE.Vector3(...p), Q = new THREE.Vector3(...q), C0 = P.clone().add(Q).multiplyScalar(0.5);
+    const v = (o, s, u) => o.clone().addScaledVector(side, s).addScaledVector(up, u).toArray();
+    const faces = [
+      [v(P, -1, 1), v(P, 1, 1), v(Q, 1, 1), v(Q, -1, 1)], [v(P, -1, -1), v(P, 1, -1), v(Q, 1, -1), v(Q, -1, -1)],
+      [v(P, 1, -1), v(P, 1, 1), v(Q, 1, 1), v(Q, 1, -1)], [v(P, -1, -1), v(P, -1, 1), v(Q, -1, 1), v(Q, -1, -1)],
+      [v(P, -1, -1), v(P, 1, -1), v(P, 1, 1), v(P, -1, 1)], [v(Q, -1, -1), v(Q, 1, -1), v(Q, 1, 1), v(Q, -1, 1)]];
+    for (const f of faces) {
+      const fc = f.reduce((s, x) => [s[0] + x[0] / 4, s[1] + x[1] / 4, s[2] + x[2] / 4], [0, 0, 0]);
+      this.quad(f[0], f[1], f[2], f[3], [fc[0] - C0.x, fc[1] - C0.y, fc[2] - C0.z], col);
+    }
+  }
+
+  build() {
+    const acc = new Map();
+    for (const [, key, nx, ny, nz] of this.smoothKeys) {
+      const a = acc.get(key) || [0, 0, 0];
+      a[0] += nx; a[1] += ny; a[2] += nz; acc.set(key, a);
+    }
+    for (const [vi, key] of this.smoothKeys) {
+      const a = acc.get(key), l = Math.hypot(a[0], a[1], a[2]) || 1;
+      this.nor[vi * 3] = a[0] / l; this.nor[vi * 3 + 1] = a[1] / l; this.nor[vi * 3 + 2] = a[2] / l;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    return g;
+  }
+}

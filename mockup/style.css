@@ -1,0 +1,17 @@
+html, body { margin: 0; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, #2a3140 0%, #12151c 70%, #0b0d12 100%); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: #d8dde6; }
+canvas { display: block; }
+#hud { position: absolute; top: 14px; left: 16px; pointer-events: none; min-width: 240px; }
+#hud .title { font-size: 15px; letter-spacing: 3px; font-weight: bold; color: #fff; }
+#hud .title span { font-size: 11px; color: #8a96a8; letter-spacing: 1px; font-weight: normal; }
+#hud b { color: #fff; }
+.hp { margin: 8px 0 4px; width: 220px; height: 8px; background: #2a2f3a; border: 1px solid #444c5c; }
+#hpbar { height: 100%; width: 100%; background: linear-gradient(90deg, #d9534f, #f0ad4e); transition: width .15s; }
+#status { min-height: 18px; color: #ffd27a; }
+#stats { color: #8a96a8; font-size: 11px; margin-top: 4px; }
+#help { position: absolute; bottom: 14px; left: 16px; color: #8a96a8; font-size: 12px; pointer-events: none; }
+#help kbd { background: #2a2f3a; border: 1px solid #444c5c; border-radius: 3px; padding: 0 4px; color: #e6e9ef; }
+#legend { position: absolute; top: 14px; right: 16px; font-size: 12px; color: #aab3c2; pointer-events: none; }
+#legend div { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+#legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid #0006; }
+#fade { position: absolute; inset: 0; background: #0b0d12; opacity: 1; pointer-events: none; transition: opacity .35s; }
+#flash { position: absolute; inset: 0; background: #ff3b1f; opacity: 0; pointer-events: none; transition: opacity .4s; }

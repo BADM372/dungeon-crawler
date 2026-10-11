@@ -1,0 +1,59 @@
+// Fluids (swim / burn), waterfalls, health regeneration and the respawn point.
+import { LH, LAVA, ACID, DIRS } from '../core/constants.js';
+import { floorY } from '../core/surfaces.js';
+import { player, state } from '../game/state.js';
+import { hurt } from '../game/flow.js';
+
+// returns false when the player got respawned
+function fluids(dt, gr) {
+  const fl = gr.s && !gr.s.kind && gr.s.fluid ? gr.s : null;
+  const wasSwimming = player.swimming;
+  player.swimming = false; player.fluid = 0;
+  if (!fl || player.y >= fl.surf * LH + 0.05) return true;
+  if (fl.fluid === LAVA) { hurt(50, 'Fell into lava!'); return false; }
+  const fy = fl.surf * LH - 0.24;   // float a little below the surface
+  if (player.y > fy + 0.01 && !wasSwimming) return true;
+  player.vy = 0;
+  player.y += (fy - player.y) * Math.min(1, dt * 6);
+  player.swimming = true; player.grounded = true; player.fluid = fl.fluid;
+  if (fl.fluid === ACID) {
+    player.hp -= 30 * dt;
+    if (!state.statusMsg) state.statusMsg = 'Acid burns! Get out!';
+    if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return false; }
+  } else if (!state.statusMsg) state.statusMsg = 'Swimming - find a low bank to climb out';
+  return true;
+}
+
+// standing in a waterfall: the current pushes you out; lava and acid falls hurt
+function falls(dt, ci) {
+  for (const f of state.map.falls) {
+    if (ci !== f.c) continue;
+    const lx = player.x - Math.floor(player.x), lz = player.z - Math.floor(player.z);
+    const dist = [lx, 1 - lx, lz, 1 - lz][f.d], lat = f.d < 2 ? lz : lx;
+    if (dist > 0.45 || lat < 0.06 || lat > 0.94 || player.y > f.top * LH || player.y < f.bot * LH - 0.5) continue;
+    if (f.type === LAVA) { hurt(50, 'Burned by a lavafall!'); return false; }
+    if (f.type === ACID) {
+      player.hp -= 40 * dt;
+      if (!state.statusMsg) state.statusMsg = 'Acid rain!';
+      if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return false; }
+    }
+    player.vx += DIRS[f.d][0] * 9 * dt; player.vz += DIRS[f.d][1] * 9 * dt;
+    if (!player.grounded) player.vy -= 12 * dt;
+  }
+  return true;
+}
+
+export function applyHazards(dt, gr) {
+  if (player.y < -3) { hurt(25, 'Fell out of the cube'); return false; }
+  if (state.time > state.statusUntil) state.statusMsg = '';
+  if (!fluids(dt, gr) || !falls(dt, gr.i)) return false;
+  if (!player.swimming && player.grounded) player.hp = Math.min(100, player.hp + 6 * dt);
+
+  // remember a safe spot to respawn at
+  player.safeTimer += dt;
+  if (player.grounded && !player.swimming && gr.s && !gr.s.kind && !gr.s.fluid && player.safeTimer > 0.4) {
+    player.safeTimer = 0;
+    player.safe = { x: gr.s.x + 0.5, y: floorY(gr.s, 0.5, 0.5), z: gr.s.z + 0.5 };
+  }
+  return true;
+}

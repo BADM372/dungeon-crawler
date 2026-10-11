@@ -1,0 +1,56 @@
+// Smoothing: decide which neighbouring floors blend into a slope (links), then give every
+// floor four corner heights averaged over the linked floors around each corner.
+import { LH, DIRS, OPP, edgePts } from '../core/constants.js';
+import { idx, inb, hash32 } from '../core/util.js';
+
+function makeLinks(ctx) {
+  const { R, cols, floors, slopeNoise, headOK, pathWalks } = ctx;
+  const setLink = (f, d, g) => { f.link[d] = g; g.link[OPP[d]] = f; };
+  for (const f of floors) for (const d of [0, 2]) {
+    const nx = f.x + DIRS[d][0], nz = f.z + DIRS[d][1];
+    if (!inb(nx, nz)) continue;
+    for (const g of cols[idx(nx, nz)]) {
+      const dh = Math.abs(g.top - f.top);
+      if (dh > 2 || f.covered || g.covered) continue;
+      if (f.fluid || g.fluid) { if (f.fluid === g.fluid && f.surf === g.surf) setLink(f, d, g); continue; }
+      if (!headOK(g, f.top) || !headOK(f, g.top)) continue;
+      if (dh === 0 || f.ramp || g.ramp) { setLink(f, d, g); continue; }
+      if (f.prot || g.prot) continue;
+      // slopes come in patches: the noise decides how smooth a region is
+      const s = slopeNoise(f.x * 0.3 + 3, f.z * 0.3 + 3);
+      if (R() < (dh === 1 ? 0.3 + 0.7 * s : 0.05 + 0.55 * s)) setLink(f, d, g);
+    }
+  }
+  // the route always walks over slopes, never up cliffs
+  for (const m of pathWalks) setLink(m.from, m.d, m.to);
+}
+
+export function smooth(ctx) {
+  const { floors, runs } = ctx;
+  makeLinks(ctx);
+
+  // structure endpoints: the two corners facing the stair/bridge are pinned to the floor level
+  const pins = new Map();
+  for (const r of runs) if (r.kind !== 'landing') for (const [f, side] of [[r.from, r.d], [r.to, OPP[r.d]]])
+    if (!f.landing) for (const [X, Z] of edgePts(f.x, f.z, side)) pins.set(f.id + ':' + X + ',' + Z, f.top * LH);
+
+  function computeCorner(f, ox, oz) {
+    const X = f.x + ox, Z = f.z + oz;
+    const inBlock = g => (g.x === X - 1 || g.x === X) && (g.z === Z - 1 || g.z === Z);
+    const group = [f];
+    for (let i = 0; i < group.length; i++) for (const g of group[i].link) if (g && inBlock(g) && !group.includes(g)) group.push(g);
+    const pinned = group.map(g => pins.get(g.id + ':' + X + ',' + Z)).filter(v => v !== undefined);
+    if (pinned.length) return pinned.reduce((a, b) => a + b) / pinned.length;
+    let mean = 0;
+    for (const g of group) mean += g.top;
+    mean = mean / group.length * LH;
+    // a little jitter for the low-poly look (identical for every floor sharing the corner)
+    if (!group.some(g => g.prot || g.fluid || g.covered))
+      mean += ((hash32(X * 7919 + Z * 104729 + Math.round(mean * 8) * 31337) % 1000) / 1000 - 0.5) * 0.08;
+    return mean;
+  }
+  for (const f of floors) {
+    f.cs = [0, 1, 2, 3].map(k => computeCorner(f, k & 1, k >> 1));
+    f.split = Math.abs(f.cs[0] - f.cs[3]) <= Math.abs(f.cs[1] - f.cs[2]) ? 0 : 1;
+  }
+}
