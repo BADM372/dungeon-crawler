@@ -6,6 +6,7 @@ import { groundAt } from '../physics/collide.js';
 import { player, state, setStatus } from './state.js';
 import { showStats, flash, fadeOut, fadeIn } from './hud.js';
 import { resetCut } from './cut.js';
+import { resetSpiders } from './spiders.js';
 
 const seedFor = d => d === 1 ? state.baseSeed : hash32(state.baseSeed + d * 2654435761) % 1000000000;
 
@@ -35,6 +36,7 @@ export function loadCube(seed = seedFor(state.depth)) {
   state.map = generate(seed);
   disposeWorld(state.world);
   state.world = buildWorld(state.map, state.showPath);
+  resetSpiders();
   spawnEntry();
   showStats(state.map, state.depth, seed);
   fadeIn();

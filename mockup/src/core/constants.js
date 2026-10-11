@@ -38,6 +38,6 @@ export const WALK_SPEED = 1.9, RUN_SPEED = 4.1, SWIM_SPEED = 0.9;
 // the walk / run cycles play at the pace of these ground speeds; the remaining
 // distance is covered with longer strides (see render/stride.js)
 export const WALK_ANIM = 1.4, RUN_ANIM = 3.2;
-export const JUMP_V = 5.5;      // -> jumps ~0.7 units high
+export const JUMP_V = 6.27;     // -> jumps ~0.9 units high
 export const SIT_IMPACT = 10;   // landing faster than this knocks you onto your bottom
 export const RAGDOLL_IMPACT = 14;   // ... and this turns you into a ragdoll (and hurts)
