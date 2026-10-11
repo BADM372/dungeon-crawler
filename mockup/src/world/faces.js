@@ -5,7 +5,7 @@
 // random stream, so it does not depend on who decided it.
 import { N } from '../core/constants.js';
 import { clamp } from '../core/util.js';
-import { key, parse, step, faceKey, MIN_Y } from './coords.js';
+import { key, parse, step, faceKey } from './coords.js';
 
 export const LAYER_BASE = [0, 10, 16, 22];   // the levels of the world-wide layers
 
@@ -43,8 +43,9 @@ function sideFace(world, k, d, withPortal) {
   if (!withPortal) return f;
   let pos;
   do pos = 3 + Math.floor(R() * 10); while (f.river && Math.abs(pos - f.river.pos - (f.river.w - 1) / 2) < 3.5);
+  // the portal's layer: any layer both cubes have, mostly the highest one (sky routes)
   const maxL = Math.min(world.wfc.tiles.get(k).K, world.wfc.tiles.get(step(k, d)).K) - 1;
-  const layer = maxL > 0 && R() > 0.55 ? 1 + Math.floor(R() * maxL) : 0;
+  const layer = maxL > 0 && R() < 0.5 ? maxL : Math.floor(R() * (maxL + 1));
   let level = LAYER_BASE[layer];
   if (!layer) {   // a flat pad of three cells at the highest ground level around it
     level = Math.max(f.profile[pos - 1], f.profile[pos], f.profile[pos + 1]);
@@ -59,26 +60,14 @@ function verticalFace(world, k, d, withPortal) {
   return { vertical: true, portal: withPortal ? { x: 4 + Math.floor(R() * 8), z: 4 + Math.floor(R() * 8) } : null };
 }
 
+// faces follow the depth's layout (layout.js): side portals where it links two cubes, the
+// well down / the ring up at the ends of its spine
 export function decideFaces(world, k) {
-  const R = world.wfc.rng(k, 0xface), Y = parse(k)[1];
-  let portals = 0;
-  const todo = [];
+  const L = world.layout(-parse(k)[1]);
   for (let d = 0; d < 6; d++) {
-    const f = world.faces.get(faceKey(k, d));
-    if (f) portals += f.portal ? 1 : 0; else todo.push(d);
-  }
-  const want = k === world.start ? 2 + Math.floor(R() * 2) : 2 + Math.floor(R() * 3);
-  // vertical faces first (rarer), then the sides in random order until there are enough portals
-  for (const d of todo.filter(d => d >= 4)) {
-    const ny = Y + (d === 5 ? 1 : -1), open = ny <= 0 && ny >= MIN_Y && R() < (d === 4 ? 0.35 : 0.2);
-    world.faces.set(faceKey(k, d), verticalFace(world, k, d, open));
-    if (open) portals++;
-  }
-  const sides = todo.filter(d => d < 4);
-  for (let i = sides.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [sides[i], sides[j]] = [sides[j], sides[i]]; }
-  for (const d of sides) {
-    const open = portals < want;
-    world.faces.set(faceKey(k, d), sideFace(world, k, d, open));
-    if (open) portals++;
+    const fk = faceKey(k, d);
+    if (world.faces.has(fk)) continue;
+    if (d < 4) world.faces.set(fk, sideFace(world, k, d, L.portals.has(fk)));
+    else world.faces.set(fk, verticalFace(world, k, d, d === 4 ? L.down === k : L.up === k));
   }
 }

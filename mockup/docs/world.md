@@ -1,7 +1,7 @@
 # World of cubes (spike)
 
 The world is an unbounded grid of cubes `(X, Y, Z)`. `Y = 0` is the surface and deeper
-strata go down to `MIN_Y = -3`. Cubes come into existence lazily, the first time you get
+strata go down to depth 20 (`MIN_Y = -20`). Cubes come into existence lazily, the first time you get
 near them, and stay around after that.
 
 ## Layers
@@ -51,8 +51,26 @@ the cube on its low side. Its layout comes from the face's own random stream.
 **Vertical faces** carry a down/up portal: a well in the upper cube, a ring on the top layer
 of the lower cube.
 
-Each cube aims for 2–4 portals; the start cube has 2–3 plus a spawn pad and no entrance.
-Faces already decided by a neighbor count towards that target.
+Which faces carry portals is decided by the depth's layout (see below), not per cube.
+
+## Layout: the spiral down (`world/layout.js`)
+
+Which cubes exist and how they connect depends only on the world seed:
+
+- **Depth 0:** the town (0,0,0, the spawn) and a short road out to the first well.
+- **Depths 1–19:** an arc of a two-cube-wide ring around the vertical axis under the town.
+  You come up through the ring at one end; the well down is 150–240° further around. The
+  next depth's arc starts right below that well.
+- **Ring size:** the radius shrinks with depth (3 → 2 → 1), so the way down spirals
+  inwards. That is about 35 / 25 / 15 cubes per depth, with a spine of about 14 / 10 / 5
+  cubes from the ring to the well.
+- **Depth 20:** the core, the 3×3 cubes around the axis.
+- **Spine:** a spine of portals always connects the up ring to the well. Every other cube of
+  the arc hangs off a neighbour closer to the spine, and about 12% extra portals make loops.
+
+Layer counts are part of the WFC state. A collapsing cube's count is drawn towards its
+neighbours' counts, so tall regions form. A face's portal sits on any layer both cubes
+have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 
 ## Generator changes
 

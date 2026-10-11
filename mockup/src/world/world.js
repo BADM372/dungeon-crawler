@@ -7,6 +7,7 @@ import { WFC } from './wfc.js';
 import { key, parse, step, faceKey, hashKey, MIN_Y } from './coords.js';
 import { decideFaces, LAYER_BASE } from './faces.js';
 import { themeAt } from './depth.js';
+import { makeLayouts } from './layout.js';
 
 export class World {
   constructor(seed) {
@@ -16,6 +17,7 @@ export class World {
     this.faces = new Map();
     this.cubes = new Map();
     this.start = key(0, 0, 0);
+    this.layout = makeLayouts(seed);   // depth -> which cubes exist and how they connect
   }
 
   prepare(k) {

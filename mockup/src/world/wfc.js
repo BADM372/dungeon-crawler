@@ -36,7 +36,8 @@ export class WFC {
       const R = this.rng(best), w = weightAt(best), sum = bestDom.reduce((s, t) => s + w(t), 0);
       let r = R() * sum, tile = bestDom[bestDom.length - 1];
       for (const t of bestDom) if ((r -= w(t)) < 0) { tile = t; break; }
-      this.tiles.set(best, { ...tile, K: layersOf(tile.kind, R()) });
+      const near = [0, 1, 2, 3].map(d => this.tiles.get(step(best, d))?.K).filter(Boolean);
+      this.tiles.set(best, { ...tile, K: layersOf(tile.kind, R(), near) });
       todo.delete(best);
     }
   }

@@ -5,7 +5,7 @@
 // the mixed tiles (slope, gorge) appear where regions meet.
 const SOCKETS = ['L', 'H', 'W'];
 const W = { meadow: 6, highland: 5, slope: 0.35, river: 0.6, lake: 0.12, gorge: 0.03 };
-const LAYERS = { meadow: [1, 2], highland: [2, 4], slope: [2, 3], river: [1, 3], lake: [2, 3], gorge: [2, 3] };
+const LAYERS = { meadow: [1, 3], highland: [2, 4], slope: [2, 4], river: [1, 3], lake: [2, 3], gorge: [2, 4] };
 export const KIND_COLOR = { meadow: '#6fae4f', highland: '#a08052', slope: '#8f9a4c', river: '#3f8fd8', lake: '#2fb6c4', gorge: '#7a5a8c' };
 
 function kindsFor(s) {
@@ -23,8 +23,12 @@ for (let i = 0; i < 81; i++) {
   for (const kind of kindsFor(sock)) TILES.push({ id: TILES.length, kind, sock, weight: W[kind] });
 }
 
-// layer count of a collapsed cube (r in [0,1) from the cube's hash)
-export function layersOf(kind, r) {
-  const [a, b] = LAYERS[kind];
-  return a + Math.floor(r * (b - a + 1));
+// layer count of a collapsing cube: within its kind's range, drawn towards the counts of its
+// collapsed neighbours so tall (many-layered) regions form, where portals can link up high
+export function layersOf(kind, r, near) {
+  const [a, b] = LAYERS[kind], w = [];
+  for (let K = a; K <= b; K++) w.push(1 + 2.5 * near.filter(n => n === K).length);
+  let x = r * w.reduce((s, v) => s + v, 0);
+  for (let i = 0; i < w.length; i++) if ((x -= w[i]) < 0) return a + i;
+  return b;
 }

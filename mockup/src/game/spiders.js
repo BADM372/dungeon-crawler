@@ -37,6 +37,7 @@ function steer(s, tx, tz, speed, dt) {
 
 // along s.path; returns true at the end
 function follow(s, speed, dt, end) {
+  if (!s.path) return true;
   const i = s.path.indexOf(s.f);
   if (i > 0) s.path = s.path.slice(i);
   const next = s.path[1];
@@ -51,8 +52,9 @@ function decide(s) {
   if (s.mode !== 'chase' && s.mode !== 'attack') {
     if (!alive || !target || dist > AGGRO || Math.abs(p.y - s.y) > 1) return;
     if (!clearLine(s.x, s.y + 0.3, s.z, p.x, p.y + 0.6, p.z)) return;
-    s.path = findPath(s.f, target, 8);
-    if (s.path) { s.mode = 'chase'; s.lost = 0; }
+    // only switch paths once there is a way to the player (a wandering spider keeps its own)
+    const path = findPath(s.f, target, 8);
+    if (path) { s.path = path; s.mode = 'chase'; s.lost = 0; }
     return;
   }
   if (s.mode === 'attack') return;
