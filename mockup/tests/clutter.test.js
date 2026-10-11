@@ -80,7 +80,7 @@ test('cover dresses routes/slopes without blockers; focal sites remain free of a
   assert.ok(cover > 0);
 });
 
-test('cliff-lip and hanging props have vertical clearance and point out of the cliff', () => {
+test('cliff-lip props have vertical clearance and nothing hangs from slab undersides', () => {
   let lips = 0, ceilings = 0;
   for (let seed = 0; seed < 30; seed++) {
     const m = terrain(seed);
@@ -98,10 +98,8 @@ test('cliff-lip and hanging props have vertical clearance and point out of the c
         assert.ok(q.y - p.drop * q.s > 4.2);
         assert.ok(Math.abs(q.yaw - (q.x === 8 ? -Math.PI / 2 : Math.PI / 2)) < 1e-8);
       }
-      if (p.attach === 'ceiling') {
-        ceilings++; assert.equal(q.y, 9); assert.ok(q.y + p.minY * q.s >= 4.95);
-      }
+      if (p.attach === 'ceiling') ceilings++;
     }
   }
-  assert.ok(lips > 0); assert.ok(ceilings > 0);
+  assert.ok(lips > 0); assert.equal(ceilings, 0);
 });

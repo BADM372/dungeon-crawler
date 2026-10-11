@@ -285,7 +285,7 @@ are built, seeded by the cube.
   above.
 - **Blocking props** (trees, boulders, columns): never in or next to route columns or near
   portals. They get round colliders (`map.blockers`) that the player and the spiders respect.
-- **Ceiling props:** hang under floating slabs.
+- **Ceiling props:** not placed; slab undersides are never visible from the camera.
 - **Wall props:** fit within exposed cliff faces.
 - **Cover:** a separate dense, non-blocking pass on dry terrain, including routes and
   slopes; tilted to the floor normal. Glowing cover is emissive only.

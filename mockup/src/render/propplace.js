@@ -1,6 +1,6 @@
 // Deterministic ambient placement, independent of the terrain RNG. Destination arrangements
 // are emitted by the worker; ambient blockers stay away from routes and reservations.
-import { N, LH, BASE, CHAR_H, DIRS, EDGE_CORNERS, FLUID_NAME } from '../core/constants.js';
+import { N, LH, BASE, DIRS, EDGE_CORNERS, FLUID_NAME } from '../core/constants.js';
 import { mulberry32, hash32, idx, inb } from '../core/util.js';
 import { floorY } from '../core/surfaces.js';
 import { props, signatureProp } from '../core/propcatalog.js';
@@ -39,7 +39,7 @@ export function placeProps(m, theme) {
     && m.cols[idx(f.x + dx, f.z + dz)].some(g => g.fluid && Math.abs(g.surf - f.top) <= 3));
 
   for (const f of m.floors) {
-    const col = m.cols[f.c], above = col[col.indexOf(f) + 1], below = col[col.indexOf(f) - 1];
+    const col = m.cols[f.c], above = col[col.indexOf(f) + 1];
     const pieces = m.pieces[f.c], top = Math.max(...f.cs), ceiling = above ? above.bottom * LH : Infinity;
     const slope = top - Math.min(...f.cs), s = 0.85 + R() * 0.3;
     const dry = !f.fluid && !f.covered && !pieces.length;
@@ -77,12 +77,8 @@ export function placeProps(m, theme) {
         add(p, f.x + 0.5, f.surf * LH, f.z + 0.5, R() * Math.PI * 2, s);
     }
 
-    if (!focal && f.layer > 0 && !f.merged && !pieces.length && R() < 0.25) {
-      const p = pick('ceiling', p => !p.blocking), origin = f.bottom * LH;
-      const low = below ? (below.fluid ? below.surf * LH : Math.max(...below.cs)) + CHAR_H : -BASE;
-      if (p && fits(p, origin, s, low + 0.1, Infinity))
-        add(p, f.x + 0.5, origin, f.z + 0.5, R() * Math.PI * 2, s);
-    }
+    // No ceiling props: undersides of slabs are never visible from the camera.
+    // Hanging decoration is limited to lip props draped over visible ledges.
 
     if (f.fluid || focal || nearPortal(f)) continue;
     for (let d = 0; d < 4; d++) {
