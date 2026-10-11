@@ -2,15 +2,14 @@
 import * as THREE from 'three';
 import { N, LH, LAVA, ACID, DIRS } from '../core/constants.js';
 import { fallTex } from './materials.js';
-import { clipping } from './section.js';
+import { cutMaterial } from './section.js';
 
 function fallMaterial(type) {
-  return new THREE.MeshStandardMaterial({
+  return cutMaterial(new THREE.MeshStandardMaterial({
     map: fallTex[type], transparent: true, opacity: type === LAVA ? 1 : 0.85, depthWrite: false, roughness: 0.3,
     emissive: type === LAVA ? 0xff4a00 : type === ACID ? 0x2a7a10 : 0x0a2a4a,
     emissiveMap: type === LAVA ? fallTex[LAVA] : null, emissiveIntensity: type === LAVA ? 1.3 : 1,
-    clippingPlanes: clipping,
-  });
+  }));
 }
 
 // a sheet pouring over the slab edge, plus a splash ring where it lands
@@ -31,7 +30,7 @@ export function buildFalls(m, group) {
 
     const foam = f.type === LAVA ? 0xffc06a : f.type === ACID ? 0xd8ff9a : 0xeaf6ff;
     const splash = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, 0.05, 14),
-      new THREE.MeshBasicMaterial({ color: foam, transparent: true, opacity: 0.55, depthWrite: false, clippingPlanes: clipping }));
+      cutMaterial(new THREE.MeshBasicMaterial({ color: foam, transparent: true, opacity: 0.55, depthWrite: false })));
     splash.position.set(ex + dx * 0.3, yBot + 0.06, ez + dz * 0.3);
     splash.renderOrder = 10 * f.layer + 4;
     group.add(splash); splashes.push(splash);

@@ -1,0 +1,69 @@
+// Animation state machine and blend trees: which clips play with what weight and at what
+// time. On land: idle -> walk -> run by speed; in water: treading water -> paddling by speed;
+// jump / fall / land / sit are cross-faded one-shots.
+import { WALK_SPEED, RUN_SPEED, WALK_ANIM, RUN_ANIM, SWIM_SPEED, SIT_IMPACT } from '../core/constants.js';
+import { clamp } from '../core/util.js';
+import { player } from '../game/state.js';
+import { character } from './character.js';
+
+export const W = { idle: 1, walk: 0, run: 0, swimIdle: 0, swim: 0, jump: 0, fall: 0, land: 0, sit: 0 };
+const RATE = { loco: 10, swim: 6, jump: 18, fall: 7, land: 20, sit: 14 };   // cross-fade speeds
+const seen = { jump: 0, land: 0 };
+let mode = 'loco', modeT = 0, phase = 0, swimPhase = 0, slow = 0;
+export const blend = { stretch: 1 };   // stride stretch for the walk / run cycle
+
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+export const resetMode = () => { mode = 'loco'; };
+
+function nextMode(dt, speed) {
+  const p = player;
+  modeT += dt;
+  if (p.jumpCount !== seen.jump) { seen.jump = p.jumpCount; mode = 'jump'; modeT = 0; }
+  if (p.landCount !== seen.land) {
+    seen.land = p.landCount;
+    if (p.landImpact > SIT_IMPACT) { mode = 'sit'; modeT = 0; }
+    else if (mode !== 'loco' || p.landImpact > 5) { mode = 'land'; modeT = 0; }
+  }
+  if (mode === 'loco' && !p.grounded && !p.swimming && p.airTime > 0.15) { mode = 'fall'; modeT = 0; }
+  if (mode === 'jump' && p.vy < -0.5) { mode = 'fall'; modeT = 0; }
+  if ((mode === 'fall' || mode === 'jump') && p.grounded && !p.swimming && modeT > 0.05) { mode = 'land'; modeT = 0; }
+  if (mode === 'land' && (modeT > 0.5 || (speed > 0.4 && modeT > 0.12))) mode = 'loco';
+  if (mode === 'sit' && modeT > character.actions.sit.getClip().duration + 0.2 && p.stun <= 0) { mode = 'loco'; slow = 0.8; }
+  // splashing into water (or still in it) -> swim; climbing out onto a bank -> walk
+  if (p.swimming && !(mode === 'jump' && modeT < 0.3)) mode = 'swim';
+  else if (mode === 'swim' && !p.swimming) mode = p.grounded ? 'loco' : 'fall';
+}
+
+export function updateBlend(dt, speed, time) {
+  const A = character.actions, T = {};
+  for (const n in W) T[n] = 0;
+  nextMode(dt, speed);
+  if (mode === 'loco') {
+    // idle -> walk -> run by speed with one shared phase; the cycle plays at the pace of
+    // WALK_ANIM / RUN_ANIM and longer strides make up the rest of the distance
+    const loco = smooth(0.05, 0.35, speed), t = clamp((speed - WALK_SPEED) / (RUN_SPEED - WALK_SPEED), 0, 1);
+    T.idle = 1 - loco; T.walk = loco * (1 - t); T.run = loco * t;
+    const move = WALK_SPEED + (RUN_SPEED - WALK_SPEED) * t, anim = WALK_ANIM + (RUN_ANIM - WALK_ANIM) * t;
+    const stride = character.walkStride + (character.runStride - character.walkStride) * t;
+    phase = (phase + dt * speed * (anim / move) / stride) % 1;
+    blend.stretch = move / anim;
+  } else if (mode === 'swim') {
+    // treading water -> doggy paddle; the paddle cycle follows the swimming speed
+    const s = smooth(0.08, 0.5, speed / SWIM_SPEED);
+    T.swimIdle = 1 - s; T.swim = s;
+    swimPhase = (swimPhase + dt * Math.max(speed, 0.25) / character.swimStride) % 1;
+  } else T[mode] = 1;
+  slow -= dt;
+  const k = Math.min(1, dt * (slow > 0 ? 2.5 : RATE[mode]));   // standing up from sitting is slow
+  for (const n in W) { W[n] += (T[n] - W[n]) * k; A[n].setEffectiveWeight(W[n]); }
+
+  const dur = n => A[n].getClip().duration;
+  A.walk.time = phase * dur('walk');
+  A.run.time = phase * dur('run');
+  A.swim.time = swimPhase * dur('swim');
+  A.swimIdle.time = time % dur('swimIdle');
+  if (mode === 'jump') A.jump.time = Math.min(modeT * 1.4, dur('jump'));
+  A.fall.time = dur('fall') * (0.5 + 0.5 * Math.sin(time * 3));
+  if (mode === 'land') A.land.time = Math.min(modeT, dur('land'));
+  if (mode === 'sit') A.sit.time = Math.min(modeT, dur('sit'));
+}

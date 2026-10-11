@@ -1,7 +1,6 @@
-// Where the section cut sits, driven by occlusion: rays from the character towards the camera
-// find the lowest solid in the way, and the cut drops just below it (snapped to a clean slab
-// underside or a terrain level). Points around / ahead of the character make it kick in a
-// little before the character is actually hidden. Revealing is quick; restoring waits.
+// How deep the cutaway goes, driven by occlusion: rays from the character to the camera find
+// the lowest solid in the way and the cut drops just below it (a slab underside or a terrain
+// level). Revealing is quick; restoring waits until the character has been visible a while.
 import { N, LH } from '../core/constants.js';
 import { camera } from '../render/scene.js';
 import { setCut } from '../render/section.js';
@@ -46,6 +45,8 @@ function blockedAt(x, y, z, top) {
 
 function target(m) {
   const info = mapInfo(m), p = player, y = p.visY;
+  // never below our feet, and never below the surface of the water we swim in
+  const floor = p.swimming ? y + 0.6 : y + 0.3;
   if (p.ragdoll && cut !== Infinity) return cut;
   // the character itself (chest and head) ...
   let need = Math.min(blockedAt(p.x, y + 0.6, p.z, info.top), blockedAt(p.x, y + 0.95, p.z, info.top));
@@ -58,12 +59,12 @@ function target(m) {
   if (need === Infinity) return info.top;
   // prefer cutting just under a slab; otherwise snap down to the level grid
   let best = -Infinity;
-  for (const b of info.bases) if (b <= need && b >= y + 0.3) best = Math.max(best, b);
+  for (const b of info.bases) if (b <= need && b >= floor) best = Math.max(best, b);
   if (best === -Infinity) {
     // something on our own layer (hill, pillar, cliff): cut it at a terrain level, unless that
     // would slice a slab (e.g. climbing the stairs into a layer); then keep it and rely on the
     // silhouette
-    const g = Math.max(y + 0.3, Math.floor(need / LH) * LH - 0.02);
+    const g = Math.max(floor, Math.floor(need / LH) * LH - 0.02);
     best = info.bands.some(([lo, hi]) => g > lo + 0.01 && g < hi) ? info.top : g;
   }
   return Math.min(best, info.top);
@@ -72,7 +73,7 @@ function target(m) {
 // is height c inside a slab (cutting there would slice it)?
 const inSlab = (m, c) => mapInfo(m).bands.some(([lo, hi]) => c > lo + 0.01 && c < hi);
 
-function apply(m, settled = true) { setCut(cut >= mapInfo(m).top - 0.01 ? Infinity : cut, m, settled && !inSlab(m, cut)); }
+function apply(m) { setCut(cut >= mapInfo(m).top - 0.01 ? Infinity : cut, m, player.x, player.visY + 0.6, player.z); }
 
 export function updateCut(dt) {
   const m = state.map;
@@ -91,7 +92,7 @@ export function updateCut(dt) {
   vel = (vel - omega * tmp) * e;
   cut = t + (change + tmp) * e;
   if (Math.abs(cut - t) < 1e-3 && Math.abs(vel) < 1e-2) { cut = t; vel = 0; }
-  apply(m, Math.abs(cut - t) < 0.02);
+  apply(m);
 }
 
 // jump straight to the right cut (new cube, respawn)

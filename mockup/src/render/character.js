@@ -50,6 +50,7 @@ function setup(gltf) {
   const defs = {
     idle: part(J, 'Idle', 0, 2),          // the neutral standing pose
     walk: clips.Walk, run: clips.Run,
+    swim: clips.Swim, swimIdle: clips.SwimIdle,   // authored for floating chest deep
     jump: part(J, 'JumpUp', 15, 27),      // push-off into the rising pose
     fall: part(J, 'Fall', 26, 31),        // tucked pose around the apex
     land: part(J, 'Land', 37, 58),        // compression + recovery
@@ -72,7 +73,7 @@ function setup(gltf) {
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
     ready: true, group, model, mesh, bones, mixer, actions, standing,
-    walkStride: stride('Walk'), runStride: stride('Run'),
+    walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
   });
 }
 

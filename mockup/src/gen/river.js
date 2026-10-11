@@ -24,8 +24,8 @@ export function carveRiver(ctx) {
     stats.fluids.push(FLUID_NAME[type] + ' river');
   }
 
-  for (let p = hasRiver ? ri(0, 1) : ri(1, 2); p > 0; p--) {
-    const type = pickFluid(0.5, 0.3);
+  for (let p = hasRiver ? ri(1, 2) : ri(2, 3); p > 0; p--) {
+    const type = pickFluid(0.7, 0.18);   // mostly water
     const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
     const cells = [];
     for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
