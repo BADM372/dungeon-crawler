@@ -1,35 +1,37 @@
 // Waterfall sheets with splash rings, and point lights over lava.
 import * as THREE from 'three';
 import { N, LH, LAVA, ACID, DIRS } from '../core/constants.js';
-import { fadeMaterial, fallTex } from './materials.js';
+import { fallTex } from './materials.js';
+import { clipping } from './section.js';
 
 function fallMaterial(type) {
   return new THREE.MeshStandardMaterial({
     map: fallTex[type], transparent: true, opacity: type === LAVA ? 1 : 0.85, depthWrite: false, roughness: 0.3,
     emissive: type === LAVA ? 0xff4a00 : type === ACID ? 0x2a7a10 : 0x0a2a4a,
     emissiveMap: type === LAVA ? fallTex[LAVA] : null, emissiveIntensity: type === LAVA ? 1.3 : 1,
+    clippingPlanes: clipping,
   });
 }
 
 // a sheet pouring over the slab edge, plus a splash ring where it lands
-export function buildFalls(m, layers, group) {
+export function buildFalls(m, group) {
   const splashes = [], lights = [];
   for (const f of m.falls) {
-    const L = layers[f.layer], [dx, dz] = DIRS[f.d], bx = f.c % N, bz = (f.c / N) | 0;
+    const [dx, dz] = DIRS[f.d], bx = f.c % N, bz = (f.c / N) | 0;
     const yTop = f.top * LH - 0.04, yBot = f.bot * LH - 0.08, h = yTop - yBot;
     const ex = dx > 0 ? bx : dx < 0 ? bx + 1 : bx + 0.5, ez = dz > 0 ? bz : dz < 0 ? bz + 1 : bz + 0.5;
     const geo = new THREE.BoxGeometry(dx ? 0.22 : 0.84, h, dx ? 0.84 : 0.22);
     const uv = geo.attributes.uv;
     for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * h * 0.7);
     const mat = fallMaterial(f.type);
-    const sheet = new THREE.Mesh(geo, f.layer ? fadeMaterial(mat, L.fadeU) : mat);
+    const sheet = new THREE.Mesh(geo, mat);
     sheet.position.set(ex + dx * 0.12, yBot + h / 2, ez + dz * 0.12);
     sheet.renderOrder = 10 * f.layer + 3;
     group.add(sheet);
 
     const foam = f.type === LAVA ? 0xffc06a : f.type === ACID ? 0xd8ff9a : 0xeaf6ff;
     const splash = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, 0.05, 14),
-      new THREE.MeshBasicMaterial({ color: foam, transparent: true, opacity: 0.55, depthWrite: false }));
+      new THREE.MeshBasicMaterial({ color: foam, transparent: true, opacity: 0.55, depthWrite: false, clippingPlanes: clipping }));
     splash.position.set(ex + dx * 0.3, yBot + 0.06, ez + dz * 0.3);
     splash.renderOrder = 10 * f.layer + 4;
     group.add(splash); splashes.push(splash);

@@ -13,7 +13,7 @@ import { buildMarkers } from './markers.js';
 export function disposeWorld(world) {
   if (!world) return;
   scene.remove(world.group);
-  world.group.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
+  world.group.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.userData.keep || m.dispose()); });
 }
 
 export function buildWorld(m, showPath) {
@@ -23,19 +23,15 @@ export function buildWorld(m, showPath) {
   buildFloors(m, layers);
   buildStructures(m, layers);
   const fluidMeshes = layerMeshes(layers, group);
-  const { splashes, lights } = buildFalls(m, layers, group);
+  const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
   const markers = buildMarkers(m, group, showPath);
   scene.add(group);
   return { group, layers, fluidMeshes, splashes, lights, ...markers };
 }
 
-// per-frame animation; layers above `playerLayer` fade out
-export function animateWorld(world, dt, time, playerLayer) {
-  world.layers.forEach((L, k) => {
-    const target = k > playerLayer ? 1 : 0;
-    L.fadeU.value += (target - L.fadeU.value) * Math.min(1, dt * 5);
-  });
+// per-frame animation of fluids, waterfalls, lights and the portal
+export function animateWorld(world, dt, time) {
   for (const m of world.fluidMeshes) {
     const t = m.userData.fluid;
     if (t === WATER) m.position.y = Math.sin(time * 1.6) * 0.025;

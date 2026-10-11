@@ -66,7 +66,7 @@ export function buildFloors(m, layers) {
     });
     walls(m, f, L.terrain);
     const fb = f.bottom * LH;
-    if (f.bottom > 0) L.terrain.quad([x, fb, z], [x + 1, fb, z], [x + 1, fb, z + 1], [x, fb, z + 1], [0, -1, 0], UNDERSIDE);
+    L.terrain.quad([x, fb, z], [x + 1, fb, z], [x + 1, fb, z + 1], [x, fb, z + 1], [0, -1, 0], UNDERSIDE);
     if (f.fluid) fluidVolume(m, f, L.fluids[f.fluid]);
   }
 }

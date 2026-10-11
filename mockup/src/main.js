@@ -2,7 +2,6 @@
 import * as THREE from 'three';
 import { renderer, scene, camera } from './render/scene.js';
 import { animateWorld } from './render/world.js';
-import { playerU } from './render/materials.js';
 import { animateCharacter } from './render/animator.js';
 import { generate } from './gen/index.js';
 import { groundAt } from './physics/collide.js';
@@ -10,6 +9,7 @@ import { player, state, setStatus } from './game/state.js';
 import { loadCube } from './game/flow.js';
 import { updatePlayer } from './game/update.js';
 import { updateCamera } from './game/camera.js';
+import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
 
 const clock = new THREE.Clock();
@@ -22,11 +22,11 @@ function frame() {
   // smooth out small vertical snaps (steps), but not falls
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
-  playerU.value.set(player.x, player.visY, player.z);
   animateCharacter(dt, state.time);
-  if (state.world) animateWorld(state.world, dt, state.time, player.layer);
+  if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
   updateCamera(dt);
+  updateCut(dt);   // after the camera: the cut depends on what the camera can see
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

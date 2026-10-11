@@ -5,6 +5,7 @@ import { buildWorld, disposeWorld } from '../render/world.js';
 import { groundAt } from '../physics/collide.js';
 import { player, state, setStatus } from './state.js';
 import { showStats, flash, fadeOut, fadeIn } from './hud.js';
+import { resetCut } from './cut.js';
 
 const seedFor = d => d === 1 ? state.baseSeed : hash32(state.baseSeed + d * 2654435761) % 1000000000;
 
@@ -14,6 +15,7 @@ export function spawnAt(x, y, z) {
   const gr = groundAt(x, z, y + 0.05, 0);
   player.support = gr.s;
   if (gr.s) player.layer = gr.s.kind ? gr.s.run.layer : gr.s.layer;
+  resetCut();
 }
 
 export function spawnEntry() {
