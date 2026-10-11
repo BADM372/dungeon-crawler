@@ -51,12 +51,13 @@ function dying(v, s, dt) {
   v.group.visible = fade > 0;
 }
 
-export function animateSpiders(list, dt) {
+// off: where the cube is drawn (it slides during portal travel)
+export function animateSpiders(list, dt, off = { x: 0, y: 0, z: 0 }) {
   if (!spiderModel.ready) return;
   for (const s of list) {
     const v = s.view || (s.view = makeView(s));
     v.yaw = angleTo(v.yaw, s.yaw, Math.min(1, dt * 14));
-    v.group.position.set(s.x, s.y, s.z);
+    v.group.position.set(s.x + off.x, s.y + off.y, s.z + off.z);
     v.group.rotation.y = v.yaw;
     if (s.mode === 'dead') { dying(v, s, dt); continue; }
     // the walk cycle plays at the pace of the actual ground speed

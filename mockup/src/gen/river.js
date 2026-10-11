@@ -1,34 +1,45 @@
-// Layer 0 fluids: a river canyon across the cube plus a few pools.
+// Layer 0 fluids: rivers that enter through the cube faces (their crossings are shared with the
+// neighbours) and meet at a junction, a lake for lake cubes, plus a few pools.
 import { N, DIRS, FLUID_NAME } from '../core/constants.js';
-import { idx, inb, clamp } from '../core/util.js';
+import { idx, inb } from '../core/util.js';
+import { edgeCell } from './portals.js';
+
+export const RIVER_SURF = 2;   // all rivers in the world flow at this level
 
 export function carveRiver(ctx) {
-  const { R, ri, pickFluid, lvl0, prot0, stats } = ctx;
+  const { R, ri, pickFluid, lvl0, prot0, stats, spec } = ctx;
   const fluid0 = new Uint8Array(N * N), surf0 = new Int16Array(N * N);
   // surface one level below the lowest bank, bed two below the surface
   const fill = (cells, type, S) => { for (const i of cells) { fluid0[i] = type; surf0[i] = S; lvl0[i] = Math.max(0, S - 2); } };
 
-  const hasRiver = R() < 0.7;
-  if (hasRiver) {
-    const type = pickFluid(0.6, 0.25);
-    let x = ri(5, N - 6); const w = R() < 0.5 ? 1 : 2;
-    const cells = new Set();
-    for (let z = 0; z < N; z++) {
-      for (let k = 0; k < w; k++) cells.add(idx(x + k, z));
-      const r = R(), nx = clamp(x + (r < 0.3 ? -1 : r > 0.7 ? 1 : 0), 4, N - 6);
-      if (nx !== x) { for (let k = 0; k < w; k++) cells.add(idx(nx + k, z)); x = nx; }
+  const ends = spec.faces.map((f, d) => f.river && { d, ...f.river }).filter(Boolean), lake = spec.kind === 'lake';
+  if (ends.length || lake) {
+    const jx = ri(6, 9), jz = ri(6, 9), cells = new Set();
+    for (const e of ends) {
+      const c0 = edgeCell(e.d, e.pos, 0), lat = e.d < 2 ? [0, 1] : [1, 0];
+      let x = c0 % N, z = (c0 / N) | 0;
+      const mark = () => { for (let k = 0; k < e.w; k++) if (inb(x + lat[0] * k, z + lat[1] * k)) cells.add(idx(x + lat[0] * k, z + lat[1] * k)); };
+      mark();
+      for (let s = 0; s < 2; s++) { x -= DIRS[e.d][0]; z -= DIRS[e.d][1]; mark(); }   // straight in from the face
+      for (let guard = 0; (x !== jx || z !== jz) && guard < 60; guard++) {
+        const dx = jx - x, dz = jz - z, alongX = R() < (Math.abs(dx) > Math.abs(dz) ? 0.75 : 0.25);
+        if ((alongX && dx) || !dz) x += Math.sign(dx); else z += Math.sign(dz);
+        mark();
+      }
     }
-    const list = [...cells].filter(i => !prot0[i]);
-    let S = Infinity; for (const i of list) S = Math.min(S, lvl0[i]);
-    fill(list, type, Math.max(2, S - 1));
-    stats.fluids.push(FLUID_NAME[type] + ' river');
+    if (lake || ends.length === 1) {   // a lake, or a pool where a lone river ends
+      const rad = lake ? 2.6 + R() * 1.6 : 1.3 + R() * 0.7;
+      for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) if (Math.hypot(x - jx, z - jz) < rad) cells.add(idx(x, z));
+    }
+    fill([...cells].filter(i => !prot0[i]), spec.fluid, RIVER_SURF);
+    stats.fluids.push(FLUID_NAME[spec.fluid] + (lake ? ' lake' : ' river'));
   }
 
-  for (let p = hasRiver ? ri(1, 2) : ri(2, 3); p > 0; p--) {
+  for (let p = ri(0, 2); p > 0; p--) {
     const type = pickFluid(0.7, 0.18);   // mostly water
     const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
     const cells = [];
-    for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) {
       const i = idx(x, z);
       if (!prot0[i] && !fluid0[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
     }

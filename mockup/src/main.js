@@ -11,24 +11,26 @@ import { updatePlayer } from './game/update.js';
 import { updateCamera } from './game/camera.js';
 import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
-import { updateSpiders, drawSpiders, spiders } from './game/spiders.js';
+import { updateSpiders, spiders } from './game/spiders.js';
+import { travelling, updateTravel, drawTravelSpiders } from './game/travel.js';
 
 const clock = new THREE.Clock();
 
 function frame() {
   const dt = Math.min(clock.getDelta(), 1 / 30);
   state.time += dt;
-  if (state.map && !state.transitioning) { updatePlayer(dt); updateSpiders(dt); }
+  if (travelling()) updateTravel(dt);
+  else if (state.map && !state.transitioning) { updatePlayer(dt); updateSpiders(dt); }
 
   // smooth out small vertical snaps (steps), but not falls
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
-  drawSpiders(dt);
+  drawTravelSpiders(dt);
   if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
   updateCamera(dt);
-  updateCut(dt);   // after the camera: the cut depends on what the camera can see
+  if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -38,6 +40,6 @@ setStatus('Find the golden portal on the far side of the cube');
 // debug / test hooks
 window.__game = {
   get map() { return state.map; }, player, generate, loadCube, updatePlayer, groundAt,
-  get transitioning() { return state.transitioning; }, get spiders() { return spiders; }, updateSpiders,
+  get transitioning() { return state.transitioning; }, get spiders() { return spiders; }, updateSpiders, state,
 };
 frame();

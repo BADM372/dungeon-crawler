@@ -1,33 +1,46 @@
-// Entry (x=0 face) and exit (x=N face): on different layers, or both on one upper
-// layer that gets split in two so the route has to detour through another layer.
-import { N, MAX_L } from '../core/constants.js';
-import { idx, inb, clamp } from '../core/util.js';
+// Portal pads. Side portals sit on a face (3 cells wide; 2 deep on the ground, 3 deep on an
+// upper layer), down portals are wells in the ground, up portals rings on the top layer, and
+// the first cube gets a spawn pad. Ground pads are flattened and protected (prot = portal id).
+import { N } from '../core/constants.js';
+import { idx, clamp } from '../core/util.js';
+
+// cell j steps in from face d at position t along it
+export const edgeCell = (d, t, j) => d === 0 ? idx(N - 1 - j, t) : d === 1 ? idx(j, t) : d === 2 ? idx(t, N - 1 - j) : idx(t, j);
+const square = (x, z) => { const out = []; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) out.push(idx(x + dx, z + dz)); return out; };
+const KIND = ['side', 'side', 'side', 'side', 'down', 'up'];
 
 export function placePortals(ctx) {
-  const { R, ri, K, B, lvl0, flat, stats } = ctx;
-  let mode, le, lx;
-  if (K === 1) { mode = 'single'; le = lx = 0; }
-  else if (R() < 0.7) { mode = 'cross'; le = ri(0, K - 1); do lx = ri(0, K - 1); while (lx === le); }
-  else { mode = 'split'; le = lx = ri(1, K - 1); }
-  stats.mode = mode;
+  const { R, ri, spec, lvl0, K, B } = ctx;
+  const prot0 = new Uint8Array(N * N), portals = [];
+  const add = p => { p.id = portals.length + 1; portals.push(p); if (!p.layer) for (const c of p.cells) { lvl0[c] = p.level; prot0[c] = p.id; } };
+  const groundLevel = cells => clamp(Math.max(...cells.map(c => lvl0[c])), 3, 14);
+  // a free 3x3 spot (with a cell of margin) as close as possible to (x, z)
+  const taken = () => new Set(portals.flatMap(p => p.cells));
+  const near = (x, z) => {
+    const t = taken();
+    for (let r = 0; r < N; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
+      const cx = clamp(x + dx, 4, N - 5), cz = clamp(z + dz, 4, N - 5);
+      let free = true;
+      for (let a = -2; a <= 2 && free; a++) for (let b = -2; b <= 2; b++) if (t.has(idx(cx + b, cz + a))) { free = false; break; }
+      if (free) return [cx, cz];
+    }
+    return [x, z];
+  };
 
-  const ez = ri(2, N - 3), xz = ri(2, N - 3);
-  const entryCells = [], exitCells = [];
-  for (let x = 0; x <= 1; x++) for (let z = ez - 1; z <= ez + 1; z++) entryCells.push(idx(x, z));
-  for (let x = N - 2; x < N; x++) for (let z = xz - 1; z <= xz + 1; z++) exitCells.push(idx(x, z));
-
-  // pads on layer 0 are flattened into the ground and protected (prot 1 = entry, 2 = exit)
-  const prot0 = new Uint8Array(N * N);
-  let entryL = B[le], exitL = B[lx];
-  if (le === 0) {
-    entryL = clamp(lvl0[idx(1, ez)], 2, flat ? 5 : 16);
-    for (const c of entryCells) { lvl0[c] = entryL; prot0[c] = 1; }
+  for (const sp of spec.portals) {
+    if (sp.dir < 4) {
+      const cells = [];
+      for (let t = sp.pos - 1; t <= sp.pos + 1; t++) for (let j = 0; j < (sp.layer ? 3 : 2); j++) cells.push(edgeCell(sp.dir, t, j));
+      add({ kind: 'side', dir: sp.dir, pos: sp.pos, layer: sp.layer, level: sp.level, cells, c: edgeCell(sp.dir, sp.pos, 0) });
+    } else {
+      const [x, z] = near(sp.x, sp.z), cells = square(x, z), layer = sp.dir === 5 ? K - 1 : 0;
+      add({ kind: KIND[sp.dir], dir: sp.dir, layer, level: layer ? B[layer] : groundLevel(cells), cells, c: idx(x, z) });
+    }
   }
-  if (lx === 0) {
-    let around = 0;
-    for (let x = N - 4; x < N; x++) for (let z = xz - 2; z <= xz + 2; z++) if (inb(x, z)) around = Math.max(around, lvl0[idx(x, z)]);
-    exitL = clamp(around + ri(0, 2), 3, flat ? 5 : MAX_L);
-    for (const c of exitCells) { lvl0[c] = exitL; prot0[c] = 2; }
+  if (spec.spawn) {
+    const [x, z] = near(ri(5, N - 6), ri(5, N - 6)), cells = square(x, z);
+    add({ kind: 'spawn', dir: -1, layer: 0, level: groundLevel(cells), cells, c: idx(x, z) });
   }
-  Object.assign(ctx, { mode, le, lx, ez, xz, entryCells, exitCells, prot0, entryL, exitL });
+  ctx.portals = portals; ctx.prot0 = prot0;
+  ctx.stats.mode = spec.kind; void R;
 }

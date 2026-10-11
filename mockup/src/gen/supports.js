@@ -28,7 +28,7 @@ export function addRamps(ctx) {
         if (!inb(x, z)) continue;
         let g = null;
         for (const f of cols[idx(x, z)]) if (f.top < e.top - 1) g = f;
-        if (!g || g.fluid || g.prot || g.top >= target) continue;
+        if (!g || g.fluid || g.prot || g.top >= target || ctx.border(g)) continue;
         const a = nextAbove(g);
         if (a && a.bottom < target + HEAD) continue;
         g.top = target; g.ramp = true; any = true; made++;
@@ -39,9 +39,10 @@ export function addRamps(ctx) {
   }
 }
 
-// every floating slab rests on at least one pillar; tiny crumbs are dropped
+// every floating slab rests on at least one pillar (unless the cube has floating islands);
+// tiny crumbs are dropped
 export function addSupports(ctx) {
-  const { ri, K, layerFloor, removeFloor, nextBelow, stats } = ctx;
+  const { ri, K, layerFloor, removeFloor, nextBelow, stats } = ctx, floating = ctx.spec.floating;
   for (let k = 1; k < K; k++) {
     const seen = new Set();
     for (let c = 0; c < N * N; c++) {
@@ -58,7 +59,7 @@ export function addSupports(ctx) {
       }
       const prot = comp.some(f => f.prot);
       if (comp.length < 3 && !prot && !comp.some(f => f.merged)) { comp.forEach(removeFloor); continue; }
-      if (comp.some(f => f.merged)) continue;
+      if (comp.some(f => f.merged) || floating) continue;
       const cands = comp.filter(f => { const b = nextBelow(f); return b && !b.fluid && !b.prot && !b.ramp && !f.prot; });
       if (!cands.length) { if (!prot) comp.forEach(removeFloor); continue; }
       for (let n = Math.min(cands.length, comp.length > 12 ? 2 : 1); n > 0; n--) {

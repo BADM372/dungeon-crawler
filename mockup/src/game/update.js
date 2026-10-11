@@ -1,8 +1,8 @@
 // One simulation step for the player.
-import { N, SIT_IMPACT, RAGDOLL_IMPACT } from '../core/constants.js';
+import { SIT_IMPACT, RAGDOLL_IMPACT } from '../core/constants.js';
 import { player, state } from './state.js';
 import { inputDir, wantsRun, takeJump } from './input.js';
-import { nextCube } from './flow.js';
+import { checkPortals } from './portals.js';
 import { knockDown, stepRagdoll } from './ragdoll.js';
 import { movePlayer, updateLayer } from '../physics/move.js';
 import { applyHazards } from '../physics/hazards.js';
@@ -23,5 +23,5 @@ export function updatePlayer(dt) {
   if (gr.landed > SIT_IMPACT) player.stun = 1.5;
 
   if (!applyHazards(dt, gr)) return;
-  if (gr.s === state.map.exit.floor && player.x > N - 0.7) nextCube();
+  checkPortals();
 }

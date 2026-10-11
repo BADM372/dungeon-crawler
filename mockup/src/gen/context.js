@@ -23,6 +23,8 @@ export function createContext(seed) {
     fluid: 0, surf: 0, prot: 0, merged: layer === 0, ramp: false, link: [null, null, null, null],
   });
   ctx.topFloor = c => cols[c][cols[c].length - 1];
+  // the outer ring of cells is shared with the neighbouring cubes and must not change
+  ctx.border = f => !f.x || !f.z || f.x === N - 1 || f.z === N - 1;
   ctx.layerFloor = (c, k) => cols[c].find(f => f.layer === k);
   ctx.removeFloor = f => { const col = cols[f.c]; col.splice(col.indexOf(f), 1); };
   ctx.nextAbove = f => { const col = cols[f.c]; return col[col.indexOf(f) + 1] || null; };

@@ -106,4 +106,6 @@ export function updateSpiders(dt) {
   spiders = spiders.filter(s => s.mode !== 'dead' || s.deadT < 1.5 || (removeSpiderViews([s]), false));
 }
 
-export const drawSpiders = dt => animateSpiders(spiders, dt);
+export const drawSpiders = (dt, off) => animateSpiders(spiders, dt, off);
+// hand the current spiders over (portal travel keeps drawing them until the old cube is gone)
+export function detachSpiders() { const list = spiders; spiders = []; return list; }

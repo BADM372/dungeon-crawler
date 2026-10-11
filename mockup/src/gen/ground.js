@@ -1,44 +1,46 @@
-// Layer count / heights and the rolling ground of layer 0.
+// Layer count / heights and the rolling ground of layer 0. The four face profiles (shared with
+// the neighbouring cubes) pin the edge cells; inwards the ground blends from them into local
+// detail, hills and plateaus.
 import { N, MAX_L } from '../core/constants.js';
 import { idx, clamp } from '../core/util.js';
 
-// 1-4 layers; B[k] is the base level of upper layer k
 export function chooseLayers(ctx) {
-  const { R, ri } = ctx;
-  const r0 = R();
-  const K = r0 < 0.12 ? 1 : r0 < 0.42 ? 2 : r0 < 0.75 ? 3 : 4;
-  const B = [0];
-  if (K === 2) B.push(ri(10, 12));
-  if (K === 3) { B.push(ri(10, 11)); B.push(B[1] + ri(6, 7)); }
-  if (K === 4) { B.push(ri(9, 10)); B.push(B[1] + 6); B.push(B[2] + 6); }
-  ctx.K = K; ctx.B = B; ctx.stats.layers = K;
+  ctx.K = ctx.spec.K; ctx.B = ctx.spec.B; ctx.stats.layers = ctx.K;
 }
 
-// terraced noise + conical hills; plateaus only when there are no upper layers
-export function groundHeights(ctx) {
-  const { R, ri, noise, K } = ctx;
-  const lvl0 = new Int16Array(N * N);
-  const flat = K > 1;
-  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
-    let n = noise(x * 0.21 + 0.5, z * 0.21 + 0.5);
-    n = clamp((n - 0.25) / 0.5, 0, 1);
-    lvl0[idx(x, z)] = 2 + Math.floor(n * (flat ? 3.99 : 6.99));
+// local relief added on top of the blended profiles (faded out towards the edges)
+function relief(ctx) {
+  const { R, ri, noise, spec } = ctx;
+  const extra = new Float32Array(N * N);
+  const hills = spec.kind === 'highland' ? 0 : ri(1, 2);
+  for (let h = 0; h < hills; h++) {
+    const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 2.2 + R() * 2.5, amp = ri(1, 3);
+    for (let i = 0; i < N * N; i++) extra[i] += amp * Math.max(0, 1 - Math.hypot(i % N + 0.5 - cx, ((i / N) | 0) + 0.5 - cz) / rad);
   }
-  for (let h = ri(1, 2); h > 0; h--) {
-    const cx = 2 + R() * (N - 4), cz = 2 + R() * (N - 4), rad = 2.2 + R() * 2.5, amp = flat ? ri(1, 3) : ri(2, 4);
-    for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
-      const d = Math.hypot(x + 0.5 - cx, z + 0.5 - cz);
-      lvl0[idx(x, z)] += Math.round(amp * Math.max(0, 1 - d / rad));
-    }
-  }
-  if (!flat) for (let p = ri(1, 2); p > 0; p--) {
-    const cx = ri(3, N - 4) + 0.5, cz = ri(3, N - 4) + 0.5;
-    const hx = 1.5 + R() * 2.5, hz = 1.5 + R() * 2.5, raise = ri(4, 7);
+  const plateaus = spec.kind === 'highland' || spec.kind === 'meadow' && ctx.K === 1 ? ri(1, 2) : 0;
+  for (let p = 0; p < plateaus; p++) {
+    const cx = ri(4, N - 5) + 0.5, cz = ri(4, N - 5) + 0.5;
+    const hx = 1.5 + R() * 2.5, hz = 1.5 + R() * 2.5, raise = ri(3, 6);
     for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
       const dx = Math.abs(x + 0.5 - cx) / hx, dz = Math.abs(z + 0.5 - cz) / hz;
-      if (dx ** 4 + dz ** 4 + (noise(x * 0.8 + 40, z * 0.8 + 40) - 0.5) * 0.8 < 1) lvl0[idx(x, z)] += raise;
+      if (dx ** 4 + dz ** 4 + (noise(x * 0.8 + 40, z * 0.8 + 40) - 0.5) * 0.8 < 1) extra[idx(x, z)] += raise;
     }
   }
-  for (let i = 0; i < N * N; i++) lvl0[i] = clamp(lvl0[i], 1, MAX_L);
-  ctx.lvl0 = lvl0; ctx.flat = flat;
+  return extra;
+}
+
+export function groundHeights(ctx) {
+  const { noise, spec } = ctx;
+  const P = spec.faces.map(f => f.profile), extra = relief(ctx);
+  const lvl0 = new Int16Array(N * N);
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+    const d = [N - 1 - x, x, N - 1 - z, z], p = [P[0][z], P[1][z], P[2][x], P[3][x]];
+    const near = d.indexOf(Math.min(...d));
+    let s = 0, ws = 0;
+    for (let i = 0; i < 4; i++) { const w = 1 / (d[i] + 0.6) ** 2; s += w * p[i]; ws += w; }
+    const e = clamp(d[near] / 3, 0, 1);
+    const v = d[near] === 0 ? p[near] : Math.round(s / ws + e * ((noise(x * 0.21 + 0.5, z * 0.21 + 0.5) - 0.5) * 3 + extra[idx(x, z)]));
+    lvl0[idx(x, z)] = clamp(v, 2, MAX_L);
+  }
+  ctx.lvl0 = lvl0; ctx.flat = ctx.K > 1;
 }

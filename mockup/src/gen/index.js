@@ -1,7 +1,7 @@
 // World generator: runs the stages in order and retries with a new seed on failure.
 import * as THREE from 'three';
 import { N, LH } from '../core/constants.js';
-import { idx, hash32 } from '../core/util.js';
+import { hash32 } from '../core/util.js';
 import { floorY, runY } from '../core/surfaces.js';
 import { createContext } from './context.js';
 import { chooseLayers, groundHeights } from './ground.js';
@@ -24,27 +24,29 @@ function indexFloors(ctx) {
     col.sort((a, b) => a.top - b.top);
     for (const f of col) { f.id = floors.length; floors.push(f); }
   }
-  ctx.entryF = ctx.cols[idx(0, ctx.ez)].find(f => f.prot === 1);
-  ctx.exitF = ctx.cols[idx(N - 1, ctx.xz)].find(f => f.prot === 2);
+  for (const p of ctx.portals) p.floor = ctx.cols[p.c].find(f => f.prot === p.id);
+  ctx.portalFloors = ctx.portals.map(p => p.floor);
 }
 
-// polyline along the planned route (debug overlay)
-function pathPoints(ctx) {
+// polyline along route moves (debug overlay, test bots)
+function pathPoints(ctx, moves) {
   const center = (c, y) => new THREE.Vector3(c % N + 0.5, y + 0.12, ((c / N) | 0) + 0.5);
   const nodeY = n => n.landing ? n.top * LH : floorY(n, 0.5, 0.5);
-  const pts = [center(ctx.entryF.c, nodeY(ctx.entryF))];
-  for (const m of ctx.moves) {
+  const pts = [center(ctx.portalFloors[0].c, nodeY(ctx.portalFloors[0]))];
+  for (const m of moves) {
     if (m.cells.length) {
-      const run = ctx.runs.find(r => r.from === m.from && r.to === m.to);
-      for (const p of run.pieces) pts.push(center(p.c, runY(p, 0.5, 0.5)));
+      const run = ctx.runs.find(r => r.from === m.from && r.to === m.to), back = ctx.runs.find(r => r.from === m.to && r.to === m.from);
+      const pieces = run ? run.pieces : [...back.pieces].reverse();   // a structure used the other way round
+      for (const p of pieces) pts.push(center(p.c, runY(p, 0.5, 0.5)));
     }
     pts.push(center(m.to.c, nodeY(m.to)));
   }
   return pts;
 }
 
-function tryGenerate(seed) {
+function tryGenerate(seed, spec) {
   const ctx = createContext(seed);
+  ctx.spec = spec;
   chooseLayers(ctx);
   groundHeights(ctx);
   placePortals(ctx);
@@ -55,25 +57,27 @@ function tryGenerate(seed) {
   addPools(ctx);
   addStreams(ctx);
   indexFloors(ctx);
-  if (!ctx.entryF || !ctx.exitF) return null;
+  if (ctx.portalFloors.some(f => !f)) return null;
   makeMoves(ctx);
   if (!findRoute(ctx) || !placeStructures(ctx)) return null;
   smooth(ctx);
   shapeStructures(ctx);
   addFences(ctx);
-  const { K, B, mode, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves } = ctx;
+  const { K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves } = ctx;
+  const portals = ctx.portals.map(p => ({ id: p.id, kind: p.kind, dir: p.dir, layer: p.layer, cells: p.cells,
+    x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
-    seed, K, B, mode, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves,
-    pathPts: pathPoints(ctx),
-    entry: { x: 0, z: ctx.ez, y: ctx.entryL * LH, floor: ctx.entryF, layer: ctx.le },
-    exit: { x: N - 1, z: ctx.xz, y: ctx.exitL * LH, floor: ctx.exitF, layer: ctx.lx },
+    seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
+    kind: spec.kind, key: spec.key, pathPts: pathPoints(ctx, ctx.moves),
+    routes: ctx.segments.map(s => pathPoints(ctx, s)),   // first portal -> each other portal
   };
 }
 
-export function generate(seed) {
-  for (let a = 0; a < 120; a++) {
-    const m = tryGenerate(hash32(seed + a * 7919));
-    if (m) { m.seed = seed; m.attempts = a + 1; return m; }
+// spec: what the world fixes for this cube (faces, portals, layers; see world/world.js)
+export function generate(spec) {
+  for (let a = 0; a < 200; a++) {
+    const m = tryGenerate(hash32(spec.seed + a * 7919), spec);
+    if (m) { m.seed = spec.seed; m.attempts = a + 1; return m; }
   }
-  throw new Error('generator failed for seed ' + seed);
+  throw new Error('generator failed for cube ' + spec.key);
 }

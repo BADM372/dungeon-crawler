@@ -3,17 +3,13 @@ import { clamp } from '../core/util.js';
 
 const $ = id => document.getElementById(id);
 
-export function showStats(map, depth, seed) {
-  $('depth').textContent = depth;
+export function showStats(map, cube, seed, visits) {
+  $('depth').textContent = cube;
   $('seed').textContent = seed;
   const s = map.stats;
-  const modeText = {
-    single: 'single layer',
-    cross: `entry L${map.entry.layer} → exit L${map.exit.layer}`,
-    split: `split layer L${map.entry.layer}`,
-  }[s.mode];
+  const portals = map.portals.filter(p => p.kind !== 'spawn').map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));
   $('stats').innerHTML =
-    `${s.layers} layer${s.layers > 1 ? 's' : ''} · ${modeText}<br>` +
+    `${map.kind} · ${s.layers} layer${s.layers > 1 ? 's' : ''} · portals ${portals.join(' ')} · visit ${visits}<br>` +
     `slopes ${s.slopes} · cliffs ${s.cliffs} · ramps ${s.ramps} · pillars ${s.pillars} · ` +
     `stairs ${s.stairs} · landings ${s.landings} · bridges ${s.bridges} · fences ${s.fences}<br>` +
     `${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`;

@@ -1,7 +1,7 @@
 // Keyboard and mouse wheel.
 import { clamp } from '../core/util.js';
 import { player, state, view, setStatus } from './state.js';
-import { spawnEntry, nextCube } from './flow.js';
+import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
 import { knockDown } from './ragdoll.js';
 
 const keys = new Set();
@@ -24,8 +24,9 @@ addEventListener('keydown', e => {
   if (e.code === 'Space') { jumpPressed = true; e.preventDefault(); }
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
-  if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned at entry'); }
-  if (e.code === 'KeyN') nextCube(true);
+  if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned where you came in'); }
+  if (e.code === 'KeyN') nextCube();
+  if (e.code === 'KeyV') { state.showNeighbors = !state.showNeighbors; updateNeighbors(); }
   if (e.code === 'KeyK' && !player.ragdoll) knockDown({ push: 3, hop: 2.5, reason: 'Whoops!' });
   if (e.code === 'KeyP') { state.showPath = !state.showPath; if (state.world) state.world.pathLine.visible = state.showPath; }
   if (e.code.startsWith('Arrow')) e.preventDefault();

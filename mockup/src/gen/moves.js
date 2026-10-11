@@ -2,6 +2,8 @@
 import { N, MAX_L, SHEAD, DIRS } from '../core/constants.js';
 import { idx, inb } from '../core/util.js';
 
+const MAX_DROP = 8;   // levels; deeper drops land hard enough to knock the character over
+
 export function makeMoves(ctx) {
   const { cols, floors, nextAbove } = ctx;
   // enough room above floor g for a ball arriving at level h
@@ -49,9 +51,9 @@ export function makeMoves(ctx) {
       if (Math.abs(dh) <= 2 && !g.fluid && headOK(g, h) && headOK(f, g.top)) {
         out.push({ kind: 'walk', from: f, to: g, d, cells: [], cost: 1 + 0.4 * Math.abs(dh) }); walked = true;
       }
-      if (g.top < h - 2) below = g;
+      if (g.top < h - 2 && g.top >= h - MAX_DROP) below = g;
     }
-    if (!walked && below && !below.fluid && headOK(below, h)) out.push({ kind: 'drop', from: f, to: below, d, cells: [], cost: 2.2 });
+    if (!walked && below && !below.fluid && headOK(below, h + 1)) out.push({ kind: 'drop', from: f, to: below, d, cells: [], cost: 2.2 });
   }
 
   // stairs: k flight cells, then a floor or a new landing; at most 2 levels per cell

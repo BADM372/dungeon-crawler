@@ -16,7 +16,7 @@ export function disposeWorld(world) {
   world.group.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.userData.keep || m.dispose()); });
 }
 
-export function buildWorld(m, showPath) {
+export function buildWorld(m, showPath, seen) {
   const group = new THREE.Group();
   const layers = makeLayers(m.K);
   layers[0].terrain.box(0, -BASE, 0, N, 0, N, BEDROCK[0], BEDROCK[1]);
@@ -25,7 +25,7 @@ export function buildWorld(m, showPath) {
   const fluidMeshes = layerMeshes(layers, group);
   const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
-  const markers = buildMarkers(m, group, showPath);
+  const markers = buildMarkers(m, group, showPath, seen);
   scene.add(group);
   return { group, layers, fluidMeshes, splashes, lights, ...markers };
 }
@@ -41,8 +41,5 @@ export function animateWorld(world, dt, time) {
   for (const t of FLUIDS) fallTex[t].offset.y += dt * (t === LAVA ? 0.5 : 1.5);
   world.splashes.forEach((s, i) => { const k = 1 + Math.sin(time * 9 + i) * 0.08; s.scale.set(k, 1, k); });
   for (const l of world.lights) l.intensity = 5 + Math.sin(time * 4 + l.position.x) * 1.5;
-  world.ring.rotation.x = time * 1.5;
-  world.disc.material.opacity = 0.35 + Math.sin(time * 4) * 0.15;
-  world.beam.material.opacity = 0.09 + Math.sin(time * 2) * 0.04;
-  world.entryGlow.material.opacity = 0.25 + Math.sin(time * 2.5) * 0.1;
+  for (const p of world.portalFx) p.tick(time);
 }
