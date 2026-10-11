@@ -1,20 +1,60 @@
 #!/usr/bin/env python3
-"""Dev server for the mockup: serves the repo root without browser caching, so edited ES
-modules are always picked up. Run from anywhere:  python3 mockup/serve.py [port]
-then open http://localhost:8000/mockup/game.html"""
+"""No-cache dev server. In a git worktree, /blender/* comes from the main
+checkout, while /mockup/* stays in this worktree. Override with --assets-root.
+Usage: uv run --no-project mockup/serve.py [port] [--assets-root REPO]
+"""
+import argparse
 import http.server
-import os
-import sys
+from pathlib import Path
+import subprocess
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def default_assets_root():
+    try:
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=ROOT, text=True, capture_output=True, check=True,
+        ).stdout.strip()
+        main = Path(common).parent
+        if (main / "blender").is_dir():
+            return main
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    return ROOT
 
 
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
+    assets = ROOT / "blender"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(ROOT), **kwargs)
+
+    def translate_path(self, path):
+        local = Path(super().translate_path(path))
+        if local.is_relative_to(ROOT / "blender"):
+            asset = (self.assets / local.relative_to(ROOT / "blender")).resolve()
+            # Do not follow an asset symlink out of the designated asset directory.
+            if asset.is_relative_to(self.assets):
+                return str(asset)
+            return str(ROOT / ".not-served")
+        return str(local)
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-    os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-    print(f"serving on http://localhost:{port}/mockup/game.html")
-    http.server.ThreadingHTTPServer(("", port), NoCacheHandler).serve_forever()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("port", nargs="?", type=int, default=8000)
+    parser.add_argument("--assets-root", type=Path, default=default_assets_root(), help="checkout containing blender/")
+    parser.add_argument("--bind", default="127.0.0.1")
+    args = parser.parse_args()
+    NoCacheHandler.assets = (args.assets_root.expanduser().resolve() / "blender")
+    if not NoCacheHandler.assets.is_dir():
+        parser.error("--assets-root must contain blender/")
+    print(f"serving on http://{args.bind}:{args.port}/mockup/game.html", flush=True)
+    print(f"Blender assets: {NoCacheHandler.assets}", flush=True)
+    http.server.ThreadingHTTPServer((args.bind, args.port), NoCacheHandler).serve_forever()

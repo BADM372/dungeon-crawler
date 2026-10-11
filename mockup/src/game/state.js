@@ -1,9 +1,11 @@
 // Mutable game state shared between modules.
 import { CHAR_R, CHAR_H } from '../core/constants.js';
+import { swordState } from '../core/combat.js';
 
 export const player = {
   x: 0, z: 0, y: 0, vx: 0, vy: 0, vz: 0, visY: 0,
-  r: CHAR_R, h: CHAR_H, hp: 100, layer: 0,
+  r: CHAR_R, h: CHAR_H, hp: 100, layer: 0, yaw: 0,
+  sword: swordState(),
   grounded: true, swimming: false, fluid: 0, support: null,
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
   // event counters the animator watches

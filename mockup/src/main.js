@@ -18,7 +18,9 @@ import { applyLook } from './render/look.js';
 import { depthOf } from './world/depth.js';
 import './game/dev.js';
 import { updateSpiders, spiders } from './game/spiders.js';
-import { travelling, updateTravel, drawTravelSpiders } from './game/travel.js';
+import { stunders } from './game/stunders.js';
+import { updateEnemies, allEnemies } from './game/enemies.js';
+import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
 const clock = new THREE.Clock();
 
@@ -26,13 +28,13 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 1 / 30);
   state.time += dt;
   if (travelling()) updateTravel(dt);
-  else if (state.map && !state.transitioning) { updatePlayer(dt); updateSpiders(dt); }
+  else if (state.map && !state.transitioning) { updatePlayer(dt); if (!state.transitioning) updateEnemies(dt); }
 
   // smooth out small vertical snaps (steps), but not falls
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
-  drawTravelSpiders(dt);
+  drawTravelEnemies(dt);
   tickNeighbors(dt);
   tickProps(state.time);
   if (state.world) animateWorld(state.world, dt, state.time);
@@ -53,5 +55,6 @@ setStatus('Find the golden portal on the far side of the cube');
 window.__game = {
   get map() { return state.map; }, player, generate, loadCube, updatePlayer, groundAt,
   get transitioning() { return state.transitioning; }, get spiders() { return spiders; }, updateSpiders, state,
+  get stunders() { return stunders; }, get enemies() { return allEnemies(); }, updateEnemies,
 };
 frame();

@@ -8,10 +8,12 @@ import { characterYaw } from '../render/animator.js';
 import { player, setStatus } from './state.js';
 import { flash } from './hud.js';
 import { hurt, spawnAt, spawnEntry } from './flow.js';
+import { cancelSword } from './sword.js';
 
 // respawn: 'safe' (last safe spot), or null (get up where you lie)
 export function knockDown({ damage = 0, reason = '', respawn = null, push = 0, hop = 0 } = {}) {
   player.climb = null;
+  cancelSword();
   if (!character.ready) { hurt(damage, reason); return; }
   player.hp -= damage;
   if (damage > 0) flash();
