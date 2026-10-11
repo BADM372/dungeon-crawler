@@ -1050,7 +1050,7 @@ def flex_pose(skel):
 # ============================================================================
 # baking to actions
 # ============================================================================
-def bake_action(rig, name, frames, cyclic, props=None):
+def bake_action(rig, name, frames, cyclic, props=None, loc_bones=("hips",)):
     act = bpy.data.actions.get(name)
     if act is not None:
         bpy.data.actions.remove(act)
@@ -1068,7 +1068,7 @@ def bake_action(rig, name, frames, cyclic, props=None):
             prev[bname] = rot
             pb.rotation_quaternion = rot
             pb.keyframe_insert("rotation_quaternion", frame=f, group=bname)
-            if bname == "hips":
+            if bname in loc_bones:
                 pb.location = loc
                 pb.keyframe_insert("location", frame=f, group=bname)
     act.use_frame_range = True
