@@ -79,6 +79,7 @@ export function buildProps(placed, group) {
     // a few glowing props light their surroundings (the light pool picks the nearest)
     if (p.light && !p.cover) for (const q of list) {
       if (lights >= 6) break;
+      if (q.unlit) continue;   // e.g. daytime lamp posts in the town clearings
       const l = new THREE.PointLight(p.light, p.intensity * 2, 4, 2);
       l.position.set(q.x, q.y + (p.attach === 'ceiling' ? -0.4 : 0.5), q.z);
       group.add(l); lights++;

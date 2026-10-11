@@ -16,6 +16,7 @@ import { canMove } from '../src/physics/canmove.js';
 import { mapInfo } from '../src/game/cutinfo.js';
 import { player } from '../src/game/state.js';
 import { buildCubeGeometry } from '../src/render/cubegeo.js';
+import { propMetadata } from '../src/core/propcatalog.js';
 
 const overlaps = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.z0 < b.z1 && a.z1 > b.z0;
 const signature = m => ({ clearing: m.town || m.merchantCamp, portals: m.portals.map(p => [p.kind, p.dir, p.x, p.z]),
@@ -28,6 +29,7 @@ function checkCurvedPaths(m) {
     for (let t = 0; t <= 1; t += .1) {
       const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
       assert.ok(!m.occluders.filter(b => b.shape !== 'ellipsoid').some(b => containsXZ(b, x, z, CHAR_R + .03)), 'curved path must clear bodies, not just look connected');
+      assert.ok(!new Set(m.staticBlockers.flat()).values().some(b => containsXZ(b, x, z, CHAR_R + .03)), 'curved path must clear clutter');
       const c = Math.min(N - 1, Math.max(0, Math.floor(z))) * N + Math.min(N - 1, Math.max(0, Math.floor(x)));
       assert.equal(m.cols[c][0].fluid, 0);
     }
@@ -164,6 +166,43 @@ test('camp-to-countryside edges stay flat even when countryside is generated fir
     const p = outside.portals.find(p => p.dir === nd);
     assert.equal(p.layer, 0); assert.equal(p.y, TOWN_LEVEL * LH);
     assert.equal(outside.merchantCamp, undefined);
+  }
+});
+
+function checkClutter(m, min) {
+  const plan = m.town || m.merchantCamp, y = TOWN_LEVEL * LH, pond = new Set(plan.pond);
+  const clutter = plan.placements.filter(p => !p.name.startsWith('town_'));
+  assert.ok(clutter.length >= min, `only ${clutter.length} clutter props`);
+  assert.ok(new Set(clutter.map(p => p.name.replace(/_[ab]$/, ''))).size >= 15, 'clutter must be varied');
+  // Oriented footprints: the axis-aligned collider envelopes have empty corners.
+  const footprints = [...BUILDINGS, ...MERCHANTS].flatMap(b => plan.placements.filter(p => p.name === b.name)
+    .map(p => ({ p, bounds: b.bounds })));
+  const inside = (x, z) => footprints.some(({ p, bounds: [x0, z0, x1, z1] }) => {
+    const dx = x - p.x, dz = z - p.z, c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+    const lx = dx * c - dz * s, lz = dx * s + dz * c;
+    return lx > x0 && lx < x1 && lz > z0 && lz < z1;
+  });
+  for (const p of clutter) {
+    const meta = propMetadata.get(p.name), c = Math.floor(p.z) * N + Math.floor(p.x);
+    assert.ok(meta, p.name); assert.equal(meta.attach === 'water', pond.has(c), p.name);
+    assert.ok(p.x > 0 && p.z > 0 && p.x < N && p.z < N);
+    if (meta.attach === 'water') assert.equal(p.y, (TOWN_LEVEL - 1) * LH);
+    else assert.ok(Math.abs(p.y - y) < .03, p.name);
+    assert.ok(!inside(p.x, p.z), p.name + ' inside a building');
+    if (meta.light) assert.equal(p.unlit, true, 'daytime lamps should not add point lights');
+    if (meta.blocking) {
+      assert.ok(m.staticBlockers[c].some(b => b.name === p.name && b.x === p.x && b.z === p.z), p.name + ' needs a collider');
+    }
+  }
+}
+
+test('both clearings are dressed with varied clutter that stays off paths, water and buildings', () => {
+  for (let seed = 0; seed < 24; seed++) {
+    const w = new World(seed), town = w.cube(w.start).map, camp = w.cube(step(w.start, town.exit)).map;
+    checkClutter(town, 100); checkClutter(camp, 100);
+    assert.ok(town.town.placements.some(p => p.name.startsWith('meadow_lily_pads_')));
+    assert.ok(town.town.placements.some(p => p.name.startsWith('meadow_cattails_') || p.name.startsWith('any_shore_stones_')));
+    assert.ok(camp.merchantCamp.placements.some(p => p.name.startsWith('relics_old_campfire_')));
   }
 });
 

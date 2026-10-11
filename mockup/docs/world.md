@@ -49,6 +49,18 @@ but only the trunks block movement. Tree species and scale/yaw vary deterministi
 The existing cutaway includes building and canopy occlusion volumes, independently
 of body colliders, so foreground roofs/foliage reveal the player as the camera turns.
 
+Both clearings are then dressed with ~140 small catalog props (`put`/`group`/`scatter`
+in `world/town.js`), all reusing `props.glb`/`clutter.glb`: authored set pieces
+(a gate signpost, lamp posts, barrels/crates/sacks by each trade, the blacksmith's
+planks and coal, a wheelbarrow at the stable, reeds/stones/lily pads around the pond,
+the traders' campfire with log seats) followed by seeded meadow ground cover that
+thins out towards the open centre. Candidates that do not fit are skipped. Every
+prop avoids the oriented building footprints, trunks, other clutter, the pond (except
+water/shore props) and the path ribbons; blocking props (barrels, crates, logs …) get
+circle colliders and also keep clear of gates, the spawn plaza and doorsteps by a full
+character width, so the reachability validation is unaffected. Lamp posts are
+marked `unlit` because the town is in daylight.
+
 `enemyFree` is generation metadata, retained on cached maps and checked before any
 species-specific spawn selection. The town and the one-cube-wide **surface** buffer
 (`Y=0`, `max(abs(X), abs(Z)) <= 1`, including diagonals if they exist) have no enemies.
@@ -63,7 +75,8 @@ independent of download timing; rendering cannot accidentally remove them.
 orientations: flat dry ground, guaranteed town pond, four houses inside town and
 three tents only in the adjacent road cube, non-overlapping assets, dry reachable
 gates/frontages using actual movement probes, generation-order-independent
-boundaries, curved path geometry, safe-buffer spawns/revisits, box/trunk collision,
+boundaries, curved path geometry, clutter placement and colliders,
+safe-buffer spawns/revisits, box/trunk collision,
 canopy occlusion, and matching Blender exports. For real worker/asset/render checks,
 run `await (await import('./tests/town-browser-checks.js')).runTownChecks()` from
 `game.html`'s devtools.
