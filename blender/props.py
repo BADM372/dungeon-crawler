@@ -973,7 +973,7 @@ SPECS = [
 def finish(m, name, attach, hints, collection):
     """Bake attachment space, color and flat normals directly into a mesh."""
     limit = hints.get("max_radius", MAX_RADIUS)
-    if limit is not None and attach != "wall":
+    if limit is not None and attach not in ("wall", "lip"):
         radius = max(math.hypot(x, y) for x, y, z in m.vertices)
         factor = min(1, limit / radius)
         m.vertices = [(x * factor, y * factor, z) for x, y, z in m.vertices]
@@ -983,6 +983,9 @@ def finish(m, name, attach, hints, collection):
     elif attach == "ceiling":
         dz = -max(z for x, y, z in m.vertices)
         m.vertices = [(x, y, z + dz) for x, y, z in m.vertices]
+    elif attach in ("lip", "water"):
+        # Authored in attachment space (clutter.py): cliff edge / waterline at the origin.
+        pass
     else:
         dy = -min(y for x, y, z in m.vertices)
         m.vertices = [(x, y + dy, z) for x, y, z in m.vertices]
@@ -1048,6 +1051,8 @@ def finish(m, name, attach, hints, collection):
     obj["blocking"] = bool(hints.get("blocking", False))
     if attach == "wall":
         radius = max(math.hypot(x, z) for x, y, z in m.vertices)
+    elif attach == "lip":
+        radius = max(abs(x) for x, y, z in m.vertices)
     else:
         radius = max(math.hypot(x, y) for x, y, z in m.vertices)
     obj["radius"] = math.ceil(radius * 10000) / 10000
