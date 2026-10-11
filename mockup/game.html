@@ -30,7 +30,7 @@
 <body>
 <div id="hud">
   <div class="title">CUBE CRAWLER <span>mockup</span></div>
-  <div>Depth <b id="depth">1</b> &middot; Seed <b id="seed">-</b></div>
+  <div>Depth <b id="depth">1</b> &middot; Seed <b id="seed">-</b> &middot; Layer <b id="layer">-</b></div>
   <div class="hp"><div id="hpbar"></div></div>
   <div id="status"></div>
   <div id="stats"></div>
@@ -61,7 +61,9 @@ const N = 16;            // cube footprint in cells
 const LH = 0.5;          // height of one terrain level
 const CUBE_H = 16;       // visual height of the cube
 const BASE = 0.6;        // thickness of the bedrock slab under the map
-const MAX_L = 22;
+const MAX_L = 24;
+const HEAD = 3;          // min free levels between two stacked floors
+const SHEAD = 3;         // clearance (levels) kept around stairs and bridges
 const WATER = 1, LAVA = 2, ACID = 3;
 const FLUID_NAME = { 1: 'water', 2: 'lava', 3: 'acid' };
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -115,22 +117,52 @@ function makeNoise(R) {
   };
 }
 
-// height of the smoothed terrain surface inside cell i at local coords (fx, fz) in [0,1].
-// Each cell is two triangles; `split` picks the diagonal. Rendering uses the exact same triangles.
-function surfY(cs, split, i, fx, fz) {
-  const k = i * 4, c00 = cs[k], c10 = cs[k + 1], c01 = cs[k + 2], c11 = cs[k + 3];
-  if (!split[i]) {
+class Heap {
+  constructor() { this.a = []; }
+  get size() { return this.a.length; }
+  push(k, v) {
+    const a = this.a; a.push([k, v]);
+    let i = a.length - 1;
+    while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; }
+  }
+  pop() {
+    const a = this.a, top = a[0], last = a.pop();
+    if (a.length) {
+      a[0] = last; let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = l + 1; let m = i;
+        if (l < a.length && a[l][0] < a[m][0]) m = l;
+        if (r < a.length && a[r][0] < a[m][0]) m = r;
+        if (m === i) break;
+        [a[m], a[i]] = [a[i], a[m]]; i = m;
+      }
+    }
+    return top[1];
+  }
+}
+
+// A floor is a solid slab in one column: solid from `bottom` up to its (smoothed) top surface.
+// Every column has a ground floor (layer 0, bottom 0) and possibly floors of upper layers above it.
+// Height of the smoothed top inside the cell at local coords (fx, fz) in [0,1]; each cell is two
+// triangles and rendering uses the exact same split.
+function floorY(f, fx, fz) {
+  const c00 = f.cs[0], c10 = f.cs[1], c01 = f.cs[2], c11 = f.cs[3];
+  if (!f.split) {
     if (fx >= fz) return c00 + (c10 - c00) * fx + (c11 - c10) * fz;
     return c00 + (c11 - c01) * fx + (c01 - c00) * fz;
   }
   if (fx + fz <= 1) return c00 + (c10 - c00) * fx + (c01 - c00) * fz;
   return c11 + (c01 - c11) * (1 - fx) + (c10 - c11) * (1 - fz);
 }
-// height of a stair / bridge run piece (linear along its direction)
-function runY(s, fx, fz) {
-  const t = s.dx > 0 ? fx : s.dx < 0 ? 1 - fx : s.dz > 0 ? fz : 1 - fz;
-  return s.y0 + (s.y1 - s.y0) * t;
+// height of a stair / bridge / landing piece: linear along the whole run, plank bridges sag
+function runY(p, fx, fz) {
+  const r = p.run;
+  if (r.kind === 'landing') return r.y0;
+  const t = p.dx > 0 ? fx : p.dx < 0 ? 1 - fx : p.dz > 0 ? fz : 1 - fz;
+  const T = (p.j + t) / r.k;
+  return r.y0 + (r.y1 - r.y0) * T - r.sag * Math.sin(Math.PI * T);
 }
+const topOf = (s, fx, fz) => s.kind ? runY(s, fx, fz) : floorY(s, fx, fz);
 
 // ---------------------------------------------------------------------------
 // world generator
@@ -141,56 +173,70 @@ function tryGenerate(seed) {
   const noise = makeNoise(R);
   const fenceNoise = makeNoise(R);
   const slopeNoise = makeNoise(R);
+  const topNoise = makeNoise(R);
+  const stats = { layers: 0, mode: '', stairs: 0, bridges: 0, fences: 0, slopes: 0, cliffs: 0, pillars: 0, ramps: 0, fluids: [] };
 
-  const lvl = new Int16Array(N * N);
-  const fluid = new Uint8Array(N * N);
-  const surf = new Int16Array(N * N);
-  const prot = new Uint8Array(N * N);
-  const stair = new Array(N * N).fill(null);
-  const bridge = new Array(N * N).fill(null);
-  const fences = new Map();
-  const fenceList = [];
-  const stairRuns = [], bridgeRuns = [];
-  const stats = { stairs: 0, bridges: 0, fences: 0, slopes: 0, cliffs: 0, fluids: [] };
+  // --- layers -------------------------------------------------------------
+  const r0 = R();
+  const K = r0 < 0.12 ? 1 : r0 < 0.42 ? 2 : r0 < 0.75 ? 3 : 4;
+  const B = [0];
+  if (K === 2) B.push(ri(10, 12));
+  if (K === 3) { B.push(ri(10, 11)); B.push(B[1] + ri(6, 7)); }
+  if (K === 4) { B.push(ri(9, 10)); B.push(B[1] + 6); B.push(B[2] + 6); }
+  stats.layers = K;
 
-  // 1) rolling base terrain (terraced noise)
+  // --- layer 0: rolling ground ---------------------------------------------
+  const lvl0 = new Int16Array(N * N);
+  const flat = K > 1;
   for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
     let n = noise(x * 0.21 + 0.5, z * 0.21 + 0.5);
     n = clamp((n - 0.25) / 0.5, 0, 1);
-    lvl[idx(x, z)] = 2 + Math.floor(n * 6.99);
+    lvl0[idx(x, z)] = 2 + Math.floor(n * (flat ? 3.99 : 6.99));
   }
-  // 2) hills: conical bumps that terrace into rings
   for (let h = ri(1, 2); h > 0; h--) {
-    const cx = 2 + R() * (N - 4), cz = 2 + R() * (N - 4), rad = 2.2 + R() * 2.5, amp = ri(2, 4);
+    const cx = 2 + R() * (N - 4), cz = 2 + R() * (N - 4), rad = 2.2 + R() * 2.5, amp = flat ? ri(1, 3) : ri(2, 4);
     for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
       const d = Math.hypot(x + 0.5 - cx, z + 0.5 - cz);
-      lvl[idx(x, z)] += Math.round(amp * Math.max(0, 1 - d / rad));
+      lvl0[idx(x, z)] += Math.round(amp * Math.max(0, 1 - d / rad));
     }
   }
-  // 3) plateaus: raised blobs with steep cliff sides
-  for (let p = ri(1, 2); p > 0; p--) {
+  if (!flat) for (let p = ri(1, 2); p > 0; p--) {
     const cx = ri(3, N - 4) + 0.5, cz = ri(3, N - 4) + 0.5;
     const hx = 1.5 + R() * 2.5, hz = 1.5 + R() * 2.5, raise = ri(4, 7);
     for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
       const dx = Math.abs(x + 0.5 - cx) / hx, dz = Math.abs(z + 0.5 - cz) / hz;
-      const v = dx ** 4 + dz ** 4 + (noise(x * 0.8 + 40, z * 0.8 + 40) - 0.5) * 0.8;
-      if (v < 1) lvl[idx(x, z)] += raise;
+      if (dx ** 4 + dz ** 4 + (noise(x * 0.8 + 40, z * 0.8 + 40) - 0.5) * 0.8 < 1) lvl0[idx(x, z)] += raise;
     }
   }
-  for (let i = 0; i < N * N; i++) lvl[i] = clamp(lvl[i], 1, MAX_L);
+  for (let i = 0; i < N * N; i++) lvl0[i] = clamp(lvl0[i], 1, MAX_L);
 
-  // 4) entry + exit pads on opposite faces of the cube
+  // --- entry + exit: on different layers, or on the same layer split in two ------
+  let mode, le, lx;
+  if (K === 1) { mode = 'single'; le = lx = 0; }
+  else if (R() < 0.7) { mode = 'cross'; le = ri(0, K - 1); do lx = ri(0, K - 1); while (lx === le); }
+  else { mode = 'split'; le = lx = ri(1, K - 1); }
+  stats.mode = mode;
   const ez = ri(2, N - 3), xz = ri(2, N - 3);
-  const entryL = clamp(lvl[idx(1, ez)], 2, 16);
-  for (let x = 0; x <= 1; x++) for (let z = ez - 1; z <= ez + 1; z++) { lvl[idx(x, z)] = entryL; prot[idx(x, z)] = 1; }
-  let around = 0;
-  for (let x = N - 4; x < N; x++) for (let z = xz - 2; z <= xz + 2; z++) if (inb(x, z)) around = Math.max(around, lvl[idx(x, z)]);
-  const exitL = clamp(around + ri(0, 2), 3, MAX_L);
-  for (let x = N - 2; x < N; x++) for (let z = xz - 1; z <= xz + 1; z++) { lvl[idx(x, z)] = exitL; prot[idx(x, z)] = 2; }
+  const entryCells = [], exitCells = [];
+  for (let x = 0; x <= 1; x++) for (let z = ez - 1; z <= ez + 1; z++) entryCells.push(idx(x, z));
+  for (let x = N - 2; x < N; x++) for (let z = xz - 1; z <= xz + 1; z++) exitCells.push(idx(x, z));
+  const prot0 = new Uint8Array(N * N);
+  let entryL = B[le], exitL = B[lx];
+  if (le === 0) {
+    entryL = clamp(lvl0[idx(1, ez)], 2, flat ? 5 : 16);
+    for (const c of entryCells) { lvl0[c] = entryL; prot0[c] = 1; }
+  }
+  if (lx === 0) {
+    let around = 0;
+    for (let x = N - 4; x < N; x++) for (let z = xz - 2; z <= xz + 2; z++) if (inb(x, z)) around = Math.max(around, lvl0[idx(x, z)]);
+    exitL = clamp(around + ri(0, 2), 3, flat ? 5 : MAX_L);
+    for (const c of exitCells) { lvl0[c] = exitL; prot0[c] = 2; }
+  }
 
-  // 5) fluids: a river cutting a canyon across the cube + some pools
+  // --- layer 0 fluids: a river canyon + pools ----------------------------------
+  const fluid0 = new Uint8Array(N * N), surf0 = new Int16Array(N * N);
   const pickFluid = (w, l) => { const r = R(); return r < w ? WATER : r < w + l ? LAVA : ACID; };
-  const hasRiver = R() < 0.75;
+  const hasRiver = R() < 0.7;
   if (hasRiver) {
     const type = pickFluid(0.6, 0.25);
     let x = ri(5, N - 6); const w = R() < 0.5 ? 1 : 2;
@@ -200,309 +246,643 @@ function tryGenerate(seed) {
       const r = R(), nx = clamp(x + (r < 0.3 ? -1 : r > 0.7 ? 1 : 0), 4, N - 6);
       if (nx !== x) { for (let k = 0; k < w; k++) cells.add(idx(nx + k, z)); x = nx; }
     }
-    const list = [...cells].filter(i => !prot[i]);
-    let S = Infinity; for (const i of list) S = Math.min(S, lvl[i]);
+    const list = [...cells].filter(i => !prot0[i]);
+    let S = Infinity; for (const i of list) S = Math.min(S, lvl0[i]);
     S = Math.max(2, S - 1);
-    for (const i of list) { fluid[i] = type; surf[i] = S; lvl[i] = Math.max(0, S - 2); }
+    for (const i of list) { fluid0[i] = type; surf0[i] = S; lvl0[i] = Math.max(0, S - 2); }
     stats.fluids.push(FLUID_NAME[type] + ' river');
   }
-  for (let p = hasRiver ? ri(0, 2) : ri(1, 3); p > 0; p--) {
+  for (let p = hasRiver ? ri(0, 1) : ri(1, 2); p > 0; p--) {
     const type = pickFluid(0.5, 0.3);
     const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
     const cells = [];
     for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
       const i = idx(x, z);
-      if (!prot[i] && !fluid[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
+      if (!prot0[i] && !fluid0[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
     }
     if (!cells.length) continue;
     const set = new Set(cells);
     let S = Infinity;
     for (const i of cells) {
-      S = Math.min(S, lvl[i]);
+      S = Math.min(S, lvl0[i]);
       const x = i % N, z = (i / N) | 0;
       for (const [dx, dz] of DIRS) {
         const nx = x + dx, nz = z + dz;
-        if (inb(nx, nz) && !set.has(idx(nx, nz)) && !fluid[idx(nx, nz)]) S = Math.min(S, lvl[idx(nx, nz)]);
+        if (inb(nx, nz) && !set.has(idx(nx, nz)) && !fluid0[idx(nx, nz)]) S = Math.min(S, lvl0[idx(nx, nz)]);
       }
     }
     S = Math.max(1, S - 1);
-    for (const i of cells) { fluid[i] = type; surf[i] = S; lvl[i] = Math.max(0, S - 2); }
+    for (const i of cells) { fluid0[i] = type; surf0[i] = S; lvl0[i] = Math.max(0, S - 2); }
     stats.fluids.push(FLUID_NAME[type] + ' pool');
   }
 
-  // 6) path search: walk (incl. slopes of 1-2 levels) / drop / stairs / bridge moves
-  function movesFrom(i) {
-    const out = [];
-    const x = i % N, z = (i / N) | 0, h = lvl[i];
-    for (const [dx, dz] of DIRS) {
-      const nx = x + dx, nz = z + dz;
+  // --- floors ----------------------------------------------------------------------
+  const cols = Array.from({ length: N * N }, () => []);
+  const mk = (c, top, bottom, layer) => ({
+    id: -1, c, x: c % N, z: (c / N) | 0, top, bottom, layer,
+    fluid: 0, surf: 0, prot: 0, merged: layer === 0, ramp: false, link: [null, null, null, null],
+  });
+  for (let c = 0; c < N * N; c++) {
+    const f = mk(c, lvl0[c], 0, 0);
+    f.fluid = fluid0[c]; f.surf = surf0[c]; f.prot = prot0[c];
+    cols[c].push(f);
+  }
+  const topFloor = c => cols[c][cols[c].length - 1];
+  const layerFloor = (c, k) => cols[c].find(f => f.layer === k);
+  const removeFloor = f => { const col = cols[f.c]; col.splice(col.indexOf(f), 1); };
+
+  // --- upper layers: slabs made of blobs, merged into whatever pokes up from below -----
+  for (let k = 1; k < K; k++) {
+    const mask = new Uint8Array(N * N);
+    const blob = (cx, cz, hx, hz) => {
+      for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
+        const dx = Math.abs(x + 0.5 - cx) / hx, dz = Math.abs(z + 0.5 - cz) / hz;
+        if (dx ** 4 + dz ** 4 + (noise(x * 0.7 + k * 13, z * 0.7 + k * 7) - 0.5) * 0.9 < 1) mask[idx(x, z)] = 1;
+      }
+    };
+    if (mode === 'split' && k === le) {
+      blob(ri(2, 4) + 0.5, ri(3, N - 4) + 0.5, 2 + R() * 1.5, 2.5 + R() * 3);
+      blob(ri(11, 13) + 0.5, ri(3, N - 4) + 0.5, 2 + R() * 1.5, 2.5 + R() * 3);
+      for (let z = 0; z < N; z++) for (let x = 6; x <= 9; x++) mask[idx(x, z)] = 0;
+    } else {
+      for (let b = ri(1, 3); b > 0; b--) blob(ri(2, N - 3) + 0.5, ri(2, N - 3) + 0.5, 1.8 + R() * 3, 1.8 + R() * 3);
+    }
+    const padOf = new Map();
+    const pad = (cells, p, x0, x1, z0, z1) => {
+      for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) mask[idx(x, z)] = 1;
+      for (const c of cells) padOf.set(c, p);
+    };
+    if (le === k) pad(entryCells, 1, 0, 3, ez - 1, ez + 1);
+    if (lx === k) pad(exitCells, 2, N - 4, N - 1, xz - 1, xz + 1);
+    for (let c = 0; c < N * N; c++) {
+      if (!mask[c]) continue;
+      const x = c % N, z = (c / N) | 0;
+      const top = padOf.has(c) ? B[k] : B[k] + (topNoise(x * 0.35 + k * 5, z * 0.35) > 0.6 ? 1 : 0);
+      const u = mk(c, top, top - 2, k);
+      u.prot = padOf.get(c) || 0;
+      const below = topFloor(c);
+      if (below.top + HEAD > u.bottom) {
+        if ((below.fluid || below.prot) && !u.prot) continue;   // leave a hole above rivers / pads
+        u.bottom = below.bottom; u.merged = true; removeFloor(below);
+      }
+      cols[c].push(u);
+    }
+  }
+  const nextAbove = f => { const col = cols[f.c]; return col[col.indexOf(f) + 1] || null; };
+  const nextBelow = f => { const col = cols[f.c]; return col[col.indexOf(f) - 1] || null; };
+
+  // --- ramps: raise the layer below into a slope leading up to a slab edge -------------
+  for (let k = 1; k < K; k++) {
+    if (R() > 0.6) continue;
+    const cands = [];
+    for (let c = 0; c < N * N; c++) {
+      const e = layerFloor(c, k);
+      if (!e || e.prot || e.fluid) continue;
+      for (let d = 0; d < 4; d++) {
+        const nx = e.x + DIRS[d][0], nz = e.z + DIRS[d][1];
+        if (inb(nx, nz) && !layerFloor(idx(nx, nz), k)) cands.push([e, d]);
+      }
+    }
+    if (!cands.length) continue;
+    const [e, d] = cands[ri(0, cands.length - 1)];
+    const lat = d < 2 ? [0, 1] : [1, 0];
+    let made = 0;
+    for (let j = 0; j < 8; j++) {
+      const target = e.top - 2 * (j + 1);
+      let any = false;
+      for (const w of [0, 1]) {
+        const x = e.x + DIRS[d][0] * (j + 1) + lat[0] * w, z = e.z + DIRS[d][1] * (j + 1) + lat[1] * w;
+        if (!inb(x, z)) continue;
+        const col = cols[idx(x, z)];
+        let g = null;
+        for (const f of col) if (f.top < e.top - 1) g = f;
+        if (!g || g.fluid || g.prot || g.top >= target) continue;
+        const a = nextAbove(g);
+        if (a && a.bottom < target + HEAD) continue;
+        g.top = target; g.ramp = true; any = true; made++;
+      }
+      if (!any) break;
+    }
+    if (made) stats.ramps++;
+  }
+
+  // --- supports: every floating slab rests on at least one pillar; drop tiny crumbs ----
+  for (let k = 1; k < K; k++) {
+    const seen = new Set();
+    for (let c = 0; c < N * N; c++) {
+      const f0 = layerFloor(c, k);
+      if (!f0 || seen.has(f0)) continue;
+      const comp = [f0]; seen.add(f0);
+      for (let i = 0; i < comp.length; i++) {
+        const f = comp[i];
+        for (const [dx, dz] of DIRS) {
+          if (!inb(f.x + dx, f.z + dz)) continue;
+          const g = layerFloor(idx(f.x + dx, f.z + dz), k);
+          if (g && !seen.has(g)) { seen.add(g); comp.push(g); }
+        }
+      }
+      const prot = comp.some(f => f.prot);
+      if (comp.length < 3 && !prot && !comp.some(f => f.merged)) { comp.forEach(removeFloor); continue; }
+      if (comp.some(f => f.merged)) continue;
+      const cands = comp.filter(f => { const b = nextBelow(f); return b && !b.fluid && !b.prot && !b.ramp && !f.prot; });
+      if (!cands.length) { if (!prot) comp.forEach(removeFloor); continue; }
+      for (let n = Math.min(cands.length, comp.length > 12 ? 2 : 1); n > 0; n--) {
+        const f = cands.splice(ri(0, cands.length - 1), 1)[0], b = nextBelow(f);
+        f.bottom = b.bottom; f.merged = true; removeFloor(b); stats.pillars++;
+      }
+    }
+  }
+
+  // --- pools on upper layers ---------------------------------------------------
+  for (let k = 1; k < K; k++) {
+    if (R() > 0.45) continue;
+    const type = pickFluid(0.55, 0.25);
+    const ok = c => { const f = layerFloor(c, k); return f && !f.prot && !f.ramp; };
+    const centers = [];
+    for (let c = 0; c < N * N; c++) {
+      if (!ok(c)) continue;
+      const x = c % N, z = (c / N) | 0;
+      let all = true;
+      for (let dz = -1; dz <= 1 && all; dz++) for (let dx = -1; dx <= 1; dx++) if (!inb(x + dx, z + dz) || !ok(idx(x + dx, z + dz))) { all = false; break; }
+      if (all) centers.push(c);
+    }
+    if (!centers.length) continue;
+    const c0 = centers[ri(0, centers.length - 1)], rad = 1 + R() * 0.7;
+    const cells = [];
+    for (let c = 0; c < N * N; c++) {
+      if (!ok(c) || Math.hypot(c % N - c0 % N, ((c / N) | 0) - ((c0 / N) | 0)) > rad) continue;
+      const x = c % N, z = (c / N) | 0;
+      if (DIRS.every(([dx, dz]) => inb(x + dx, z + dz) && layerFloor(idx(x + dx, z + dz), k))) cells.push(layerFloor(c, k));
+    }
+    if (!cells.length) continue;
+    const set = new Set(cells);
+    let S = Infinity;
+    for (const f of cells) for (const [dx, dz] of DIRS) {
+      const g = layerFloor(idx(f.x + dx, f.z + dz), k);
+      if (!set.has(g)) S = Math.min(S, g.top);
+    }
+    S -= 1;
+    const bed = S - 2;
+    if (cells.some(f => { const b = nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) continue;
+    for (const f of cells) { f.top = bed; f.fluid = type; f.surf = S; if (!f.merged) f.bottom = Math.min(f.bottom, bed - 1); }
+    stats.fluids.push(FLUID_NAME[type] + ' pool (L' + k + ')');
+  }
+
+  // --- streams on upper layers spill over the slab edge as waterfalls into a pool below ---
+  const falls = [];
+  // the floor that walls in a fluid at level h in column c (null if the fluid would spill)
+  const bankAt = (x, z, h) => inb(x, z) ? cols[idx(x, z)].find(f => f.bottom <= h && f.top >= h - 3) || null : undefined;
+  function poolAround(center, rad, type) {
+    const cells = [];
+    for (let z = center.z - 2; z <= center.z + 2; z++) for (let x = center.x - 2; x <= center.x + 2; x++) {
+      if (!inb(x, z) || Math.hypot(x - center.x, z - center.z) > rad) continue;
+      const g = cols[idx(x, z)].find(f => f.layer === center.layer && !f.fluid && !f.prot && !f.ramp && Math.abs(f.top - center.top) <= 2);
+      if (g) cells.push(g);
+    }
+    if (!cells.includes(center)) return 0;
+    const set = new Set(cells);
+    let S = Infinity;
+    for (const f of cells) {
+      S = Math.min(S, f.top);
+      for (const [dx, dz] of DIRS) {
+        const b = bankAt(f.x + dx, f.z + dz, f.top);
+        if (b === undefined || set.has(b)) continue;   // the cube wall holds it
+        if (!b) return 0;
+        if (b.fluid) { if (b.fluid !== type) return 0; continue; }
+        S = Math.min(S, b.top);
+      }
+    }
+    S -= 1;
+    const bed = S - 2;
+    if (bed < 0 || cells.some(f => { const b = nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) return 0;
+    for (const f of cells) { f.top = bed; f.fluid = type; f.surf = S; if (!f.merged) f.bottom = Math.min(f.bottom, bed - 1); }
+    return S;
+  }
+  for (let k = 1; k < K; k++) {
+    if (R() > 0.85) continue;
+    const type = pickFluid(0.6, 0.25);
+    const ok = f => f && f.layer === k && !f.prot && !f.ramp && !f.fluid;
+    const at = (x, z) => inb(x, z) ? layerFloor(idx(x, z), k) : null;
+    const cands = [];
+    for (let c = 0; c < N * N; c++) {
+      const s0 = layerFloor(c, k);
+      if (!ok(s0)) continue;
+      for (let d = 0; d < 4; d++) {
+        const [dx, dz] = DIRS[d], lx = dz, lz = dx;
+        if (inb(s0.x - dx, s0.z - dz) && !at(s0.x - dx, s0.z - dz)) continue;   // bank (or cube wall) behind the source
+        const chan = [];
+        let x = s0.x, z = s0.z, good = true;
+        for (;;) {
+          const f = at(x, z);
+          if (!ok(f) || !at(x + lx, z + lz) || !at(x - lx, z - lz) || chan.length > 6) { good = false; break; }
+          chan.push(f);
+          if (!inb(x + dx, z + dz)) { good = false; break; }
+          if (!at(x + dx, z + dz)) break;   // reached the slab edge
+          x += dx; z += dz;
+        }
+        if (!good || chan.length < 2) continue;
+        const e = chan[chan.length - 1], bc = idx(e.x + dx, e.z + dz);
+        let g = null;
+        for (const f of cols[bc]) if (f.top < e.top - 3) g = f;
+        const above = g && nextAbove(g);
+        if (!g || g.prot || g.ramp || (above && above.bottom < e.top + 1)) continue;
+        cands.push({ chan, d, g, bc });
+      }
+    }
+    if (!cands.length) continue;
+    const st = cands[ri(0, cands.length - 1)];
+    const [dx, dz] = DIRS[st.d], lx = dz, lz = dx;
+    // carve the channel: surface one level below its lowest bank
+    let S = Infinity;
+    for (const f of st.chan) {
+      S = Math.min(S, f.top);
+      for (const b of [at(f.x + lx, f.z + lz), at(f.x - lx, f.z - lz)]) S = Math.min(S, b.top);
+    }
+    const back = at(st.chan[0].x - dx, st.chan[0].z - dz);
+    if (back) S = Math.min(S, back.top);
+    S -= 1;
+    const bed = S - 2;
+    if (st.chan.some(f => { const b = nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) continue;
+    // the pool at the bottom (or an existing body of the same fluid)
+    let S2 = st.g.fluid ? (st.g.fluid === type ? st.g.surf : 0) : poolAround(st.g, 1.3 + R() * 0.6, type);
+    if (!S2 || S2 >= S - 2) continue;
+    for (const f of st.chan) { f.top = bed; f.fluid = type; f.surf = S; if (!f.merged) f.bottom = Math.min(f.bottom, bed - 1); }
+    falls.push({ c: st.bc, d: st.d, top: S, bot: S2, type, layer: st.g.layer });
+    stats.fluids.push(FLUID_NAME[type] + ' fall L' + k + '→L' + st.g.layer);
+  }
+
+  // --- index floors --------------------------------------------------------------
+  const floors = [];
+  for (const col of cols) { col.sort((a, b) => a.top - b.top); for (const f of col) { f.id = floors.length; floors.push(f); } }
+  const entryF = cols[idx(0, ez)].find(f => f.prot === 1);
+  const exitF = cols[idx(N - 1, xz)].find(f => f.prot === 2);
+  if (!entryF || !exitF) return null;
+
+  // --- path search: nodes are floors plus free-standing stair landings ----------------------
+  const headOK = (g, h) => { const a = nextAbove(g); return !a || a.bottom >= Math.max(h, g.top) + 2; };
+  const colClear = (c, lo, hi, gapSolid) => {
+    for (const g of cols[c]) {
+      if (g.prot) return false;
+      if (g.bottom >= hi + SHEAD) continue;
+      if (g.fluid ? (g.surf <= lo - 1) : (g.top <= lo - gapSolid)) continue;
+      return false;
+    }
+    return true;
+  };
+  const NL = floors.length, SZ = NL + N * N * 64;
+  const nodeOf = new Map();
+  const landingAt = (c, h) => {
+    const id = NL + c * 64 + h;
+    let n = nodeOf.get(id);
+    if (!n) { n = { id, c, x: c % N, z: (c / N) | 0, top: h, landing: true, layer: 0 }; nodeOf.set(id, n); }
+    return n;
+  };
+  // a landing is a stone platform at level h: needs free space around it
+  const landingOK = (c, h) => {
+    if (h > MAX_L) return false;
+    for (const g of cols[c]) {
+      if (g.prot || g.top === h) return false;
+      if (g.bottom >= h + SHEAD) continue;
+      if (g.top <= h - 1 && (!g.fluid || g.surf <= h - 1)) continue;
+      return false;
+    }
+    return true;
+  };
+  function movesFrom(f, allowLandings = true) {
+    const out = [], h = f.top;
+    for (let d = 0; d < 4; d++) {
+      const [dx, dz] = DIRS[d], nx = f.x + dx, nz = f.z + dz;
       if (!inb(nx, nz)) continue;
       const n = idx(nx, nz);
-      if (!fluid[n] && !stair[n] && !bridge[n]) {
-        const dh = lvl[n] - h;
-        if (Math.abs(dh) <= 2) out.push({ kind: 'walk', from: i, to: n, cells: [], cost: 1 + 0.4 * Math.abs(dh) });
-        else if (dh <= -3) out.push({ kind: 'drop', from: i, to: n, cells: [], cost: 2.2 });
+      if (!f.landing) {
+        let below = null, walked = false;
+        for (const g of cols[n]) {
+          const dh = g.top - h;
+          if (Math.abs(dh) <= 2 && !g.fluid && headOK(g, h) && headOK(f, g.top)) {
+            out.push({ kind: 'walk', from: f, to: g, d, cells: [], cost: 1 + 0.4 * Math.abs(dh) }); walked = true;
+          }
+          if (g.top < h - 2) below = g;
+        }
+        if (!walked && below && !below.fluid && headOK(below, h)) out.push({ kind: 'drop', from: f, to: below, d, cells: [], cost: 2.2 });
+      } else if (landingOK(n, h)) {
+        out.push({ kind: 'walkway', from: f, to: landingAt(n, h), d, cells: [], cost: 2.2 });
       }
-      // stairs: k stair cells followed by a landing cell, max 2 levels rise per cell
-      const sc = [];
-      for (let k = 1; k <= 4; k++) {
-        const sx = x + dx * k, sz = z + dz * k;
-        if (!inb(sx, sz)) break;
-        const s = idx(sx, sz);
-        if (fluid[s] || prot[s] || stair[s] || bridge[s]) break;
-        sc.push(s);
-        const bx = sx + dx, bz = sz + dz;
-        if (!inb(bx, bz)) break;
-        const b = idx(bx, bz);
-        if (fluid[b] || stair[b] || bridge[b]) continue;
-        const rise = lvl[b] - h, ar = Math.abs(rise);
-        if (ar >= Math.max(3, k) && ar <= 2 * k)
-          out.push({ kind: 'stair', from: i, to: b, cells: sc.slice(), dx, dz, rise, cost: 1.5 + k * 1.6 });
+
+      // stairs: k flight cells, then a floor or a new landing; at most 2 levels per cell
+      const flight = [];
+      for (let k = 1; k <= 5; k++) {
+        const sx = f.x + dx * k, sz = f.z + dz * k, ex = sx + dx, ezz = sz + dz;
+        if (!inb(ex, ezz)) break;
+        flight.push(idx(sx, sz));
+        const e = idx(ex, ezz), targets = [];
+        for (const g of cols[e]) if (!g.fluid && headOK(g, g.top)) targets.push(g);
+        if (allowLandings) for (const r of new Set([2 * k, 2 * k - 1])) if (r >= 2 && landingOK(e, h + r)) targets.push(landingAt(e, h + r));
+        for (const g of targets) {
+          const rise = g.top - h, ar = Math.abs(rise);
+          if (ar < Math.max(f.landing || g.landing ? 2 : 3, k) || ar > 2 * k) continue;
+          let ok = true;
+          for (let j = 0; j < k && ok; j++) {
+            const a = h + rise * j / k, b = h + rise * (j + 1) / k;
+            ok = colClear(flight[j], Math.floor(Math.min(a, b)), Math.ceil(Math.max(a, b)), 0);
+          }
+          if (ok) out.push({ kind: 'stair', from: f, to: g, d, dx, dz, cells: flight.slice(), cost: 1.5 + k * 1.6 + (g.landing ? 2.5 : 0) });
+        }
       }
-      // bridges: straight (possibly sloped) span over fluid or low ground
-      const bc = [];
-      let need = -Infinity;
+      // bridges: straight span over fluid or lower ground to a floor, may slope by up to 2 levels
+      const span = [];
       for (let k = 1; k <= 7; k++) {
-        const cx = x + dx * k, cz = z + dz * k;
-        if (!inb(cx, cz)) break;
-        const c = idx(cx, cz);
-        if (prot[c] || stair[c] || bridge[c]) break;
-        need = Math.max(need, fluid[c] ? surf[c] + 1 : lvl[c] + 2);
-        if (need > h) break;
-        bc.push(c);
-        const bx = cx + dx, bz = cz + dz;
-        if (!inb(bx, bz)) break;
-        const b = idx(bx, bz);
-        if (fluid[b] || stair[b] || bridge[b]) continue;
-        const hb = lvl[b];
-        if (Math.abs(hb - h) <= Math.min(2, k) && need <= Math.min(h, hb))
-          out.push({ kind: 'bridge', from: i, to: b, cells: bc.slice(), dx, dz, cost: 1.5 + k * 1.1 + Math.abs(hb - h) * 0.3 });
+        const cx = f.x + dx * k, cz = f.z + dz * k, ex = cx + dx, ezz = cz + dz;
+        if (!inb(ex, ezz)) break;
+        span.push(idx(cx, cz));
+        if (!colClear(span[k - 1], h, h, 2)) break;
+        for (const g of cols[idx(ex, ezz)]) {
+          if (g.fluid || Math.abs(g.top - h) > Math.min(2, k)) continue;
+          const lo = Math.min(h, g.top), hi = Math.max(h, g.top);
+          if (span.every(c => colClear(c, lo, hi, 2)))
+            out.push({ kind: 'bridge', from: f, to: g, d, dx, dz, cells: span.slice(), cost: 1.5 + k * 1.1 + Math.abs(g.top - h) * 0.3 });
+        }
       }
     }
     return out;
   }
 
-  const jitter = new Float32Array(N * N).map(() => R() * 0.6);
-  const start = idx(0, ez), goal = idx(N - 1, xz);
-  const g = new Float32Array(N * N).fill(Infinity);
-  const prev = new Array(N * N).fill(null);
-  const closed = new Uint8Array(N * N);
-  const hfn = i => Math.abs((i % N) - (goal % N)) + Math.abs(((i / N) | 0) - ((goal / N) | 0));
-  g[start] = 0;
-  const open = [start];
-  while (open.length) {
-    let bi = 0;
-    for (let k = 1; k < open.length; k++) if (g[open[k]] + hfn(open[k]) < g[open[bi]] + hfn(open[bi])) bi = k;
-    const cur = open.splice(bi, 1)[0];
-    if (cur === goal) break;
-    if (closed[cur]) continue;
-    closed[cur] = 1;
+  const jitter = new Float32Array(SZ).map(() => R() * 0.6);
+  const gs = new Float64Array(SZ).fill(Infinity);
+  const prev = new Array(SZ).fill(null);
+  const closed = new Uint8Array(SZ);
+  const hfn = f => Math.abs(f.x - exitF.x) + Math.abs(f.z - exitF.z);
+  const open = new Heap();
+  gs[entryF.id] = 0; open.push(hfn(entryF), entryF);
+  while (open.size) {
+    const cur = open.pop();
+    if (cur === exitF) break;
+    if (closed[cur.id]) continue;
+    closed[cur.id] = 1;
     for (const mv of movesFrom(cur)) {
-      const ng = g[cur] + mv.cost + jitter[mv.to];
-      if (ng < g[mv.to]) { g[mv.to] = ng; prev[mv.to] = mv; open.push(mv.to); }
+      const ng = gs[cur.id] + mv.cost + jitter[mv.to.id];
+      if (ng < gs[mv.to.id]) { gs[mv.to.id] = ng; prev[mv.to.id] = mv; open.push(ng + hfn(mv.to), mv.to); }
     }
   }
-  if (!isFinite(g[goal])) return null;
+  if (!isFinite(gs[exitF.id])) return null;
   const moves = [];
-  for (let c = goal; c !== start; c = prev[c].from) moves.unshift(prev[c]);
+  for (let f = exitF; f !== entryF; f = prev[f.id].from) moves.unshift(prev[f.id]);
+  const pathFloors = [entryF, ...moves.map(m => m.to).filter(n => !n.landing)];
+  if (mode === 'split' && !pathFloors.some(f => f.layer !== le)) return null;
+  // landings belong to the layer the climb started from (so they stay visible from below)
+  for (const m of moves) if (m.to.landing) m.to.layer = m.from.layer;
 
-  // intermediates (stair / bridge cells) must not be reused elsewhere in the path
-  const count = new Map();
-  const bump = c => count.set(c, (count.get(c) || 0) + 1);
-  bump(start);
-  for (const mv of moves) { mv.cells.forEach(bump); bump(mv.to); }
-  for (const mv of moves) for (const c of mv.cells) if (count.get(c) > 1) return null;
-  const pathSet = new Set(count.keys());
-
-  function applyStair(m) {
-    const h = lvl[m.from], k = m.cells.length;
-    m.cells.forEach((s, j) => {
-      const a = h + m.rise * j / k, b = h + m.rise * (j + 1) / k;
-      stair[s] = { dx: m.dx, dz: m.dz, y0: 0, y1: 0 };
-      lvl[s] = Math.floor(Math.min(a, b));
-      fluid[s] = 0;
+  // --- structures: claims keep them apart from each other and from walked floors ----------
+  const pieces = Array.from({ length: N * N }, () => []);
+  const claims = Array.from({ length: N * N }, () => []);
+  for (const f of falls) claims[f.c].push({ c: f.c, lo: f.bot, hi: f.top });
+  const walkedIn = Array.from({ length: N * N }, () => []);
+  for (const f of pathFloors) walkedIn[f.c].push(f);
+  // vertical space the ball sweeps through when it walks or drops into a column
+  const sweeps = Array.from({ length: N * N }, () => []);
+  for (const m of moves) if (!m.cells.length && !m.to.landing) sweeps[m.to.c].push([Math.min(m.from.top, m.to.top), Math.max(m.from.top, m.to.top) + 2]);
+  const runs = [], landings = new Map();
+  const runClaims = m => {
+    const out = m.cells.map((c, j) => {
+      const k = m.cells.length, h = m.from.top, rise = m.to.top - h;
+      const a = h + rise * j / k, b = h + rise * (j + 1) / k;
+      return { c, lo: Math.min(a, b) - 1, hi: Math.max(a, b) };
     });
-    stairRuns.push(m);
-    stats.stairs++;
+    if (m.to.landing && !landings.has(m.to.id)) out.push({ c: m.to.c, lo: m.to.top - 1, hi: m.to.top });
+    return out;
+  };
+  function canPlace(m) {
+    for (const cl of runClaims(m)) {
+      for (const o of claims[cl.c]) if (!(o.hi + SHEAD <= cl.lo || cl.hi + SHEAD <= o.lo)) return false;
+      for (const g of walkedIn[cl.c]) if (g.top > cl.lo - SHEAD + 1 && g.top <= cl.hi + 1) return false;
+      for (const [a, b] of sweeps[cl.c]) if (cl.lo <= b && cl.hi >= a) return false;
+    }
+    return true;
   }
-  function applyBridge(m) {
-    for (const c of m.cells) bridge[c] = { dx: m.dx, dz: m.dz, axis: m.dx !== 0 ? 'x' : 'z', y0: 0, y1: 0 };
-    bridgeRuns.push(m);
-    stats.bridges++;
+  const coverBelow = (c, lo) => { for (const g of cols[c]) if (g.top <= lo && lo - g.top < SHEAD) g.covered = true; };
+  function placeLanding(n) {
+    const run = { kind: 'landing', from: n, to: n, cells: [n.c], k: 1, sag: 0, layer: n.layer, conn: new Set() };
+    run.pieces = [{ kind: 'landing', c: n.c, j: 0, dx: 1, dz: 0, run, y0: 0, y1: 0, base: 0 }];
+    pieces[n.c].push(run.pieces[0]);
+    coverBelow(n.c, n.top - 1);
+    landings.set(n.id, run);
+    runs.push(run);
   }
-
+  function place(m) {
+    for (const cl of runClaims(m)) claims[cl.c].push(cl);
+    if (m.to.landing && !landings.has(m.to.id)) placeLanding(m.to);
+    if (m.kind === 'walkway') {
+      landings.get(m.from.id).conn.add(m.d); landings.get(m.to.id).conn.add(OPP[m.d]);
+      return;
+    }
+    const lo = m.from.top <= m.to.top ? m.from : m.to, hi = lo === m.from ? m.to : m.from;
+    const run = { kind: m.kind, from: m.from, to: m.to, d: m.d, dx: m.dx, dz: m.dz, cells: m.cells, k: m.cells.length, sag: 0,
+      layerLo: lo.layer, layerHi: hi.layer, layer: Math.min(lo.layer, hi.layer) };
+    // floors right under a stair are covered by it: they must not be smoothed up through the steps
+    if (m.kind === 'stair') for (const cl of runClaims(m)) coverBelow(cl.c, cl.lo + 1);
+    run.pieces = m.cells.map((c, j) => { const p = { kind: m.kind, c, j, dx: m.dx, dz: m.dz, run, y0: 0, y1: 0, base: 0 }; pieces[c].push(p); return p; });
+    if (m.from.landing) landings.get(m.from.id).conn.add(m.d);
+    if (m.to.landing) landings.get(m.to.id).conn.add(OPP[m.d]);
+    runs.push(run);
+    if (m.kind === 'stair') stats.stairs++; else stats.bridges++;
+  }
   const pathEdges = new Set();
   const pathWalks = [];
-  for (const mv of moves) {
-    if (mv.kind === 'stair') applyStair(mv);
-    else if (mv.kind === 'bridge') applyBridge(mv);
+  for (const m of moves) {
+    if (m.cells.length || m.to.landing) { if (!canPlace(m)) return null; place(m); }
     else {
-      pathEdges.add(edgeKey(mv.from % N, (mv.from / N) | 0, mv.to % N, (mv.to / N) | 0));
-      if (mv.kind === 'walk') pathWalks.push(mv);
+      pathEdges.add(m.from.id + ':' + m.d); pathEdges.add(m.to.id + ':' + OPP[m.d]);
+      if (m.kind === 'walk') pathWalks.push(m);
     }
   }
-
-  // 7) decorative extra stairs + bridges off the critical path
+  stats.landings = landings.size;
+  // decorative extras
   let ds = ri(1, 3), db = ri(0, 2), tries = 0;
-  while ((ds > 0 || db > 0) && tries++ < 400) {
-    const i = ri(0, N * N - 1);
-    if (fluid[i] || stair[i] || bridge[i]) continue;
-    const mvs = movesFrom(i).filter(m => (m.kind === 'stair' && ds > 0) || (m.kind === 'bridge' && db > 0));
+  while ((ds > 0 || db > 0) && tries++ < 300) {
+    const f = floors[ri(0, floors.length - 1)];
+    if (f.fluid || f.prot) continue;
+    const mvs = movesFrom(f, false).filter(m => (m.kind === 'stair' && ds > 0) || (m.kind === 'bridge' && db > 0));
     if (!mvs.length) continue;
     const m = mvs[ri(0, mvs.length - 1)];
-    if (m.cells.some(c => pathSet.has(c) || prot[c])) continue;
-    if (m.kind === 'stair') { applyStair(m); ds--; } else { applyBridge(m); db--; }
-    m.cells.forEach(c => pathSet.add(c));
+    if (!canPlace(m)) continue;
+    place(m);
+    if (m.kind === 'stair') ds--; else db--;
   }
 
-  // 8) smoothing links: which neighbouring cells blend into a slope, which stay a cliff
-  const link = new Uint8Array(N * N);
-  // structure endpoints: the two corners facing the stair/bridge are pinned to the cell's level,
-  // so the structure always meets a level edge
+  // --- smoothing links -----------------------------------------------------------------
+  const setLink = (f, d, g) => { f.link[d] = g; g.link[OPP[d]] = f; };
+  for (const f of floors) for (const d of [0, 2]) {
+    const nx = f.x + DIRS[d][0], nz = f.z + DIRS[d][1];
+    if (!inb(nx, nz)) continue;
+    for (const g of cols[idx(nx, nz)]) {
+      const dh = Math.abs(g.top - f.top);
+      if (dh > 2 || f.covered || g.covered) continue;
+      if (f.fluid || g.fluid) { if (f.fluid === g.fluid && f.surf === g.surf) setLink(f, d, g); continue; }
+      if (!headOK(g, f.top) || !headOK(f, g.top)) continue;
+      if (dh === 0 || f.ramp || g.ramp) { setLink(f, d, g); continue; }
+      if (f.prot || g.prot) continue;
+      const s = slopeNoise(f.x * 0.3 + 3, f.z * 0.3 + 3);
+      if (R() < (dh === 1 ? 0.3 + 0.7 * s : 0.05 + 0.55 * s)) setLink(f, d, g);
+    }
+  }
+  for (const m of pathWalks) setLink(m.from, m.d, m.to);
+
+  // structure endpoints: the two corners facing the stair/bridge are pinned to the floor level
   const pins = new Map();
-  for (const r of stairRuns.concat(bridgeRuns)) {
-    const d = dirIndex(r.dx, r.dz);
-    for (const [c, side] of [[r.from, d], [r.to, OPP[d]]]) {
-      for (const [X, Z] of edgePts(c % N, (c / N) | 0, side)) pins.set(c + ':' + X + ',' + Z, lvl[c] * LH);
-    }
-  }
-  const setLink = (a, d) => {
-    const n = idx(a % N + DIRS[d][0], ((a / N) | 0) + DIRS[d][1]);
-    link[a] |= 1 << d; link[n] |= 1 << OPP[d];
-  };
-  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
-    const c = idx(x, z);
-    if (stair[c]) continue;
-    for (const d of [0, 2]) {
-      const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
-      if (!inb(nx, nz)) continue;
-      const n = idx(nx, nz);
-      if (stair[n]) continue;
-      if (fluid[c] || fluid[n]) { if (fluid[c] === fluid[n] && surf[c] === surf[n]) setLink(c, d); continue; }
-      const dh = Math.abs(lvl[c] - lvl[n]);
-      if (dh === 0) { setLink(c, d); continue; }
-      if (prot[c] || prot[n] || dh > 2) continue;
-      const s = slopeNoise(x * 0.3 + 3, z * 0.3 + 3);
-      const p = dh === 1 ? 0.3 + 0.7 * s : 0.05 + 0.55 * s;
-      if (R() < p) setLink(c, d);
-    }
-  }
-  for (const mv of pathWalks) {
-    const d = dirIndex(mv.to % N - mv.from % N, ((mv.to / N) | 0) - ((mv.from / N) | 0));
-    setLink(mv.from, d);
-  }
+  for (const r of runs) if (r.kind !== 'landing') for (const [f, side] of [[r.from, r.d], [r.to, OPP[r.d]]])
+    if (!f.landing) for (const [X, Z] of edgePts(f.x, f.z, side)) pins.set(f.id + ':' + X + ',' + Z, f.top * LH);
 
-  // 9) corner heights: every corner averages the cells around it that are linked to this cell
-  const corners = new Float32Array(N * N * 4);
-  const split = new Uint8Array(N * N);
-  function computeCorner(c, ox, oz) {
-    const x = c % N, z = (c / N) | 0, X = x + ox, Z = z + oz;
-    const inBlock = n => { const nx = n % N, nz = (n / N) | 0; return (nx === X - 1 || nx === X) && (nz === Z - 1 || nz === Z); };
-    const group = [c];
-    for (let gi = 0; gi < group.length; gi++) {
-      const gc = group[gi];
-      for (let d = 0; d < 4; d++) {
-        if (!(link[gc] >> d & 1)) continue;
-        const n = idx(gc % N + DIRS[d][0], ((gc / N) | 0) + DIRS[d][1]);
-        if (inBlock(n) && !group.includes(n)) group.push(n);
-      }
-    }
-    const pinned = group.map(gc => pins.get(gc + ':' + X + ',' + Z)).filter(v => v !== undefined);
+  // corner heights: average of the linked floors around each corner
+  function computeCorner(f, ox, oz) {
+    const X = f.x + ox, Z = f.z + oz;
+    const inBlock = g => (g.x === X - 1 || g.x === X) && (g.z === Z - 1 || g.z === Z);
+    const group = [f];
+    for (let i = 0; i < group.length; i++) for (const g of group[i].link) if (g && inBlock(g) && !group.includes(g)) group.push(g);
+    const pinned = group.map(g => pins.get(g.id + ':' + X + ',' + Z)).filter(v => v !== undefined);
     if (pinned.length) return pinned.reduce((a, b) => a + b) / pinned.length;
     let mean = 0;
-    for (const gc of group) mean += lvl[gc];
+    for (const g of group) mean += g.top;
     mean = mean / group.length * LH;
-    if (!group.some(gc => prot[gc] || fluid[gc] || stair[gc]))
+    if (!group.some(g => g.prot || g.fluid || g.covered))
       mean += ((hash32(X * 7919 + Z * 104729 + Math.round(mean * 8) * 31337) % 1000) / 1000 - 0.5) * 0.08;
     return mean;
   }
-  for (let c = 0; c < N * N; c++) {
-    for (let k = 0; k < 4; k++) corners[c * 4 + k] = computeCorner(c, k & 1, k >> 1);
-    const k = c * 4;
-    split[c] = Math.abs(corners[k] - corners[k + 3]) <= Math.abs(corners[k + 1] - corners[k + 2]) ? 0 : 1;
+  for (const f of floors) {
+    f.cs = [0, 1, 2, 3].map(k => computeCorner(f, k & 1, k >> 1));
+    f.split = Math.abs(f.cs[0] - f.cs[3]) <= Math.abs(f.cs[1] - f.cs[2]) ? 0 : 1;
   }
-  const edgeY = (c, d) => { const [a, b] = EDGE_CORNERS[d]; return (corners[c * 4 + a] + corners[c * 4 + b]) / 2; };
-  const tY = (c, fx, fz) => surfY(corners, split, c, fx, fz);
+  const edgeY = (n, d) => { if (n.landing) return n.top * LH; const [a, b] = EDGE_CORNERS[d]; return (n.cs[a] + n.cs[b]) / 2; };
+  const floorBelow = (c, y) => { let g = null; for (const f of cols[c]) if (f.top * LH <= y + 0.01) g = f; return g; };
+  const groundY = g => g ? (g.fluid ? g.surf * LH : Math.min(...g.cs)) : 0;
+  const pathCols = new Set(pathFloors.map(f => f.c));
 
-  // 10) fences: posts follow the surface, physics uses the min/max height of the edge
-  function addFence(a, d, hfn) {
-    const x = a % N, z = (a / N) | 0, nx = x + DIRS[d][0], nz = z + DIRS[d][1];
+  // --- structure geometry: heights from the smoothed floors at both ends, styles, supports ---
+  const pillar = (run, c, cx, cz, hx, hz, bottom, top) => {
+    if (top - bottom < 0.05) return;
+    const p = { kind: 'pillar', c, run, x0: cx - hx, x1: cx + hx, z0: cz - hz, z1: cz + hz, bottom, top };
+    pieces[c].push(p); (run.pillars ||= []).push(p);
+  };
+  for (const r of runs) {
+    if (r.kind === 'landing') { r.c = r.cells[0]; r.y0 = r.y1 = r.ymid = r.from.top * LH; }
+    else { r.y0 = edgeY(r.from, r.d); r.y1 = edgeY(r.to, OPP[r.d]); r.ymid = (r.y0 + r.y1) / 2; }
+  }
+  const pieceEnds = p => {
+    if (p.kind === 'landing') { p.y0 = p.y1 = p.run.y0; return; }
+    const neg = p.dx < 0 || p.dz < 0;
+    p.y0 = runY(p, neg ? 1 : 0, neg ? 1 : 0); p.y1 = runY(p, neg ? 0 : 1, neg ? 0 : 1);
+  };
+  for (const r of runs) r.pieces.forEach(pieceEnds);
+  for (const r of runs) {
+    if (r.kind === 'landing') {
+      const y = r.y0, sup = floorBelow(r.c, y - 0.5), p = r.pieces[0];
+      const supported = sup && y - sup.top * LH < SHEAD * LH;
+      p.base = supported ? groundY(sup) : y - 0.35;
+      if (!supported && !pathCols.has(r.c)) pillar(r, r.c, 0.5, 0.5, 0.17, 0.17, groundY(sup), y - 0.35);
+      continue;
+    }
+    const k = r.k;
+    if (r.kind === 'bridge') {
+      const deckLo = Math.min(r.y0, r.y1) - 0.25;
+      const below = r.pieces.map(p => floorBelow(p.c, deckLo));
+      const solid = below.every(g => g && !g.fluid && deckLo - groundY(g) < 4)
+        && r.pieces.every(p => !pathCols.has(p.c) && !pieces[p.c].some(q => q.run !== r && q.kind !== 'pillar' && Math.min(q.y0, q.y1) < deckLo));
+      r.style = solid && R() < 0.7 ? 'stone' : 'plank';
+      if (r.style === 'plank' && k >= 2) { r.sag = Math.min(0.22, 0.05 * k); r.pieces.forEach(pieceEnds); }
+    }
+    r.pieces.forEach(p => {
+      const lo = Math.min(p.y0, p.y1), sup = floorBelow(p.c, lo);
+      p.ground = groundY(sup);
+      p.supported = r.kind === 'stair' && !!sup && lo - sup.top * LH < SHEAD * LH;
+      p.base = p.supported ? p.ground : lo - 0.4;
+    });
+    // supports under bridges: stone piers between arches, timber legs under long plank spans
+    if (r.kind === 'bridge') {
+      if (r.style === 'stone') {
+        const nArch = Math.ceil(k / 3);
+        r.splits = [];
+        for (let i = 1; i < nArch; i++) r.splits.push(Math.round(i * k / nArch) - 0.5);
+        for (const s of r.splits) {
+          const p = r.pieces[Math.floor(s)];
+          pillar(r, p.c, 0.5, 0.5, r.dx ? 0.2 : 0.42, r.dx ? 0.42 : 0.2, p.ground, runY(p, 0.5, 0.5) - 0.3);
+        }
+      } else if (k >= 3) {
+        r.pieces.forEach((p, j) => {
+          const top = runY(p, 0.5, 0.5) - 0.2;
+          if (j % 2 === 1 && top - p.ground < 3.5 && !pathCols.has(p.c))
+            for (const w of [-0.38, 0.38]) pillar(r, p.c, 0.5 + (r.dz ? w : 0), 0.5 + (r.dx ? w : 0), 0.06, 0.06, p.ground, top);
+        });
+      }
+    }
+  }
+
+  // --- fences (physics edges; `show` decides if we draw a wooden fence) ------------------
+  const fences = new Map(), fenceList = [];
+  function addFence(c, d, hfn, layer, show = true) {
+    const x = c % N, z = (c / N) | 0, nx = x + DIRS[d][0], nz = z + DIRS[d][1];
     const pts = [0.07, 0.5, 0.93].map(t => {
       const fx = d === 0 ? 0.93 : d === 1 ? 0.07 : t, fz = d === 2 ? 0.93 : d === 3 ? 0.07 : t;
       return [x + fx, hfn(fx, fz), z + fz];
     });
     const ys = pts.map(p => p[1]);
-    const f = { a, ox: x, oz: z, nx, nz, pts, ymin: Math.min(...ys), ymax: Math.max(...ys) };
+    const f = { pts, ymin: Math.min(...ys), ymax: Math.max(...ys), layer, show };
     fenceList.push(f);
     const key = edgeKey(x, z, nx, nz);
     if (!fences.has(key)) fences.set(key, []);
     fences.get(key).push(f);
   }
-
-  // stairs + bridges get their real heights from the smoothed terrain at both ends
-  for (const r of stairRuns) {
-    const d = dirIndex(r.dx, r.dz), k = r.cells.length;
-    const ys = edgeY(r.from, d), ye = edgeY(r.to, OPP[d]);
-    r.cells.forEach((s, j) => {
-      const st = stair[s];
-      st.y0 = ys + (ye - ys) * j / k; st.y1 = ys + (ye - ys) * (j + 1) / k;
-      lvl[s] = Math.max(0, Math.floor(Math.min(st.y0, st.y1) / LH));
-      for (let q = 0; q < 4; q++) corners[s * 4 + q] = lvl[s] * LH;
-    });
+  for (const r of runs) {
+    if (r.kind === 'landing') {
+      for (let d = 0; d < 4; d++) if (!r.conn.has(d) && inb(r.from.x + DIRS[d][0], r.from.z + DIRS[d][1]))
+        addFence(r.c, d, () => r.y0, r.layer, false);
+      continue;
+    }
+    for (const p of r.pieces) for (const ld of (r.dx !== 0 ? [2, 3] : [0, 1]))
+      if (inb(p.c % N + DIRS[ld][0], ((p.c / N) | 0) + DIRS[ld][1])) addFence(p.c, ld, (fx, fz) => runY(p, fx, fz), r.layer, false);
   }
-  for (const r of bridgeRuns) {
-    const d = dirIndex(r.dx, r.dz), k = r.cells.length;
-    const ys = edgeY(r.from, d), ye = edgeY(r.to, OPP[d]);
-    r.cells.forEach((c, j) => {
-      const br = bridge[c];
-      br.y0 = ys + (ye - ys) * j / k; br.y1 = ys + (ye - ys) * (j + 1) / k;
-      const lat = br.axis === 'x' ? [2, 3] : [0, 1];
-      for (const ld of lat) addFence(c, ld, (fx, fz) => runY(br, fx, fz));
-    });
-  }
-
-  // cliff fences, in runs, and around lava. never on path edges.
-  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
-    const c = idx(x, z);
-    if (fluid[c] || stair[c] || bridge[c]) continue;
-    const runs = fenceNoise(x * 0.45, z * 0.45) > 0.56;
+  for (const f of floors) {
+    if (f.fluid) continue;
+    const runsF = fenceNoise(f.x * 0.45 + f.layer * 9, f.z * 0.45) > 0.56;
     for (let d = 0; d < 4; d++) {
-      const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
-      if (!inb(nx, nz)) continue;
-      const n = idx(nx, nz);
-      if (stair[n] || bridge[n] || (link[c] >> d & 1) || pathEdges.has(edgeKey(x, z, nx, nz))) continue;
-      const [a, b] = EDGE_CORNERS[d], [na, nb] = EDGE_CORNERS[OPP[d]];
-      const my = Math.min(corners[c * 4 + a], corners[c * 4 + b]);
-      const nt = fluid[n] ? surf[n] * LH : Math.max(corners[n * 4 + na], corners[n * 4 + nb]);
-      if (my - nt < 0.9) continue;
+      const nx = f.x + DIRS[d][0], nz = f.z + DIRS[d][1];
+      if (!inb(nx, nz) || f.link[d] || pathEdges.has(f.id + ':' + d)) continue;
+      const n = idx(nx, nz), [a, b] = EDGE_CORNERS[d], [na, nb] = EDGE_CORNERS[OPP[d]];
+      const my = Math.min(f.cs[a], f.cs[b]);
+      if (pieces[n].some(p => p.kind !== 'pillar' && Math.abs((p.y0 + p.y1) / 2 - my) < 1.6)) continue;
+      // what lies on the other side: a wall, or something to fall onto
+      let nt = 0, wall = false, lava = false;
+      for (const g of cols[n]) {
+        const gt = g.fluid ? g.surf * LH : Math.max(g.cs[na], g.cs[nb]);
+        if (gt <= my - 0.05) { nt = gt; lava = g.fluid === LAVA; }
+        else if (g.bottom * LH < my + 1) wall = true;
+      }
+      if (wall || my - nt < 0.9) continue;
       stats.cliffs++;
-      const p = fluid[n] === LAVA ? 0.85 : runs ? 0.9 : 0.06;
-      if (R() < p) { addFence(c, d, (fx, fz) => tY(c, fx, fz)); stats.fences++; }
+      const p = lava ? 0.85 : runsF ? 0.9 : f.layer > 0 && my - nt > 2 ? 0.3 : 0.06;
+      if (R() < p) { addFence(f.c, d, (fx, fz) => floorY(f, fx, fz), f.layer); stats.fences++; }
     }
   }
-  for (let c = 0; c < N * N; c++) for (const d of [0, 2]) if ((link[c] >> d & 1) && !fluid[c]) {
-    const n = idx(c % N + DIRS[d][0], ((c / N) | 0) + DIRS[d][1]);
-    if (lvl[n] !== lvl[c]) stats.slopes++;
-  }
+  for (const f of floors) for (const d of [0, 2]) if (f.link[d] && !f.fluid && f.link[d].top !== f.top) stats.slopes++;
 
   // debug path through the actual surfaces
-  const center = (i, y) => new THREE.Vector3(i % N + 0.5, y + 0.12, ((i / N) | 0) + 0.5);
-  const pieceY = c => { const s = stair[c] || bridge[c]; return (s.y0 + s.y1) / 2; };
-  const pathPts = [center(start, tY(start, 0.5, 0.5))];
-  for (const mv of moves) {
-    for (const c of mv.cells) pathPts.push(center(c, pieceY(c)));
-    pathPts.push(center(mv.to, tY(mv.to, 0.5, 0.5)));
+  const center = (c, y) => new THREE.Vector3(c % N + 0.5, y + 0.12, ((c / N) | 0) + 0.5);
+  const nodeY = n => n.landing ? n.top * LH : floorY(n, 0.5, 0.5);
+  const pathPts = [center(entryF.c, nodeY(entryF))];
+  for (const m of moves) {
+    if (m.cells.length) {
+      const run = runs.find(r => r.from === m.from && r.to === m.to);
+      for (const p of run.pieces) pathPts.push(center(p.c, runY(p, 0.5, 0.5)));
+    }
+    pathPts.push(center(m.to.c, nodeY(m.to)));
   }
 
   return {
-    seed, lvl, fluid, surf, prot, stair, bridge, link, moves, corners, split, fences, fenceList, stats, pathPts,
-    entry: { x: 0, z: ez, y: entryL * LH },
-    exit: { x: N - 1, z: xz, y: exitL * LH },
+    seed, K, B, mode, cols, floors, pieces, runs, falls, fences, fenceList, stats, pathPts, moves,
+    entry: { x: 0, z: ez, y: entryL * LH, floor: entryF, layer: le },
+    exit: { x: N - 1, z: xz, y: exitL * LH, floor: exitF, layer: lx },
   };
 }
 
 function generate(seed) {
-  for (let a = 0; a < 80; a++) {
+  for (let a = 0; a < 120; a++) {
     const m = tryGenerate(hash32(seed + a * 7919));
     if (m) { m.seed = seed; m.attempts = a + 1; return m; }
   }
@@ -529,10 +909,8 @@ class GeoBuilder {
       this.nor.push(nx / len, ny / len, nz / len);
       this.col.push(col.r, col.g, col.b);
     }
-    if (smooth) for (let k = 0; k < 3; k++) {
-      const v = [a, b, c][k];
-      this.smoothKeys.push([base + k, v[0].toFixed(3) + ',' + v[1].toFixed(3) + ',' + v[2].toFixed(3), nx, ny, nz]);
-    }
+    if (smooth) [a, b, c].forEach((v, k) =>
+      this.smoothKeys.push([base + k, v[0].toFixed(3) + ',' + v[1].toFixed(3) + ',' + v[2].toFixed(3), nx, ny, nz]));
   }
   quad(a, b, c, d, want, col, smooth = false) { this.tri(a, b, c, col, want, smooth); this.tri(a, c, d, col, want, smooth); }
   box(x0, y0, z0, x1, y1, z1, top, side, skip = {}) {
@@ -595,9 +973,9 @@ function wallRegion(b, P0, P1, lows, ups, nrm, col) {
     const tm = (t0 + t1) / 2;
     if (hi(tm) - lo(tm) <= 1e-5) continue;
     const A = [P0[0] + (P1[0] - P0[0]) * t0, P0[1] + (P1[1] - P0[1]) * t0];
-    const B = [P0[0] + (P1[0] - P0[0]) * t1, P0[1] + (P1[1] - P0[1]) * t1];
+    const Bp = [P0[0] + (P1[0] - P0[0]) * t1, P0[1] + (P1[1] - P0[1]) * t1];
     const l0 = lo(t0), l1 = lo(t1), h0 = Math.max(l0, hi(t0)), h1 = Math.max(l1, hi(t1));
-    b.quad([A[0], l0, A[1]], [B[0], l1, B[1]], [B[0], h1, B[1]], [A[0], h0, A[1]], nrm, col);
+    b.quad([A[0], l0, A[1]], [Bp[0], l1, Bp[1]], [Bp[0], h1, Bp[1]], [A[0], h0, A[1]], nrm, col);
   }
 }
 
@@ -616,15 +994,75 @@ const SIDE_STOPS = [[0, '#4e382a'], [6, '#7a5638'], [11, '#7a6d62'], [20, '#9a94
 const C = s => new THREE.Color(s);
 const LIP = C('#3f6b2e');
 
-// cliff wall between the top line `up` and the bottom line `low`, coloured in strata bands
-function cliffWall(b, P0, P1, low, up, nrm, lip) {
-  const lipLine = [up[0] - 0.12, up[1] - 0.12];
-  const ymin = Math.min(low[0], low[1]), ymax = Math.max(up[0], up[1]);
+// cliff wall clipped to the region above all `lows` lines and below all `ups` lines, in strata bands
+function cliffWall(b, P0, P1, lows, ups, topLine, nrm, lip) {
+  const lipLine = [topLine[0] - 0.12, topLine[1] - 0.12];
+  const ymin = Math.max(...lows.map(l => Math.min(l[0], l[1]))), ymax = Math.min(Math.max(...topLine), ...ups.map(l => Math.max(l[0], l[1])));
+  if (ymax <= ymin) return;
   for (let j = Math.floor(ymin); j < ymax; j++) {
     const col = gradient(SIDE_STOPS, j / LH).multiplyScalar(j & 1 ? 1 : 0.88);
-    wallRegion(b, P0, P1, [low, [j, j]], lip ? [up, [j + 1, j + 1], lipLine] : [up, [j + 1, j + 1]], nrm, col);
+    wallRegion(b, P0, P1, lows.concat([[j, j]]), ups.concat(lip ? [[j + 1, j + 1], lipLine] : [[j + 1, j + 1]]), nrm, col);
   }
-  if (lip) wallRegion(b, P0, P1, [low, lipLine], [up], nrm, LIP);
+  if (lip) wallRegion(b, P0, P1, lows.concat([lipLine]), ups, nrm, LIP);
+}
+
+// local frame of a stair / bridge run: s runs along the structure (0..k cells), w across it
+function runFrame(r) {
+  const first = r.cells[0];
+  const ox = first % N + 0.5 - r.dx * 0.5, oz = ((first / N) | 0) + 0.5 - r.dz * 0.5;
+  const lx = -r.dz, lz = r.dx;
+  return {
+    P: (s, w, y) => [ox + r.dx * s + lx * w, y, oz + r.dz * s + lz * w],
+    Y: s => { const T = s / r.k; return r.y0 + (r.y1 - r.y0) * T - r.sag * Math.sin(Math.PI * T); },
+    D: [r.dx, 0, r.dz], Lt: [lx, 0, lz],
+  };
+}
+// six-sided block in run space between s0..s1 and w0..w1, bottom/top heights given at both ends
+function slab(b, F, s0, s1, w0, w1, b0, t0, b1, t1, top, side) {
+  if (t0 - b0 < 0.005 && t1 - b1 < 0.005) return;
+  const P = F.P;
+  const v = [P(s0, w0, b0), P(s1, w0, b1), P(s1, w1, b1), P(s0, w1, b0), P(s0, w0, t0), P(s1, w0, t1), P(s1, w1, t1), P(s0, w1, t0)];
+  const neg = a => a.map(x => -x), sd = side.clone().multiplyScalar(0.85);
+  b.quad(v[4], v[5], v[6], v[7], [0, 1, 0], top);
+  b.quad(v[0], v[1], v[2], v[3], [0, -1, 0], sd);
+  b.quad(v[0], v[1], v[5], v[4], neg(F.Lt), side);
+  b.quad(v[3], v[2], v[6], v[7], F.Lt, side);
+  b.quad(v[0], v[3], v[7], v[4], neg(F.D), sd);
+  b.quad(v[1], v[2], v[6], v[5], F.D, sd);
+}
+
+// streaky textures for falling fluids (scrolled every frame)
+function makeFallTex(base, streak) {
+  const c = document.createElement('canvas'); c.width = 32; c.height = 64;
+  const g = c.getContext('2d'), R = mulberry32(7);
+  g.fillStyle = base; g.fillRect(0, 0, 32, 64);
+  g.fillStyle = streak;
+  for (let i = 0; i < 46; i++) {
+    g.globalAlpha = 0.2 + R() * 0.55;
+    const x = Math.floor(R() * 32), y = Math.floor(R() * 64), w = 1 + Math.floor(R() * 2), h = 6 + Math.floor(R() * 22);
+    g.fillRect(x, y, w, h); g.fillRect(x, y - 64, w, h);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const fallTex = { [WATER]: makeFallTex('#3f8fe0', '#eaf7ff'), [LAVA]: makeFallTex('#ff5a00', '#ffd27a'), [ACID]: makeFallTex('#66e030', '#eaffc8') };
+
+// materials of upper layers fade out around the player when the player is below them
+const playerU = { value: new THREE.Vector3() };
+function fadeMaterial(mat, fadeU) {
+  mat.transparent = true;
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uFade = fadeU; sh.uniforms.uPlayer = playerU;
+    sh.vertexShader = 'varying vec3 vFadeW;\n' + sh.vertexShader.replace('#include <project_vertex>',
+      '#include <project_vertex>\n  vFadeW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'uniform float uFade;\nuniform vec3 uPlayer;\nvarying vec3 vFadeW;\n' + sh.fragmentShader.replace('#include <opaque_fragment>', `
+      float fadeD = distance(vFadeW.xz, uPlayer.xz);
+      diffuseColor.a *= mix(1.0, mix(0.13, 0.45, smoothstep(1.5, 6.5, fadeD)), uFade);
+      #include <opaque_fragment>`);
+  };
+  mat.customProgramCacheKey = () => 'fade';
+  return mat;
 }
 
 // ---------------------------------------------------------------------------
@@ -672,8 +1110,8 @@ scene.add(cubeGroup);
 
 // player
 const player = {
-  x: 0, z: 0, y: 0, vy: 0, vx: 0, vz: 0, r: 0.3, hp: 100,
-  grounded: true, swimming: false, fluid: 0, visY: 0, support: 'terrain',
+  x: 0, z: 0, y: 0, vy: 0, vx: 0, vz: 0, r: 0.3, hp: 100, layer: 0,
+  grounded: true, swimming: false, fluid: 0, visY: 0, support: null,
   safe: { x: 0, y: 0, z: 0 }, safeTimer: 0, autoDir: null,
 };
 const playerGroup = new THREE.Group();
@@ -703,148 +1141,237 @@ function disposeWorld() {
 function buildWorld(m) {
   disposeWorld();
   const group = new THREE.Group();
-  const { lvl, fluid, surf, stair, bridge, corners: cs } = m;
-  const terrain = new GeoBuilder();
-  const wood = new GeoBuilder();
-  const fluids = { [WATER]: new GeoBuilder(), [LAVA]: new GeoBuilder(), [ACID]: new GeoBuilder() };
+  const { cols, pieces } = m;
+  const layers = Array.from({ length: m.K }, () => ({
+    terrain: new GeoBuilder(), wood: new GeoBuilder(),
+    fluids: { [WATER]: new GeoBuilder(), [LAVA]: new GeoBuilder(), [ACID]: new GeoBuilder() },
+    fadeU: { value: 0 },
+  }));
   const shade = (x, z) => ((x + z) & 1 ? 1.0 : 0.95) * (0.97 + (hash32(x * 31 + z * 977) % 100) / 1600);
 
   // bedrock
-  terrain.box(0, -BASE, 0, N, 0, N, C('#2a2a31'), C('#23232a'));
+  layers[0].terrain.box(0, -BASE, 0, N, 0, N, C('#2a2a31'), C('#23232a'));
 
-  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) {
-    const i = idx(x, z), L = lvl[i], k = i * 4;
-    const P = [[x, cs[k], z], [x + 1, cs[k + 1], z], [x, cs[k + 2], z + 1], [x + 1, cs[k + 3], z + 1]];
+  for (const f of m.floors) {
+    const L = layers[f.layer], x = f.x, z = f.z, cs = f.cs;
+    const P = [[x, cs[0], z], [x + 1, cs[1], z], [x, cs[2], z + 1], [x + 1, cs[3], z + 1]];
 
     // smooth top surface: 2 triangles, shared normals for soft shading
     let top;
-    if (fluid[i]) top = C(fluid[i] === WATER ? '#7d6f52' : fluid[i] === LAVA ? '#2b1d1a' : '#3e4a2a');
+    if (f.fluid) top = C(f.fluid === WATER ? '#7d6f52' : f.fluid === LAVA ? '#2b1d1a' : '#3e4a2a');
     else {
-      const avg = (cs[k] + cs[k + 1] + cs[k + 2] + cs[k + 3]) / 4 / LH;
-      top = gradient(TOP_STOPS, avg).multiplyScalar(shade(x, z));
-      for (const [dx, dz] of DIRS) {
-        const nx = x + dx, nz = z + dz;
+      top = gradient(TOP_STOPS, (cs[0] + cs[1] + cs[2] + cs[3]) / 4 / LH).multiplyScalar(shade(x, z));
+      for (const g of f.link) if (g && g.fluid) top.lerp(C(g.fluid === WATER ? '#c9b98a' : g.fluid === LAVA ? '#3a2a22' : '#a4a64a'), 0.4);
+      for (let d = 0; d < 4; d++) {
+        const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
         if (!inb(nx, nz)) continue;
-        const f = fluid[idx(nx, nz)];
-        if (f === WATER) top.lerp(C('#c9b98a'), 0.4);
-        else if (f === LAVA) top.lerp(C('#3a2a22'), 0.35);
-        else if (f === ACID) top.lerp(C('#a4a64a'), 0.3);
+        const wf = cols[idx(nx, nz)].find(g => g.fluid && Math.abs(g.surf - f.top) <= 2);
+        if (wf) top.lerp(C(wf.fluid === WATER ? '#c9b98a' : wf.fluid === LAVA ? '#3a2a22' : '#a4a64a'), 0.35);
       }
     }
-    const tris = m.split[i] ? [[0, 1, 2], [1, 3, 2]] : [[0, 1, 3], [0, 3, 2]];
+    const tris = f.split ? [[0, 1, 2], [1, 3, 2]] : [[0, 1, 3], [0, 3, 2]];
     tris.forEach((t, ti) => {
-      const col = top.clone().multiplyScalar(0.95 + (hash32(i * 2 + ti) % 100) / 1000);
-      terrain.tri(P[t[0]], P[t[1]], P[t[2]], col, [0, 1, 0], true);
+      const col = top.clone().multiplyScalar(0.95 + (hash32(f.c * 2 + ti + f.layer * 977) % 100) / 1000);
+      L.terrain.tri(P[t[0]], P[t[1]], P[t[2]], col, [0, 1, 0], true);
     });
 
-    // cliff walls where this cell's edge is above the neighbour's edge (or the cube boundary)
+    // walls: our side face minus whatever the neighbouring column covers
+    const fb = f.bottom * LH;
     for (let d = 0; d < 4; d++) {
-      const [ea, eb] = EDGE_CORNERS[d];
-      const up = [cs[k + ea], cs[k + eb]];
-      let low = [0, 0];
+      const [ea, eb] = EDGE_CORNERS[d], [na, nb] = EDGE_CORNERS[OPP[d]];
+      const topLine = [cs[ea], cs[eb]];
       const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
-      if (inb(nx, nz)) {
-        const n = idx(nx, nz), [na, nb] = EDGE_CORNERS[OPP[d]];
-        low = [cs[n * 4 + na], cs[n * 4 + nb]];
-      }
-      if (up[0] <= low[0] + 1e-4 && up[1] <= low[1] + 1e-4) continue;
+      const nbs = inb(nx, nz) ? cols[idx(nx, nz)].slice().sort((a, b) => a.bottom - b.bottom) : [];
       const [P0, P1] = edgePts(x, z, d);
-      cliffWall(terrain, P0, P1, low, up, DIRV[d], !fluid[i] && !stair[i]);
+      let gl = [-1e9, -1e9];
+      const gaps = [];
+      for (const g of nbs) { gaps.push([gl, [g.bottom * LH, g.bottom * LH]]); gl = [g.cs[na], g.cs[nb]]; }
+      gaps.push([gl, [1e9, 1e9]]);
+      for (const [lo, hi] of gaps) cliffWall(L.terrain, P0, P1, [[fb, fb], lo], [topLine, hi], topLine, DIRV[d], !f.fluid);
     }
-
-    // stairs (still blocky; reworked in a later step)
-    const st = stair[i];
-    if (st) {
-      const lo = Math.min(st.y0, st.y1), hi = Math.max(st.y0, st.y1), base = L * LH;
-      const n = Math.max(2, Math.round((hi - lo) / 0.25));
-      const ux = st.y1 >= st.y0 ? st.dx : -st.dx, uz = st.y1 >= st.y0 ? st.dz : -st.dz;
-      for (let s = 0; s < n; s++) {
-        const t0 = s / n, ttop = lo + (hi - lo) * (s + 0.5) / n;
-        let x0 = x, x1 = x + 1, z0 = z, z1 = z + 1;
-        if (ux > 0) x0 = x + t0; else if (ux < 0) x1 = x + 1 - t0;
-        if (uz > 0) z0 = z + t0; else if (uz < 0) z1 = z + 1 - t0;
-        terrain.box(x0, base, z0, x1, ttop, z1, C(s & 1 ? '#c9bfae' : '#b9af9d'), C('#8f8678'), { ny: true });
-      }
-    }
+    // underside of floating slabs
+    if (f.bottom > 0) L.terrain.quad([x, fb, z], [x + 1, fb, z], [x + 1, fb, z + 1], [x, fb, z + 1], [0, -1, 0], C('#3a2f28'));
 
     // fluids
-    if (fluid[i]) {
-      const sy = surf[i] * LH - 0.06, by = L * LH;
+    if (f.fluid) {
+      const sy = f.surf * LH - 0.06, by = f.top * LH;
       const hidden = d => {
         const nx = x + DIRS[d][0], nz = z + DIRS[d][1];
         if (!inb(nx, nz)) return false;
-        const n = idx(nx, nz), [na, nb] = EDGE_CORNERS[OPP[d]];
-        return fluid[n] ? surf[n] >= surf[i] : Math.min(cs[n * 4 + na], cs[n * 4 + nb]) >= sy;
+        const [na, nb] = EDGE_CORNERS[OPP[d]];
+        return cols[idx(nx, nz)].some(g => g.fluid ? g.surf >= f.surf && g.top * LH <= sy
+          : g.bottom * LH <= by + 0.01 && Math.min(g.cs[na], g.cs[nb]) >= sy);
       };
-      fluids[fluid[i]].box(x, by, z, x + 1, sy, z + 1, C('#ffffff'), C('#ffffff'), {
+      L.fluids[f.fluid].box(x, by, z, x + 1, sy, z + 1, C('#ffffff'), C('#ffffff'), {
         ny: true, px: hidden(0), nx: hidden(1), pz: hidden(2), nz: hidden(3),
       });
     }
+  }
 
-    // bridges (deck follows the slope between both ends)
-    const br = bridge[i];
-    if (br) {
-      const gy = Math.min(cs[k], cs[k + 1], cs[k + 2], cs[k + 3]);
-      const plank = p => C(p & 1 ? '#a0703f' : '#8d6136');
-      const beam = C('#5d3d22');
-      const ym = (br.y0 + br.y1) / 2;
-      for (let p = 0; p < 5; p++) {
-        const a = p * 0.2 + 0.01, b = a + 0.18, tc = (a + b) / 2;
-        if (br.axis === 'x') { const y = runY(br, tc, 0.5); wood.box(x + a, y - 0.1, z + 0.04, x + b, y, z + 0.96, plank(p), C('#6e4a28')); }
-        else { const y = runY(br, 0.5, tc); wood.box(x + 0.04, y - 0.1, z + a, x + 0.96, y, z + b, plank(p), C('#6e4a28')); }
+  // --- structures: stairs, bridges, landings ------------------------------------------
+  const STONE = C('#cfc5b2'), STONE2 = C('#bdb29e'), CHEEK = C('#8f8678'), CAP = C('#a69d8d'), SOFFIT = C('#6f685e');
+  const PIER = C('#968e80'), WOOD = C('#a0703f'), WOOD2 = C('#8d6136'), BEAM = C('#5d3d22'), ROPE = C('#cdb88e');
+  const pillarBox = (b, q, col) => { const x = q.c % N, z = (q.c / N) | 0; b.box(x + q.x0, q.bottom, z + q.z0, x + q.x1, q.top, z + q.z1, col, col); };
+  for (const r of m.runs) {
+    const L = layers[r.layer], S = L.terrain, W = L.wood;
+    if (r.kind === 'landing') {
+      const p = r.pieces[0], x = r.from.x, z = r.from.z, y = r.y0;
+      S.box(x + 0.02, p.base, z + 0.02, x + 0.98, y, z + 0.98, (x + z) & 1 ? STONE : STONE2, CHEEK);
+      for (let d = 0; d < 4; d++) {
+        if (r.conn.has(d)) continue;
+        const e = [[x + 0.88, z, x + 1, z + 1], [x, z, x + 0.12, z + 1], [x, z + 0.88, x + 1, z + 1], [x, z, x + 1, z + 0.12]][d];
+        S.box(e[0], y, e[1], e[2], y + 0.28, e[3], CAP, CHEEK);
       }
-      if (br.axis === 'x') {
-        const ya = runY(br, 0, 0.5) - 0.16, yb = runY(br, 1, 0.5) - 0.16;
-        wood.beam([x, ya, z + 0.14], [x + 1, yb, z + 0.14], 0.12, 0.12, beam);
-        wood.beam([x, ya, z + 0.86], [x + 1, yb, z + 0.86], 0.12, 0.12, beam);
-        if (ym - 0.22 > gy) for (const pz of [0.14, 0.86]) wood.box(x + 0.44, gy, z + pz - 0.06, x + 0.56, ym - 0.22, z + pz + 0.06, beam, beam);
-      } else {
-        const ya = runY(br, 0.5, 0) - 0.16, yb = runY(br, 0.5, 1) - 0.16;
-        wood.beam([x + 0.14, ya, z], [x + 0.14, yb, z + 1], 0.12, 0.12, beam);
-        wood.beam([x + 0.86, ya, z], [x + 0.86, yb, z + 1], 0.12, 0.12, beam);
-        if (ym - 0.22 > gy) for (const px of [0.14, 0.86]) wood.box(x + px - 0.06, gy, z + 0.44, x + px + 0.06, ym - 0.22, z + 0.56, beam, beam);
+      for (const q of r.pillars || []) pillarBox(S, q, PIER);
+      continue;
+    }
+    const F = runFrame(r), k = r.k;
+    if (r.kind === 'stair') {
+      // uniform steps over the whole flight, side walls, solid where the flight rests on ground
+      const rise = r.y1 - r.y0, n = Math.max(2, Math.round(Math.abs(rise) / 0.2)), half = Math.abs(rise) / n / 2;
+      for (let i = 0; i < n; i++) {
+        const s0 = i * k / n, s1 = (i + 1) * k / n, top = r.y0 + rise * (i + 0.5) / n;
+        const p = r.pieces[clamp(Math.floor((s0 + s1) / 2), 0, k - 1)];
+        const bot = p.supported ? p.base : top - 0.16;
+        slab(S, F, s0, s1, -0.4, 0.4, bot, top, bot, top, i & 1 ? STONE : STONE2, CHEEK);
       }
+      for (let j = 0; j < k; j++) {
+        const p = r.pieces[j], ya = F.Y(j), yb = F.Y(j + 1);
+        const ba = p.supported ? p.base : ya - 0.4, bb = p.supported ? p.base : yb - 0.4;
+        for (const [w0, w1] of [[-0.5, -0.4], [0.4, 0.5]]) slab(S, F, j, j + 1, w0, w1, ba, ya + half + 0.14, bb, yb + half + 0.14, CAP, CHEEK);
+        if (!p.supported) slab(S, F, j, j + 1, -0.4, 0.4, ya - 0.36, ya - half - 0.1, yb - 0.36, yb - half - 0.1, SOFFIT, SOFFIT);
+      }
+    } else if (r.style === 'stone') {
+      // stone deck with parapets, carried by round arches that spring from the banks / piers
+      const segs = k * 4;
+      for (let i = 0; i < segs; i++) {
+        const s0 = i * k / segs, s1 = (i + 1) * k / segs, ya = F.Y(s0), yb = F.Y(s1);
+        slab(S, F, s0, s1, -0.5, 0.5, ya - 0.25, ya, yb - 0.25, yb, (i >> 1) & 1 ? STONE : STONE2, CHEEK);
+        for (const [w0, w1] of [[-0.5, -0.4], [0.4, 0.5]]) slab(S, F, s0, s1, w0, w1, ya, ya + 0.3, yb, yb + 0.3, CAP, CHEEK);
+      }
+      const bounds = [0, ...(r.splits || []), k];
+      for (let a = 0; a + 1 < bounds.length; a++) {
+        const s0 = bounds[a], s1 = bounds[a + 1], span = s1 - s0;
+        let deckMin = Infinity;
+        for (let i = 0; i <= 8; i++) deckMin = Math.min(deckMin, F.Y(s0 + span * i / 8) - 0.25);
+        const H = Math.min(span * 0.5, 1.1), spring = deckMin - H - 0.12;
+        const under = t => spring + H * Math.sqrt(Math.max(0, 1 - (2 * (t - s0) / span - 1) ** 2));
+        const steps = Math.max(8, Math.round(span * 10));
+        for (let i = 0; i < steps; i++) {
+          const sa = s0 + span * i / steps, sb = s0 + span * (i + 1) / steps;
+          slab(S, F, sa, sb, -0.45, 0.45, under(sa), F.Y(sa) - 0.25, under(sb), F.Y(sb) - 0.25, CHEEK, CHEEK);
+        }
+      }
+      for (const q of r.pillars || []) pillarBox(S, q, PIER);
+    } else {
+      // plank bridge: sagging deck, stringers, posts with rope rails, timber legs
+      const planks = Math.round(k / 0.2);
+      for (let i = 0; i < planks; i++) {
+        const sc = (i + 0.5) * k / planks, sa = sc - 0.088, sb = sc + 0.088;
+        slab(W, F, sa, sb, -0.46, 0.46, F.Y(sa) - 0.07, F.Y(sa), F.Y(sb) - 0.07, F.Y(sb), i & 1 ? WOOD : WOOD2, BEAM);
+      }
+      const segs = k * 4;
+      for (let i = 0; i < segs; i++) {
+        const s0 = i * k / segs, s1 = (i + 1) * k / segs;
+        for (const [w0, w1] of [[-0.42, -0.32], [0.32, 0.42]]) slab(W, F, s0, s1, w0, w1, F.Y(s0) - 0.2, F.Y(s0) - 0.07, F.Y(s1) - 0.2, F.Y(s1) - 0.07, BEAM, BEAM);
+      }
+      for (const side of [-0.47, 0.47]) {
+        let last = null;
+        for (let s = 0; s <= k + 1e-6; s += 0.5) {
+          const [px, py, pz] = F.P(s, side, F.Y(s));
+          W.box(px - 0.04, py - 0.1, pz - 0.04, px + 0.04, py + 0.56, pz + 0.04, BEAM, BEAM);
+          if (last) for (const ry of [0.28, 0.5]) W.beam([last[0], last[1] + ry, last[2]], [px, py + ry, pz], 0.035, 0.035, ROPE);
+          last = [px, py, pz];
+        }
+      }
+      for (const q of r.pillars || []) pillarBox(W, q, BEAM);
     }
   }
 
   // fences (cliff fences + bridge rails): posts follow the surface, rails are sloped beams
   const post = C('#6e4420'), rail = C('#8b5a2b');
   for (const f of m.fenceList) {
-    for (const [px, py, pz] of f.pts) wood.box(px - 0.045, py, pz - 0.045, px + 0.045, py + 0.5, pz + 0.045, post, post);
+    if (!f.show) continue;
+    const W = layers[f.layer].wood;
+    for (const [px, py, pz] of f.pts) W.box(px - 0.045, py, pz - 0.045, px + 0.045, py + 0.5, pz + 0.045, post, post);
     for (let s = 0; s + 1 < f.pts.length; s++) {
       const p = f.pts[s], q = f.pts[s + 1];
-      for (const ry of [0.2, 0.4]) wood.beam([p[0], p[1] + ry, p[2]], [q[0], q[1] + ry, q[2]], 0.05, 0.06, rail);
+      for (const ry of [0.2, 0.4]) W.beam([p[0], p[1] + ry, p[2]], [q[0], q[1] + ry, q[2]], 0.05, 0.06, rail);
     }
   }
 
-  const solidMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
-  for (const b of [terrain, wood]) {
-    const mesh = new THREE.Mesh(b.build(), solidMat.clone());
-    mesh.castShadow = mesh.receiveShadow = true;
-    group.add(mesh);
+  // meshes: layer 0 opaque, upper layers fade (depth pre-pass + blended colour pass)
+  const fluidMats = [];
+  layers.forEach((L, k) => {
+    for (const b of [L.terrain, L.wood]) {
+      if (!b.pos.length) continue;
+      const geo = b.build();
+      const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+      const mesh = new THREE.Mesh(geo, k ? fadeMaterial(mat, L.fadeU) : mat);
+      mesh.castShadow = mesh.receiveShadow = true;
+      if (k) {
+        mesh.renderOrder = 10 * k + 1;
+        const pre = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true }));
+        pre.renderOrder = 10 * k;
+        group.add(pre);
+      }
+      group.add(mesh);
+    }
+    const fm = {
+      [WATER]: new THREE.MeshStandardMaterial({ color: 0x2e86de, emissive: 0x0a2a4a, transparent: true, opacity: 0.72, roughness: 0.15, metalness: 0.1, depthWrite: false }),
+      [LAVA]: new THREE.MeshStandardMaterial({ color: 0xff6a00, emissive: 0xff3a00, emissiveIntensity: 1.2, roughness: 0.6 }),
+      [ACID]: new THREE.MeshStandardMaterial({ color: 0x7dff3a, emissive: 0x3a9a10, emissiveIntensity: 0.8, transparent: true, opacity: 0.82, roughness: 0.3, depthWrite: false }),
+    };
+    for (const t of [WATER, LAVA, ACID]) {
+      if (!L.fluids[t].pos.length) continue;
+      const mat = k ? fadeMaterial(fm[t], L.fadeU) : fm[t];
+      const mesh = new THREE.Mesh(L.fluids[t].build(), mat);
+      mesh.receiveShadow = t !== LAVA;
+      mesh.renderOrder = 10 * k + 2;
+      mesh.userData.fluid = t;
+      group.add(mesh);
+      fluidMats.push(mesh);
+    }
+  });
+
+  // waterfalls: a sheet pouring over the slab edge, plus a splash ring where it lands
+  const splashes = [], lights = [];
+  for (const f of m.falls) {
+    const L = layers[f.layer], [dx, dz] = DIRS[f.d], bx = f.c % N, bz = (f.c / N) | 0;
+    const yTop = f.top * LH - 0.04, yBot = f.bot * LH - 0.08, h = yTop - yBot;
+    const ex = dx > 0 ? bx : dx < 0 ? bx + 1 : bx + 0.5, ez = dz > 0 ? bz : dz < 0 ? bz + 1 : bz + 0.5;
+    const geo = new THREE.BoxGeometry(dx ? 0.22 : 0.84, h, dx ? 0.84 : 0.22);
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * h * 0.7);
+    const mat = new THREE.MeshStandardMaterial({
+      map: fallTex[f.type], transparent: true, opacity: f.type === LAVA ? 1 : 0.85, depthWrite: false, roughness: 0.3,
+      emissive: f.type === LAVA ? 0xff4a00 : f.type === ACID ? 0x2a7a10 : 0x0a2a4a,
+      emissiveMap: f.type === LAVA ? fallTex[LAVA] : null, emissiveIntensity: f.type === LAVA ? 1.3 : 1,
+    });
+    const sheet = new THREE.Mesh(geo, f.layer ? fadeMaterial(mat, L.fadeU) : mat);
+    sheet.position.set(ex + dx * 0.12, yBot + h / 2, ez + dz * 0.12);
+    sheet.renderOrder = 10 * f.layer + 3;
+    group.add(sheet);
+    const foam = f.type === LAVA ? 0xffc06a : f.type === ACID ? 0xd8ff9a : 0xeaf6ff;
+    const splash = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, 0.05, 14),
+      new THREE.MeshBasicMaterial({ color: foam, transparent: true, opacity: 0.55, depthWrite: false }));
+    splash.position.set(ex + dx * 0.3, yBot + 0.06, ez + dz * 0.3);
+    splash.renderOrder = 10 * f.layer + 4;
+    group.add(splash); splashes.push(splash);
+    if (f.type === LAVA) {
+      const l = new THREE.PointLight(0xff5a1a, 6, 6, 2);
+      l.position.set(ex + dx * 0.6, yBot + h * 0.4, ez + dz * 0.6);
+      lights.push(l); group.add(l);
+    }
   }
 
-  const fluidMats = {
-    [WATER]: new THREE.MeshStandardMaterial({ color: 0x2e86de, emissive: 0x0a2a4a, transparent: true, opacity: 0.72, roughness: 0.15, metalness: 0.1, depthWrite: false }),
-    [LAVA]: new THREE.MeshStandardMaterial({ color: 0xff6a00, emissive: 0xff3a00, emissiveIntensity: 1.2, roughness: 0.6 }),
-    [ACID]: new THREE.MeshStandardMaterial({ color: 0x7dff3a, emissive: 0x3a9a10, emissiveIntensity: 0.8, transparent: true, opacity: 0.82, roughness: 0.3, depthWrite: false }),
-  };
-  const fluidMeshes = {};
-  for (const t of [WATER, LAVA, ACID]) {
-    if (!fluids[t].pos.length) continue;
-    const mesh = new THREE.Mesh(fluids[t].build(), fluidMats[t]);
-    mesh.receiveShadow = t !== LAVA;
-    group.add(mesh);
-    fluidMeshes[t] = mesh;
-  }
   // a few glows over lava
-  const lights = [];
-  for (let i = 0; i < N * N; i++) {
-    if (fluid[i] !== LAVA) continue;
-    const x = i % N + 0.5, z = ((i / N) | 0) + 0.5;
-    if (lights.some(l => Math.hypot(l.position.x - x, l.position.z - z) < 4) || lights.length >= 4) continue;
+  for (const f of m.floors) {
+    if (f.fluid !== LAVA) continue;
+    const x = f.x + 0.5, z = f.z + 0.5, y = f.surf * LH + 0.7;
+    if (lights.some(l => Math.hypot(l.position.x - x, l.position.z - z, l.position.y - y) < 4) || lights.length >= 4) continue;
     const l = new THREE.PointLight(0xff5a1a, 6, 6, 2);
-    l.position.set(x, surf[i] * LH + 0.7, z);
+    l.position.set(x, y, z);
     lights.push(l); group.add(l);
   }
 
@@ -859,7 +1386,7 @@ function buildWorld(m) {
   lintel.position.set(0.12, ey + 1.58, ez + 0.5); lintel.castShadow = true; group.add(lintel);
   const entryGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 1.45),
     new THREE.MeshBasicMaterial({ color: 0x5fd3ff, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
-  entryGlow.rotation.y = Math.PI / 2; entryGlow.position.set(0.03, ey + 0.74, ez + 0.5); group.add(entryGlow);
+  entryGlow.rotation.y = Math.PI / 2; entryGlow.position.set(0.03, ey + 0.74, ez + 0.5); entryGlow.renderOrder = 900; group.add(entryGlow);
 
   // exit portal on the x=N face
   const xy = m.exit.y, xz = m.exit.z;
@@ -869,6 +1396,7 @@ function buildWorld(m) {
     new THREE.MeshStandardMaterial({ color: 0xffc94a, emissive: 0xffa500, emissiveIntensity: 1.4 }));
   const disc = new THREE.Mesh(new THREE.CircleGeometry(0.44, 32),
     new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
+  disc.renderOrder = 900;
   portal.add(ring, disc);
   ring.rotation.y = disc.rotation.y = Math.PI / 2;
   portal.add(new THREE.PointLight(0xffc94a, 8, 6, 2));
@@ -877,6 +1405,7 @@ function buildWorld(m) {
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, beamH, 20, 1, true),
     new THREE.MeshBasicMaterial({ color: 0xffd36a, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
   beam.position.set(N - 0.5, xy + beamH / 2, xz + 0.5);
+  beam.renderOrder = 900;
   group.add(beam);
 
   // door outlines on the cube faces
@@ -894,7 +1423,7 @@ function buildWorld(m) {
   group.add(pathLine);
 
   scene.add(group);
-  world = { group, fluidMeshes, fluidMats, portal, ring, disc, beam, entryGlow, lights, pathLine };
+  world = { group, layers, fluidMats, splashes, portal, ring, disc, beam, entryGlow, lights, pathLine };
 }
 
 // ---------------------------------------------------------------------------
@@ -904,35 +1433,37 @@ function cellAt(x, z) {
   const cx = Math.floor(x), cz = Math.floor(z);
   return inb(cx, cz) ? idx(cx, cz) : -1;
 }
-const terrainY = (i, fx, fz) => surfY(map.corners, map.split, i, fx, fz);
-// height of a given solid kind in cell i (null if that cell has no such solid)
-function solidY(kind, i, fx, fz) {
-  if (kind === 'terrain') return terrainY(i, fx, fz);
-  const s = kind === 'stair' ? map.stair[i] : map.bridge[i];
-  return s ? runY(s, fx, fz) : null;
-}
+const pieceBottom = (p, top) => p.kind === 'bridge' ? top - 0.2 : p.base;
+const inPillar = (p, fx, fz) => fx >= p.x0 && fx <= p.x1 && fz >= p.z0 && fz <= p.z1;
 // highest walkable surface at (x,z) that is not above y+step
 function groundAt(x, z, y, step) {
   const i = cellAt(x, z);
-  if (i < 0) return { h: -Infinity, kind: null };
+  if (i < 0) return { h: -Infinity, s: null, i };
   const fx = x - Math.floor(x), fz = z - Math.floor(z);
-  let h = terrainY(i, fx, fz), kind = 'terrain';
-  for (const k of ['stair', 'bridge']) {
-    const s = solidY(k, i, fx, fz);
-    if (s !== null && s <= y + step && s > h) { h = s; kind = k; }
+  let h = -Infinity, s = null;
+  for (const f of map.cols[i]) { const t = floorY(f, fx, fz); if (t <= y + step && t > h) { h = t; s = f; } }
+  for (const p of map.pieces[i]) {
+    if (p.kind === 'pillar') continue;
+    const t = runY(p, fx, fz);
+    if (t <= y + step && t > h) { h = t; s = p; }
   }
-  return { h, kind, i };
+  return { h, s, i };
 }
 // does something solid occupy the ball's body (between y+step and the top of the ball)?
-function blockedAt(x, z, y, step) {
+function blockedAt(x, z, y, step, piecesOnly = false) {
   const i = cellAt(x, z);
   if (i < 0) return true;
-  const fx = x - Math.floor(x), fz = z - Math.floor(z);
-  if (terrainY(i, fx, fz) > y + step) return true;
-  const st = solidY('stair', i, fx, fz);
-  if (st !== null && st > y + step) return true;
-  const br = solidY('bridge', i, fx, fz);
-  if (br !== null && br > y + step && br - 0.2 < y + 2 * player.r) return true;
+  const fx = x - Math.floor(x), fz = z - Math.floor(z), head = y + 2 * player.r;
+  if (!piecesOnly) for (const f of map.cols[i]) if (floorY(f, fx, fz) > y + step && f.bottom * LH < head) return true;
+  for (const p of map.pieces[i]) {
+    if (p.kind === 'pillar') {
+      if (inPillar(p, fx, fz) && p.bottom < head && p.top > y + step) return true;
+      continue;
+    }
+    const t = runY(p, fx, fz), b = pieceBottom(p, t);
+    // inside our own cell only structures hanging overhead count (not the one we roll on)
+    if (piecesOnly ? b > y + 0.05 && b < head : t > y + step && b < head) return true;
+  }
   return false;
 }
 function fenceBlocks(a, b, y) {
@@ -943,17 +1474,18 @@ function fenceBlocks(a, b, y) {
   return !!f && f.some(e => y > e.ymin - 0.45 && y < e.ymax + 0.6);
 }
 // Surfaces are continuous inside a cell, so the only real obstacles are height jumps across a
-// cell edge (cliffs, stair sides) and decks hanging at body height. (rx,rz) is a reference point
-// on our side, (px,pz) the probe point.
+// cell edge (cliffs, slab sides, stair sides) and structures at body height. (rx,rz) is a
+// reference point on our side, (px,pz) the probe point.
 function hopBlocked(rx, rz, px, pz, y, step) {
   const ri = cellAt(rx, rz), pi = cellAt(px, pz);
   if (pi < 0) return true;
-  const br = solidY('bridge', pi, px - Math.floor(px), pz - Math.floor(pz));
-  if (br !== null && br > y + step && br - 0.2 < y + 2 * player.r) return true;
-  if (ri === pi || ri < 0) return false;
+  if (ri === pi || ri < 0) return blockedAt(px, pz, y, step, true);
   const e = 0.002;
   const qx = clamp(px, Math.floor(rx) + e, Math.floor(rx) + 1 - e), qz = clamp(pz, Math.floor(rz) + e, Math.floor(rz) + 1 - e);
-  const ref = Math.max(y, groundAt(qx, qz, y + 0.6, 0).h);
+  // our side of the edge: the surface we roll on if it is in that cell, else whatever is there
+  const sup = player.support, qi = cellAt(qx, qz);
+  const own = sup && sup.c === qi ? topOf(sup, qx - Math.floor(qx), qz - Math.floor(qz)) : groundAt(qx, qz, y + 0.6, 0).h;
+  const ref = Math.max(y, own);
   const q2x = clamp(qx, Math.floor(px) + e, Math.floor(px) + 1 - e), q2z = clamp(qz, Math.floor(pz) + e, Math.floor(pz) + 1 - e);
   return blockedAt(q2x, q2z, ref, step);
 }
@@ -976,13 +1508,12 @@ function canMove(nx, nz, axis, sign) {
   return true;
 }
 // surface gradient of the solid the ball rests on
-function slopeAt(kind, x, z) {
-  const i = cellAt(x, z);
-  if (i < 0 || !kind) return [0, 0];
+function slopeAt(s, x, z) {
+  if (!s) return [0, 0];
   const e = 0.04;
   const fx = clamp(x - Math.floor(x), e, 1 - e), fz = clamp(z - Math.floor(z), e, 1 - e);
-  const gx = (solidY(kind, i, fx + e, fz) - solidY(kind, i, fx - e, fz)) / (2 * e);
-  const gz = (solidY(kind, i, fx, fz + e) - solidY(kind, i, fx, fz - e)) / (2 * e);
+  const gx = (topOf(s, fx + e, fz) - topOf(s, fx - e, fz)) / (2 * e);
+  const gz = (topOf(s, fx, fz + e) - topOf(s, fx, fz - e)) / (2 * e);
   return [gx || 0, gz || 0];
 }
 
@@ -994,8 +1525,11 @@ let statusMsg = '', statusUntil = 0;
 function setStatus(s) { statusMsg = s; statusUntil = time + 2.2; }
 
 function spawnAt(x, y, z) {
-  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: 'terrain' });
+  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null });
   player.safe = { x, y, z };
+  const gr = groundAt(x, z, y + 0.05, 0);
+  player.support = gr.s;
+  if (gr.s) player.layer = gr.s.kind ? gr.s.run.layer : gr.s.layer;
 }
 function spawnEntry() { spawnAt(map.entry.x + 0.5, map.entry.y, map.entry.z + 0.5); player.hp = 100; }
 
@@ -1028,7 +1562,7 @@ function updatePlayer(dt) {
   let ax = dx * sp * accK * ctl, az = dz * sp * accK * ctl;
   if (player.grounded && !player.swimming) {
     const [gx, gz] = slopeAt(player.support, player.x, player.z);
-    const k = player.support === 'stair' ? 0.25 : 1, den = 1 + gx * gx + gz * gz;
+    const k = player.support?.kind === 'stair' ? 0.25 : 1, den = 1 + gx * gx + gz * gz;
     ax -= GRAV * ROLL * gx / den * k;
     az -= GRAV * ROLL * gz / den * k;
   }
@@ -1059,37 +1593,55 @@ function updatePlayer(dt) {
     }
     else player.grounded = false;
   }
-  player.support = gr.kind;
+  if (player.y < -3) { hurt(25, 'Fell out of the cube'); return; }
+  player.support = gr.s;
+  if (player.grounded && gr.s) player.layer = gr.s.kind
+    ? (player.y > gr.s.run.ymid ? (gr.s.run.y1 > gr.s.run.y0 ? gr.s.run.to : gr.s.run.from).layer : (gr.s.run.y1 > gr.s.run.y0 ? gr.s.run.from : gr.s.run.to).layer)
+    : gr.s.layer;
 
   // fluids
-  const ci = cellAt(player.x, player.z);
-  const ft = ci >= 0 ? map.fluid[ci] : 0;
+  const ci = gr.i;
+  const fl = gr.s && !gr.s.kind && gr.s.fluid ? gr.s : null;
   const wasSwimming = player.swimming;
   player.swimming = false; player.fluid = 0;
   if (time > statusUntil) statusMsg = '';
-  if (ft && gr.kind === 'terrain' && player.y < map.surf[ci] * LH + 0.05) {
-    const sy = map.surf[ci] * LH;
-    if (ft === LAVA) { hurt(50, 'Fell into lava!'); return; }
+  if (fl && player.y < fl.surf * LH + 0.05) {
+    const sy = fl.surf * LH;
+    if (fl.fluid === LAVA) { hurt(50, 'Fell into lava!'); return; }
     const fy = sy - 0.24;
     if (player.y <= fy + 0.01 || wasSwimming) {
       player.vy = 0;
       player.y += (fy - player.y) * Math.min(1, dt * 6);
-      player.swimming = true; player.grounded = true; player.fluid = ft;
-      if (ft === ACID) {
+      player.swimming = true; player.grounded = true; player.fluid = fl.fluid;
+      if (fl.fluid === ACID) {
         player.hp -= 30 * dt;
         if (!statusMsg) statusMsg = 'Acid burns! Get out!';
         if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return; }
       } else if (!statusMsg) statusMsg = 'Swimming - find a low bank to climb out';
     }
   }
+  // standing in a waterfall: the current pushes you out; lava and acid falls hurt
+  for (const f of map.falls) {
+    if (ci !== f.c) continue;
+    const lx = player.x - Math.floor(player.x), lz = player.z - Math.floor(player.z);
+    const dist = [lx, 1 - lx, lz, 1 - lz][f.d], lat = f.d < 2 ? lz : lx;
+    if (dist > 0.45 || lat < 0.06 || lat > 0.94 || player.y > f.top * LH || player.y < f.bot * LH - 0.5) continue;
+    if (f.type === LAVA) { hurt(50, 'Burned by a lavafall!'); return; }
+    if (f.type === ACID) {
+      player.hp -= 40 * dt;
+      if (!statusMsg) statusMsg = 'Acid rain!';
+      if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return; }
+    }
+    player.vx += DIRS[f.d][0] * 9 * dt; player.vz += DIRS[f.d][1] * 9 * dt;
+    if (!player.grounded) player.vy -= 12 * dt;
+  }
   if (!player.swimming && player.grounded) player.hp = Math.min(100, player.hp + 6 * dt);
 
   // remember a safe spot to respawn at
   player.safeTimer += dt;
-  if (player.grounded && !player.swimming && !ft && gr.kind === 'terrain' && player.safeTimer > 0.4) {
+  if (player.grounded && !player.swimming && gr.s && !gr.s.kind && !gr.s.fluid && player.safeTimer > 0.4) {
     player.safeTimer = 0;
-    const cx = (ci % N) + 0.5, cz = ((ci / N) | 0) + 0.5;
-    player.safe = { x: cx, y: terrainY(ci, 0.5, 0.5), z: cz };
+    player.safe = { x: gr.s.x + 0.5, y: floorY(gr.s, 0.5, 0.5), z: gr.s.z + 0.5 };
   }
 
   // rolling visual
@@ -1100,8 +1652,7 @@ function updatePlayer(dt) {
   }
 
   // exit
-  const ex = map.exit;
-  if (ci === idx(ex.x, ex.z) && Math.abs(player.y - ex.y) < 0.5 && player.x > N - 0.7) nextCube();
+  if (gr.s === map.exit.floor && player.x > N - 0.7) nextCube();
 }
 
 // ---------------------------------------------------------------------------
@@ -1116,11 +1667,13 @@ function loadCube(seed) {
   map = generate(seed);
   buildWorld(map);
   spawnEntry();
+  for (const L of world.layers) L.fadeU.value = 0;
   document.getElementById('depth').textContent = depth;
   document.getElementById('seed').textContent = seed;
   const s = map.stats;
-  document.getElementById('stats').textContent =
-    `slopes ${s.slopes} · cliffs ${s.cliffs} · stairs ${s.stairs} · bridges ${s.bridges} · fences ${s.fences} · ${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`;
+  const modeText = { single: 'single layer', cross: `entry L${map.entry.layer} → exit L${map.exit.layer}`, split: `split layer L${map.entry.layer}` }[s.mode];
+  document.getElementById('stats').innerHTML =
+    `${s.layers} layer${s.layers > 1 ? 's' : ''} · ${modeText}<br>slopes ${s.slopes} · cliffs ${s.cliffs} · ramps ${s.ramps} · pillars ${s.pillars} · stairs ${s.stairs} · bridges ${s.bridges} · fences ${s.fences}<br>${s.fluids.join(', ') || 'no fluids'} · gen tries ${map.attempts}`;
   const fade = document.getElementById('fade');
   requestAnimationFrame(() => fade.style.opacity = 0);
 }
@@ -1182,13 +1735,22 @@ function frame() {
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
   if (Math.abs(player.y - player.visY) > 1.5) player.visY = player.y;
   playerGroup.position.set(player.x, player.visY + player.r, player.z);
+  playerU.value.set(player.x, player.visY, player.z);
   ghost.quaternion.copy(ball.quaternion);
 
   if (world) {
-    const fm = world.fluidMeshes;
-    if (fm[WATER]) fm[WATER].position.y = Math.sin(time * 1.6) * 0.025;
-    if (fm[ACID]) fm[ACID].position.y = Math.sin(time * 2.3 + 1) * 0.02;
-    world.fluidMats[LAVA].emissiveIntensity = 1.1 + Math.sin(time * 3) * 0.3;
+    world.layers.forEach((L, k) => {
+      const target = k > player.layer ? 1 : 0;
+      L.fadeU.value += (target - L.fadeU.value) * Math.min(1, dt * 5);
+    });
+    for (const m of world.fluidMats) {
+      const t = m.userData.fluid;
+      if (t === WATER) m.position.y = Math.sin(time * 1.6) * 0.025;
+      else if (t === ACID) m.position.y = Math.sin(time * 2.3 + 1) * 0.02;
+      else m.material.emissiveIntensity = 1.1 + Math.sin(time * 3) * 0.3;
+    }
+    for (const t of [WATER, LAVA, ACID]) fallTex[t].offset.y += dt * (t === LAVA ? 0.5 : 1.5);
+    world.splashes.forEach((s, i) => { const k = 1 + Math.sin(time * 9 + i) * 0.08; s.scale.set(k, 1, k); });
     for (const l of world.lights) l.intensity = 5 + Math.sin(time * 4 + l.position.x) * 1.5;
     world.ring.rotation.x = time * 1.5;
     world.disc.material.opacity = 0.35 + Math.sin(time * 4) * 0.15;
@@ -1198,6 +1760,7 @@ function frame() {
 
   document.getElementById('hpbar').style.width = clamp(player.hp, 0, 100) + '%';
   document.getElementById('status').textContent = statusMsg;
+  document.getElementById('layer').textContent = map ? `${player.layer + 1}/${map.K}` : '-';
 
   updateCamera(dt);
   renderer.render(scene, camera);
