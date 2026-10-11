@@ -5,7 +5,10 @@ Animations (all in place, the game moves the character; one-shots start and
 end in the neutral standing pose so they can be cross-faded from anything):
     Walk         -- loop, 28 frames @ 30 fps, ground speed WALK_SPEED (extras: speed)
     Run          -- loop, 20 frames @ 30 fps, ground speed RUN_SPEED (extras: speed)
-    Jump         -- crouch, push-off, ballistic flight, landing, recovery
+    Swim         -- loop, doggy paddle at SWIM_SPEED (extras: speed, water_level)
+    SwimIdle     -- loop, treading water (extras: water_level)
+    Jump         -- crouch, push-off, ballistic flight, landing, recovery; the
+                    game slices it by frame number (see JUMP_V0), keep timing
     JumpLandSit  -- jump, lose balance, land on the bottom, bounce, stay sitting
     Kick         -- right front kick
     Punch        -- right straight punch from a guard
@@ -360,17 +363,22 @@ def _floor_clamp(d, pivot, reach, radius):
     return h * math.sqrt(1.0 - zmin * zmin) + Vector((0.0, 0.0, zmin))
 
 
-def simulate(pivots, targets, length, k, zeta, gravity=True, substeps=12, collide=None):
+def simulate(pivots, targets, length, k, zeta, gravity=1.0, substeps=12, collide=None,
+             drag=0.0, flow=None):
     """Point mass on a rigid rod hanging from a moving pivot.
 
     The mass is pulled towards `pivot + length * target_dir` by a damped
     spring (muscle tone) and by gravity, and keeps its momentum when the
     pivot accelerates.  `collide=(reach, radius)` keeps the end of the limb
-    above the floor (inelastic contact).  Returns the direction per frame.
+    above the floor (inelastic contact).  `gravity` scales g (buoyancy in
+    water), `drag` pulls the mass towards the velocity of the surrounding
+    `flow` (water streaming past an in-place swimmer).  Returns the direction
+    per frame.
     """
     h = 1.0 / (FPS * substeps)
     c = 2 * zeta * math.sqrt(k)
-    g = GRAVITY if gravity else Vector()
+    g = GRAVITY * gravity
+    flow = flow or Vector()
     p = pivots[0] + targets[0] * length
     v = Vector()
     prev_tp = p.copy()
@@ -383,7 +391,7 @@ def simulate(pivots, targets, length, k, zeta, gravity=True, substeps=12, collid
             tp = pv + td * length
             tv = (tp - prev_tp) / h
             prev_tp = tp
-            a = g + (tp - p) * k - (v - tv) * c
+            a = g + (tp - p) * k - (v - tv) * c - (v - flow) * drag
             p_old = p.copy()
             v = v + a * h
             p = p + v * h
@@ -432,12 +440,16 @@ def _per_side(v):
     return v if isinstance(v, dict) else {"L": v, "R": v}
 
 
-def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
+def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta, env=None, springs=None):
     """params(frame) -> dict describing the authored motion.
 
     arm_k / arm_zeta / fore_k / fore_zeta are floats or {"L": .., "R": ..}.
+    env: {"gravity", "drag", "flow", "floor"} for all springs (e.g. water).
+    springs: overrides for SPRINGS ("spine" / "head").
     Returns a list of {bone: basis matrix} per frame.
     """
+    env = dict({"gravity": 1.0, "drag": 0.0, "flow": None, "floor": True}, **(env or {}))
+    springs = dict(SPRINGS, **(springs or {}))
     arm_k, arm_zeta = _per_side(arm_k), _per_side(arm_zeta)
     fore_k, fore_zeta = _per_side(fore_k), _per_side(fore_zeta)
     P = [params(f) for f in range(n_frames)]
@@ -464,7 +476,7 @@ def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
                 tgt = tgt.lerp(local, wl)
             ground = tgt.z
             knee, foot = two_bone_ik(hip, tgt, THIGH_LEN, SHIN_LEN, pole)
-            for _ in range(3 if ground < 0.06 else 0):
+            for _ in range(3 if ground < 0.06 and wl < 0.5 else 0):
                 # lift the target so the tilted flat sole doesn't dig in
                 shin = (foot - knee).normalized()
                 tilt = math.acos(max(-1.0, min(1.0, -shin.z)))
@@ -476,13 +488,14 @@ def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
     def run_spring(name, pivot_fn, target_fn, length, k, zeta, twist_fn=None, collide=None):
         pivots = [pivot_fn(f) for f in range(n_frames)]
         targets = [target_fn(f) for f in range(n_frames)]
-        dirs = simulate(pivots, targets, length, k, zeta, collide=collide)
+        dirs = simulate(pivots, targets, length, k, zeta, gravity=env["gravity"],
+                        collide=collide if env["floor"] else None, drag=env["drag"], flow=env["flow"])
         for f in range(n_frames):
             tw = twist_fn(f) if twist_fn else 0.0
             bases[f][name] = skel.aim(name, poses[f], dirs[f], tw)
 
     # level 1: spine
-    L, k, z = SPRINGS["spine"]
+    L, k, z = springs["spine"]
     run_spring(
         "spine",
         lambda f: skel.base("spine", poses[f]).translation,
@@ -492,7 +505,7 @@ def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
     )
 
     # level 2: head and upper arms
-    L, k, z = SPRINGS["head"]
+    L, k, z = springs["head"]
     run_spring(
         "head",
         lambda f: skel.base("head", poses[f]).translation,
@@ -631,81 +644,151 @@ def run_params(n):
     return params
 
 
+# The game (mockup/src/render/character.js) cuts the Jump clip into pieces by
+# frame number: idle 0-2, push-off 15-27, apex 26-31, landing 37-58.  Keep this
+# timeline (take-off at frame 18, touchdown at frame 37, 59 frames) stable.
+JUMP_V0 = 2 * (HIP_Z + 0.005 - 0.47) / 0.15     # take-off speed, fixes the air time
+
+
 def jump_params():
-    """Returns (params, n_frames, pre_roll_frames)."""
-    stand = HIP_Z - 0.01
-    t_crouch0, t_crouch1, t_takeoff = 0.15, 0.45, 0.60
-    z_crouch, z_takeoff = 0.47, HIP_Z + 0.005
-    v0 = 2 * (z_takeoff - z_crouch) / (t_takeoff - t_crouch1)   # end speed of u^2 push
+    """Returns (params, n_frames, pre_roll_frames).
+
+    A compact, athletic jump: moderate squat with the arms swinging back,
+    arms drive forward-up (not overhead) at take-off, body stays fairly
+    upright and the eyes level, light tuck in the air, soft landing.
+    """
+    stand = STAND_Z
+    t_c0, t_c1, t_to = 0.15, 0.45, 0.60
+    z_crouch, z_to = 0.54, HIP_Z + 0.005
+    v0 = JUMP_V0
+    push_exp = v0 * (t_to - t_c1) / (z_to - z_crouch)   # push curve ends at exactly v0
     t_air = 2 * v0 / G
-    t_land = t_takeoff + t_air
-    omega = 8.0
+    t_land = t_to + t_air
+    omega = 11.0                                         # landing absorption (stiff legs)
     t_end = t_land + 0.70
     n = int(round(t_end * FPS)) + 1
     pre = int(0.6 * FPS)
 
     def hip_z(t):
-        if t < t_crouch0:
+        if t < t_c0:
             return stand
-        if t < t_crouch1:
-            return lerp(stand, z_crouch, smoothstep(t_crouch0, t_crouch1, t))
-        if t < t_takeoff:
-            u = (t - t_crouch1) / (t_takeoff - t_crouch1)
-            return z_crouch + (z_takeoff - z_crouch) * u * u
+        if t < t_c1:
+            return lerp(stand, z_crouch, smoothstep(t_c0, t_c1, t))
+        if t < t_to:
+            u = (t - t_c1) / (t_to - t_c1)
+            return z_crouch + (z_to - z_crouch) * u ** push_exp
         if t < t_land:
-            ta = t - t_takeoff
-            return z_takeoff + v0 * ta - 0.5 * G * ta * ta
+            ta = t - t_to
+            return z_to + v0 * ta - 0.5 * G * ta * ta
         tl = t - t_land
-        A = z_takeoff - stand
-        B = -v0 + omega * A
-        return stand + (A + B * tl) * math.exp(-omega * tl)
+        a = z_to - stand
+        b = -v0 + omega * a
+        return stand + (a + b * tl) * math.exp(-omega * tl)
 
-    D = math.radians
-    arm_swing = keyframes((t_crouch0, 0.0), (t_crouch1, D(-60)), (t_takeoff, D(165)),
-                          (t_takeoff + 0.30, D(115)), (t_land - 0.05, D(40)),
-                          (t_land + 0.25, D(10)), (t_end, 0.0))
-    elbow = keyframes((t_crouch0, D(15)), (t_crouch1, D(28)), (t_takeoff, D(6)),
-                      (t_land - 0.1, D(12)), (t_land + 0.15, D(35)), (t_end, D(15)))
-    hips_y = keyframes((t_crouch0, 0.0), (t_crouch1, 0.06), (t_takeoff, 0.0))
-    takeoff_pitch = keyframes((t_crouch0, 0.0), (t_crouch1, D(22)), (t_takeoff, D(-5)),
-                              (t_land, D(5)))
-    lean = keyframes((t_crouch0, 0.0), (t_crouch1, D(12)), (t_takeoff, D(-5)), (t_land, D(2)))
+    swing = keyframes((t_c0, 0.0), (t_c1, D(-35)), (t_to, D(80)), (t_to + 0.25, D(55)),
+                      (t_land - 0.05, D(30)), (t_land + 0.20, D(8)), (t_end, 0.0))
+    abduct = keyframes((t_c0, D(6)), (t_to, D(12)), (t_to + 0.30, D(28)), (t_land, D(20)), (t_end, D(6)))
+    elbow = keyframes((t_c0, D(15)), (t_c1, D(20)), (t_to, D(25)), (t_land - 0.1, D(30)),
+                      (t_land + 0.15, D(30)), (t_end, D(15)))
+    hips_y = keyframes((t_c0, 0.0), (t_c1, 0.03), (t_to, 0.0))
+    air_pitch = keyframes((t_c0, 0.0), (t_c1, D(12)), (t_to, D(-3)), (t_land, D(3)))
+    air_lean = keyframes((t_c0, 0.0), (t_c1, D(6)), (t_to, D(-3)), (t_land, D(2)))
 
     def params(f):
         t = (f - pre) / FPS
         z = hip_z(t)
         if t < t_land:
-            pitch = takeoff_pitch(t)
-            spine = lean(t)
+            pitch, spine = air_pitch(t), air_lean(t)
         else:
-            squash = max(0.0, (stand - z) / 0.13)
-            fade = smoothstep(0.0, 0.12, t - t_land)
-            pitch = lerp(D(5), D(26) * squash, fade)
-            spine = lerp(D(2), D(10) * squash, fade)
+            squash = max(0.0, (stand - z) / 0.10)
+            fade = smoothstep(0.0, 0.10, t - t_land)
+            pitch = lerp(D(3), D(14) * squash, fade)
+            spine = lerp(D(2), D(6) * squash, fade)
         feet = {}
         for side, s in (("L", 1), ("R", -1)):
-            if t_takeoff < t < t_land:
-                u = (t - t_takeoff) / t_air
-                tuck = 0.20 * math.sin(math.pi * u) ** 0.8
+            if t_to < t < t_land:
+                u = (t - t_to) / t_air
+                tuck = 0.12 * math.sin(math.pi * u) ** 0.8
                 fz = max(0.0, z - (LEG_LEN - 0.005) + tuck)
-                fy = -0.07 * math.sin(math.pi * u)
+                fy = -0.04 * math.sin(math.pi * u)
             else:
                 fz = max(0.0, z - (LEG_LEN - 0.005))
                 fy = 0.0
             feet[side] = Vector((s * figure.LEG_X, fy, fz))
-        a = arm_swing(t)
-        b = elbow(t)
+        arm = lambda s: (swing(t), abduct(t), elbow(t))
         return {
-            "hips_pos": Vector((0.0, hips_y(t) if t < t_takeoff else 0.0, z)),
+            "hips_pos": Vector((0.0, hips_y(t) if t < t_to else 0.0, z)),
             "hips_rot": (pitch, 0.0, 0.0),
             "spine_lean": spine,
             "spine_twist": 0.0,
-            "head_pitch": -(pitch + spine) * 0.75,
+            "head_pitch": -(pitch + spine) * 0.9,
             "head_twist": 0.0,
             "feet": feet,
-            "arms": {"L": (a, D(8), b), "R": (a, D(8), b)},
+            "arms": {"L": arm(1), "R": arm(-1)},
         }
     return params, n, pre
+
+
+# ----------------------------------------------------------------------------
+# swimming.  The game swims chest deep: the feet are 0.5 game units below the
+# surface, i.e. WATER_Z in rig units at CHAR_SCALE 0.55.  In water most of
+# gravity is cancelled by buoyancy and the limbs feel strong drag relative to
+# the water, which streams backwards past the in-place swimmer.
+# ----------------------------------------------------------------------------
+WATER_Z = 0.91
+SWIM_FRAMES, SWIM_SPEED = 24, 1.6
+SWIM_IDLE_FRAMES = 36
+
+
+def water_env(speed):
+    return {"gravity": 0.1, "drag": 5.0, "flow": Vector((0, speed, 0)), "floor": False}
+
+
+def swim_params(n):
+    """Doggy paddle: body inclined forward, head up, hands paddle alternately
+    in circles at the surface in front of the chest, legs pedal underneath."""
+    pitch, lean = math.radians(42), math.radians(8)
+
+    def params(f):
+        w = 2 * math.pi * ((f / n) % 1)
+        arms, legs = {}, {}
+        for side, s, off in (("L", 1, 0.0), ("R", -1, math.pi)):
+            a = w + off
+            # reach forward with a long arm over the surface, pull down and back with a bent
+            # elbow.  Swing is relative to the chest, which leans forward by pitch + lean, so
+            # world angle from straight down = swing - (pitch + lean): ~55..100 degrees.
+            arms[side] = (pitch + lean + D(78) + D(24) * math.cos(a), D(24) + D(6) * math.sin(a),
+                          D(40) - D(25) * math.cos(a))
+            b = w + off + 1.2
+            legs[side] = Vector((s * figure.LEG_X, 0.12 + 0.12 * math.sin(b), -0.52 + 0.08 * math.cos(b)))
+        return pose_params(
+            hips_pos=Vector((0, 0.10, 0.65 + 0.02 * math.cos(2 * w))),
+            hips_rot=(pitch, D(4) * math.sin(w), D(5) * math.cos(w)),
+            spine_lean=lean, spine_twist=-D(8) * math.cos(w),
+            head_pitch=-(pitch + lean) * 0.85, head_twist=D(4) * math.cos(w),
+            feet_local=legs, feet_local_w=1.0, arms=arms,
+        )
+    return params
+
+
+def swim_idle_params(n):
+    """Treading water: upright, hands sculling in and out at the surface,
+    legs eggbeater underneath, a slow bob."""
+    def params(f):
+        w = 2 * math.pi * ((f / n) % 1)
+        arms, legs = {}, {}
+        for side, s, off in (("L", 1, 0.0), ("R", -1, math.pi)):
+            a = 2 * w   # two sculls per cycle, both hands together
+            arms[side] = (D(32), D(42) + D(18) * math.sin(a), D(45) + D(10) * math.cos(a))
+            b = w + off
+            legs[side] = Vector((s * (0.20 + 0.05 * math.cos(b)), -0.05 + 0.10 * math.sin(b), -0.50))
+        return pose_params(
+            hips_pos=Vector((0, 0, 0.62 + 0.025 * math.sin(2 * w))),
+            hips_rot=(D(8), 0.0, D(3) * math.sin(w)),
+            spine_lean=D(3), head_pitch=-D(8),
+            feet_local=legs, feet_local_w=1.0, arms=arms,
+        )
+    return params
 
 
 # ----------------------------------------------------------------------------
@@ -1035,9 +1118,17 @@ def make_animations(rig, ob):
     bake_action(rig, "Run", frames[n * (cycles - 1):], True, {"speed": RUN_SPEED})
 
     params, n, pre = jump_params()
-    frames = solve_motion(skel, params, n + pre, arm_k=320.0, arm_zeta=0.55,
-                          fore_k=450.0, fore_zeta=0.55)
+    frames = solve_motion(skel, params, n + pre, arm_k=320.0, arm_zeta=0.8,
+                          fore_k=450.0, fore_zeta=0.7,
+                          springs={"head": (0.45, 750.0, 0.5), "spine": (0.42, 1100.0, 0.55)})
     bake_action(rig, "Jump", frames[pre:], False)
+
+    for name, n, fn, speed in (("Swim", SWIM_FRAMES, swim_params, SWIM_SPEED),
+                               ("SwimIdle", SWIM_IDLE_FRAMES, swim_idle_params, 0.0)):
+        frames = solve_motion(skel, fn(n), n * cycles + 1, arm_k=160.0, arm_zeta=0.4,
+                              fore_k=220.0, fore_zeta=0.45, env=water_env(speed))
+        bake_action(rig, name, frames[n * (cycles - 1):], True,
+                    {"speed": speed, "water_level": WATER_Z})
 
     def one(name, built, arm_k, arm_zeta, fore_k, fore_zeta, props=None, contact="lift"):
         """Bake a one-shot.  Ground contact is enforced on the actual mesh:
