@@ -1,13 +1,13 @@
 // Level flow: the world of cubes, entering a cube, travelling through portals, spawning and
 // taking damage.
 import { DIRS } from '../core/constants.js';
-import { showNeighbors, clearNeighbors } from '../render/neighbors.js';
-import { World } from '../world/world.js';
+import { showNeighbors } from '../render/neighbors.js';
+import { WorldClient } from '../world/client.js';
 import { step } from '../world/coords.js';
 import { buildWorld, disposeWorld } from '../render/world.js';
 import { groundAt } from '../physics/collide.js';
 import { player, state, setStatus } from './state.js';
-import { showStats, flash, fadeOut, fadeIn } from './hud.js';
+import { showStats, flash, fadeOut, fadeIn, whenReady } from './hud.js';
 import { resetCut } from './cut.js';
 import { resetSpiders } from './spiders.js';
 import { drawMinimap } from './minimap.js';
@@ -46,13 +46,14 @@ export function hurt(amount, reason) {
 // which portals lead somewhere already explored
 export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id, p.kind !== 'spawn' && !!state.cubes.cubes.get(step(k, p.dir))?.visits]));
 
-// enter cube k, arriving through its portal on face `from` (null: the spawn pad)
-export function enterCube(k, from = null) {
-  const c = state.cubes.cube(k);
+// enter cube c (a ready cube from the world client), arriving through its portal on face
+// `from` (null: the spawn pad)
+export function enterCube(c, from = null) {
+  const k = c.key;
   c.visits++;
   state.cubeKey = k; state.map = c.map;
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo);
   resetSpiders();
   const p = c.map.portals.find(q => from === null ? q.kind === 'spawn' : q.dir === from);
   state.arrival = arrivalPoint(p);
@@ -65,32 +66,36 @@ export function enterCube(k, from = null) {
 }
 
 // HUD, minimap and neighbours for the cube we are in now
-export function settleIn() {
+export function settleIn(neighbors = true) {
   const c = state.cubes.cubes.get(state.cubeKey);
   showStats(c.map, state.cubeKey, state.cubes.seed, c.visits);
   drawMinimap();
-  updateNeighbors();
+  if (neighbors) updateNeighbors();
+  // get the cubes behind our portals ready in the background
+  state.cubes.prefetch(c.map.portals.filter(p => p.kind !== 'spawn').map(p => step(state.cubeKey, p.dir)));
 }
 
-// low-detail copies of the neighbouring cubes you have already been to
-export function updateNeighbors() {
-  if (!state.showNeighbors) { clearNeighbors(); return; }
-  const near = [0, 1, 2, 3].map(d => ({ c: state.cubes.cubes.get(step(state.cubeKey, d)), dx: DIRS[d][0], dz: DIRS[d][1] }));
-  showNeighbors(near.filter(n => n.c?.visits).map(n => ({ map: n.c.map, dx: n.dx, dz: n.dz })));
+// the visited cubes next to cube k (for the low-detail proxies)
+export function visitedNeighbors(k) {
+  if (!state.showNeighbors) return [];
+  return [0, 1, 2, 3].map(d => ({ c: state.cubes.cubes.get(step(k, d)), dx: DIRS[d][0], dz: DIRS[d][1] }))
+    .filter(n => n.c?.visits).map(n => ({ key: n.c.key, geo: n.c.geo, dx: n.dx, dz: n.dz }));
 }
+
+export function updateNeighbors() { showNeighbors(visitedNeighbors(state.cubeKey)); }
 
 export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
-  state.cubes = new World(seed);
+  state.cubes?.dispose();
+  state.cubes = new WorldClient(seed);
+  state.transitioning = true;
   player.hp = 100;
-  enterCube(state.cubes.start);
+  return whenReady(state.cubes.get(state.cubes.start)).then(c => { enterCube(c); state.transitioning = false; });
 }
 
-function transition(fn) {
+export function nextCube() {
   if (state.transitioning) return;
   state.transitioning = true;
   fadeOut();
-  setTimeout(() => { fn(); state.transitioning = false; }, 380);
+  setTimeout(() => newWorld().then(() => setStatus('A new world')), 380);
 }
-
-export const nextCube = () => transition(() => { newWorld(); setStatus('A new world'); });
 export const loadCube = () => newWorld(state.baseSeed);

@@ -1,5 +1,4 @@
 // World generator: runs the stages in order and retries with a new seed on failure.
-import * as THREE from 'three';
 import { N, LH } from '../core/constants.js';
 import { hash32 } from '../core/util.js';
 import { floorY, runY } from '../core/surfaces.js';
@@ -30,7 +29,7 @@ function indexFloors(ctx) {
 
 // polyline along route moves (debug overlay, test bots)
 function pathPoints(ctx, moves) {
-  const center = (c, y) => new THREE.Vector3(c % N + 0.5, y + 0.12, ((c / N) | 0) + 0.5);
+  const center = (c, y) => ({ x: c % N + 0.5, y: y + 0.12, z: ((c / N) | 0) + 0.5 });
   const nodeY = n => n.landing ? n.top * LH : floorY(n, 0.5, 0.5);
   const pts = [center(ctx.portalFloors[0].c, nodeY(ctx.portalFloors[0]))];
   for (const m of moves) {

@@ -1,33 +1,35 @@
 // Builds (and animates) all meshes for one generated map.
 import * as THREE from 'three';
-import { N, BASE, WATER, LAVA, ACID, FLUIDS } from '../core/constants.js';
-import { BEDROCK } from './palette.js';
+import { WATER, LAVA, ACID, FLUIDS } from '../core/constants.js';
 import { scene } from './scene.js';
 import { fallTex } from './materials.js';
-import { makeLayers, layerMeshes } from './layers.js';
-import { buildFloors } from './floors.js';
-import { buildStructures } from './structures.js';
+import { layerMeshes } from './layers.js';
+import { buildCubeGeometry } from './cubegeo.js';
 import { buildFalls, lavaLights } from './falls.js';
 import { buildMarkers } from './markers.js';
+import { adoptLights, releaseLights } from './lightpool.js';
+import { makeFadable } from './fade.js';
+import { makeGlass } from './glass.js';
 
 export function disposeWorld(world) {
   if (!world) return;
   scene.remove(world.group);
-  world.group.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.userData.keep || m.dispose()); });
+  releaseLights(world.group);
+  world.group.traverse(o => { if (!o.userData.sharedGeo) o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.userData.keep || m.dispose()); });
 }
 
-export function buildWorld(m, showPath, seen) {
+// geo: the cube's geometry arrays (from the worker); built here if missing
+export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m)) {
   const group = new THREE.Group();
-  const layers = makeLayers(m.K);
-  layers[0].terrain.box(0, -BASE, 0, N, 0, N, BEDROCK[0], BEDROCK[1]);
-  buildFloors(m, layers);
-  buildStructures(m, layers);
-  const fluidMeshes = layerMeshes(layers, group);
+  const fluidMeshes = layerMeshes(geo, group);
   const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
   const markers = buildMarkers(m, group, showPath, seen);
+  group.add(makeGlass());
+  adoptLights(group);
+  makeFadable(group);
   scene.add(group);
-  return { group, layers, fluidMeshes, splashes, lights, ...markers };
+  return { group, fluidMeshes, splashes, lights, ...markers };
 }
 
 // per-frame animation of fluids, waterfalls, lights and the portal

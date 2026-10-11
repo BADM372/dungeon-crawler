@@ -77,7 +77,30 @@ The new cube is active from the first frame. The player moves in its coordinates
 slide offset, so when the slide ends the offset is zero and nothing jumps. The section cut
 is off during the slide.
 
+While sliding, the old cube dissolves out and the new one dissolves in (`render/fade.js`).
+The dissolve is an ordered-dither discard per cube, so depth and sorting stay intact.
+
+The cube you leave cross-fades into its low-detail proxy, and the cube you enter out of
+its proxy (if you had been there). The two use complementary dither patterns, so one draws
+exactly the pixels the other drops. Every cube, full or proxy, sits in its own glass box
+(`render/glass.js`) that moves and fades with it (`game/travelfx.js`).
+
 The minimap and the low-detail neighbours only show cubes you have visited.
+
+## Off the main thread (`world/worker.js`, `world/client.js`)
+
+The world lives in a module worker. That covers WFC, faces, map generation and the cube
+geometry (`render/cubegeo.js`, which builds typed arrays per layer). The main thread
+receives each map by structured clone (the object graph survives) and the geometry as
+transferred buffers, and only wraps them into meshes. The neighbour view reuses those
+buffers.
+
+After entering a cube, the cubes behind its portals are prefetched, so travel usually
+starts at once. If a cube is not ready, the player waits in the portal and a
+"generating" spinner shows.
+
+Point lights come from a fixed pool (`render/lightpool.js`). A changing light count made
+three.js recompile every lit shader on each cube change, which was the biggest stutter.
 
 ## Results
 

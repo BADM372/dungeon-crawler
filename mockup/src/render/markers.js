@@ -4,8 +4,7 @@
 import * as THREE from 'three';
 import { N, CUBE_H } from '../core/constants.js';
 
-const STONE = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });
-STONE.userData.keep = true;
+let STONE = null;   // one per cube (cubes fade on their own)
 const COLORS = { new: [0xffc94a, 0xffa500], seen: [0x5fd3ff, 0x1f8fd0] };
 const glowMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, side: THREE.DoubleSide, depthWrite: false });
 const box = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), STONE); m.position.set(x, y, z); m.castShadow = true; return m; };
@@ -61,6 +60,7 @@ function spawnPad(p) {
 
 // seen: portal id -> leads somewhere explored
 export function buildMarkers(m, group, showPath, seen = {}) {
+  STONE = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });
   const portalFx = m.portals.map(p => {
     const col = COLORS[seen[p.id] ? 'seen' : 'new'];
     const fx = p.kind === 'side' ? gate(p, col) : p.kind === 'down' ? well(p, col) : p.kind === 'up' ? ring(p, col) : spawnPad(p);

@@ -1,5 +1,5 @@
 // Colours used by the world meshes.
-import * as THREE from 'three';
+import * as THREE from '../../vendor/three/three.module.js';   // plain path: also loads in the world worker
 import { WATER, LAVA } from '../core/constants.js';
 
 export const C = s => new THREE.Color(s);

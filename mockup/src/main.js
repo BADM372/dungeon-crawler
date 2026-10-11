@@ -11,6 +11,8 @@ import { updatePlayer } from './game/update.js';
 import { updateCamera } from './game/camera.js';
 import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
+import { updateLightPool, focusPoint } from './render/lightpool.js';
+import { tickNeighbors } from './render/neighbors.js';
 import { updateSpiders, spiders } from './game/spiders.js';
 import { travelling, updateTravel, drawTravelSpiders } from './game/travel.js';
 
@@ -27,10 +29,12 @@ function frame() {
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
   drawTravelSpiders(dt);
+  tickNeighbors(dt);
   if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
   updateCamera(dt);
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
+  updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

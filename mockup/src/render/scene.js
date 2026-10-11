@@ -1,6 +1,6 @@
-// Renderer, scene, lights, camera and the glass cube outline.
+// Renderer, scene, lights and camera.
 import * as THREE from 'three';
-import { N, CUBE_H, BASE } from '../core/constants.js';
+import { N } from '../core/constants.js';
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.localClippingEnabled = true;
@@ -32,15 +32,6 @@ Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, n
 sun.shadow.bias = -0.0006;
 sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
-
-// the cube itself: always the same size, drawn as a faint glass box
-{
-  const geo = new THREE.BoxGeometry(N, CUBE_H, N);
-  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo),
-    new THREE.LineBasicMaterial({ color: 0x8fb3d9, transparent: true, opacity: 0.35 }));
-  const glass = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x6d8db5, transparent: true, opacity: 0.05, side: THREE.BackSide, depthWrite: false }));
-  for (const o of [edges, glass]) { o.position.set(N / 2, CUBE_H / 2 - BASE, N / 2); scene.add(o); }
-}
 
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);

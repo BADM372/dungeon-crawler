@@ -16,3 +16,9 @@ canvas { display: block; }
 #fade { position: absolute; inset: 0; background: #0b0d12; opacity: 1; pointer-events: none; transition: opacity .35s; }
 #flash { position: absolute; inset: 0; background: #ff3b1f; opacity: 0; pointer-events: none; transition: opacity .4s; }
 #minimap { position: absolute; top: 150px; right: 16px; pointer-events: none; image-rendering: pixelated; }
+#loading { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
+  color: #e6e9ef; font-size: 12px; letter-spacing: 1px; background: #0b0d12cc; border: 1px solid #444c5c; border-radius: 4px;
+  padding: 6px 12px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 10; }
+#loading.on { opacity: 1; }
+#loading span { width: 12px; height: 12px; border: 2px solid #5fd3ff55; border-top-color: #5fd3ff; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

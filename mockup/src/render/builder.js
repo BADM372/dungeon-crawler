@@ -1,5 +1,5 @@
 // Accumulates triangles with vertex colours into one BufferGeometry.
-import * as THREE from 'three';
+import * as THREE from '../../vendor/three/three.module.js';   // plain path: also loads in the world worker
 
 export class GeoBuilder {
   constructor() { this.pos = []; this.nor = []; this.col = []; this.smoothKeys = []; }
@@ -53,7 +53,8 @@ export class GeoBuilder {
     }
   }
 
-  build() {
+  // smoothed normals, as typed arrays (these can be sent from the worker)
+  arrays() {
     const acc = new Map();
     for (const [, key, nx, ny, nz] of this.smoothKeys) {
       const a = acc.get(key) || [0, 0, 0];
@@ -63,10 +64,16 @@ export class GeoBuilder {
       const a = acc.get(key), l = Math.hypot(a[0], a[1], a[2]) || 1;
       this.nor[vi * 3] = a[0] / l; this.nor[vi * 3 + 1] = a[1] / l; this.nor[vi * 3 + 2] = a[2] / l;
     }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
-    return g;
+    return { pos: new Float32Array(this.pos), nor: new Float32Array(this.nor), col: new Float32Array(this.col) };
   }
+
+  build() { return toGeometry(this.arrays()); }
+}
+
+export function toGeometry(a) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(a.pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(a.nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(a.col, 3));
+  return g;
 }

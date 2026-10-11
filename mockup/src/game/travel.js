@@ -5,13 +5,15 @@
 import * as THREE from 'three';
 import { N, CUBE_H, BASE } from '../core/constants.js';
 import { step, D6, OPP6 } from '../world/coords.js';
-import { buildWorld, disposeWorld } from '../render/world.js';
-import { removeSpiderViews, animateSpiders } from '../render/spiders.js';
-import { clearNeighbors } from '../render/neighbors.js';
+import { buildWorld } from '../render/world.js';
+import { detachNeighbors, buildNeighbors } from '../render/neighbors.js';
+import { setFade } from '../render/fade.js';
 import { setCut } from '../render/section.js';
-import { player, state } from './state.js';
-import { resetSpiders, detachSpiders, drawSpiders } from './spiders.js';
-import { arrivalPoint, portalSeen, spawnAt, settleIn } from './flow.js';
+import { player, state, setStatus } from './state.js';
+import { whenReady } from './hud.js';
+import { resetSpiders, detachSpiders, drawSpiders, spiders } from './spiders.js';
+import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors } from './flow.js';
+import { slideVisuals, endVisuals } from './travelfx.js';
 
 const GAP = CUBE_H + BASE;   // vertical distance between strata while sliding
 let tr = null;
@@ -20,25 +22,34 @@ const ease = t => t * t * (3 - 2 * t);
 
 export const travelling = () => !!tr;
 
+// the cube behind the portal may still be generating: wait for it (frozen in the portal)
 export function startTravel(p) {
   if (state.transitioning) return;
-  const k = step(state.cubeKey, p.dir), c = state.cubes.cube(k), m = c.map;
+  state.transitioning = true;
+  const k = step(state.cubeKey, p.dir);
+  whenReady(state.cubes.get(k)).then(c => slide(p, c), () => { state.transitioning = false; setStatus('The portal does not open'); });
+}
+
+function slide(p, c) {
+  const k = c.key, m = c.map, oldKey = state.cubeKey;
   const oldWorld = state.world;
   state.map = m;   // from here on the new cube is the active one (arrivalPoint reads it)
   const arr = m.portals.find(q => q.dir === OPP6[p.dir]), A = arrivalPoint(arr);
   const D = new THREE.Vector3(D6[p.dir][0] * N, D6[p.dir][1] * GAP, D6[p.dir][2] * N);
-  tr = { t: 0, D, kind: p.kind, old: { world: oldWorld, spiders: detachSpiders() },
+  tr = { t: 0, D, kind: p.kind, k, oldKey, old: { world: oldWorld, spiders: detachSpiders(), ghosts: detachNeighbors() },
     S: new THREE.Vector3(player.x, player.y, player.z).sub(D), A: new THREE.Vector3(A.x, A.y, A.z), last: null };
   tr.T = p.kind === 'side' ? THREE.MathUtils.clamp(tr.S.distanceTo(tr.A) / 2.2, 0.9, 1.4) : 1.3;
-  state.transitioning = true;
-  clearNeighbors();
   setCut(Infinity, null, 0, 0, 0);
   c.visits++;
   state.cubeKey = k; state.arrival = A; state.portalLock = arr.id;
-  state.world = buildWorld(m, state.showPath, portalSeen(k, m));
+  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo);
   state.world.group.position.copy(D);
+  setFade(state.world.group, 0);
+  tr.ghosts = buildNeighbors(visitedNeighbors(k));   // includes the cube we are leaving
+  for (const g of tr.old.ghosts) g.fade0 = g.group.userData.fade;
   resetSpiders();
 }
+
 
 export function updateTravel(dt) {
   tr.t = Math.min(1, tr.t + dt / tr.T);
@@ -51,23 +62,22 @@ export function updateTravel(dt) {
   tr.last = { x, y, z };
   Object.assign(p, { x: x + off.x, y: y + off.y, visY: y + off.y, z: z + off.z, grounded: tr.kind === 'side', swimming: false });
   p.airTime = p.grounded ? 0 : p.airTime + dt;
-  state.world.group.position.copy(off);
-  tr.old.world.group.position.copy(oldOff);
-  animateSpiders(tr.old.spiders, 0, oldOff);
+  slideVisuals(tr, t, off, oldOff);
   if (t >= 1) finish();
 }
 
-export const drawTravelSpiders = dt => drawSpiders(dt, tr ? off : undefined);
+export function drawTravelSpiders(dt) {
+  drawSpiders(dt, tr ? off : undefined);
+  if (tr) for (const s of spiders) if (s.view) s.view.group.visible = tr.fadeNew > 0.5;
+}
 
 function finish() {
-  disposeWorld(tr.old.world);
-  removeSpiderViews(tr.old.spiders);
-  state.world.group.position.set(0, 0, 0);
+  endVisuals(tr);
   const landed = tr.kind === 'down', hp = player.hp;
   tr = null;
   spawnAt(state.arrival.x, state.arrival.y, state.arrival.z);
   player.hp = hp;
   if (landed) { player.landImpact = 4; player.landCount++; }
-  settleIn();
+  settleIn(false);
   state.transitioning = false;
 }

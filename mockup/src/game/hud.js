@@ -29,3 +29,10 @@ export function flash() {
 
 export const fadeOut = () => { $('fade').style.opacity = 1; };
 export const fadeIn = () => requestAnimationFrame(() => { $('fade').style.opacity = 0; });
+
+// a spinner while waiting for the world worker (only if it takes more than a moment)
+export function whenReady(promise) {
+  const t = setTimeout(() => $('loading').classList.add('on'), 80);
+  const done = () => { clearTimeout(t); $('loading').classList.remove('on'); };
+  return promise.then(v => { done(); return v; }, e => { done(); throw e; });
+}
