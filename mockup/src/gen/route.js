@@ -28,6 +28,7 @@ function search(ctx, from, goal, jitter, have) {
 
 export function findRoute(ctx) {
   const { R, SZ, portalFloors } = ctx;
+  if (!portalFloors.length) { Object.assign(ctx, { moves: [], segments: [], pathFloors: [] }); return true; }   // not part of the world
   const jitter = new Float32Array(SZ).map(() => R() * 0.6);   // varies the route per seed
   const [first, ...rest] = portalFloors, have = new Set(), moves = [], segments = [];
   for (const goal of rest) {

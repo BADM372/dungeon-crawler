@@ -14,7 +14,11 @@ export function buildCubeGeometry(m) {
     terrain: new GeoBuilder(), wood: new GeoBuilder(),
     fluids: Object.fromEntries(FLUIDS.map(t => [t, new GeoBuilder()])),
   }));
-  layers[0].terrain.box(0, -BASE, 0, N, 0, N, BEDROCK[0], BEDROCK[1]);
+  // bedrock under every column that is not open to the depth below
+  const solid = (x, z) => x >= 0 && z >= 0 && x < N && z < N && m.cols[z * N + x].some(f => f.layer === 0 || f.merged && f.bottom === 0);
+  for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) if (solid(x, z))
+    layers[0].terrain.box(x, -BASE, z, x + 1, 0, z + 1, BEDROCK[0], BEDROCK[1],
+      { py: true, px: solid(x + 1, z), nx: solid(x - 1, z), pz: solid(x, z + 1), nz: solid(x, z - 1) });
   buildFloors(m, layers);
   buildStructures(m, layers);
   const arr = b => b.pos.length ? b.arrays() : null;

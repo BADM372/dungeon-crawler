@@ -6,6 +6,7 @@ import { idx } from '../core/util.js';
 export function buildSlabs(ctx) {
   const { R, ri, noise, topNoise, K, B, cols, mk, topFloor, removeFloor } = ctx;
   for (let c = 0; c < N * N; c++) {
+    if (ctx.void0[c]) continue;   // open to the depth below: no ground here
     const f = mk(c, ctx.lvl0[c], 0, 0);
     f.fluid = ctx.fluid0[c]; f.surf = ctx.surf0[c]; f.prot = ctx.prot0[c];
     cols[c].push(f);
@@ -32,7 +33,7 @@ export function buildSlabs(ctx) {
       const u = mk(c, top, top - 2, k);
       u.prot = padOf.get(c) || 0;
       const below = topFloor(c);
-      if (below.top + HEAD > u.bottom) {
+      if (below && below.top + HEAD > u.bottom) {
         if ((below.fluid || below.prot) && !u.prot) continue;   // leave a hole above rivers / pads
         u.bottom = below.bottom; u.merged = true; removeFloor(below);
       }

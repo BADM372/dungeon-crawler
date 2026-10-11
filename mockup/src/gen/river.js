@@ -10,7 +10,7 @@ export function carveRiver(ctx) {
   const { R, ri, pickFluid, lvl0, prot0, stats, spec } = ctx;
   const fluid0 = new Uint8Array(N * N), surf0 = new Int16Array(N * N);
   // surface one level below the lowest bank, bed two below the surface
-  const fill = (cells, type, S) => { for (const i of cells) { fluid0[i] = type; surf0[i] = S; lvl0[i] = Math.max(0, S - 2); } };
+  const fill = (cells, type, S) => { for (const i of cells) { fluid0[i] = type; surf0[i] = S; lvl0[i] = Math.max(0, S - 2); ctx.void0[i] = 0; } };
 
   const ends = spec.faces.map((f, d) => f.river && { d, ...f.river }).filter(Boolean), lake = spec.kind === 'lake';
   if (ends.length || lake) {
@@ -41,7 +41,7 @@ export function carveRiver(ctx) {
     const cells = [];
     for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) {
       const i = idx(x, z);
-      if (!prot0[i] && !fluid0[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
+      if (!prot0[i] && !fluid0[i] && !ctx.void0[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
     }
     if (!cells.length) continue;
     const set = new Set(cells);

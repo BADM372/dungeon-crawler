@@ -4,6 +4,7 @@ import { floorY } from '../core/surfaces.js';
 import { player, state } from '../game/state.js';
 import { hurt } from '../game/flow.js';
 import { knockDown } from '../game/ragdoll.js';
+import { startFall } from '../game/fall.js';
 
 // returns false when the player got respawned
 function fluids(dt, gr) {
@@ -45,6 +46,8 @@ function falls(dt, ci) {
 }
 
 export function applyHazards(dt, gr) {
+  // below the cube: through the void into the cube below, or out of the world
+  if (player.y < -1.5 && startFall()) return false;
   if (player.y < -3) { hurt(25, 'Fell out of the cube'); return false; }
   if (state.time > state.statusUntil) state.statusMsg = '';
   if (!fluids(dt, gr) || !falls(dt, gr.i)) return false;

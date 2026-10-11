@@ -8,6 +8,7 @@ import { key, parse, step, faceKey, hashKey, MIN_Y } from './coords.js';
 import { decideFaces, LAYER_BASE } from './faces.js';
 import { themeAt } from './depth.js';
 import { makeLayouts } from './layout.js';
+import { voidAllowed } from './voids.js';
 
 export class World {
   constructor(seed) {
@@ -41,7 +42,7 @@ export class World {
     return {
       key: k, X, Y, Z, kind: t.kind, K: t.K, B: LAYER_BASE.slice(0, t.K), faces, portals,
       spawn: k === this.start, noise: this.noise, depth: -Y,
-      fluid: theme.river, fluidMix: theme.fluids,
+      fluid: theme.river, fluidMix: theme.fluids, voidOK: voidAllowed(this, k), relief: theme.relief,
       // islands without pillars: lakes, the sky islands near the top and the abyss
       floating: t.kind === 'lake' || ((-Y <= 3 || -Y >= 19) && this.wfc.rng(k, 0xf10a7)() < 0.5),
       seed: hash32(this.seed ^ hashKey(k)),

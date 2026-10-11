@@ -61,7 +61,8 @@ export function addSupports(ctx) {
       if (comp.length < 3 && !prot && !comp.some(f => f.merged)) { comp.forEach(removeFloor); continue; }
       if (comp.some(f => f.merged) || floating) continue;
       const cands = comp.filter(f => { const b = nextBelow(f); return b && !b.fluid && !b.prot && !b.ramp && !f.prot; });
-      if (!cands.length) { if (!prot) comp.forEach(removeFloor); continue; }
+      // nothing to stand a pillar on: keep it as a floating island if it is over the void
+      if (!cands.length) { if (!prot && !comp.some(f => !nextBelow(f))) comp.forEach(removeFloor); continue; }
       for (let n = Math.min(cands.length, comp.length > 12 ? 2 : 1); n > 0; n--) {
         const f = cands.splice(ri(0, cands.length - 1), 1)[0], b = nextBelow(f);
         f.bottom = b.bottom; f.merged = true; removeFloor(b); stats.pillars++;

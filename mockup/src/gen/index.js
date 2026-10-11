@@ -31,6 +31,7 @@ function indexFloors(ctx) {
 function pathPoints(ctx, moves) {
   const center = (c, y) => ({ x: c % N + 0.5, y: y + 0.12, z: ((c / N) | 0) + 0.5 });
   const nodeY = n => n.landing ? n.top * LH : floorY(n, 0.5, 0.5);
+  if (!ctx.portalFloors.length) return [];
   const pts = [center(ctx.portalFloors[0].c, nodeY(ctx.portalFloors[0]))];
   for (const m of moves) {
     if (m.cells.length) {

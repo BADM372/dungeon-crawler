@@ -72,6 +72,22 @@ Layer counts are part of the WFC state. A collapsing cube's count is drawn towar
 neighbours' counts, so tall regions form. A face's portal sits on any layer both cubes
 have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 
+## Void and relief
+
+- **Void:** a cube may have columns with no ground at all, open to the depth below. This is
+  only allowed where the cube below exists in the next depth's layout (`world/voids.js`).
+- **How much:** the amount comes from the theme. It is large for the sky islands (depths 1–3)
+  and the abyss (19), small for crevasses and sinkholes in between.
+- **Shape:** the void field is world-space noise, and face profiles carry `VOID` cells, so
+  open areas line up across faces.
+- **What stays solid:** portal pads, the ground around them and rivers. Upper slabs over
+  void float without pillars.
+- **Falling in:** you fall into the cube below (`game/fall.js`) with the vertical slide. You
+  come out at the same spot, 5 units over the ground, so the hard landing costs about 20 HP.
+  If it is void there too, you keep falling.
+- **Relief:** themes also have a `relief` that stretches highland faces (up to level ~18 in
+  the snowy peaks) and makes hills and plateaus taller.
+
 ## Generator changes
 
 - Input is a spec (`world.spec(k)`) instead of a seed. Retries vary the seed but never the spec.

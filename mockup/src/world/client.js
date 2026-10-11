@@ -2,11 +2,13 @@
 // cubes: key -> { key, map, geo, info, visits }. `get` resolves when the cube is ready; asking for
 // cubes early (prefetch) makes walking through a portal instant.
 import { key } from './coords.js';
+import { makeLayouts } from './layout.js';
 
 export class WorldClient {
   constructor(seed) {
     this.seed = seed;
     this.start = key(0, 0, 0);
+    this.layout = makeLayouts(seed);   // which cubes exist (cheap, also needed here)
     this.cubes = new Map();
     this.waiting = new Map();   // key -> [resolve, reject][]
     this.worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });

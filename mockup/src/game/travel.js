@@ -14,6 +14,7 @@ import { whenReady } from './hud.js';
 import { resetSpiders, detachSpiders, drawSpiders, spiders } from './spiders.js';
 import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors } from './flow.js';
 import { slideVisuals, endVisuals } from './travelfx.js';
+import { fallPoint } from './fall.js';
 
 const GAP = CUBE_H + BASE;   // vertical distance between strata while sliding
 let tr = null;
@@ -34,14 +35,16 @@ function slide(p, c) {
   const k = c.key, m = c.map, oldKey = state.cubeKey;
   const oldWorld = state.world;
   state.map = m;   // from here on the new cube is the active one (arrivalPoint reads it)
-  const arr = m.portals.find(q => q.dir === OPP6[p.dir]), A = arrivalPoint(arr);
+  const arr = m.portals.find(q => q.dir === OPP6[p.dir]), fall = p.kind === 'fall' && fallPoint(m);
+  const A = fall ? fall.air : arrivalPoint(arr);
   const D = new THREE.Vector3(D6[p.dir][0] * N, D6[p.dir][1] * GAP, D6[p.dir][2] * N);
   tr = { t: 0, D, kind: p.kind, k, oldKey, old: { world: oldWorld, spiders: detachSpiders(), ghosts: detachNeighbors() },
     S: new THREE.Vector3(player.x, player.y, player.z).sub(D), A: new THREE.Vector3(A.x, A.y, A.z), last: null };
   tr.T = p.kind === 'side' ? THREE.MathUtils.clamp(tr.S.distanceTo(tr.A) / 2.2, 0.9, 1.4) : 1.3;
   setCut(Infinity, null, 0, 0, 0);
   c.visits++;
-  state.cubeKey = k; state.arrival = A; state.portalLock = arr.id;
+  state.cubeKey = k; state.arrival = fall ? fall.rest : A; state.portalLock = fall ? 0 : arr.id;
+  tr.A0 = A;
   state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo);
   state.world.group.position.copy(D);
   setFade(state.world.group, 0);
@@ -56,7 +59,7 @@ export function updateTravel(dt) {
   const t = tr.t, e = ease(t), p = player;
   off.copy(tr.D).multiplyScalar(1 - e); oldOff.copy(off).sub(tr.D);
   // the path in the new cube's coordinates: walk straight through, fall, or rise
-  const u = tr.kind === 'side' ? t : tr.kind === 'down' ? t * t : 1 - (1 - t) ** 2;
+  const u = tr.kind === 'side' ? t : tr.kind === 'up' ? 1 - (1 - t) ** 2 : t * t;
   const x = tr.S.x + (tr.A.x - tr.S.x) * t, z = tr.S.z + (tr.A.z - tr.S.z) * t, y = tr.S.y + (tr.A.y - tr.S.y) * u;
   if (tr.last) { p.vx = (x - tr.last.x) / dt; p.vz = (z - tr.last.z) / dt; p.vy = (y - tr.last.y) / dt; }
   tr.last = { x, y, z };
@@ -73,10 +76,11 @@ export function drawTravelSpiders(dt) {
 
 function finish() {
   endVisuals(tr);
-  const landed = tr.kind === 'down', hp = player.hp;
+  const landed = tr.kind === 'down', falling = tr.kind === 'fall', hp = player.hp, A = tr.A0;
   tr = null;
-  spawnAt(state.arrival.x, state.arrival.y, state.arrival.z);
+  spawnAt(A.x, A.y, A.z);
   player.hp = hp;
+  if (falling) { player.safe = { ...state.arrival }; Object.assign(player, { grounded: false, vy: -6, support: null }); }
   if (landed) { player.landImpact = 4; player.landCount++; }
   settleIn(false);
   state.transitioning = false;
