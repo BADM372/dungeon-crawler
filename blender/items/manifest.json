@@ -1,0 +1,630 @@
+{
+  "up": "Y",
+  "weapon_scale": 0.55,
+  "assets": [
+    {
+      "name": "item_stick_short",
+      "triangles": 132,
+      "size": [
+        0.5504,
+        0.1087,
+        0.0999
+      ],
+      "bounds_blender": [
+        [
+          -0.2550870180130005,
+          -0.0573546439409256,
+          0.0
+        ],
+        [
+          0.2952761948108673,
+          0.051365822553634644,
+          0.09993601590394974
+        ]
+      ],
+      "attach": "ground",
+      "category": "resource",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_stick_short.glb"
+    },
+    {
+      "name": "item_stick_forked",
+      "triangles": 164,
+      "size": [
+        0.6646,
+        0.2699,
+        0.1205
+      ],
+      "bounds_blender": [
+        [
+          -0.30704906582832336,
+          -0.05565537139773369,
+          0.0
+        ],
+        [
+          0.3575019836425781,
+          0.2142607569694519,
+          0.12051253020763397
+        ]
+      ],
+      "attach": "ground",
+      "category": "resource",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_stick_forked.glb"
+    },
+    {
+      "name": "item_stick_long",
+      "triangles": 164,
+      "size": [
+        0.8029,
+        0.1736,
+        0.1339
+      ],
+      "bounds_blender": [
+        [
+          -0.3864590525627136,
+          -0.04762280359864235,
+          0.0
+        ],
+        [
+          0.4164462983608246,
+          0.1260005384683609,
+          0.133938729763031
+        ]
+      ],
+      "attach": "ground",
+      "category": "resource",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_stick_long.glb"
+    },
+    {
+      "name": "item_coin_gold",
+      "triangles": 476,
+      "size": [
+        0.289,
+        0.289,
+        0.066
+      ],
+      "bounds_blender": [
+        [
+          -0.1445000022649765,
+          -0.1445000022649765,
+          0.0
+        ],
+        [
+          0.1445000022649765,
+          0.1445000022649765,
+          0.06599999964237213
+        ]
+      ],
+      "attach": "ground",
+      "category": "currency",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_coin_gold.glb"
+    },
+    {
+      "name": "item_coin_silver",
+      "triangles": 476,
+      "size": [
+        0.289,
+        0.289,
+        0.066
+      ],
+      "bounds_blender": [
+        [
+          -0.1445000022649765,
+          -0.1445000022649765,
+          0.0
+        ],
+        [
+          0.1445000022649765,
+          0.1445000022649765,
+          0.06599999964237213
+        ]
+      ],
+      "attach": "ground",
+      "category": "currency",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_coin_silver.glb"
+    },
+    {
+      "name": "item_coin_copper",
+      "triangles": 476,
+      "size": [
+        0.289,
+        0.289,
+        0.066
+      ],
+      "bounds_blender": [
+        [
+          -0.1445000022649765,
+          -0.1445000022649765,
+          0.0
+        ],
+        [
+          0.1445000022649765,
+          0.1445000022649765,
+          0.06599999964237213
+        ]
+      ],
+      "attach": "ground",
+      "category": "currency",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_coin_copper.glb"
+    },
+    {
+      "name": "item_crystal_ruby",
+      "triangles": 56,
+      "size": [
+        0.2598,
+        0.3,
+        0.245
+      ],
+      "bounds_blender": [
+        [
+          -0.12990380823612213,
+          -0.15000000596046448,
+          0.0
+        ],
+        [
+          0.12990380823612213,
+          0.15000000596046448,
+          0.24500000476837158
+        ]
+      ],
+      "attach": "ground",
+      "category": "gem",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_crystal_ruby.glb"
+    },
+    {
+      "name": "item_crystal_diamond",
+      "triangles": 46,
+      "size": [
+        0.2956,
+        0.2956,
+        0.235
+      ],
+      "bounds_blender": [
+        [
+          -0.14782072603702545,
+          -0.14782072603702545,
+          0.0
+        ],
+        [
+          0.14782072603702545,
+          0.14782072603702545,
+          0.23499999940395355
+        ]
+      ],
+      "attach": "ground",
+      "category": "gem",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_crystal_diamond.glb"
+    },
+    {
+      "name": "item_crystal_emerald",
+      "triangles": 60,
+      "size": [
+        0.25,
+        0.2975,
+        0.19
+      ],
+      "bounds_blender": [
+        [
+          -0.125,
+          -0.14875000715255737,
+          0.0
+        ],
+        [
+          0.125,
+          0.14875000715255737,
+          0.1899999976158142
+        ]
+      ],
+      "attach": "ground",
+      "category": "gem",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_crystal_emerald.glb"
+    },
+    {
+      "name": "item_crystal_sapphire",
+      "triangles": 28,
+      "size": [
+        0.2377,
+        0.2271,
+        0.34
+      ],
+      "bounds_blender": [
+        [
+          -0.11832323670387268,
+          -0.10215727984905243,
+          0.0
+        ],
+        [
+          0.11941706389188766,
+          0.12498746812343597,
+          0.3400000035762787
+        ]
+      ],
+      "attach": "ground",
+      "category": "gem",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_crystal_sapphire.glb"
+    },
+    {
+      "name": "item_crystal_amethyst",
+      "triangles": 34,
+      "size": [
+        0.2388,
+        0.2438,
+        0.43
+      ],
+      "bounds_blender": [
+        [
+          -0.11941706389188766,
+          -0.12188822031021118,
+          0.0
+        ],
+        [
+          0.11941706389188766,
+          0.12188822031021118,
+          0.4300000071525574
+        ]
+      ],
+      "attach": "ground",
+      "category": "gem",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_crystal_amethyst.glb"
+    },
+    {
+      "name": "weapon_sword_short",
+      "triangles": 334,
+      "size": [
+        0.322,
+        0.124,
+        0.825
+      ],
+      "bounds_blender": [
+        [
+          -0.1610061079263687,
+          -0.06199999898672104,
+          -0.1850000023841858
+        ],
+        [
+          0.1610061079263687,
+          0.06199999898672104,
+          0.6399999856948853
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_sword_short.glb"
+    },
+    {
+      "name": "weapon_sword_medium",
+      "triangles": 334,
+      "size": [
+        0.3983,
+        0.124,
+        1.1
+      ],
+      "bounds_blender": [
+        [
+          -0.1991301029920578,
+          -0.06199999898672104,
+          -0.20000000298023224
+        ],
+        [
+          0.1991301029920578,
+          0.06199999898672104,
+          0.8999999761581421
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_sword_medium.glb"
+    },
+    {
+      "name": "weapon_sword_long",
+      "triangles": 358,
+      "size": [
+        0.4561,
+        0.124,
+        1.43
+      ],
+      "bounds_blender": [
+        [
+          -0.22806353867053986,
+          -0.06199999898672104,
+          -0.23000000417232513
+        ],
+        [
+          0.22806353867053986,
+          0.06199999898672104,
+          1.2000000476837158
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_sword_long.glb"
+    },
+    {
+      "name": "weapon_sword_broad",
+      "triangles": 334,
+      "size": [
+        0.4847,
+        0.124,
+        1.12
+      ],
+      "bounds_blender": [
+        [
+          -0.24236051738262177,
+          -0.06199999898672104,
+          -0.20000000298023224
+        ],
+        [
+          0.24236051738262177,
+          0.06199999898672104,
+          0.9200000166893005
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_sword_broad.glb"
+    },
+    {
+      "name": "weapon_sword_greatsword",
+      "triangles": 358,
+      "size": [
+        0.5926,
+        0.124,
+        1.755
+      ],
+      "bounds_blender": [
+        [
+          -0.29629942774772644,
+          -0.06199999898672104,
+          -0.2849999964237213
+        ],
+        [
+          0.29629942774772644,
+          0.06199999898672104,
+          1.4700000286102295
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_sword_greatsword.glb"
+    },
+    {
+      "name": "weapon_bow",
+      "triangles": 536,
+      "size": [
+        0.3099,
+        0.0963,
+        1.4216
+      ],
+      "bounds_blender": [
+        [
+          -0.07899999618530273,
+          -0.04814999923110008,
+          -0.7107999920845032
+        ],
+        [
+          0.23087269067764282,
+          0.04814999923110008,
+          0.7107999920845032
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_bow.glb"
+    },
+    {
+      "name": "weapon_arrow",
+      "triangles": 96,
+      "size": [
+        0.103,
+        0.0953,
+        0.86
+      ],
+      "bounds_blender": [
+        [
+          -0.04800000041723251,
+          -0.04763126000761986,
+          0.0
+        ],
+        [
+          0.05499984323978424,
+          0.04763126000761986,
+          0.8600000143051147
+        ]
+      ],
+      "attach": "nock",
+      "category": "ammunition",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_arrow.glb"
+    },
+    {
+      "name": "weapon_staff",
+      "triangles": 628,
+      "size": [
+        0.431,
+        0.23,
+        2.286
+      ],
+      "bounds_blender": [
+        [
+          -0.2260311096906662,
+          -0.11500000208616257,
+          -0.7822967171669006
+        ],
+        [
+          0.20495162904262543,
+          0.11500000208616257,
+          1.503668189048767
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_staff.glb"
+    },
+    {
+      "name": "item_potion_health",
+      "triangles": 294,
+      "size": [
+        0.3,
+        0.3208,
+        0.402
+      ],
+      "bounds_blender": [
+        [
+          -0.15000000596046448,
+          -0.17080000042915344,
+          0.0
+        ],
+        [
+          0.15000000596046448,
+          0.15000000596046448,
+          0.4020000100135803
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_health.glb"
+    },
+    {
+      "name": "item_potion_mana",
+      "triangles": 218,
+      "size": [
+        0.18,
+        0.1854,
+        0.407
+      ],
+      "bounds_blender": [
+        [
+          -0.09000000357627869,
+          -0.10750000178813934,
+          0.0
+        ],
+        [
+          0.09000000357627869,
+          0.07794228941202164,
+          0.40700000524520874
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_mana.glb"
+    },
+    {
+      "name": "item_potion_stamina",
+      "triangles": 186,
+      "size": [
+        0.1838,
+        0.2089,
+        0.367
+      ],
+      "bounds_blender": [
+        [
+          -0.09192388504743576,
+          -0.11699999868869781,
+          0.0
+        ],
+        [
+          0.09192388504743576,
+          0.09192388504743576,
+          0.367000013589859
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_stamina.glb"
+    },
+    {
+      "name": "treasure_chest_closed",
+      "triangles": 1028,
+      "size": [
+        0.998,
+        0.668,
+        0.669
+      ],
+      "bounds_blender": [
+        [
+          -0.49900001287460327,
+          -0.3490000069141388,
+          0.0
+        ],
+        [
+          0.49900001287460327,
+          0.3190000057220459,
+          0.6690000295639038
+        ]
+      ],
+      "attach": "ground",
+      "category": "container",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/treasure_chest_closed.glb"
+    },
+    {
+      "name": "treasure_chest_open",
+      "triangles": 2416,
+      "size": [
+        0.998,
+        0.9773,
+        1.0466
+      ],
+      "bounds_blender": [
+        [
+          -0.49900001287460327,
+          -0.3490000069141388,
+          0.0
+        ],
+        [
+          0.49900001287460327,
+          0.6283420324325562,
+          1.0466017723083496
+        ]
+      ],
+      "attach": "ground",
+      "category": "container",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/treasure_chest_open.glb"
+    }
+  ]
+}
