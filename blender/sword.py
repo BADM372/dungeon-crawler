@@ -8,7 +8,7 @@ The runtime angles the grip 60 degrees from the forearm to keep the idle
 blade off the ground. This is a separate prop, never embedded in character.glb.
 
 Standalone export:
-    Blender -b --python blender/sword.py -- blender/sword.glb
+    Blender -b --python blender/sword.py -- [assets/sword.glb]
 Inside Blender:
     import sword; sword.build()
     sword.attach(rig)  # build and attach a copy at hand.R, including bone-tail compensation
@@ -125,6 +125,6 @@ if __name__ == "__main__":
     obj = build()
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
-    bpy.ops.export_scene.gltf(filepath=str(Path(args[0] if args else __file__.replace('.py', '.glb')).resolve()),
+    bpy.ops.export_scene.gltf(filepath=str(Path(args[0]).resolve() if args else Path(__file__).resolve().parent.parent / 'assets' / 'sword.glb'),
                               export_format="GLB", use_selection=True, export_yup=True,
                               export_extras=True, export_animations=False, export_texcoords=False)

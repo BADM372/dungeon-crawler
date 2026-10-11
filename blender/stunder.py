@@ -20,14 +20,14 @@ Build the asset first, without animation (inside Blender / MCP):
 
 Then animate / export:
     stunder.animate(rig, mesh)
-    stunder.export_gltf(rig, mesh, "<repo>/blender/stunder.glb")
+    stunder.export_gltf(rig, mesh, "<repo>/assets/stunder.glb")
 
 Or build everything:
-    stunder.main(export_path="<repo>/blender/stunder.glb",
+    stunder.main(export_path="<repo>/assets/stunder.glb",
                  blend_path="<repo>/blender/stunder.blend")
 
 Headless (Blender's bundled Python needs OpenVDB, as for the other enemies):
-    Blender -b --python blender/stunder.py -- blender/stunder.glb blender/stunder.blend
+    Blender -b --python blender/stunder.py -- assets/stunder.glb blender/stunder.blend
     Blender -b --python blender/stunder.py -- --static /tmp/stunder-static.blend
 
 Clips, 30 fps; locomotion is IN PLACE, the game supplies root movement:
@@ -979,7 +979,7 @@ def main(scene=None, export_path=None, blend_path=None):
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("output", nargs="?", default=str(Path(__file__).with_suffix(".glb")))
+    parser.add_argument("output", nargs="?", default=str(Path(__file__).resolve().parent.parent / "assets" / "stunder.glb"))
     parser.add_argument("blend", nargs="?", default=str(Path(__file__).with_suffix(".blend")))
     parser.add_argument("--static", action="store_true")
     options = parser.parse_args(args)

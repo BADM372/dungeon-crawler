@@ -38,13 +38,13 @@ Units are metres, the figure is ~2 m tall, +Z up, the character faces -Y,
 +X is the character's left (".L").
 
 Headless regeneration (also saves the editable, unarmed rig):
-    Blender -b --python blender/character.py -- blender/character.glb blender/character.blend
+    Blender -b --python blender/character.py -- assets/character.glb blender/character.blend
 
 Usage inside Blender (e.g. via MCP):
     import sys; sys.path.insert(0, "<repo>/blender")
     import importlib, figure, character
     importlib.reload(figure); importlib.reload(character)
-    character.main(export_path="<repo>/blender/character.glb")
+    character.main(export_path="<repo>/assets/character.glb")
 """
 import math
 from pathlib import Path
@@ -654,7 +654,7 @@ def run_params(n):
     return params
 
 
-# The game (mockup/src/render/character.js) cuts the Jump clip into pieces by
+# The game (src/render/character.js) cuts the Jump clip into pieces by
 # frame number: idle 0-2, push-off 15-27, apex 26-31, landing 37-58.  Keep this
 # timeline (take-off at frame 18, touchdown at frame 37, 59 frames) stable.
 JUMP_V0 = 2 * (HIP_Z + 0.005 - 0.47) / 0.15     # take-off speed, fixes the air time
@@ -1303,7 +1303,7 @@ def export_gltf(rig, ob, path):
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    rig, mesh = main(export_path=str(Path(args[0] if args else __file__.replace(".py", ".glb")).resolve()))
+    rig, mesh = main(export_path=str(Path(args[0]).resolve() if args else Path(__file__).resolve().parent.parent / "assets" / "character.glb"))
     if len(args) > 1:
         figure.setup_stage(bpy.context.scene)
         bpy.context.scene.frame_set(0)

@@ -1,6 +1,9 @@
 """Large, flat-shaded grove trees for the starting town, in game-cell units.
 
 Blender -b --python blender/town_trees.py
+
+Writes assets/town_trees.glb, blender/town_trees.blend and
+blender/previews/town_trees-preview.png.
 MCP: import town_trees; town_trees.main()
 
 Separate from the one-cell scatter library. Wide crowns, substantial roots and
@@ -19,7 +22,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import props
 import town
 
-DIRECTORY = Path(__file__).resolve().parent
 SPECS = [('town_tree_oak_a', 6.8, 1.30, .23, '#659449'),
          ('town_tree_elm_a', 7.1, 1.05, .19, '#789453'),
          ('town_tree_birch_a', 6.1, .85, .15, '#91a76a')]
@@ -67,7 +69,7 @@ def main():
     scene = bpy.data.scenes.new('TownGrovePreview')
     bpy.context.window.scene = scene
     objects = build(scene)
-    props.export_gltf(objects, DIRECTORY / 'town_trees.glb')
+    props.export_gltf(objects, props.ASSETS / 'town_trees.glb')
     for i, obj in enumerate(objects):
         obj.location = (i * 4, 0, 0)
     # Reuse presentation materials and light direction, not the town showroom.
@@ -94,16 +96,16 @@ def main():
     scene.cycles.use_denoising = True
     scene.render.resolution_x, scene.render.resolution_y, scene.render.resolution_percentage = 1200, 850, 100
     scene.render.image_settings.file_format = 'PNG'
-    scene.render.filepath = str(DIRECTORY / 'town_trees-preview.png')
+    scene.render.filepath = str(props.PREVIEWS / 'town_trees-preview.png')
     # In MCP, write only this new scene's dependencies, leaving the user's file
     # untouched. A headless build starts empty and can save a regular main file.
     if bpy.app.background:
         for other in list(bpy.data.scenes):
             if other != scene and not other.objects:
                 bpy.data.scenes.remove(other)
-        bpy.ops.wm.save_as_mainfile(filepath=str(DIRECTORY / 'town_trees.blend'))
+        bpy.ops.wm.save_as_mainfile(filepath=str(props.HERE / 'town_trees.blend'))
     else:
-        bpy.data.libraries.write(str(DIRECTORY / 'town_trees.blend'), {scene}, fake_user=True)
+        bpy.data.libraries.write(str(props.HERE / 'town_trees.blend'), {scene}, fake_user=True)
     return [{'name': o.name, 'triangles': len(o.data.polygons), 'height': o['height']} for o in objects]
 
 

@@ -6,7 +6,7 @@ linear COLOR_0, ONE mesh per prop named "<set>_<prop>_<variant>" at the origin,
 glTF extras (attach, radius, blocking, priority, light, intensity, sway), an
 optional "<name>_glow" emissive material. Neutral "any" props stay grey for the
 game's per-theme tint. New placement slots for the world generator (hooked
-up through render/propplace.js; see clutter/README.md):
+up through src/render/propplace.js; see docs/assets/clutter.md):
 
     attach "ground"   origin at the base centre, base at z = 0
         cover: true   tiny ground cover (<= 0.3 tall, radius <= 0.35) for a separate
@@ -25,6 +25,9 @@ Builders live in clutter_surface.py and clutter_depths.py, helpers in clutter_ge
 
 Headless (build, validate, export, save the showroom, render previews):
     Blender -b --python blender/clutter.py -- [output-directory] [--no-render]
+
+Default output: assets/clutter.glb + assets/clutter/manifest.json, blender/clutter.blend,
+renders in blender/previews/ (clutter-preview.png, clutter/<set>.png).
 
 Inside Blender / MCP:
     import sys; sys.path.insert(0, "<repo>/blender")
@@ -47,7 +50,6 @@ import props  # noqa: E402
 import clutter_surface  # noqa: E402
 import clutter_depths  # noqa: E402
 
-DIRECTORY = Path(__file__).resolve().parent
 SEED = 4242
 COLLECTION = "CubeCrawlerClutter"
 PREVIEW = "ClutterPreview_NOT_EXPORTED"
@@ -486,6 +488,7 @@ def frame(scene, blocks, theme, px_per_cell=110, height_cells=5.0):
 
 def render_previews(scene, blocks, directory):
     directory = Path(directory)
+    (directory / "clutter").mkdir(parents=True, exist_ok=True)
     paths = []
     for theme in SETS:
         frame(scene, blocks, theme)
@@ -525,7 +528,7 @@ def contact_sheet(paths, out, scale=0.6):
 
 
 def main(directory=None, render=True):
-    directory = Path(directory or DIRECTORY).resolve()
+    directory, blends, previews = props.output_dirs(directory)
     scene = bpy.data.scenes.get("ClutterShowroom") or bpy.data.scenes.new("ClutterShowroom")
     if bpy.context.window:
         bpy.context.window.scene = scene
@@ -538,9 +541,9 @@ def main(directory=None, render=True):
     for other in list(bpy.data.scenes):
         if other != scene and not other.objects:
             bpy.data.scenes.remove(other)
-    bpy.ops.wm.save_as_mainfile(filepath=str(directory / "clutter.blend"))
+    bpy.ops.wm.save_as_mainfile(filepath=str(blends / "clutter.blend"))
     if render:
-        render_previews(scene, blocks, directory)
+        render_previews(scene, blocks, previews)
     print(f"Cube Crawler clutter: {len(objects)} props, {sum(r['triangles'] for r in report)} triangles")
     return report
 

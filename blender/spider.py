@@ -24,13 +24,13 @@ Animations (in place, 30 fps):
                settle into a held corpse pose (2 seconds, extras: hold_last_frame)
 
 Headless regeneration (saves a clean, editable project with all three clips):
-    Blender -b --python blender/spider.py -- blender/spider.glb blender/spider.blend
+    Blender -b --python blender/spider.py -- assets/spider.glb blender/spider.blend
 
 Usage inside Blender (e.g. via MCP):
     import sys; sys.path.insert(0, "<repo>/blender")
     import importlib, figure, character, spider
     importlib.reload(figure); importlib.reload(character); importlib.reload(spider)
-    spider.main(export_path="<repo>/blender/spider.glb")
+    spider.main(export_path="<repo>/assets/spider.glb")
 """
 import math
 from pathlib import Path
@@ -591,7 +591,7 @@ def main(scene=None, export_path=None, active_action="SpiderWalk"):
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    rig, mesh = main(export_path=str(Path(args[0] if args else __file__.replace(".py", ".glb")).resolve()))
+    rig, mesh = main(export_path=str(Path(args[0]).resolve() if args else Path(__file__).resolve().parent.parent / "assets" / "spider.glb"))
     minima = C.mesh_min_z(rig, mesh, bpy.data.actions["SpiderDeath"])
     assert minima.min() > -0.002, ("SpiderDeath floor contact", float(minima.min()))
     rig.animation_data.action = bpy.data.actions["SpiderWalk"]

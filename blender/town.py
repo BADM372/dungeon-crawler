@@ -9,11 +9,12 @@ Headless:
     Blender -b --python blender/town.py -- [output-directory]
 MCP / Blender (build does not clear unrelated objects):
     import sys; sys.path.insert(0, '<repo>/blender')
-    import town; objects = town.build(); town.export(objects, '<repo>/blender')
+    import town; objects = town.build(); town.export(objects, '<repo>/assets')
 
-main() creates a NEW presentation scene, exports town.glb and town/*.glb,
-saves town.blend and a JSON manifest, then renders town-preview.png plus
-individual thumbnails. Preview floor, labels, camera and lights never export.
+main() creates a NEW presentation scene, exports town.glb, town/*.glb and a
+JSON manifest to assets/, saves blender/town.blend, then renders
+blender/previews/town-preview.png plus individual thumbnails in
+blender/previews/town/. Preview floor, labels, camera and lights never export.
 The exports are models only; they do not implement gameplay or collision.
 """
 import hashlib
@@ -640,7 +641,7 @@ def validate(objects):
 
 def export(objects, directory):
     directory = Path(directory).resolve()
-    directory.mkdir(parents=True, exist_ok=True)
+    (directory / 'town').mkdir(parents=True, exist_ok=True)
     report = validate(objects)
     props.export_gltf(objects, directory / 'town.glb')
     for obj in objects:
@@ -727,6 +728,7 @@ def setup_preview(scene, objects):
 
 def render_previews(scene, objects, preview, directory):
     directory = Path(directory)
+    (directory / 'town').mkdir(parents=True, exist_ok=True)
     scene.render.filepath = str(directory / 'town-preview.png')
     bpy.ops.render.render(write_still=True)
     cam = scene.camera
@@ -758,7 +760,7 @@ def render_previews(scene, objects, preview, directory):
 
 
 def main(directory=None, render=True):
-    directory = Path(directory or Path(__file__).parent).resolve()
+    directory, blends, previews = props.output_dirs(directory)
     scene = bpy.data.scenes.new('TownShowroom')
     if bpy.context.window:
         bpy.context.window.scene = scene
@@ -769,9 +771,9 @@ def main(directory=None, render=True):
     for obj in objects:
         obj.select_set(True)
     bpy.context.view_layer.objects.active = objects[3]
-    bpy.ops.wm.save_as_mainfile(filepath=str(directory / 'town.blend'))
+    bpy.ops.wm.save_as_mainfile(filepath=str(blends / 'town.blend'))
     if render:
-        render_previews(scene, objects, preview, directory)
+        render_previews(scene, objects, preview, previews)
     print(json.dumps(report, indent=2))
     return report
 

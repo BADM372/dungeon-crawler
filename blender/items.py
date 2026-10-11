@@ -6,6 +6,9 @@ Loot/chests use game cells and ground pivots. All exported roots are at origin.
 
 MCP: import items; items.main()
 CLI: Blender -b --python blender/items.py -- [output-directory]
+
+Default output: assets/items.glb + assets/items/ (glb, icons, manifest),
+blender/items.blend, blender/previews/items-preview.png.
 """
 import hashlib
 import json
@@ -22,7 +25,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import props
 import town
 
-DIRECTORY = Path(__file__).resolve().parent
 COLLECTION = 'CubeCrawlerItems'
 WOOD = '#82603b'
 BARK = '#6e4420'
@@ -544,12 +546,15 @@ def setup_preview(scene, objects):
     return preview
 
 
-def render_previews(scene, objects, preview, directory, overview=True):
+def render_previews(scene, objects, preview, directory, overview=True, previews=None):
+    """Overview into previews (default: directory); icons into directory/items."""
     directory = Path(directory)
+    overview_path = Path(previews or directory) / 'items-preview.png'
     cam = scene.camera
     saved = (cam.location.copy(), cam.rotation_euler.copy(), cam.data.ortho_scale)
     if overview:
-        scene.render.filepath = str(directory / 'items-preview.png')
+        overview_path.parent.mkdir(parents=True, exist_ok=True)
+        scene.render.filepath = str(overview_path)
         bpy.ops.render.render(write_still=True)
     decorations = [o for o in preview.objects if o.type == 'FONT' or o.name.startswith('Plinth_')]
     floor = next(o for o in preview.objects if o.name == 'ItemsFloor_NOT_EXPORTED')
@@ -577,11 +582,11 @@ def render_previews(scene, objects, preview, directory, overview=True):
         floor.location = floor_location
         cam.location, cam.rotation_euler, cam.data.ortho_scale = saved
         scene.render.resolution_x, scene.render.resolution_y = 1920, 1200
-        scene.render.filepath = str(directory / 'items-preview.png')
+        scene.render.filepath = str(overview_path)
 
 
 def main(directory=None, render=True):
-    directory = Path(directory or DIRECTORY).resolve()
+    directory, blends, previews = props.output_dirs(directory)
     scene = bpy.data.scenes.new('ItemsShowroom')
     if bpy.context.window:
         bpy.context.window.scene = scene
@@ -591,9 +596,9 @@ def main(directory=None, render=True):
     bpy.ops.object.select_all(action='DESELECT')
     objects[12].select_set(True)
     bpy.context.view_layer.objects.active = objects[12]
-    bpy.ops.wm.save_as_mainfile(filepath=str(directory / 'items.blend'))
+    bpy.ops.wm.save_as_mainfile(filepath=str(blends / 'items.blend'))
     if render:
-        render_previews(scene, objects, preview, directory)
+        render_previews(scene, objects, preview, directory, previews=previews)
     return report
 
 

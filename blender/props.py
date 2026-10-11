@@ -1,5 +1,5 @@
 """
-Low-poly decoration library for Cube Crawler (all P1 and P2 in wants.txt).
+Low-poly decoration library for Cube Crawler (all P1 and P2 in docs/asset-brief.txt).
 
 One cell = one Blender unit. Geometry uses Z up, flat normals and linear
 COLOR_0; only glowing faces use an additional emissive material. Each prop
@@ -8,12 +8,12 @@ UVs, unapplied transforms, modifiers, rigs or preview objects are exported.
 Variants are reproducible and change silhouettes, not just object yaw.
 
 Headless:
-    Blender -b --python blender/props.py -- blender/props.glb
+    Blender -b --python blender/props.py -- [assets/props.glb]
 
 Inside Blender / MCP (does not clear an existing scene):
     import sys; sys.path.insert(0, "<repo>/blender")
     import importlib, props; importlib.reload(props)
-    objects = props.main(export_path="<repo>/blender/props.glb")
+    objects = props.main(export_path="<repo>/assets/props.glb")
 
 build(priority=1) builds only P1. main() builds P1 across every theme, then
 P2, validates the mesh library, and exports only the library. All meshes
@@ -31,6 +31,9 @@ import bmesh
 import bpy
 from mathutils import Vector
 
+HERE = Path(__file__).resolve().parent
+ASSETS = HERE.parent / "assets"  # exported game data, the only folder the game loads from
+PREVIEWS = HERE / "previews"     # overview renders for humans, never loaded by the game
 SEED = 1729
 COLLECTION = "CubeCrawlerProps"
 COLOR_ATTRIBUTE = "Color"
@@ -1174,6 +1177,17 @@ def layout_preview(objects, spacing=1.35, row_spacing=4.6):
     return objects
 
 
+def output_dirs(directory=None):
+    """(assets, blend, previews) folders for a library export.
+
+    By default: exports to assets/, the .blend next to the script, renders to
+    blender/previews/. An explicit directory receives everything (scratch builds)."""
+    if directory:
+        directory = Path(directory).resolve()
+        return directory, directory, directory
+    return ASSETS, HERE, PREVIEWS
+
+
 def main(scene=None, export_path=None):
     obj = bpy.context.object
     if obj is not None and obj.mode != "OBJECT":
@@ -1189,6 +1203,6 @@ def main(scene=None, export_path=None):
 if __name__ == "__main__":
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     if len(args) > 1:
-        raise SystemExit("Usage: Blender -b --python blender/props.py -- [blender/props.glb]")
+        raise SystemExit("Usage: Blender -b --python blender/props.py -- [assets/props.glb]")
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    main(export_path=args[0] if args else str(Path(__file__).with_suffix(".glb")))
+    main(export_path=args[0] if args else str(ASSETS / "props.glb"))

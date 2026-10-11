@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "uv run --no-project tools/serve.py",
+    "prop-metadata": "node tools/prop-metadata.mjs"
+  }
+}
