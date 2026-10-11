@@ -5,6 +5,7 @@
 // random stream, so it does not depend on who decided it.
 import { parse, step, faceKey } from './coords.js';
 import { profile, caveWall, VOID } from './profile.js';
+import { cascade } from './cascades.js';
 
 export const LAYER_BASE = [0, 10, 16, 22];   // the levels of the world-wide layers
 
@@ -33,8 +34,9 @@ function sideFace(world, k, d, withPortal) {
 }
 
 function verticalFace(world, k, d, withPortal) {
-  const R = world.wfc.rng(faceKey(k, d), 0xd0e);
-  return { vertical: true, portal: withPortal ? { x: 4 + Math.floor(R() * 8), z: 4 + Math.floor(R() * 8) } : null };
+  const fk = faceKey(k, d), R = world.wfc.rng(fk, 0xd0e);
+  return { vertical: true, portal: withPortal ? { x: 4 + Math.floor(R() * 8), z: 4 + Math.floor(R() * 8) } : null,
+    fall: cascade(world, d === 4 ? k : step(k, 5)) };   // a fall through it (cascades.js)
 }
 
 // faces follow the depth's layout (layout.js): side portals where it links two cubes, the

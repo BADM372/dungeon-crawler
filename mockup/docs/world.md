@@ -88,6 +88,28 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 - **Relief:** themes also have a `relief` that stretches highland faces (up to level ~18 in
   the snowy peaks) and makes hills and plateaus taller.
 
+## Falls into the cube below (`world/cascades.js`, `gen/cascades.js`)
+
+- **The look:** a pool in one cube spills over the edge of its void and pours out through
+  the bottom of the glass box. In the cube below, the stream comes in through the top of
+  the box into a catch pool at the same spot. Falling through the void there lands you in
+  that pool.
+- **Decision:** the shared vertical face decides it from world data only (void field,
+  layout, the face's own random stream), so either cube may be generated first. A fall
+  needs:
+  - void allowed in the upper cube;
+  - a void cell inside the inner 8×8 with solid ground on the side it flows from;
+  - a cell at least 5 away from the wells and rings of both cubes and from the upper
+    cube's own catch pool.
+
+  Chance 45%. The fluid is the depth's river fluid 60% of the time, otherwise its fluid mix.
+- **Upper cube:** forces the void cell open and floods a small pool beside it. Neither gets
+  slabs above it.
+- **Lower cube:** clears the void around the spot, floods the catch pool and keeps slabs
+  off it. The sheet's column is claimed, so no structure crosses it.
+- **Results:** about 7% of cubes, mostly in the sky islands and the abyss. Over 8 worlds,
+  all 270 falls have a matching end in the cube below.
+
 ## Cube archetypes (`gen/archetypes.js`)
 
 Every cube gets a big shape on top of the blended ground. The shaping fades out towards the

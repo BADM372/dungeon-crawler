@@ -22,7 +22,7 @@ export function buildSlabs(ctx) {
     };
     for (let b = ri(1, 3); b > 0; b--) blob(ri(2, N - 3) + 0.5, ri(2, N - 3) + 0.5, 1.8 + R() * 3, 1.8 + R() * 3);
     // slabs only touch the cube faces at portal pads, so the edges match the neighbours
-    for (let c = 0; c < N * N; c++) { const x = c % N, z = (c / N) | 0; if (!x || !z || x === N - 1 || z === N - 1) mask[c] = 0; }
+    for (let c = 0; c < N * N; c++) { const x = c % N, z = (c / N) | 0; if (!x || !z || x === N - 1 || z === N - 1 || ctx.sky?.has(c)) mask[c] = 0; }
     const padOf = new Map();
     for (const p of ctx.portals) if (p.layer === k) for (const c of p.cells) { mask[c] = 1; padOf.set(c, p.id); }
 

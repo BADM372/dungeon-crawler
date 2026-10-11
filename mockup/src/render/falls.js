@@ -28,6 +28,7 @@ export function buildFalls(m, group) {
     sheet.renderOrder = 10 * f.layer + 3;
     group.add(sheet);
 
+    if (f.out) continue;   // pours out through the bottom of the cube: no splash here
     const foam = f.type === LAVA ? 0xffc06a : f.type === ACID ? 0xd8ff9a : 0xeaf6ff;
     const splash = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.55, 0.05, 14),
       cutMaterial(new THREE.MeshBasicMaterial({ color: foam, transparent: true, opacity: 0.55, depthWrite: false })));
