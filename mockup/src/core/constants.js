@@ -25,9 +25,19 @@ export const edgePts = (x, z, d) => [
   [[x, z + 1], [x + 1, z + 1]], [[x, z], [x + 1, z]]][d];
 
 // physics tuning
-export const STEP = 0.3;        // max ledge the ball can roll onto
-export const SWIM_STEP = 0.85;  // climbing out of water is more generous
-export const GRAV = 28;
-export const ROLL = 0.5;        // fraction of gravity that turns into downhill rolling
-export const DRAG = 4.5;
-export const SNAP = 0.25;       // stick to the ground when rolling downhill
+export const STEP = 0.3;        // max ledge the character walks up without jumping
+export const SWIM_STEP = 1.1;   // climbing out of water is more generous
+export const GRAV = 22;
+export const SNAP = 0.25;       // stick to the ground when walking downhill
+
+// character controller
+export const CHAR_SCALE = 0.55; // the rig is ~2 m tall -> ~1.1 units
+export const CHAR_R = 0.22;     // collision radius
+export const CHAR_H = 0.85;     // collision height
+export const WALK_SPEED = 1.9, RUN_SPEED = 4.1, SWIM_SPEED = 0.9;
+// the walk / run cycles play at the pace of these ground speeds; the remaining
+// distance is covered with longer strides (see render/stride.js)
+export const WALK_ANIM = 1.4, RUN_ANIM = 3.2;
+export const JUMP_V = 5.5;      // -> jumps ~0.7 units high
+export const SIT_IMPACT = 10;   // landing faster than this knocks you onto your bottom
+export const RAGDOLL_IMPACT = 14;   // ... and this turns you into a ragdoll (and hurts)

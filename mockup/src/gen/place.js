@@ -23,7 +23,7 @@ export function placeStructures(ctx) {
   };
   const canPlace = m => runClaims(m).every(cl =>
     claims[cl.c].every(o => o.hi + SHEAD <= cl.lo || cl.hi + SHEAD <= o.lo) &&
-    walkedIn[cl.c].every(g => !(g.top > cl.lo - SHEAD + 1 && g.top <= cl.hi + 1)) &&
+    walkedIn[cl.c].every(g => !(g.top > cl.lo - SHEAD && g.top <= cl.hi + 1)) &&   // room for the character's head
     sweeps[cl.c].every(([a, b]) => !(cl.lo <= b && cl.hi >= a)));
   // floors right under a stair / landing are covered by it: they must not be smoothed up through it
   const coverBelow = (c, lo) => { for (const g of cols[c]) if (g.top <= lo && lo - g.top < SHEAD) g.covered = true; };

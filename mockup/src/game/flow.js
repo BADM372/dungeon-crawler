@@ -9,7 +9,7 @@ import { showStats, flash, fadeOut, fadeIn } from './hud.js';
 const seedFor = d => d === 1 ? state.baseSeed : hash32(state.baseSeed + d * 2654435761) % 1000000000;
 
 export function spawnAt(x, y, z) {
-  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null });
+  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, stun: 0 });
   player.safe = { x, y, z };
   const gr = groundAt(x, z, y + 0.05, 0);
   player.support = gr.s;

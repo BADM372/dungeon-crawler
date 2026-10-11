@@ -1,52 +1,76 @@
-// Rolling-ball movement: input force, downhill gravity, drag, collisions and falling.
-import { STEP, SWIM_STEP, GRAV, ROLL, DRAG, SNAP, ACID } from '../core/constants.js';
-import { clamp } from '../core/util.js';
+// Character controller: walk / run / swim, jumping, gravity, ceilings and slopes.
+import { STEP, SWIM_STEP, GRAV, SNAP, ACID, WALK_SPEED, RUN_SPEED, SWIM_SPEED, JUMP_V } from '../core/constants.js';
 import { player } from '../game/state.js';
-import { canMove, groundAt, slopeAt } from './collide.js';
+import { groundAt, ceilingAt, slopeAt } from './collide.js';
+import { canMove } from './canmove.js';
 
-// (dx, dz): desired direction in world space, length <= 1. Returns the ground info.
-export function movePlayer(dt, dx, dz) {
-  const sp = player.fluid === ACID ? 1.4 : player.swimming ? 1.8 : 3.6;
-  const drag = player.swimming ? 6 : player.grounded ? DRAG : 1.2;
-  const accK = player.swimming ? 6 : DRAG;
-  const ctl = player.grounded ? 1 : 0.15;
-  let ax = dx * sp * accK * ctl, az = dz * sp * accK * ctl;
-  if (player.grounded && !player.swimming) {
-    const [gx, gz] = slopeAt(player.support, player.x, player.z);
-    const k = player.support?.kind === 'stair' ? 0.25 : 1, den = 1 + gx * gx + gz * gz;
-    ax -= GRAV * ROLL * gx / den * k;
-    az -= GRAV * ROLL * gz / den * k;
+function horizontal(dt, dx, dz, run) {
+  const p = player;
+  const speed = p.swimming ? (p.fluid === ACID ? 0.6 : SWIM_SPEED) : run ? RUN_SPEED : WALK_SPEED;
+  let tx = dx * speed, tz = dz * speed;
+  if (p.grounded && !p.swimming && p.support) {
+    const [gx, gz] = slopeAt(p.support, p.x, p.z), g = Math.hypot(gx, gz);
+    // walking uphill is slower
+    const up = (tx * gx + tz * gz) / speed;
+    if (up > 0) { tx /= 1 + 0.35 * up; tz /= 1 + 0.35 * up; }
+    // too steep to stand on (stairs excepted): slide down
+    if (g > 3 && p.support.kind !== 'stair') { const s = 2.5 * (g - 3) + 0.5; tx -= gx / g * s; tz -= gz / g * s; }
   }
-  player.vx += ax * dt; player.vz += az * dt;
-  const damp = Math.exp(-drag * dt);
-  player.vx *= damp; player.vz *= damp;
+  // grounded characters accelerate fast, in the air there is only a little control
+  const k = Math.min(1, (p.swimming ? 5 : p.grounded ? 14 : 2.5) * dt);
+  p.vx += (tx - p.vx) * k; p.vz += (tz - p.vz) * k;
 
-  // axis-separated moves so the ball slides along walls
-  const mx = player.vx * dt, mz = player.vz * dt;
-  if (Math.abs(mx) > 1e-6) { if (canMove(player.x + mx, player.z, 'x', Math.sign(mx))) player.x += mx; else player.vx *= -0.15; }
-  if (Math.abs(mz) > 1e-6) { if (canMove(player.x, player.z + mz, 'z', Math.sign(mz))) player.z += mz; else player.vz *= -0.15; }
+  // axis-separated moves so the body slides along walls
+  const mx = p.vx * dt, mz = p.vz * dt;
+  if (Math.abs(mx) > 1e-6) { if (canMove(p.x + mx, p.z, 'x', Math.sign(mx))) p.x += mx; else p.vx = 0; }
+  if (Math.abs(mz) > 1e-6) { if (canMove(p.x, p.z + mz, 'z', Math.sign(mz))) p.z += mz; else p.vz = 0; }
+}
 
-  // vertical: stick to slopes while grounded, otherwise fall
-  const gr = groundAt(player.x, player.z, player.y, player.swimming ? SWIM_STEP : STEP);
-  if (player.swimming) {
-    if (gr.h > player.y) player.y = gr.h;   // climbing out onto a bank
-    player.vy = 0;
-  } else if (player.grounded && player.vy <= 0 && gr.h >= player.y - SNAP) {
-    player.y = gr.h; player.vy = 0;
+// jump with a little coyote time (just walked off a ledge) and a short input buffer
+function jumping(dt, jump) {
+  const p = player;
+  p.coyote = p.grounded && !p.swimming ? 0.12 : p.coyote - dt;
+  p.jumpBuf = jump ? 0.15 : p.jumpBuf - dt;
+  if (p.jumpBuf <= 0 || !(p.coyote > 0 || p.swimming)) return;
+  p.vy = p.swimming ? 4.8 : JUMP_V;
+  p.grounded = p.swimming = false;
+  p.coyote = p.jumpBuf = 0;
+  p.jumpCount++;
+}
+
+// returns the ground info plus `landed` (impact speed of a landing this step, else 0)
+export function movePlayer(dt, dx, dz, run, jump) {
+  const p = player;
+  if (p.stun > 0) { p.stun -= dt; dx = dz = 0; jump = false; }
+  horizontal(dt, dx, dz, run);
+  jumping(dt, jump);
+
+  const gr = groundAt(p.x, p.z, p.y, p.swimming ? SWIM_STEP : STEP);
+  gr.landed = 0;
+  if (p.swimming) {
+    if (gr.h > p.y) p.y = gr.h;   // climbing out onto a bank
+    p.vy = 0;
+  } else if (p.grounded && p.vy <= 0 && gr.h >= p.y - SNAP) {
+    p.y = gr.h; p.vy = 0;
   } else {
-    player.vy -= GRAV * dt;
-    player.y += player.vy * dt;
-    if (player.y <= gr.h) {
-      // hard landings kill most of the horizontal momentum
-      if (player.vy < -6) { const k = clamp(1 + (player.vy + 6) * 0.08, 0.25, 1); player.vx *= k; player.vz *= k; }
-      player.y = gr.h; player.vy = 0; player.grounded = true;
-    } else player.grounded = false;
+    p.vy -= GRAV * dt;
+    let ny = p.y + p.vy * dt;
+    if (p.vy > 0) {   // bump the head
+      const c = ceilingAt(p.x, p.z, p.y + 0.1);
+      if (ny + p.h > c) { ny = Math.max(p.y, c - p.h); p.vy = 0; }
+    }
+    if (ny <= gr.h) {
+      gr.landed = -p.vy;
+      p.landImpact = gr.landed; p.landCount++;
+      p.y = gr.h; p.vy = 0; p.grounded = true;
+    } else { p.y = ny; p.grounded = false; }
   }
-  player.support = gr.s;
+  p.airTime = p.grounded || p.swimming ? 0 : p.airTime + dt;
+  p.support = gr.s;
   return gr;
 }
 
-// which layer the ball is on (for fading): the floor's layer, or the nearer end of a structure
+// which layer the character is on (for fading): the floor's layer, or the nearer end of a structure
 export function updateLayer(gr) {
   if (!player.grounded || !gr.s) return;
   const s = gr.s;

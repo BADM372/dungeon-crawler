@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.164.1/build/three.module.js" } }
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
 </head>
 <body>
@@ -18,8 +18,8 @@
   <div id="stats"></div>
 </div>
 <div id="help">
-  <kbd>WASD</kbd> move &nbsp; <kbd>Q</kbd>/<kbd>E</kbd> rotate view &nbsp; <kbd>wheel</kbd> zoom &nbsp;
-  <kbd>R</kbd> respawn &nbsp; <kbd>N</kbd> new cube &nbsp; <kbd>P</kbd> show generator path
+  <kbd>WASD</kbd> walk (double-tap to run) &nbsp; <kbd>Space</kbd> jump &nbsp; <kbd>Q</kbd>/<kbd>E</kbd> rotate view &nbsp; <kbd>wheel</kbd> zoom<br>
+  <kbd>K</kbd> knock over &nbsp; <kbd>R</kbd> respawn &nbsp; <kbd>N</kbd> new cube &nbsp; <kbd>P</kbd> show generator path
 </div>
 <div id="legend">
   <div>entry <i style="background:#5fd3ff"></i></div>

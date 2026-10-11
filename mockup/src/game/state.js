@@ -1,10 +1,16 @@
 // Mutable game state shared between modules.
+import { CHAR_R, CHAR_H } from '../core/constants.js';
 
 export const player = {
-  x: 0, z: 0, y: 0, vy: 0, vx: 0, vz: 0, r: 0.3, hp: 100, layer: 0,
-  grounded: true, swimming: false, fluid: 0, visY: 0, support: null,
+  x: 0, z: 0, y: 0, vx: 0, vy: 0, vz: 0, visY: 0,
+  r: CHAR_R, h: CHAR_H, hp: 100, layer: 0,
+  grounded: true, swimming: false, fluid: 0, support: null,
+  airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
+  // event counters the animator watches
+  jumpCount: 0, landCount: 0, landImpact: 0, getUpCount: 0,
+  ragdoll: null, ragdollThen: null,
   safe: { x: 0, y: 0, z: 0 }, safeTimer: 0,
-  autoDir: null,   // overrides keyboard input (used by test bots)
+  autoDir: null, autoRun: false,   // override keyboard input (used by test bots)
 };
 
 const params = new URLSearchParams(location.search);

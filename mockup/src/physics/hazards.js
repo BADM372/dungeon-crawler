@@ -3,6 +3,7 @@ import { LH, LAVA, ACID, DIRS } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
 import { player, state } from '../game/state.js';
 import { hurt } from '../game/flow.js';
+import { knockDown } from '../game/ragdoll.js';
 
 // returns false when the player got respawned
 function fluids(dt, gr) {
@@ -10,8 +11,8 @@ function fluids(dt, gr) {
   const wasSwimming = player.swimming;
   player.swimming = false; player.fluid = 0;
   if (!fl || player.y >= fl.surf * LH + 0.05) return true;
-  if (fl.fluid === LAVA) { hurt(50, 'Fell into lava!'); return false; }
-  const fy = fl.surf * LH - 0.24;   // float a little below the surface
+  if (fl.fluid === LAVA) { knockDown({ damage: 50, reason: 'Fell into lava!', respawn: 'safe' }); return false; }
+  const fy = fl.surf * LH - 0.5;   // swim chest deep
   if (player.y > fy + 0.01 && !wasSwimming) return true;
   player.vy = 0;
   player.y += (fy - player.y) * Math.min(1, dt * 6);
@@ -19,7 +20,7 @@ function fluids(dt, gr) {
   if (fl.fluid === ACID) {
     player.hp -= 30 * dt;
     if (!state.statusMsg) state.statusMsg = 'Acid burns! Get out!';
-    if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return false; }
+    if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
   } else if (!state.statusMsg) state.statusMsg = 'Swimming - find a low bank to climb out';
   return true;
 }
@@ -31,11 +32,11 @@ function falls(dt, ci) {
     const lx = player.x - Math.floor(player.x), lz = player.z - Math.floor(player.z);
     const dist = [lx, 1 - lx, lz, 1 - lz][f.d], lat = f.d < 2 ? lz : lx;
     if (dist > 0.45 || lat < 0.06 || lat > 0.94 || player.y > f.top * LH || player.y < f.bot * LH - 0.5) continue;
-    if (f.type === LAVA) { hurt(50, 'Burned by a lavafall!'); return false; }
+    if (f.type === LAVA) { knockDown({ damage: 50, reason: 'Burned by a lavafall!', respawn: 'safe' }); return false; }
     if (f.type === ACID) {
       player.hp -= 40 * dt;
       if (!state.statusMsg) state.statusMsg = 'Acid rain!';
-      if (player.hp <= 0) { hurt(0, 'Dissolved by acid'); return false; }
+      if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
     }
     player.vx += DIRS[f.d][0] * 9 * dt; player.vz += DIRS[f.d][1] * 9 * dt;
     if (!player.grounded) player.vy -= 12 * dt;
