@@ -1,6 +1,7 @@
 // All built structures: stairs, landings, bridges and visible fences.
 import { buildStair, buildLanding } from './stairs.js';
 import { buildStoneBridge, buildPlankBridge } from './bridges.js';
+import { buildRopeBridge, buildIronBridge } from './bridges2.js';
 import { POST, RAIL } from './palette.js';
 import { buildLadder } from './ladders.js';
 
@@ -10,6 +11,8 @@ export function buildStructures(m, layers) {
     if (r.kind === 'landing') buildLanding(r, L);
     else if (r.kind === 'stair') buildStair(r, L);
     else if (r.style === 'stone') buildStoneBridge(r, L);
+    else if (r.style === 'rope') buildRopeBridge(r, L);
+    else if (r.style === 'iron') buildIronBridge(r, L);
     else buildPlankBridge(r, L);
   }
   for (const l of m.ladders || []) buildLadder(l, layers[l.layer]);

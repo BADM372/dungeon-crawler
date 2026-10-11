@@ -126,6 +126,20 @@ under plank bridges never stand where another structure passes underneath.
   cutaway shader (`frontWall` in `render/section.js`). The cut rock shows as hatched
   cross-section, like a cutaway model.
 
+## Themed structures (`world/builds.js`, `render/bridges2.js`)
+
+- **Materials per theme:** each theme (by its prop set) names the stone, wood, rope and iron
+  its structures are made of. Stairs, landings, bridges, fences and ladders use shades of
+  those. Examples: grey stone and dark wood in the peaks, sandstone in the badlands and
+  ruins, mossy wood in the swamp, basalt and iron in the volcanic depths.
+- **Bridge styles:**
+  - stone arches (only over ground close below);
+  - plank bridges;
+  - rope bridges: spaced slats, a post at each end, rope hand lines, deeper sag, no legs;
+  - iron bridges: a flat girder deck with railings and bracing.
+- **Style mix:** each theme weights the styles. Rope bridges are common in the sky islands
+  and spider nests, iron in the mines, volcanic depths and abyss, stone in the ruins.
+
 ## Ladders and jumps (`gen/climbs.js`, `physics/climb.js`)
 
 Routes can now also use these moves:

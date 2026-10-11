@@ -2,9 +2,19 @@
 // sag, bases of stairs / landings and supporting pillars.
 import { LH, SHEAD, OPP, EDGE_CORNERS } from '../core/constants.js';
 import { runY } from '../core/surfaces.js';
+import { buildOf } from '../world/builds.js';
+import { themeAt } from '../world/depth.js';
 
 export function shapeStructures(ctx) {
   const { R, cols, pieces, runs, pathFloors } = ctx;
+  // the depth's bridge styles by weight (stone arches only over ground close below)
+  const weights = Object.entries(buildOf(themeAt(ctx.spec.depth ?? 0)).bridges);
+  const bridgeStyle = (solid, R) => {
+    const w = weights.filter(([s]) => solid || s !== 'stone');
+    let r = R() * w.reduce((a, [, v]) => a + v, 0);
+    for (const [s, v] of w) if ((r -= v) < 0) return s;
+    return 'plank';
+  };
   const edgeY = (n, d) => { if (n.landing) return n.top * LH; const [a, b] = EDGE_CORNERS[d]; return (n.cs[a] + n.cs[b]) / 2; };
   const floorBelow = (c, y) => { let g = null; for (const f of cols[c]) if (f.top * LH <= y + 0.01) g = f; return g; };
   const groundY = g => g ? (g.fluid ? g.surf * LH : Math.min(...g.cs)) : 0;
@@ -41,8 +51,10 @@ export function shapeStructures(ctx) {
       const below = r.pieces.map(p => floorBelow(p.c, deckLo));
       const solid = below.every(g => g && !g.fluid && deckLo - groundY(g) < 4)
         && r.pieces.every(p => !pathCols.has(p.c) && !pieces[p.c].some(q => q.run !== r && q.kind !== 'pillar' && Math.min(q.y0, q.y1) < deckLo));
-      r.style = solid && R() < 0.7 ? 'stone' : 'plank';
-      if (r.style === 'plank' && k >= 2) { r.sag = Math.min(0.22, 0.05 * k); r.pieces.forEach(pieceEnds); }
+      r.style = bridgeStyle(solid, R);
+      if (r.style === 'plank' && k >= 2) r.sag = Math.min(0.22, 0.05 * k);
+      if (r.style === 'rope' && k >= 2) r.sag = Math.min(0.4, 0.09 * k);   // rope bridges hang deeper
+      if (r.sag) r.pieces.forEach(pieceEnds);
     }
     r.pieces.forEach(p => {
       const lo = Math.min(p.y0, p.y1), sup = floorBelow(p.c, lo);
@@ -60,7 +72,7 @@ export function shapeStructures(ctx) {
         const p = r.pieces[Math.floor(s)];
         pillar(r, p.c, 0.5, 0.5, r.dx ? 0.2 : 0.42, r.dx ? 0.42 : 0.2, p.ground, runY(p, 0.5, 0.5) - 0.3);
       }
-    } else if (k >= 3) {
+    } else if (k >= 3 && r.style !== 'rope') {   // rope bridges just hang
       r.pieces.forEach((p, j) => {
         const top = runY(p, 0.5, 0.5) - 0.2;
         // not where another structure passes underneath (the legs would stand in its way)

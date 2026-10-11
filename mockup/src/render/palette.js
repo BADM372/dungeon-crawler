@@ -1,6 +1,8 @@
 // Colours used by the world meshes.
 import * as THREE from '../../vendor/three/three.module.js';   // plain path: also loads in the world worker
 import { WATER, LAVA } from '../core/constants.js';
+import { buildOf } from '../world/builds.js';
+import { THEMES } from '../world/themes.js';
 
 export const C = s => new THREE.Color(s);
 
@@ -20,12 +22,18 @@ export let TOP_STOPS, SIDE_STOPS, LIP, UNDERSIDE, BEDROCK;
 export function usePalette(theme) {
   TOP_STOPS = theme.top; SIDE_STOPS = theme.side;
   LIP = C(theme.lip); UNDERSIDE = C(theme.under); BEDROCK = theme.bed.map(C);
+  useBuild(buildOf(theme));
 }
 export const fluidBed = t => C(t === WATER ? '#7d6f52' : t === LAVA ? '#2b1d1a' : '#3e4a2a');
 export const fluidBank = t => C(t === WATER ? '#c9b98a' : t === LAVA ? '#3a2a22' : '#a4a64a');
 
-// structures
-export const STONE = C('#cfc5b2'), STONE2 = C('#bdb29e'), CHEEK = C('#8f8678'), CAP = C('#a69d8d');
-export const SOFFIT = C('#6f685e'), PIER = C('#968e80');
-export const WOOD = C('#a0703f'), WOOD2 = C('#8d6136'), BEAM = C('#5d3d22'), ROPE = C('#cdb88e');
-export const POST = C('#6e4420'), RAIL = C('#8b5a2b');
+// structures: shades of the theme's stone, wood, rope and iron (world/builds.js)
+export let STONE, STONE2, CHEEK, CAP, SOFFIT, PIER, WOOD, WOOD2, BEAM, ROPE, POST, RAIL, IRON, IRON2;
+function useBuild(b) {
+  const s = k => C(b.stone).multiplyScalar(k), w = k => C(b.wood).multiplyScalar(k);
+  [STONE, STONE2, CHEEK, CAP, SOFFIT, PIER] = [1, 0.92, 0.69, 0.8, 0.54, 0.73].map(s);
+  [WOOD, WOOD2, BEAM, POST, RAIL] = [1, 0.88, 0.58, 0.69, 0.87].map(w);
+  ROPE = C(b.rope); IRON = C(b.iron); IRON2 = C(b.iron).multiplyScalar(0.7);
+}
+
+usePalette(THEMES[0]);   // until a cube says otherwise
