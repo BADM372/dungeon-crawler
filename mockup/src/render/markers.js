@@ -68,7 +68,9 @@ export function buildMarkers(m, group, showPath, seen = {}) {
     group.add(fx.obj);
     return fx;
   });
-  const pathLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(m.pathPts),
+  // every route (portal -> exit, the ways back, escapes) as its own run of line segments
+  const segPts = m.routes.flatMap(r => r.slice(1).flatMap((q, i) => [r[i], q]));
+  const pathLine = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segPts),
     new THREE.LineBasicMaterial({ color: 0xff3df2, depthTest: false, transparent: true }));
   pathLine.renderOrder = 998;
   pathLine.visible = showPath;

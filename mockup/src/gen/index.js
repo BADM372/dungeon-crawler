@@ -13,7 +13,9 @@ import { addRamps, addSupports } from './supports.js';
 import { addPools } from './pools.js';
 import { addStreams } from './streams.js';
 import { makeMoves } from './moves.js';
-import { findRoute } from './route.js';
+import { findRoute, finishRoute } from './route.js';
+import { addEscapes } from './escape.js';
+import { reachTo, isCramped } from './reach.js';
 import { placeStructures } from './place.js';
 import { smooth } from './smooth.js';
 import { shapeStructures } from './shape.js';
@@ -34,7 +36,8 @@ function pathPoints(ctx, moves) {
   const center = (c, y) => ({ x: c % N + 0.5, y: y + 0.12, z: ((c / N) | 0) + 0.5 });
   const nodeY = n => n.landing ? n.top * LH : floorY(n, 0.5, 0.5);
   if (!ctx.portalFloors.length) return [];
-  const pts = [center(ctx.portalFloors[0].c, nodeY(ctx.portalFloors[0]))];
+  const start = moves.length ? moves[0].from : ctx.portalFloors[0];
+  const pts = [center(start.c, nodeY(start))];
   for (const m of moves) {
     if (m.cells.length) {
       const run = ctx.runs.find(r => r.from === m.from && r.to === m.to), back = ctx.runs.find(r => r.from === m.to && r.to === m.from);
@@ -64,18 +67,26 @@ function tryGenerate(seed, spec) {
   indexFloors(ctx);
   if (ctx.portalFloors.some(f => !f)) return null;
   makeMoves(ctx);
-  if (!findRoute(ctx) || !placeStructures(ctx)) return null;
+  if (!findRoute(ctx)) return null;
+  addEscapes(ctx);
+  finishRoute(ctx);
+  if (!placeStructures(ctx)) return null;
   smooth(ctx);
   shapeStructures(ctx);
   addFences(ctx);
+  // every portal must lead to the exit with the final slopes and fences
+  const safe = reachTo(ctx, ctx.hub, true);
+  if (safe && ctx.portalFloors.some(f => !safe.has(f.id))) return null;
+  if (ctx.moves.some(m => isCramped(ctx, m.from) || isCramped(ctx, m.to))) return null;   // a route squeezes under a slab
   const { K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves } = ctx;
   const portals = ctx.portals.map(p => ({ id: p.id, kind: p.kind, dir: p.dir, layer: p.layer, cells: p.cells,
     x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
     seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals,
-    ladders: ctx.ladders.map(ladderInfo),
-    kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, cave: !!spec.cave, pathPts: pathPoints(ctx, ctx.moves),
-    routes: ctx.segments.map(s => pathPoints(ctx, s)),   // first portal -> each other portal
+    ladders: ctx.ladders.map(ladderInfo), exit: spec.exit,
+    safe: Uint8Array.from(floors, f => !safe || safe.has(f.id) ? 1 : 0),   // floors that lead to the exit
+    kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, cave: !!spec.cave,
+    routes: ctx.segments.map(s => pathPoints(ctx, s)),   // each portal -> the exit, then the way back
   };
 }
 

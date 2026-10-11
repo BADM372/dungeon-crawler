@@ -3,9 +3,11 @@
 import { N, SHEAD, OPP, DIRS } from '../core/constants.js';
 import { inb, idx } from '../core/util.js';
 import { placeClimb } from './climbs.js';
+import { moveKey } from './route.js';
+import { addDecor } from './decor.js';
 
 export function placeStructures(ctx) {
-  const { ri, cols, floors, falls, moves, pathFloors, movesFrom, stats } = ctx;
+  const { cols, falls, moves, pathFloors, stats } = ctx;
   const cellLists = () => Array.from({ length: N * N }, () => []);
   const pieces = cellLists(), claims = cellLists(), walkedIn = cellLists(), sweeps = cellLists(), runCells = cellLists();
   for (const f of falls) claims[f.c].push({ c: f.c, lo: f.bot, hi: f.top });
@@ -63,28 +65,25 @@ export function placeStructures(ctx) {
   }
 
   const pathEdges = new Set(), pathWalks = [], ladders = [];
-  for (const m of moves) {
-    if (m.cells.length || m.to.landing) { if (!canPlace(m)) return false; place(m); }
-    else if (m.kind === 'ladder' || m.kind === 'jump') { if (!placeClimb(m, claims, pathEdges, ladders)) return false; }
-    else {
+  // moves after reqMoves (ways back, escapes) are dropped with their routes if they do not fit
+  const skipped = new Set();
+  for (const [i, m] of moves.entries()) {
+    const fits = m.from.landing && !landings.has(m.from.id) ? false   // its landing was dropped
+      : m.cells.length || m.to.landing ? canPlace(m) && (place(m), true)
+      : m.kind === 'ladder' || m.kind === 'jump' ? placeClimb(m, claims, pathEdges, ladders) : null;
+    if (fits === false) { if (i < ctx.reqMoves) return false; skipped.add(moveKey(m)); continue; }
+    if (fits === null) {
       pathEdges.add(m.from.id + ':' + m.d); pathEdges.add(m.to.id + ':' + OPP[m.d]);
       if (m.kind === 'walk') pathWalks.push(m);
     }
   }
   stats.landings = landings.size;
-
-  // decorative extras off the route
-  let ds = ri(1, 3), db = ri(0, 2), tries = 0;
-  while ((ds > 0 || db > 0) && tries++ < 300) {
-    const f = floors[ri(0, floors.length - 1)];
-    if (f.fluid || f.prot) continue;
-    const mvs = movesFrom(f, false).filter(m => (m.kind === 'stair' && ds > 0) || (m.kind === 'bridge' && db > 0));
-    if (!mvs.length) continue;
-    const m = mvs[ri(0, mvs.length - 1)];
-    if (!canPlace(m)) continue;
-    place(m);
-    if (m.kind === 'stair') ds--; else db--;
+  if (skipped.size) {
+    ctx.moves = moves.filter(m => !skipped.has(moveKey(m)));
+    ctx.segments = ctx.segments.filter(sg => sg.every(m => !skipped.has(moveKey(m))));
   }
+
+  addDecor(ctx, canPlace, place);
   Object.assign(ctx, { pieces, runs, pathEdges, pathWalks, ladders });
   return true;
 }

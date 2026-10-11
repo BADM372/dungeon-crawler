@@ -16,10 +16,23 @@ export function startFall() {
   return true;
 }
 
-// where a fall comes out: same spot, a few units over the ground (a hard landing is the price)
-export function fallPoint(m) {
-  const g = groundAt(player.x, player.z, 99, 0);
-  if (!isFinite(g.h)) return { air: { x: player.x, y: 3, z: player.z }, rest: arrivalPoint(m.portals.find(q => q.kind !== 'spawn')) };
-  return { air: { x: player.x, y: Math.min(g.h + 5, CUBE_H - 2), z: player.z }, rest: { x: player.x, y: g.h, z: player.z } };
+// a spot that does not lead on (a sealed pit, lava, acid): the nearest top floor that does
+function safeSpot(m, x, z) {
+  let best = null, bd = Infinity;
+  for (const col of m.cols) {
+    const f = col[col.length - 1];
+    if (!f || f.fluid || f.prot || !m.safe[f.id]) continue;
+    const d = Math.hypot(f.x + 0.5 - x, f.z + 0.5 - z);
+    if (d < bd) { bd = d; best = f; }
+  }
+  return best;
 }
 
+// where a fall comes out: same spot, a few units over the ground (a hard landing is the price)
+export function fallPoint(m) {
+  let x = player.x, z = player.z, g = groundAt(x, z, 99, 0);
+  if (!isFinite(g.h)) return { air: { x, y: 3, z }, rest: arrivalPoint(m.portals.find(q => q.kind !== 'spawn')) };
+  const f = !g.s?.kind && g.s && !m.safe[g.s.id] && safeSpot(m, x, z);
+  if (f) { x = f.x + 0.5; z = f.z + 0.5; g = groundAt(x, z, 99, 0); }
+  return { air: { x, y: Math.min(g.h + 5, CUBE_H - 2), z }, rest: { x, y: g.h, z } };
+}

@@ -70,7 +70,18 @@ function build(seed, d, above) {
     front = next;
   }
   for (const c of cells) for (const n of nb(c)) if (inArc.has(id(n)) && R() < 0.12) link(c, n);
-  return { depth: d, cells, start, end, spine: spine.length, exists: new Set(cells.map(K)), portals,
+  // each cube's exit: the portal one step closer to the well down (the core: to its centre)
+  const exit = new Map(), goal = d < MAX_DEPTH ? end : [0, 0], seen = new Set([id(goal)]);
+  if (d < MAX_DEPTH) exit.set(K(goal), 4);
+  for (let front = [goal]; front.length;) {
+    const next = [];
+    for (const c of front) nb(c).forEach((n, dir) => {
+      if (!inArc.has(id(n)) || seen.has(id(n)) || !portals.has(faceKey(K(c), dir))) return;
+      seen.add(id(n)); exit.set(K(n), dir ^ 1); next.push(n);
+    });
+    front = next;
+  }
+  return { depth: d, cells, start, end, spine: spine.length, exists: new Set(cells.map(K)), portals, exit,
     up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null };
 }
 

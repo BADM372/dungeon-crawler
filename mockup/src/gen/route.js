@@ -2,9 +2,9 @@
 // already on the route are cheap, so later routes share the earlier ones where they can.
 import { Heap } from '../core/heap.js';
 
-const moveKey = m => m.kind + ':' + Math.min(m.from.id, m.to.id) + ':' + Math.max(m.from.id, m.to.id);
+export const moveKey = m => m.kind + ':' + Math.min(m.from.id, m.to.id) + ':' + Math.max(m.from.id, m.to.id);
 
-function search(ctx, from, goal, jitter, have) {
+export function search(ctx, from, goal, jitter, have) {
   const { SZ, movesFrom } = ctx;
   const gs = new Float64Array(SZ).fill(Infinity), prev = new Array(SZ).fill(null), closed = new Uint8Array(SZ);
   const hfn = f => Math.abs(f.x - goal.x) + Math.abs(f.z - goal.z);
@@ -16,6 +16,8 @@ function search(ctx, from, goal, jitter, have) {
     if (closed[cur.id]) continue;
     closed[cur.id] = 1;
     for (const mv of movesFrom(cur)) {
+      // no jump straight after a drop the same way (the fall carries you into the gap)
+      if (mv.kind === 'jump' && prev[cur.id]?.kind === 'drop' && prev[cur.id].d === mv.d) continue;
       const ng = gs[cur.id] + (have.has(moveKey(mv)) ? 0.2 : mv.cost + jitter[mv.to.id]);
       if (ng < gs[mv.to.id]) { gs[mv.to.id] = ng; prev[mv.to.id] = mv; open.push(ng + hfn(mv.to), mv.to); }
     }
@@ -27,19 +29,32 @@ function search(ctx, from, goal, jitter, have) {
 }
 
 export function findRoute(ctx) {
-  const { R, SZ, portalFloors } = ctx;
+  const { R, SZ, portals, portalFloors, spec } = ctx;
   if (!portalFloors.length) { Object.assign(ctx, { moves: [], segments: [], pathFloors: [] }); return true; }   // not part of the world
   const jitter = new Float32Array(SZ).map(() => R() * 0.6);   // varies the route per seed
-  const [first, ...rest] = portalFloors, have = new Set(), moves = [], segments = [];
-  for (const goal of rest) {
-    const seg = search(ctx, first, goal, jitter, have);
-    if (!seg) return false;
-    segments.push(seg);
-    for (const m of seg) if (!have.has(moveKey(m))) { have.add(moveKey(m)); moves.push(m); }
-  }
-  const pathFloors = [...new Set([first, ...moves.flatMap(m => [m.from, m.to])])].filter(n => !n.landing);
-  // landings belong to the layer the climb started from (so they stay visible from below)
-  for (const m of moves) if (m.to.landing) m.to.layer = m.from.layer;
-  ctx.moves = moves; ctx.segments = segments; ctx.pathFloors = pathFloors;
+  // the hub is the exit (the way on towards depth 20): every portal must lead there; the way
+  // back from it is only tried (a portal may be one-sided). No exit (the core): first portal.
+  const hi = Math.max(0, portals.findIndex(p => p.dir === spec.exit)), hub = portalFloors[hi];
+  const others = portalFloors.filter((_, i) => i !== hi), toHub = spec.exit != null;
+  Object.assign(ctx, { have: new Set(), moves: [], segments: [], jitter, hub: toHub ? hub : null });
+  for (const f of others) if (!take(ctx, toHub ? search(ctx, f, hub, jitter, ctx.have) : search(ctx, hub, f, jitter, ctx.have))) return false;
+  ctx.reqMoves = ctx.moves.length;
+  if (toHub) for (const f of others) take(ctx, search(ctx, hub, f, jitter, ctx.have));
   return true;
+}
+
+// add a route (a list of moves) unless it is missing; returns whether it was there
+export function take(ctx, seg) {
+  if (!seg) return false;
+  ctx.segments.push(seg);
+  for (const m of seg) if (!ctx.have.has(moveKey(m))) { ctx.have.add(moveKey(m)); ctx.moves.push(m); }
+  return true;
+}
+
+// after all routes are in: the floors on them; landings belong to the layer the climb started
+// from (so they stay visible from below)
+export function finishRoute(ctx) {
+  const { moves, portalFloors } = ctx;
+  ctx.pathFloors = [...new Set([...portalFloors.slice(0, 1), ...moves.flatMap(m => [m.from, m.to])])].filter(n => !n.landing);
+  for (const m of moves) if (m.to.landing) m.to.layer = m.from.layer;
 }

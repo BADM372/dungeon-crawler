@@ -187,10 +187,44 @@ wind in the vertex shader. Up to six glowing props per cube add light sources fo
 - Ramps and pools never modify the outer ring.
 - Rivers start at their face crossings and meet at a junction. A lone river ends in a pool;
   lake cubes get a lake.
-- Routing does A* from the first portal to each other portal. Moves already used are cheap,
-  so routes share paths. Each route is kept for test bots.
+- Routing is described in "The way down" below. Moves already used are cheap, so routes
+  share paths. Each route is kept for test bots and the path overlay (P).
 - Drops are capped at 8 levels (deeper ones ragdoll you) and need an extra level of headroom.
 - Lake cubes and half of the underground cubes get floating islands (no pillars).
+
+## The way down (`gen/route.js`, `gen/reach.js`, `gen/escape.js`)
+
+The world guarantees that from anywhere you can arrive, you can get to depth 20.
+
+- **Exits:** the layout gives every cube an exit, the portal one step closer to the well
+  down along the depth's portal links (`layout.exit`). The well cube's exit is the well, the
+  town's is its road, and the core leads to its centre. Exits depend only on the seed.
+- **Routes:** a required route from every other portal (the spawn and the up ring included)
+  to the exit, then a best-effort route from the exit back to each portal. Drops and
+  downhill jumps are one-way, so a portal may only be reachable from one side.
+- **Optional structures:** structures needed only by the ways back or escapes are left out
+  when they do not fit, together with the routes that needed them.
+- **Final check:** after smoothing and fences, `reachTo` rebuilds what the character can
+  physically do:
+  - walk level ground and slopes, jump up one level, drop down any cliff without a fence;
+  - swim, and climb out of water up to two levels;
+  - use the built structures both ways.
+
+  Every portal must reach the exit, and no route may pass a floor whose smoothed corner
+  leaves less than the character's height under the slab above. Otherwise the attempt is
+  retried.
+- **No jump after a drop:** a route never jumps right after dropping the same way, because
+  the fall carries you into the gap.
+- **Fall landings:** `fallMask` marks where you can fall in from the cube above (its void
+  field, a cell wider). Up to six landings there that do not lead to the exit get an escape
+  route (stairs, ladders, bridges). The map's `safe` flags mark floors that lead on.
+  `fallPoint` moves any landing that still does not (sealed pits, lava, acid) to the
+  nearest one that does.
+- **Before:** routes ran from the first portal to the others, so drops made them one-way
+  in the wrong direction. 7.7% of portals could not reach the way on, and none of 12 test
+  worlds could be finished; four of them trapped you in the town. Now 64 of 64 test worlds
+  reach depth 20 from the town (Node check over all 21 depths, about 3 ms per cube, 1.07
+  attempts per cube on average).
 
 ## Travel and what you see (`game/travel.js`)
 
@@ -233,8 +267,8 @@ three.js recompile every lit shader on each cube change, which was the biggest s
   corners included. Slab presence and portal positions match too.
 - **Generation:** about 3 ms per cube. Over 1000 cubes, most succeed on the first attempt
   and the worst took 5.
-- **Routes:** a bot walks the route from the first portal to every other portal. 2012 of
-  2014 routes pass (1000 cubes, 200 worlds).
+- **Routes:** a bot walks every route (portal to exit, the ways back, escapes). 1487 of
+  1488 routes pass (780 cubes, 40 worlds).
 - **Rendering:** active cube plus four low-detail neighbors at 60 fps, 57 draw calls.
 
 ## Known issues / open questions
