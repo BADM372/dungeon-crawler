@@ -1,18 +1,29 @@
 """
 Game-ready version of the clay figure: skinned mesh + skeleton + animations.
 
-Animations (all in place, the game moves the character):
-    Walk  -- loop, 28 frames @ 30 fps, ground speed WALK_SPEED
-    Run   -- loop, 20 frames @ 30 fps, ground speed RUN_SPEED
-    Jump  -- one shot: crouch, push-off, ballistic flight, landing, recovery
-    Flex  -- static strongman pose (the original sculpt)
+Animations (all in place, the game moves the character; one-shots start and
+end in the neutral standing pose so they can be cross-faded from anything):
+    Walk         -- loop, 28 frames @ 30 fps, ground speed WALK_SPEED (extras: speed)
+    Run          -- loop, 20 frames @ 30 fps, ground speed RUN_SPEED (extras: speed)
+    Jump         -- crouch, push-off, ballistic flight, landing, recovery
+    JumpLandSit  -- jump, lose balance, land on the bottom, bounce, stay sitting
+    Kick         -- right front kick
+    Punch        -- right straight punch from a guard
+    Slash        -- right-handed overhead diagonal slash (extras: weapon_socket)
+    Roll         -- forward roll; game moves ~`distance` forward (extras: distance)
+    Flex         -- static strongman pose (the original sculpt)
+
+Sockets: hand.L / hand.R are non-deforming bones at the fists for weapons.
 
 How the motion is made:
   * hips and feet are keyed procedurally; legs are solved with analytic
     two-bone IK so planted feet move backwards at exactly the ground speed
     (no foot sliding when the game moves the root at that speed)
-  * the jump uses a real ballistic arc (g = 9.81) whose take-off speed comes
-    from the push-off
+  * the jumps use a real ballistic arc (g = 9.81) whose take-off speed comes
+    from the push-off; landing on the bottom bounces with restitution 0.3
+  * ground contact is enforced on the deformed mesh: one-shots are lifted
+    wherever they would sink into the floor, the roll keeps its lowest point
+    on the floor; arm and head springs collide with the floor
   * spine, head, upper arms and forearms are damped spring pendulums
     under gravity, driven by the motion of the bone they hang from.  They are
     simulated in sub-steps and baked to keyframes.  Looping clips are
@@ -159,6 +170,10 @@ def build_rig(scene):
         s = 1 if side == "L" else -1
         bone(f"upper_arm.{side}", sh, el, "spine")
         bone(f"forearm.{side}", el, fist, f"upper_arm.{side}", True)
+        # weapon / prop socket at the fist, not deforming
+        d = (Vector(fist) - Vector(el)).normalized()
+        hb = bone(f"hand.{side}", fist, Vector(fist) + d * 0.12, f"forearm.{side}", True)
+        hb.use_deform = False
         bone(f"thigh.{side}", (s * figure.LEG_X, 0, HIP_Z), (s * figure.LEG_X, 0, KNEE_Z), "hips")
         bone(f"shin.{side}", (s * figure.LEG_X, 0, KNEE_Z), (s * figure.LEG_X, 0, 0.0), f"thigh.{side}", True)
     bpy.ops.object.mode_set(mode="OBJECT")
@@ -242,7 +257,7 @@ def compute_weights(ob):
     M = np.exp(-(D - D.min(axis=1, keepdims=True)) / tau)
     M /= M.sum(axis=1, keepdims=True)
 
-    bones = [b.name for b in ob.parent.data.bones if b.name != "root"]
+    bones = [b.name for b in ob.parent.data.bones if b.use_deform and b.name != "root"]
     W = np.zeros((n, len(bones)), np.float32)
     for k, (_, wd) in enumerate(parts):
         for bname, w in wd.items():
@@ -331,12 +346,27 @@ def two_bone_ik(hip, target, a, b, pole):
 # ============================================================================
 # springs (the physics)
 # ============================================================================
-def simulate(pivots, targets, length, k, zeta, gravity=True, substeps=12):
+def _floor_clamp(d, pivot, reach, radius):
+    """Keep the sphere of `radius` at `pivot + d * reach` above z = 0."""
+    zmin = (radius - pivot.z) / reach
+    if d.z >= zmin or zmin >= 1.0:
+        return d
+    if zmin <= -1.0:
+        return d
+    h = Vector((d.x, d.y, 0.0))
+    if h.length < 1e-6:
+        h = Vector((0.0, -1.0, 0.0))
+    h.normalize()
+    return h * math.sqrt(1.0 - zmin * zmin) + Vector((0.0, 0.0, zmin))
+
+
+def simulate(pivots, targets, length, k, zeta, gravity=True, substeps=12, collide=None):
     """Point mass on a rigid rod hanging from a moving pivot.
 
     The mass is pulled towards `pivot + length * target_dir` by a damped
     spring (muscle tone) and by gravity, and keeps its momentum when the
-    pivot accelerates.  Returns the simulated direction per frame.
+    pivot accelerates.  `collide=(reach, radius)` keeps the end of the limb
+    above the floor (inelastic contact).  Returns the direction per frame.
     """
     h = 1.0 / (FPS * substeps)
     c = 2 * zeta * math.sqrt(k)
@@ -357,7 +387,10 @@ def simulate(pivots, targets, length, k, zeta, gravity=True, substeps=12):
             p_old = p.copy()
             v = v + a * h
             p = p + v * h
-            p = pv + (p - pv).normalized() * length
+            d = (p - pv).normalized()
+            if collide:
+                d = _floor_clamp(d, pv, *collide)
+            p = pv + d * length
             v = (p - p_old) / h
         out.append((p - pivots[f + 1]).normalized())
     return out
@@ -378,11 +411,35 @@ def arm_dir(swing, abduct, side_sign):
     return rot_x(-swing) @ rot_y(-side_sign * abduct) @ Vector((0, 0, -1))
 
 
+def arm_target(spec, side_sign):
+    """Arm spec -> (upper arm direction in chest rest axes, elbow bend).
+
+    spec is either (swing, abduct, bend) or (dx, dy, dz, bend) with an
+    explicit direction in the chest frame (x = character's left, -y = forward).
+    """
+    if len(spec) == 4:
+        return Vector(spec[:3]).normalized(), spec[3]
+    return arm_dir(spec[0], spec[1], side_sign), spec[2]
+
+
+def A(swing, abduct, bend, side_sign):
+    """Arm spec as an explicit 4-vector (so different kinds of keys blend)."""
+    d = arm_dir(swing, abduct, side_sign)
+    return Vector((d.x, d.y, d.z, bend))
+
+
+def _per_side(v):
+    return v if isinstance(v, dict) else {"L": v, "R": v}
+
+
 def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
     """params(frame) -> dict describing the authored motion.
 
+    arm_k / arm_zeta / fore_k / fore_zeta are floats or {"L": .., "R": ..}.
     Returns a list of {bone: basis matrix} per frame.
     """
+    arm_k, arm_zeta = _per_side(arm_k), _per_side(arm_zeta)
+    fore_k, fore_zeta = _per_side(fore_k), _per_side(fore_zeta)
     P = [params(f) for f in range(n_frames)]
     poses = [dict() for _ in range(n_frames)]
     bases = [dict() for _ in range(n_frames)]
@@ -398,22 +455,28 @@ def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
         bs["hips"] = skel.set("hips", ps, desired)
         hips_R = skel.frame_rot("hips", ps)
         pole = hips_R @ Vector((0, -1, 0.0))
+        wl = prm.get("feet_local_w", 0.0)
         for side, _ in sides:
             hip = skel.base(f"thigh.{side}", ps).translation
             tgt = prm["feet"][side].copy()
+            if wl > 0:  # feet given relative to the hips (tucks, legs in the air)
+                local = prm["hips_pos"] + hips_R @ prm["feet_local"][side]
+                tgt = tgt.lerp(local, wl)
             ground = tgt.z
-            for _ in range(3):  # lift the target so the tilted flat sole doesn't dig in
-                knee, foot = two_bone_ik(hip, tgt, THIGH_LEN, SHIN_LEN, pole)
+            knee, foot = two_bone_ik(hip, tgt, THIGH_LEN, SHIN_LEN, pole)
+            for _ in range(3 if ground < 0.06 else 0):
+                # lift the target so the tilted flat sole doesn't dig in
                 shin = (foot - knee).normalized()
                 tilt = math.acos(max(-1.0, min(1.0, -shin.z)))
                 tgt = Vector((tgt.x, tgt.y, ground + SOLE_R * math.sin(tilt)))
+                knee, foot = two_bone_ik(hip, tgt, THIGH_LEN, SHIN_LEN, pole)
             bs[f"thigh.{side}"] = skel.aim(f"thigh.{side}", ps, knee - hip)
             bs[f"shin.{side}"] = skel.aim(f"shin.{side}", ps, foot - knee)
 
-    def run_spring(name, pivot_fn, target_fn, length, k, zeta, twist_fn=None):
+    def run_spring(name, pivot_fn, target_fn, length, k, zeta, twist_fn=None, collide=None):
         pivots = [pivot_fn(f) for f in range(n_frames)]
         targets = [target_fn(f) for f in range(n_frames)]
-        dirs = simulate(pivots, targets, length, k, zeta)
+        dirs = simulate(pivots, targets, length, k, zeta, collide=collide)
         for f in range(n_frames):
             tw = twist_fn(f) if twist_fn else 0.0
             bases[f][name] = skel.aim(name, poses[f], dirs[f], tw)
@@ -436,28 +499,31 @@ def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta):
         lambda f: skel.frame_rot("spine", poses[f]) @ rot_x(P[f]["head_pitch"]) @ Vector((0, 0, 1)),
         L, k, z,
         twist_fn=lambda f: P[f]["head_twist"],
+        collide=(figure.HEAD_Z - HEAD_BONE_Z[0], figure.HEAD_R),
     )
     for side, s in sides:
         run_spring(
             f"upper_arm.{side}",
             lambda f, side=side: skel.base(f"upper_arm.{side}", poses[f]).translation,
             lambda f, side=side, s=s: skel.frame_rot("spine", poses[f])
-            @ arm_dir(P[f]["arms"][side][0], P[f]["arms"][side][1], s),
-            figure.UPPER_ARM_LEN * 0.6, arm_k, arm_zeta,
+            @ arm_target(P[f]["arms"][side], s)[0],
+            figure.UPPER_ARM_LEN * 0.6, arm_k[side], arm_zeta[side],
+            collide=(figure.UPPER_ARM_LEN, figure.LIMB_R),
         )
 
     # level 3: forearms bend forward about the chest's side axis
     for side, s in sides:
-        def fore_target(f, side=side):
+        def fore_target(f, side=side, s=s):
             chest = skel.frame_rot("spine", poses[f])
             upper = poses[f][f"upper_arm.{side}"].col[1].xyz.normalized()
             axis = chest @ Vector((1, 0, 0))
-            return Quaternion(axis, -P[f]["arms"][side][2]) @ upper
+            return Quaternion(axis, -arm_target(P[f]["arms"][side], s)[1]) @ upper
         run_spring(
             f"forearm.{side}",
             lambda f, side=side: skel.base(f"forearm.{side}", poses[f]).translation,
             fore_target,
-            figure.FOREARM_LEN * 0.6, fore_k, fore_zeta,
+            figure.FOREARM_LEN * 0.6, fore_k[side], fore_zeta[side],
+            collide=(figure.FOREARM_LEN, figure.LIMB_R),
         )
     return bases
 
@@ -642,6 +708,243 @@ def jump_params():
     return params, n, pre
 
 
+# ----------------------------------------------------------------------------
+# one-shot actions.  All start and end in the neutral standing pose so the
+# game can cross-fade into and out of them from anything.
+# ----------------------------------------------------------------------------
+D = math.radians
+STAND_Z = HIP_Z - 0.01
+PRE_ROLL = int(0.5 * FPS)       # frames of neutral pose to settle the springs
+
+
+def neutral_arms():
+    return {"L": A(0.0, D(6), D(15), 1), "R": A(0.0, D(6), D(15), -1)}
+
+
+def neutral_feet():
+    return {"L": Vector((figure.LEG_X, 0, 0)), "R": Vector((-figure.LEG_X, 0, 0))}
+
+
+def pose_params(**kw):
+    p = {
+        "hips_pos": Vector((0, 0, STAND_Z)), "hips_rot": (0.0, 0.0, 0.0),
+        "spine_lean": 0.0, "spine_twist": 0.0, "head_pitch": 0.0, "head_twist": 0.0,
+        "feet": neutral_feet(), "arms": neutral_arms(),
+    }
+    p.update(kw)
+    return p
+
+
+def one_shot(duration, fn):
+    """fn(t) -> params.  Returns (params(frame), n_frames, pre_roll)."""
+    n = int(round(duration * FPS)) + 1
+    return (lambda f: fn(max(0.0, (f - PRE_ROLL) / FPS))), n, PRE_ROLL
+
+
+def kick_params():
+    """Front kick with the right leg: chamber, snap out, re-chamber, step down."""
+    X = figure.LEG_X
+    na = neutral_arms()
+    foot = keyframes((0.10, Vector((-X, 0, 0))), (0.28, Vector((-0.14, -0.30, 0.40))),
+                     (0.38, Vector((-0.12, -0.68, 0.64))), (0.50, Vector((-0.12, -0.66, 0.62))),
+                     (0.62, Vector((-0.14, -0.28, 0.36))), (0.82, Vector((-X, 0, 0))))
+    hips_x = keyframes((0.05, 0.0), (0.22, 0.07), (0.66, 0.07), (0.85, 0.0))
+    hips_z = keyframes((0.05, STAND_Z), (0.22, STAND_Z - 0.03), (0.66, STAND_Z - 0.03), (0.85, STAND_Z))
+    pitch = keyframes((0.22, 0.0), (0.38, D(-20)), (0.50, D(-17)), (0.70, 0.0))
+    yaw = keyframes((0.22, 0.0), (0.38, D(12)), (0.55, D(10)), (0.75, 0.0))
+    lean = keyframes((0.22, 0.0), (0.38, D(-6)), (0.55, D(-5)), (0.75, 0.0))
+    arm_l = keyframes((0.08, na["L"]), (0.30, A(D(35), D(40), D(50), 1)),
+                      (0.55, A(D(30), D(40), D(50), 1)), (0.85, na["L"]))
+    arm_r = keyframes((0.08, na["R"]), (0.30, A(D(-30), D(35), D(30), -1)),
+                      (0.55, A(D(-25), D(35), D(30), -1)), (0.85, na["R"]))
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((hips_x(t), 0, hips_z(t))),
+            hips_rot=(pitch(t), 0.0, yaw(t)),
+            spine_lean=lean(t),
+            head_pitch=-(pitch(t) + lean(t)) * 0.8,
+            head_twist=-yaw(t) * 0.6,
+            feet={"L": Vector((X, 0, 0)), "R": foot(t)},
+            arms={"L": arm_l(t), "R": arm_r(t)},
+        )
+    return one_shot(0.95, fn)
+
+
+def punch_params():
+    """Right straight punch: raise guard, twist and extend, retract, relax."""
+    na = neutral_arms()
+    guard_l = Vector((0.25, -0.45, -0.85, D(125)))
+    guard_r = Vector((-0.25, -0.45, -0.85, D(125)))
+    turn = D(28) + D(12)                       # spine twist + hips yaw at impact
+    hit = rot_z(-turn) @ Vector((0, -1, 0.10))  # straight ahead in world space
+    hit_r = Vector((hit.x, hit.y, hit.z, D(4)))
+    pull_l = Vector((0.30, -0.30, -0.90, D(130)))
+    tg, ts0, ts1, tr, tg2, te = 0.18, 0.28, 0.36, 0.46, 0.60, 0.85
+    arm_r = keyframes((0.04, na["R"]), (tg, guard_r), (ts0, guard_r), (ts1, hit_r), (tr, hit_r),
+                      (tg2, guard_r), (te, na["R"]))
+    arm_l = keyframes((0.04, na["L"]), (tg, guard_l), (ts0, guard_l), (ts1, pull_l), (tr, pull_l),
+                      (tg2, guard_l), (te, na["L"]))
+    twist = keyframes((ts0, 0.0), (ts1, D(28)), (tr, D(26)), (tg2, 0.0))
+    yaw = keyframes((ts0, 0.0), (ts1, D(12)), (tr, D(11)), (tg2, 0.0))
+    lean = keyframes((0.04, 0.0), (tg, D(4)), (ts0, D(4)), (ts1, D(9)), (tr, D(8)), (tg2, D(4)), (te, 0.0))
+    hz = keyframes((0.04, STAND_Z), (tg, STAND_Z - 0.04), (tg2, STAND_Z - 0.04), (te, STAND_Z))
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((0, 0, hz(t))),
+            hips_rot=(0.0, 0.0, yaw(t)),
+            spine_lean=lean(t), spine_twist=twist(t),
+            head_pitch=-lean(t) * 0.8, head_twist=-(twist(t) + yaw(t)) * 0.8,
+            arms={"L": arm_l(t), "R": arm_r(t)},
+        )
+    return one_shot(0.95, fn)
+
+
+def slash_params():
+    """Right-handed diagonal overhead slash (weapon goes on the hand.R socket)."""
+    na = neutral_arms()
+    wind = Vector((-0.45, 0.35, 0.82, D(75)))   # cocked up and back over the right shoulder
+    over = Vector((-0.20, -0.45, 0.87, D(40)))  # passing overhead
+    s = rot_z(-D(47)) @ Vector((0.35, -0.65, -0.68))
+    strike = Vector((s.x, s.y, s.z, D(10)))      # down, forward, across to the left
+    s = rot_z(-D(50)) @ Vector((0.45, -0.40, -0.80))
+    follow = Vector((s.x, s.y, s.z, D(15)))
+    tw, to, ts, tf, te = 0.32, 0.41, 0.48, 0.60, 1.00
+    arm_r = keyframes((0.05, na["R"]), (tw, wind), (to, over), (ts, strike), (tf, follow), (te, na["R"]))
+    arm_l = keyframes((0.05, na["L"]), (tw, A(D(30), D(25), D(45), 1)), (ts, A(D(-25), D(30), D(30), 1)),
+                      (tf, A(D(-20), D(30), D(30), 1)), (te, na["L"]))
+    twist = keyframes((0.05, 0.0), (tw, D(-30)), (to, D(-5)), (ts, D(35)), (tf, D(38)), (te, 0.0))
+    yaw = keyframes((0.05, 0.0), (tw, D(-10)), (ts, D(12)), (tf, D(12)), (te, 0.0))
+    lean = keyframes((0.05, 0.0), (tw, D(-6)), (ts, D(15)), (tf, D(16)), (te, 0.0))
+    pitch = keyframes((0.05, 0.0), (ts, D(6)), (tf, D(6)), (te, 0.0))
+    hz = keyframes((0.05, STAND_Z), (tw, STAND_Z - 0.01), (ts, STAND_Z - 0.07), (tf, STAND_Z - 0.07), (te, STAND_Z))
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((0, 0, hz(t))),
+            hips_rot=(pitch(t), 0.0, yaw(t)),
+            spine_lean=lean(t), spine_twist=twist(t),
+            head_pitch=-(pitch(t) + lean(t)) * 0.7, head_twist=-(twist(t) + yaw(t)) * 0.5,
+            arms={"L": arm_l(t), "R": arm_r(t)},
+        )
+    return one_shot(1.05, fn)
+
+
+ROLL_RADIUS = 0.40   # the tucked body rolls like a ball of this radius
+
+
+def roll_params():
+    """Forward roll, in place: squat, tuck, roll 360 degrees over the back,
+    come up into a squat and stand.  The game moves the character forward
+    by about ROLL_RADIUS * 2 pi during the roll (stored as `distance`)."""
+    t0, t1, t2, t3 = 0.22, 0.32, 0.80, 1.18
+    centre = Vector((0, -0.30, ROLL_RADIUS))
+    com = Vector((0, -0.25, 0.30))              # tucked centre of mass, hips frame
+    theta = keyframes((0.02, 0.0), (t0, D(35)), (t2, D(395)), (t3, D(360)))
+
+    def rolled(th):
+        return centre - rot_x(th) @ com
+
+    squat = rolled(D(35))
+    stand = Vector((0, 0, STAND_Z))
+    tuck_w = keyframes((t0, 0.0), (t1, 1.0), (t2 - 0.08, 1.0), (t2 + 0.02, 0.0))
+    lean = keyframes((0.02, 0.0), (t0, D(30)), (t1, D(50)), (t2 - 0.05, D(50)), (t2 + 0.06, D(30)), (t3, 0.0))
+    nod = keyframes((0.02, 0.0), (t0, D(30)), (t1, D(55)), (t2 - 0.05, D(55)), (t2 + 0.06, D(20)), (t3, 0.0))
+    na = neutral_arms()
+
+    def arms(s, side):
+        hug = Vector((s * 0.15, -0.55, -0.82, D(95)))
+        return keyframes((0.02, na[side]), (t0, A(D(55), D(12), D(20), s)), (t1, hug), (t2 - 0.05, hug),
+                         (t2 + 0.10, A(D(45), D(12), D(25), s)), (t3 + 0.05, na[side]))
+    arm_l, arm_r = arms(1, "L"), arms(-1, "R")
+
+    def fn(t):
+        th = theta(t)
+        if t < t0:
+            pos = stand.lerp(squat, smoothstep(0.02, t0, t))
+        elif t < t2:
+            pos = rolled(th)
+        else:
+            pos = rolled(th).lerp(stand, smoothstep(t2, t3, t))
+        tuck = {side: Vector((s * figure.LEG_X, -0.18, -0.22)) for side, s in (("L", 1), ("R", -1))}
+        return pose_params(
+            hips_pos=pos, hips_rot=(th, 0.0, 0.0),
+            spine_lean=lean(t), head_pitch=nod(t),
+            feet_local=tuck, feet_local_w=tuck_w(t),
+            arms={"L": arm_l(t), "R": arm_r(t)},
+        )
+    return one_shot(1.35, fn)
+
+
+def jump_land_sit_params():
+    """Jump, lose balance in the air, land on the bottom, bounce, stay sitting."""
+    t_c0, t_c1, t_to = 0.15, 0.45, 0.60
+    z_crouch, z_to = 0.47, HIP_Z + 0.005
+    v0 = 2 * (z_to - z_crouch) / (t_to - t_c1)
+    z_sit = 0.11
+    t_air = (v0 + math.sqrt(v0 * v0 + 2 * G * (z_to - z_sit))) / G
+    t_imp = t_to + t_air
+    v_imp = G * t_air - v0                      # downward speed at impact
+    restitution = 0.3
+    t_end = t_imp + 1.2
+
+    def hip_z(t):
+        if t < t_c0:
+            return STAND_Z
+        if t < t_c1:
+            return lerp(STAND_Z, z_crouch, smoothstep(t_c0, t_c1, t))
+        if t < t_to:
+            u = (t - t_c1) / (t_to - t_c1)
+            return z_crouch + (z_to - z_crouch) * u * u
+        if t < t_imp:
+            ta = t - t_to
+            return z_to + v0 * ta - 0.5 * G * ta * ta
+        tb, v = t_imp, v_imp * restitution     # bouncing on the bottom
+        while v > 0.2:
+            dur = 2 * v / G
+            if t < tb + dur:
+                tt = t - tb
+                return z_sit + v * tt - 0.5 * G * tt * tt
+            tb += dur
+            v *= restitution
+        return z_sit
+
+    pitch = keyframes((t_c0, 0.0), (t_c1, D(22)), (t_to, D(-5)), (t_to + 0.35 * t_air, D(-45)),
+                      (t_imp, D(-30)), (t_imp + 0.3, D(-16)), (t_end, D(-18)))
+    lean = keyframes((t_c0, 0.0), (t_c1, D(12)), (t_to, D(-5)), (t_to + 0.5 * t_air, D(5)),
+                     (t_imp, D(18)), (t_imp + 0.3, D(10)), (t_end, D(12)))
+    legs_w = keyframes((t_to, 0.0), (t_to + 0.15, 1.0), (t_imp - 0.05, 1.0), (t_imp + 0.05, 0.0))
+    na = neutral_arms()
+
+    def arms(s, side):
+        behind = Vector((s * 0.25, 0.55, -0.80, D(10)))
+        return keyframes((t_c0, na[side]), (t_c1, A(D(-60), D(8), D(28), s)), (t_to, A(D(150), D(20), D(10), s)),
+                         (t_to + 0.45 * t_air, A(D(110), D(40), D(35), s)), (t_imp - 0.05, behind),
+                         (t_imp + 0.3, Vector((s * 0.30, 0.50, -0.81, D(15)))), (t_end, Vector((s * 0.30, 0.50, -0.81, D(15)))))
+    arm_l, arm_r = arms(1, "L"), arms(-1, "R")
+
+    def fn(t):
+        z = hip_z(t)
+        p = pitch(t)
+        wobble = D(8) * math.exp(-5 * (t - t_imp)) * math.sin(14 * (t - t_imp)) if t > t_imp else 0.0
+        if t < t_to:
+            feet = {side: Vector((s * figure.LEG_X, 0, max(0.0, z - (LEG_LEN - 0.005))))
+                    for side, s in (("L", 1), ("R", -1))}
+        else:
+            feet = {side: Vector((s * 0.18, -0.60, 0)) for side, s in (("L", 1), ("R", -1))}
+        legs = {side: Vector((s * figure.LEG_X, -0.45, -0.45)) for side, s in (("L", 1), ("R", -1))}
+        return pose_params(
+            hips_pos=Vector((0, 0.06 * smoothstep(t_c0, t_c1, t) * (1 - smoothstep(t_c1, t_to, t)), z)),
+            hips_rot=(p + wobble, 0.0, 0.0),
+            spine_lean=lean(t),
+            head_pitch=-(p + lean(t)) * 0.6,
+            feet=feet, feet_local=legs, feet_local_w=legs_w(t),
+            arms={"L": arm_l(t), "R": arm_r(t)},
+        )
+    return one_shot(t_end, fn)
+
+
 def flex_pose(skel):
     ps = {}
     bs = {}
@@ -694,7 +997,30 @@ def bake_action(rig, name, frames, cyclic, props=None):
     return act
 
 
-def make_animations(rig):
+def mesh_min_z(rig, ob, act):
+    """Lowest point of the deformed mesh for every frame of an action."""
+    sc = bpy.context.scene
+    rig.animation_data.action = act
+    rig.update_tag(refresh={"OBJECT", "DATA", "TIME"})
+    out = []
+    for f in range(int(act.frame_end) + 1):
+        sc.frame_set(f)
+        ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        me = ev.to_mesh()
+        co = np.empty(len(me.vertices) * 3, np.float32)
+        me.vertices.foreach_get("co", co)
+        ev.to_mesh_clear()
+        out.append(float(co[2::3].min()))
+    return np.array(out)
+
+
+def _smooth(x, sigma):
+    k = np.exp(-0.5 * (np.arange(-4, 5) / sigma) ** 2)
+    k /= k.sum()
+    return np.convolve(np.pad(x, 4, mode="edge"), k, mode="valid")
+
+
+def make_animations(rig, ob):
     skel = Skeleton(rig)
     cycles = 6
 
@@ -712,6 +1038,36 @@ def make_animations(rig):
     frames = solve_motion(skel, params, n + pre, arm_k=320.0, arm_zeta=0.55,
                           fore_k=450.0, fore_zeta=0.55)
     bake_action(rig, "Jump", frames[pre:], False)
+
+    def one(name, built, arm_k, arm_zeta, fore_k, fore_zeta, props=None, contact="lift"):
+        """Bake a one-shot.  Ground contact is enforced on the actual mesh:
+        "lift" raises the body wherever it would sink into the floor,
+        "always" keeps its lowest point exactly on the floor (rolling)."""
+        params, n, pre = built
+        offs = np.zeros(n + pre)
+
+        def shifted(f):
+            p = params(f)
+            p["hips_pos"] = p["hips_pos"] + Vector((0, 0, offs[f]))
+            return p
+
+        for _ in range(4):
+            frames = solve_motion(skel, shifted, n + pre, arm_k, arm_zeta, fore_k, fore_zeta)
+            act = bake_action(rig, name, frames[pre:], False, props)
+            m = mesh_min_z(rig, ob, act)
+            c = -m if contact == "always" else np.maximum(0.0, -m)
+            if np.abs(c).max() < 0.004:
+                break
+            offs[pre:] += _smooth(c, 1.2)
+
+    one("Kick", kick_params(), 260.0, 0.45, 360.0, 0.5)
+    one("Punch", punch_params(), {"L": 320.0, "R": 750.0}, {"L": 0.5, "R": 0.6},
+        {"L": 420.0, "R": 950.0}, {"L": 0.5, "R": 0.65})
+    one("Slash", slash_params(), {"L": 220.0, "R": 480.0}, {"L": 0.45, "R": 0.5},
+        {"L": 300.0, "R": 650.0}, {"L": 0.45, "R": 0.55}, {"weapon_socket": "hand.R"})
+    one("Roll", roll_params(), 900.0, 0.7, 1100.0, 0.7, {"distance": round(2 * math.pi * ROLL_RADIUS, 3)},
+        contact="always")
+    one("JumpLandSit", jump_land_sit_params(), 200.0, 0.35, 260.0, 0.4)
 
     bake_action(rig, "Flex", [flex_pose(skel)], False)
 
@@ -736,7 +1092,7 @@ def main(scene=None, export_path=None, active_action="Walk"):
     mod.object = rig
     compute_weights(ob)
 
-    make_animations(rig)
+    make_animations(rig, ob)
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act
     scene.frame_start = int(act.frame_start)
