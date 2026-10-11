@@ -12,7 +12,7 @@ function glassMaterial() {
     // a little more opaque where the surface turns away (outlines the shapes)
     .replace('#include <dithering_fragment>', `#include <dithering_fragment>
       float rim = 1.0 - abs(dot(normalize(normal), normalize(vViewPosition)));
-      gl_FragColor.a = mix(0.05, 0.3, rim * rim);`), 'cut-glass');
+      gl_FragColor.a = mix(0.1, 0.4, rim * rim);`), 'cut-glass');
 }
 
 export function addGhosts(group) {
