@@ -44,6 +44,7 @@ import { projectiles } from './game/projectiles.js';
 import { tickBurning } from './render/burning.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
 import { updateMusic, forceMood } from './game/music.js';
+import { updateFootsteps } from './game/footsteps.js';
 import { musicInfo } from './audio/music.js';
 import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
@@ -60,6 +61,7 @@ function frame() {
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
+  updateFootsteps();   // on the cycle the animator just advanced
   tickFluidDeath(dt);
   tickBurning(dt);
   drawTravelEnemies(dt);

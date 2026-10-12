@@ -108,15 +108,56 @@ function setup(gltf) {
     a.setEffectiveWeight(0); actions.idle.setEffectiveWeight(1);
     getUps[side] = { action: a, duration: clips[name].duration, move: extras(name).move_time, lie: [hips.x, hips.z] };
   }
+  const footfalls = measureFootfalls(group, bones, actions, mixer);
   // reference (standing) pose for exaggerating strides
   mixer.update(0);
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
-    ready: true, group, model, mesh, bones, mixer, actions, standing, light, getUps,
+    ready: true, group, model, mesh, bones, mixer, actions, standing, light, getUps, footfalls,
     sword: null, swordWeight: 0, getUpWeight: 0,
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
     climbStride: extras('Climb').distance * CHAR_SCALE,
   });
+}
+
+// When each foot comes down in the walk and run cycles (phase 0..1, [left, right]), for the
+// footsteps (game/footsteps.js). The rig has no foot bones: the ankle is the knee plus a
+// shin's length along the shin. A foot is down once it dropped most of the way to its lowest.
+// On the ladder (climb: { hand, foot }) a hand grabs and a foot steps onto a rung at the top of
+// its reach, before pulling down (the clip climbs in place).
+function measureFootfalls(group, bones, actions, mixer) {
+  const v = new THREE.Vector3(), d = new THREE.Vector3(), q = new THREE.Quaternion(), n = 64;
+  mixer.update(0);
+  const shin = (bones['shin.L'].getWorldPosition(v).y - group.position.y) * 0.92;   // standing: knee height
+  const ankle = side => {
+    const b = bones['shin.' + side];
+    return b.getWorldPosition(v).y + d.set(0, 1, 0).applyQuaternion(b.getWorldQuaternion(q)).y * shin;
+  };
+  const down = ys => {
+    const lo = Math.min(...ys), th = lo + 0.2 * (Math.max(...ys) - lo);
+    for (let i = 0; i < n; i++) {
+      const a = ys[(i + n - 1) % n], b = ys[i];
+      if (a > th && b <= th) return ((i - 1 + (a - th) / (a - b)) / n + 1) % 1;
+    }
+    return ys.indexOf(lo) / n;
+  };
+  const top = ys => ys.indexOf(Math.max(...ys)) / n;
+  const sample = name => {
+    const a = actions[name], dur = a.getClip().duration, ys = { L: [], R: [], hL: [], hR: [] };
+    actions.idle.setEffectiveWeight(0); a.setEffectiveWeight(1);
+    for (let i = 0; i < n; i++) {
+      a.time = i / n * dur; mixer.update(0);
+      ys.L.push(ankle('L')); ys.R.push(ankle('R'));
+      ys.hL.push(bones['hand.L'].getWorldPosition(v).y); ys.hR.push(bones['hand.R'].getWorldPosition(v).y);
+    }
+    a.setEffectiveWeight(0); actions.idle.setEffectiveWeight(1);
+    return ys;
+  };
+  const out = {};
+  for (const name of ['walk', 'run']) { const ys = sample(name); out[name] = [down(ys.L), down(ys.R)]; }
+  const ys = sample('climb');
+  out.climb = { hand: [top(ys.hL), top(ys.hR)], foot: [top(ys.L), top(ys.R)] };
+  return out;
 }
 
 export const characterReady = new GLTFLoader().loadAsync(URL).then(setup);

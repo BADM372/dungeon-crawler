@@ -10,7 +10,10 @@ export const W = { idle: 1, walk: 0, run: 0, swimIdle: 0, swim: 0, climb: 0, jum
 const RATE = { loco: 10, swim: 6, climb: 14, jump: 18, fall: 7, land: 20, sit: 14 };   // cross-fade speeds
 const seen = { jump: 0, land: 0 };
 let mode = 'loco', modeT = 0, phase = 0, swimPhase = 0, climbPhase = 0, slow = 0;
-export const blend = { stretch: 1 };   // stride stretch for the walk / run cycle
+// stretch: stride stretch for the walk / run cycle; phase: where in that cycle, run: how much
+// of it is the run (0..1), climb: where in the ladder cycle, mode: the state (game/footsteps.js
+// steps on the cycles)
+export const blend = { stretch: 1, phase: 0, run: 0, climb: 0, mode: 'loco' };
 
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 export const resetMode = () => { mode = 'loco'; };
@@ -54,7 +57,7 @@ export function updateBlend(dt, speed, time) {
     const move = WALK_SPEED + (RUN_SPEED - WALK_SPEED) * t, anim = WALK_ANIM + (RUN_ANIM - WALK_ANIM) * t;
     const stride = character.walkStride + (character.runStride - character.walkStride) * t;
     phase = (phase + dt * speed * (anim / move) / stride) % 1;
-    blend.stretch = move / anim;
+    blend.stretch = move / anim; blend.run = t;
   } else if (mode === 'swim') {
     // treading water -> doggy paddle; the paddle cycle follows the swimming speed
     const s = smooth(0.08, 0.5, speed / SWIM_SPEED);
@@ -66,6 +69,7 @@ export function updateBlend(dt, speed, time) {
     climbPhase = ((climbPhase + dt * player.climbV / character.climbStride) % 1 + 1) % 1;
   } else T[mode] = 1;
   slow -= dt;
+  blend.phase = phase; blend.climb = climbPhase; blend.mode = mode;
   const k = Math.min(1, dt * (slow > 0 ? 2.5 : RATE[mode]));   // standing up from sitting is slow
   for (const n in W) { W[n] += (T[n] - W[n]) * k; A[n].setEffectiveWeight(W[n]); }
 
