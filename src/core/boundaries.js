@@ -1,15 +1,20 @@
 // Open side connections are run state, not changes to generated terrain or cube physics.
 import { N, DIRS } from './constants.js';
 import { faceKey, step } from '../world/coords.js';
+import { portalLocked } from './guardians.js';
 
 export const isFaceOpen = (opened, key, dir) => dir < 4 && dir >= 0 && opened.has(faceKey(key, dir));
 export const openedSides = (opened, key) => DIRS.map((_, dir) => isFaceOpen(opened, key, dir));
-// All side faces open once the cubes on both sides have been discovered, with or without
-// a gate. cubes: key -> { key, visits }; returns face keys.
-export function discoveredFaces(cubes, c) {
+// Discovery opens faces within a route section, or along actual portal links.
+// Non-linked sections stay sealed so proximity cannot shorten the route or skip guards.
+export function discoveredFaces(cubes, c, run) {
   const out = [];
   if (c.visits) for (let d = 0; d < 4; d++) {
-    if (!cubes.get(step(c.key, d))?.visits) continue;
+    const neighbor = cubes.get(step(c.key, d));
+    if (!neighbor?.visits) continue;
+    const a = c.map?.routeIndex, b = neighbor.map?.routeIndex;
+    if (a != null && b != null && a !== b && !c.map.portals.some(p => p.dir === d)) continue;
+    if (run && (portalLocked(c.map, run, { dir: d }) || portalLocked(neighbor.map, run, { dir: d ^ 1 }))) continue;
     out.push(faceKey(c.key, d));
   }
   return out;

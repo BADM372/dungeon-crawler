@@ -19,7 +19,7 @@ import { glow, emit, rand } from './particles.js';
 import { cloneEnemy } from './enemymodel.js';
 import { kindColors, recolor } from './recolor.js';
 import { attackOf } from '../core/enemies.js';
-import { GUARDIAN_COLOR } from '../core/guardians.js';
+import { guardianColor, guardianTitle } from '../core/guardians.js';
 import { player } from '../game/state.js';
 import { makeBar, makeLevelLabel } from './bars.js';
 
@@ -59,11 +59,12 @@ function makeView(e, prefab) {
     a.play(); a.timeScale = 0; a.setEffectiveWeight(name === 'walk' ? 1 : 0); actions[name] = a;
     weights[name] = name === 'walk' ? 1 : 0;
   }
-  const hpBar = makeBar(e.guardian ? { color: GUARDIAN_COLOR, w: .9 } : {}), bar = hpBar.group;
+  const color = guardianColor(e.guardianRole);
+  const hpBar = makeBar(e.guardian ? { color, w: e.bossPlaceholder ? 1.2 : .9 } : {}), bar = hpBar.group;
   bar.position.y = e.profile.height + 0.12; group.add(bar);
-  const label = makeLevelLabel(e.level, e.guardian ? { color: GUARDIAN_COLOR, title: '◆ Guardian' } : {});
+  const label = makeLevelLabel(e.level, e.guardian ? { color, title: guardianTitle(e.guardianRole) } : {});
   label.position.y = e.profile.height + .33; group.add(label);
-  const fx = GLOW[e.profile.species] ?? (e.guardian ? { light: [GUARDIAN_COLOR, 2, 3, .5], pulse: .35 } : null), flames = [];
+  const fx = GLOW[e.profile.species] ?? (e.guardian ? { light: [color, 2, 3, .5], pulse: .35 } : null), flames = [];
   model.traverse(o => { if (o.isBone && /^flame/.test(o.name)) flames.push(o); });
   let light = null;
   if (fx?.light) {

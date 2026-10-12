@@ -7,8 +7,8 @@ import { World } from '../src/world/world.js';
 import { makeLayouts, guardianDepth } from '../src/world/layout.js';
 import { faceKey, step } from '../src/world/coords.js';
 import { voidAllowed } from '../src/world/voids.js';
-import { generate } from '../src/cubegen/index.js';
-import { ENEMY_PROFILES, ENEMY_KINDS, GUARDIAN_KINDS, enemyProfile, makeEnemy } from '../src/core/enemies.js';
+import { guardianColor, guardianTitle } from '../src/core/guardians.js';
+import { ENEMY_PROFILES, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS, enemyProfile, makeEnemy } from '../src/core/enemies.js';
 import { guardianId, gateLocked, portalLocked, restoreDefeated } from '../src/core/guardians.js';
 import { createRun, createPlayerStats, awardKill } from '../src/core/progression.js';
 import { population } from '../src/core/spawns.js';
@@ -21,11 +21,10 @@ import { buildCubeGeometry } from '../src/render/cubegeo.js';
 const signature = spots => spots.map(s => [s.id, s.kind.type, s.level, s.f.id, s.x, s.y, s.z, s.yaw]);
 const arena = (seed = 123, depth = 2) => {
   const world = new World(seed), key = world.layout(depth).down;
-  world.prepare(key);
-  return { world, map: state.map = generate({ ...world.spec(key), guardian: true }) };
+  return { world, map: state.map = world.cube(key).map };
 };
 
-test('guardian placement is seeded, starts at depth 2, and leaves no disconnected or useless gates', () => {
+test('every descent is guarded, with one or two mandatory seeded side guardians', () => {
   for (let seed = 0; seed < 100; seed++) {
     const get = makeLayouts(seed), same = makeLayouts(seed);
     for (let d = 0; d <= 20; d++) {
@@ -34,13 +33,22 @@ test('guardian placement is seeded, starts at depth 2, and leaves no disconnecte
       assert.deepEqual(L, same(d));
       assert.equal(L.exit.size, L.exists.size - (d === 20 ? 1 : 0));
       if (L.guardian) {
-        assert.ok(d >= 2 && d < 20);
+        assert.ok(d >= 0 && d < 20);
+        assert.equal(L.guardians.get(L.down).role, 'descent');
+        assert.equal(L.guardians.get(L.down).bossPlaceholder, true);
+        const side = [...L.guardians].filter(([, g]) => g.role === 'side');
+        assert.ok(side.length >= 1 && side.length <= 2);
+        for (const [k, g] of side) {
+          assert.ok(L.route.includes(k)); assert.notEqual(k, L.up); assert.notEqual(k, L.down);
+          assert.equal(L.gateFaces.get(faceKey(k, g.exit)), k);
+          assert.equal([0, 1, 2, 3].filter(dir => L.portals.has(faceKey(k, dir))).length, 2);
+        }
         assert.equal([0, 1, 2, 3].filter(dir => L.portals.has(faceKey(L.down, dir))).length, 1);
         assert.equal(L.exit.get(L.down), 4);
       }
     }
-    assert.equal(get(2).guardian, true);
-    for (let d = 3; d < 19; d += 2) assert.notEqual(get(d).guardian, get(d + 1).guardian);
+    for (let d = 0; d < 20; d++) assert.equal(get(d).guardian, true);
+    assert.equal(get(20).guardians.size, 0);
   }
 });
 
@@ -61,13 +69,12 @@ test('each species has a distinct pink guardian kind with unchanged movement and
 test('guardian arenas have dry, connected floors, shared ground entrances and no fall-through bypass', () => {
   for (const seed of [0, 1, 2, 7, 42, 123]) {
     const w = new World(seed);
-    for (let d = 2; d < 20; d++) {
-      const L = w.layout(d);
-      if (!L.guardian) continue;
-      const m = state.map = w.cube(L.down).map, clone = structuredClone(m);
+    for (let d = 0; d < 20; d++) for (const [key, g] of w.layout(d).guardians) {
+      const m = state.map = w.cube(key).map, clone = structuredClone(m);
       assert.equal(m.portals.length, 2);
-      assert.deepEqual(m.portals.map(p => p.kind), ['side', 'down']);
-      assert.equal(m.K, 1); assert.equal(m.exit, 4); assert.equal(m.roomRole, 'guardian');
+      assert.deepEqual(m.portals.map(p => p.kind), ['side', g.role === 'side' ? 'side' : 'down']);
+      assert.equal(m.K, 1); assert.equal(m.exit, g.exit); assert.equal(m.roomRole, `${g.role}-guardian`);
+      assert.equal(m.guardian.role, g.role); assert.equal(m.guardian.bossPlaceholder, g.role === 'descent');
       assert.equal(voidAllowed(w, m.key), false);
       assert.equal(m.floors.length, 256);
       assert.ok(m.floors.every(f => !f.fluid && !f.covered));
@@ -95,17 +102,16 @@ test('guardian arenas have dry, connected floors, shared ground entrances and no
 test('double the full local roster with exactly one promoted guardian, without overlapping spawns', () => {
   for (let seed = 0; seed < 30; seed++) {
     const w = new World(seed);
-    for (let d = 2; d < 20; d++) {
-      const L = w.layout(d);
-      if (!L.guardian) continue;
-      const map = state.map = w.cube(L.down).map, spots = guardianSpots(map);
+    for (let d = 0; d < 20; d++) for (const [key, g] of w.layout(d).guardians) {
+      const map = state.map = w.cube(key).map, spots = guardianSpots(map);
       const ordinary = population({ ...map, guardian: null }), pop = population(map);
       assert.deepEqual(signature(spots), signature(guardianSpots(map)));
       assert.deepEqual(signature(spots), signature(guardianSpots(structuredClone(map))));
       assert.equal(spots.filter(s => s.guardian).length, 1);
       const guard = spots.find(s => s.guardian);
       assert.equal(guard.id, guardianId(map.key)); assert.equal(guard.guardianGate, map.key);
-      assert.equal(guard.kind, GUARDIAN_KINDS[guard.kind.species]);
+      assert.equal(guard.kind, (g.role === 'descent' ? DESCENT_GUARDIAN_KINDS : GUARDIAN_KINDS)[guard.kind.species]);
+      assert.equal(guard.guardianRole, g.role); assert.equal(guard.bossPlaceholder, g.role === 'descent');
       assert.ok(guard.level >= 7);
       for (const [type, p] of pop) {
         assert.equal(p.count, ordinary.get(type).count * 2);
@@ -118,6 +124,59 @@ test('double the full local roster with exactly one promoted guardian, without o
         for (const b of spots) if (a !== b)
           assert.ok(Math.hypot(a.x - b.x, a.z - b.z) >= a.kind.radius + b.kind.radius + .1);
       }
+    }
+  }
+});
+
+test('descent guardians are explicit stronger boss placeholders for every species and level', () => {
+  for (const base of ENEMY_PROFILES) {
+    const side = GUARDIAN_KINDS[base.species], descent = DESCENT_GUARDIAN_KINDS[base.species];
+    assert.equal(ENEMY_KINDS[descent.type], descent);
+    assert.equal(side.guardianRole, 'side'); assert.equal(side.bossPlaceholder, false);
+    assert.equal(descent.guardianRole, 'descent'); assert.equal(descent.bossPlaceholder, true);
+    assert.notEqual(descent.type, side.type); assert.notEqual(descent.colors, side.colors);
+    assert.notEqual(guardianColor('side'), guardianColor('descent'));
+    assert.notEqual(guardianTitle('side'), guardianTitle('descent'));
+    const previousHpScale = Math.max(3,
+      ...Object.values(GUARDIAN_KINDS).map(k => 1.4 * k.hp / base.hp),
+      ...Object.values(GUARDIAN_KINDS).map(k => 1.4 * k.hpPerLevel / base.hpPerLevel));
+    for (let level = 1; level <= 30; level++) {
+      const a = enemyProfile(side, level), b = enemyProfile(descent, level);
+      const previousHp = Math.round(Math.round(base.hp * previousHpScale) + base.hpPerLevel * previousHpScale * (level - 1));
+      assert.ok(Math.abs(b.hp - previousHp * .8) <= 1, 'descent HP is 20% lower, allowing for rounding');
+      assert.ok(b.hp >= a.hp * 1.55 && b.damage > a.damage * 1.4);
+      for (const other of Object.values(GUARDIAN_KINDS)) {
+        const strongestSide = enemyProfile(other, level);
+        assert.ok(b.hp > strongestSide.hp && b.damage > strongestSide.damage, 'boss tier must beat sideways species too');
+      }
+    }
+    for (const key of ['chase', 'radius', 'height', 'attackTime', 'hitAt', 'cooldown']) assert.equal(descent[key], base[key]);
+  }
+});
+
+test('side gates lock full-face and debug travel, preserve retreat, and stay unlocked after death', () => {
+  for (const seed of [0, 1, 7, 42]) for (const depth of [0, 1, 12, 19]) {
+    const w = new World(seed), L = w.layout(depth), run = createRun(), hero = createPlayerStats();
+    for (const [key, g] of L.guardians) if (g.role === 'side') {
+      const map = state.map = w.cube(key).map;
+      const entry = map.portals[0], exit = map.portals[1];
+      const neighbor = w.cube(step(key, exit.dir)).map;
+      assert.equal(exit.dir, g.exit);
+      assert.equal(portalLocked(map, run, exit), true);
+      assert.equal(portalLocked(map, run, { kind: 'side', dir: exit.dir }), true);
+      assert.equal(portalLocked(neighbor, run, { kind: 'side', dir: exit.dir ^ 1 }), true);
+      assert.equal(portalLocked(map, run, entry), false);
+      assert.equal(entry.y, exit.y);
+      const reverse = neighbor.portals.find(p => p.dir === (exit.dir ^ 1));
+      assert.equal(reverse.y, exit.y); assert.equal(reverse.layer, 0);
+      const guard = guardianSpots(map).find(s => s.guardian);
+      const enemy = makeEnemy(guard, guard.kind);
+      damageEnemy(enemy, enemy.hp); awardKill(hero, run, enemy);
+      assert.equal(portalLocked(map, run, exit), false);
+      assert.equal(portalLocked(neighbor, run, reverse), false);
+      restoreDefeated(run, new Set());
+      assert.ok(run.defeated.has(enemy.id));
+      assert.equal(portalLocked(map, run, exit), false);
     }
   }
 });

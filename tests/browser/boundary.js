@@ -69,9 +69,8 @@ export async function runRunKeyChecks() {
   });
 }
 
-// Two neighbouring cubes with no gate between them: the face opens once both are discovered,
-// and you can walk across it (at some point along the face where nothing blocks).
-async function gatelessCheck() {
+// Nearby but non-linked progression sections must not become a shortcut on discovery.
+async function sealedSectionCheck() {
   for (const seed of [0, 1, 2, 3, 4, 5, 6, 7]) {
     await newWorld(seed); clearInput();
     const L = state.cubes.layout(1);
@@ -80,30 +79,25 @@ async function gatelessCheck() {
       if (!L.exists.has(n)) continue;
       const a = await state.cubes.get(k), b = await state.cubes.get(n);
       if (a.map.portals.some(p => p.kind === 'side' && p.dir === d)) continue;
+      if (a.map.routeIndex === b.map.routeIndex) continue;
       enterCube(a, a.map.portals[0].dir);
       check(!isFaceOpen(state.openedFaces, k, d), 'Gateless face must stay closed until both sides are discovered');
       enterCube(b, b.map.portals[0].dir);
-      check(isFaceOpen(state.openedFaces, n, OPP6[d]), 'Discovering both sides must open a gateless face');
+      check(!isFaceOpen(state.openedFaces, n, OPP6[d]), 'Discovering both sections must not open a shortcut');
       panes(state.world.glass, openedSides(state.openedFaces, n));
       enterCube(a, a.map.portals[0].dir);
-      check(isFaceOpen(state.openedFaces, k, d), 'The opened face must be shared');
+      check(!isFaceOpen(state.openedFaces, k, d), 'The sealed section boundary must be shared');
       panes(state.world.glass, openedSides(state.openedFaces, k));
       for (let along = 0.5; along < N; along += 1) {
         const x = d === 0 ? N - 0.5 : d === 1 ? 0.5 : along, z = d === 2 ? N - 0.5 : d === 3 ? 0.5 : along;
         atFace(d, along, groundAt(x, z, 99, 0).h, 0.5);
-        player.autoDir = DIRS[d];
-        for (let i = 0; i < 60 && !state.transitioning; i++) updatePlayer(1 / 60);
-        player.autoDir = null;
-        if (!state.transitioning) continue;
-        for (let i = 0; i < 100 && state.transitioning && !travelling(); i++) await delay(20);
-        if (!travelling()) continue;   // blocked at the destination
-        finishSlide();
-        check(state.cubeKey === n, 'Walking across a gateless open face must enter the neighbour');
-        return `gateless face ${k} ${d}: opens on discovering both sides, walkable`;
+        state.boundaryLock = -1; state.portalLock = 0;
+        check(!checkPortals(...DIRS[d]) && !state.transitioning, 'Non-linked section cannot trigger travel');
       }
+      return `section boundary ${k} ${d}: stays sealed after discovering both sides`;
     }
   }
-  throw Error('No walkable gateless face found');
+  throw Error('No non-linked section boundary found');
 }
 
 // Discover both ends without crossing their gate (as when arriving by another route).
@@ -262,7 +256,7 @@ export async function runBoundaryChecks() {
       check(player.hp === hp - FALL_DAMAGE && !player.ragdoll, 'A fall through cubes must cost full fall damage: ' + player.hp);
       results.push('down / up charge before travel / stepping out resets charge / portals remain / falls cost full damage and return');
       results.push(await discoveredGateCheck());
-      results.push(await gatelessCheck());
+      results.push(await sealedSectionCheck());
       return results;
     } finally { clearInput(); await newWorld(3); }
   });

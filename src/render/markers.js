@@ -9,17 +9,31 @@ const COLORS = { new: [0xffc94a, 0xffa500], seen: [0x5fd3ff, 0x1f8fd0], locked: 
 const glowMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, side: THREE.DoubleSide, depthWrite: false });
 const box = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), STONE); m.position.set(x, y, z); m.castShadow = true; return m; };
 
-function gate(p, [c, e]) {
+function gate(p, [c, e], guardian) {
   const g = new THREE.Group();
   g.add(box(0.24, 1.8, 0.24, -0.78, 0.9, 0), box(0.24, 1.8, 0.24, 0.78, 0.9, 0), box(1.9, 0.26, 0.3, 0, 1.9, 0));
   const curtain = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 1.76), glowMat(c, 0.4));
   curtain.position.y = 0.88; curtain.renderOrder = 900;
-  g.add(curtain, new THREE.PointLight(e, 3, 4, 2));
+  const light = new THREE.PointLight(e, 3, 4, 2), seal = new THREE.Group();
+  const target = new THREE.Color(c), lightTarget = new THREE.Color(e);
+  if (guardian) for (const yaw of [-Math.PI / 4, Math.PI / 4]) {
+    const cross = new THREE.Mesh(new THREE.PlaneGeometry(1.6, .1), glowMat(COLORS.locked[0], .95));
+    cross.rotation.z = yaw; cross.position.set(0, .88, .02); seal.add(cross);
+  }
+  g.add(curtain, light, seal);
   const out = 0.14;
   const pos = [[N - out, p.z + 0.5], [out, p.z + 0.5], [p.x + 0.5, N - out], [p.x + 0.5, out]][p.dir];
   g.position.set(pos[0], p.y, pos[1]);
   if (p.dir < 2) g.rotation.y = Math.PI / 2;
-  return { obj: g, tick: t => { curtain.material.opacity = 0.32 + Math.sin(t * 3 + p.id) * 0.1; } };
+  return { obj: g, setLocked: guardian ? (value, immediate = false) => {
+    seal.visible = value;
+    const col = value ? COLORS.locked : [c, e];
+    target.set(col[0]); lightTarget.set(col[1]);
+    if (immediate) { curtain.material.color.copy(target); light.color.copy(lightTarget); }
+  } : null, tick: t => {
+    curtain.material.opacity = 0.32 + Math.sin(t * 3 + p.id) * 0.1;
+    curtain.material.color.lerp(target, .15); light.color.lerp(lightTarget, .15);
+  } };
 }
 
 function well(p, [c, e], guardian) {
@@ -88,7 +102,10 @@ export function buildMarkers(m, group, showPath, seen = {}, open = [], locked = 
   STONE = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });
   const portalFx = m.portals.filter(p => p.kind !== 'side' || !open[p.dir]).map(p => {
     const col = COLORS[seen[p.id] ? 'seen' : 'new'];
-    const fx = p.kind === 'side' ? gate(p, col) : p.kind === 'down' ? well(p, col, m.guardian) : p.kind === 'up' ? ring(p, col) : spawnPad(p);
+    const guardian = p.dir === m.exit ? m.guardian : null;
+    const fx = p.kind === 'side' ? gate(p, col, guardian) : p.kind === 'down' ? well(p, col, guardian) : p.kind === 'up' ? ring(p, col) : spawnPad(p);
+    fx.obj.userData.guardianRole = guardian?.role ?? null;
+    fx.obj.userData.bossPlaceholder = !!guardian?.bossPlaceholder;
     fx.setLocked?.(locked, true);
     fx.obj.userData.portal = p;   // dev tools: click to take it
     group.add(fx.obj);

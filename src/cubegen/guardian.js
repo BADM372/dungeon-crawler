@@ -1,5 +1,5 @@
-// A deliberate descent arena: shared boundary terrain, one ground entrance, a dry
-// open interior and a framed well at the far end. No terrain retries or optional clutter
+// A deliberate side/descent arena: shared boundary terrain, one ground entrance,
+// a dry open interior and a sealed onward exit. No terrain retries or optional clutter
 // may move the guardian or break the defenders' floor graph.
 import { N, LH, DIRS } from '../core/constants.js';
 import { idx, edgeKey } from '../core/util.js';
@@ -8,22 +8,25 @@ import { groundHeights } from './ground.js';
 import { placePortals } from './portals.js';
 
 export function generateGuardian(spec) {
-  const entry = spec.portals.find(p => p.dir < 4);
-  if (!entry || spec.portals.length !== 2 || !spec.portals.some(p => p.dir === 4) || entry.layer)
-    throw new Error('Guardian arena needs one ground entrance and one descent');
+  const exit = spec.guardian.exit ?? spec.exit, role = spec.guardian.role ?? 'descent';
+  const entry = spec.portals.find(p => p.dir < 4 && p.dir !== exit);
+  const onward = spec.portals.find(p => p.dir === exit);
+  if (!entry || !onward || spec.portals.length !== 2 || entry.layer || onward.layer
+    || exit < 4 && entry.level !== onward.level)
+    throw new Error('Guardian arena needs one ground entrance and one level onward exit');
   const ctx = createContext(spec.seed);
   ctx.spec = spec; ctx.K = 1; ctx.B = [0];
   groundHeights(ctx);
-  const [dx, dz] = DIRS[entry.dir], level = entry.level;
-  // Gate towards the wall opposite the entrance, with room to circle the guardian.
+  const [dx, dz] = DIRS[exit < 4 ? exit ^ 1 : entry.dir], level = entry.level;
+  // Wells sit opposite the entrance; side exits retain their shared face position.
   const gx = dx ? dx > 0 ? 4 : N - 5 : N / 2;
   const gz = dz ? dz > 0 ? 4 : N - 5 : N / 2;
-  ctx.spec = { ...spec, portals: [entry, { dir: 4, x: gx, z: gz }] };
+  ctx.spec = { ...spec, portals: [entry, exit < 4 ? onward : { dir: 4, x: gx, z: gz }] };
   for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) {
     ctx.lvl0[idx(x, z)] = level; ctx.void0[idx(x, z)] = 0;
   }
   placePortals(ctx);
-  // Ordinary wells clamp their height; an arena's well shares the entrance level.
+  // Ordinary wells clamp their height; every arena exit shares the entrance level.
   ctx.portals[1].level = level;
   for (const c of ctx.portals[1].cells) ctx.lvl0[c] = level;
   const floors = [];
@@ -40,8 +43,10 @@ export function generateGuardian(spec) {
   });
   const portals = ctx.portals.map(p => ({ id: p.id, kind: p.kind, dir: p.dir, layer: 0, cells: p.cells,
     x: p.c % N, z: Math.floor(p.c / N), y: level * LH, floor: floors[p.c] }));
-  const guardFloor = floors[idx(gx + dx * 2, gz + dz * 2)], entrance = portals[0];
-  const guardian = { floor: guardFloor, x: guardFloor.x + .5, z: guardFloor.z + .5,
+  const gate = portals[1], entrance = portals[0];
+  const guardFloor = floors[idx(gate.x + dx * 2, gate.z + dz * 2)];
+  const guardian = { role, bossPlaceholder: role === 'descent', exit,
+    floor: guardFloor, x: guardFloor.x + .5, z: guardFloor.z + .5,
     y: level * LH, yaw: Math.atan2(dx, dz), approach: [dx, dz], portalId: portals[1].id };
   const prev = new Map([[entrance.floor, null]]), queue = [entrance.floor];
   for (let i = 0; i < queue.length; i++) for (const g of queue[i].link)
@@ -65,9 +70,10 @@ export function generateGuardian(spec) {
   ctx.stats.layers = 1; ctx.stats.mode = 'guardian arena'; ctx.stats.fences = fenceList.length;
   return { seed: spec.seed, attempts: 1, K: 1, B: [0], cols: ctx.cols, floors,
     pieces: Array.from({ length: N * N }, () => []), runs: [], falls: [], ladders: [],
-    fences, fenceList, stats: ctx.stats, moves, portals, exit: 4, guardian,
+    fences, fenceList, stats: ctx.stats, moves, portals, exit, guardian,
+    routeIndex: spec.routeIndex, gateKeys: spec.gateKeys,
     safe: Uint8Array.from(floors, f => prev.has(f) ? 1 : 0),
-    kind: spec.kind, archetype: 'arena', roomRole: 'guardian', biome: spec.biome,
+    kind: spec.kind, archetype: 'arena', roomRole: `${role}-guardian`, biome: spec.biome,
     key: spec.key, depth: spec.depth, cave: !!spec.cave, enemyFree: false,
     rewardSites: [], siteFailures: [], sitePlacements: [], siteReservations: [],
     routes: [path, [...path].reverse()].map(p => p.map(f => ({ x: f.x + .5, y: level * LH + .12, z: f.z + .5 }))),

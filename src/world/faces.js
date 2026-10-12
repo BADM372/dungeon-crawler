@@ -14,8 +14,8 @@ export const LAYER_BASE = [0, 10, 16, 22];   // the levels of the world-wide lay
 
 const guarded = (world, k) => {
   const d = -parse(k)[1];
-  if (d < 2 || d >= MAX_DEPTH) return false;
-  const L = world.layout(d); return L.guardian && L.down === k;
+  if (d < 0 || d >= MAX_DEPTH) return false;
+  return world.layout(d).guardians.has(k);
 };
 
 function sideFace(world, k, d, withPortal) {
@@ -39,7 +39,7 @@ function sideFace(world, k, d, withPortal) {
   const layer = guardian ? 0 : maxL > 0 && R() < 0.5 ? maxL : Math.floor(R() * (maxL + 1));
   let level = LAYER_BASE[layer];
   if (!layer) {   // a flat pad of three cells at the highest ground level around it
-    level = Math.max(4, f.profile[pos - 1], f.profile[pos], f.profile[pos + 1]);   // never void
+    level = guardian ? 4 : Math.max(4, f.profile[pos - 1], f.profile[pos], f.profile[pos + 1]);   // never void
     for (let t = pos - 1; t <= pos + 1; t++) f.profile[t] = level;
   }
   f.portal = { pos, layer, level };

@@ -8,7 +8,7 @@ import { isClearing } from './town.js';
 
 export function voidAllowed(world, k) {
   const [X, Y, Z] = parse(k), d = -Y;
-  return !isClearing(k, world.seed) && !(d >= 2 && world.layout(d).guardian && world.layout(d).down === k)
+  return !isClearing(k, world.seed) && !world.layout(d).guardians.has(k)
     && d < MAX_DEPTH && themeAt(d).void > 0 && world.layout(d + 1).exists.has(key(X, Y - 1, Z));
 }
 

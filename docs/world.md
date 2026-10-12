@@ -126,16 +126,16 @@ Which faces carry portals is decided by the depth's layout (see below), not per 
 
 Which cubes exist and how they connect depends only on the world seed:
 
-- **Depth 0:** the town (0,0,0, the spawn) and a short road out to the first well.
-- **Depths 1–19:** an arc of a two-cube-wide ring around the vertical axis under the town.
-  You come up through the ring at one end; the well down is 150–240° further around. The
-  next depth's arc starts right below that well.
-- **Ring size:** the radius shrinks with depth (3 → 2 → 1), so the way down spirals
-  inwards. That is about 35 / 25 / 15 cubes per depth, with a spine of about 14 / 10 / 5
-  cubes from the ring to the well.
-- **Depth 20:** the core, the 3×3 cubes around the axis.
-- **Spine:** a spine of portals always connects the up ring to the well. Every other cube of
-  the arc hangs off a neighbour closer to the spine, and about 12% extra portals make loops.
+- **Depth 0:** the town (0,0,0) and safe merchant camp start a 7–14-room route to the first well.
+- **Depths 1–19:** seeded routes through a two-cube-wide ring around the axis. Each route
+  contains 7–14 rooms, including the up ring and well. The next route starts below the well.
+- **Ring size:** the radius still shrinks with depth (3 → 2 → 1), but route length no
+  longer shrinks with it. Bounded path search preserves the room budget on small rings.
+- **Depth 20:** the core, with a 7–9-room entry-to-centre route and no further descent.
+- **Branches:** optional one-room detours fit within 14 total rooms per depth. No portal
+  loops or discovered-face shortcuts can bypass the mandatory route sections.
+- **Guardians:** every well has a stronger descent guardian (future boss placeholder),
+  with one or two mandatory side guardian arenas on its approach.
 
 Layer counts are part of the WFC state. A collapsing cube's count is drawn towards its
 neighbours' counts, so tall regions form. A face's portal sits on any layer both cubes
@@ -338,10 +338,11 @@ in game devtools for real worker, asset, shader and collision checks.
 
 ## Guardian descents
 
-Starting at depth 2, selected descent cubes are deliberate guardian arenas with one
-side entrance and a framed well down. They contain twice the normal local population
-and one high-level, hot-pink guardian. Its death alone permanently unlocks the red well
-for the current run. Defenders coordinate to intercept the approach while it lives.
+Every descent at depths 0–19 has an amber descent guardian, explicitly marked as a
+future boss placeholder. Every approach also has one or two hot-pink sideways guardians.
+Their dry arenas contain twice the normal local population. Guardian death alone
+permanently unlocks the corresponding red side gate or well for the current run.
+Defenders coordinate to intercept the approach while it lives.
 See [guardian mechanics, generation and checks](guardians.md).
 
 ## The way down (`cubegen/route.js`, `cubegen/reach.js`, `cubegen/escape.js`)
@@ -424,8 +425,10 @@ void/non-finite entries and both death and recovery after a fall.
 A shared side face opens as soon as the cubes on both sides have been discovered
 (`discoveredFaces` in `core/boundaries.js`), whether or not it has a gate or that gate
 has been crossed. Neighbouring rooms reached by different routes can be walked between.
-Opening is tracked explicitly by `faceKey` for the current world. Both gates and both
-copies of the dividing glass pane disappear; cube outlines remain. Re-entry, mesh
+Opening is tracked explicitly by `faceKey` for the current world. Non-linked progression
+sections stay sealed even when both rooms are discovered, and locked guardian faces
+cannot open through discovery. Within a section, or along an unlocked portal connection,
+both gates and both dividing glass panes disappear; cube outlines remain. Re-entry, mesh
 rebuilds and low-detail proxies use the same opened-face state.
 
 An opened side face triggers the same cube slide wherever the player approaches it,
@@ -433,7 +436,7 @@ regardless of the original portal's position or layer. The arrival preserves the
 position along the face, height and motion, with the body placed a little inside the
 next cube. Destination solids still block passage. A boundary lock prevents immediate
 bounce-back. The minimap marks opened connections as green lines along their faces;
-unopened portals retain their gold/cyan markers.
+unopened portals retain gold/cyan markers, or red crossed seals while guardian-locked.
 
 Cubes remain separate simulation spaces: player collision is cube-local, and enemies
 cannot cross their boundaries. Generation, portal metadata, routing and arrival-safety

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { N, CUBE_H, BASE, STEP, SWIM_STEP, SNAP } from '../core/constants.js';
 import { isFaceOpen, openedSides, boundaryArrival } from '../core/boundaries.js';
-import { portalLocked, gateLocked } from '../core/guardians.js';
+import { portalLocked, gateLocked, guardianLockMessage } from '../core/guardians.js';
 import { step, D6, OPP6, faceKey } from '../world/coords.js';
 import { buildWorld, setWorldOpenFaces } from '../render/world.js';
 import { setGlassFaces } from '../render/glass.js';
@@ -33,7 +33,7 @@ export const travelling = () => !!tr;
 // the cube behind the portal may still be generating: wait for it (frozen in the portal)
 export function startTravel(p) {
   if (state.transitioning || state.inventoryOpen) return;
-  if (portalLocked(state.map, state.run, p)) { setStatus('Defeat the guardian to unlock this descent'); return; }
+  if (portalLocked(state.map, state.run, p)) { setStatus(guardianLockMessage(state.map)); return; }
   clearMouseInput();
   state.transitioning = true;
   cancelSword();

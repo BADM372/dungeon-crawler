@@ -6,7 +6,7 @@
 // Each pack draws its kind from the roster's weights (core/spawns.js) on a stream of its own,
 // so the kinds never move a spot. A spot carries its kind's profile as `kind`.
 import { N } from '../core/constants.js';
-import { enemyRoll, ENEMY_KINDS, GUARDIAN_KINDS } from '../core/enemies.js';
+import { enemyRoll, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS } from '../core/enemies.js';
 import { guardianId } from '../core/guardians.js';
 import { population } from '../core/spawns.js';
 import { mulberry32, hash32 } from '../core/util.js';
@@ -66,12 +66,14 @@ export function guardianSpots(map) {
   const pop = population(map), species = [...pop.keys()];
   if (!species.length) return [];
   const R = mulberry32(hash32(map.seed ^ 0x6a7d1a)), guard = map.guardian;
-  const chosen = species[Math.floor(R() * species.length)], kind = GUARDIAN_KINDS[chosen];
+  const role = guard.role ?? 'descent';
+  const chosen = species[Math.floor(R() * species.length)];
+  const kind = (role === 'descent' ? DESCENT_GUARDIAN_KINDS : GUARDIAN_KINDS)[chosen];
   const f = guard.floor, roll = enemyRoll(map, kind, f.id);
-  const level = roll.level + 6 + Math.floor(map.depth / 3);
+  const level = roll.level + 6 + Math.floor(map.depth / 3) + (role === 'descent' ? 3 : 0);
   const spots = [{ ...roll, id: guardianId(map.key), level,
     coinDrop: Math.round(roll.coinDrop * (1 + .25 * (level - 1)) / (1 + .25 * (roll.level - 1))),
-    guardian: true, guardianGate: map.key, kind, f, x: guard.x, z: guard.z, y: guard.y, yaw: guard.yaw }];
+    guardian: true, guardianRole: role, bossPlaceholder: role === 'descent', guardianGate: map.key, kind, f, x: guard.x, z: guard.z, y: guard.y, yaw: guard.yaw }];
   const used = new Set([f.id]), entrance = map.portals.find(p => p.kind === 'side');
   const requests = [];
   for (const [type, spec] of pop) for (let i = type === chosen ? 1 : 0; i < spec.count; i++)
@@ -84,7 +86,7 @@ export function guardianSpots(map) {
     const tx = guard.x + dx * ahead - dz * side, tz = guard.z + dz * ahead + dx * side;
     const candidates = map.floors.filter(f => f.encounter && !used.has(f.id) && walkable(f, kind.height)
       && Math.hypot(f.x - entrance.x, f.z - entrance.z) >= 4
-      && map.portals.filter(p => p.kind === 'down').every(p => Math.hypot(f.x - p.x, f.z - p.z) >= 1.8)
+      && map.portals.filter(p => p.dir === map.exit).every(p => Math.hypot(f.x - p.x, f.z - p.z) >= 1.8)
       && spots.every(s => Math.hypot(f.x + .5 - s.x, f.z + .5 - s.z) >= kind.radius + s.kind.radius + .12)
       && [[kind.radius, 0], [-kind.radius, 0], [0, kind.radius], [0, -kind.radius]]
         .every(([x, z]) => floorAt(f, f.x + .5 + x, f.z + .5 + z, kind.height)));

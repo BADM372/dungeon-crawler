@@ -34,9 +34,13 @@ export function makeLevelLabel(level, { color = '#ffe4ae', onTop = false, title 
   sprite.setLevel = n => {
     if (n === shown) return;
     shown = n;
-    ctx.clearRect(0, 0, canvas.width, 64);
+    const text = title ? `${title} · Lv ${n}` : `Lv ${n}`;
+    ctx.font = 'bold 48px monospace';
+    // Long encounter titles must not clip at the old fixed Guardian label width.
+    canvas.width = Math.ceil(Math.max(title ? 640 : 256, ctx.measureText(text).width + 24));
+    sprite.scale.x = canvas.width / 256 * .7 * INDICATOR_SCALE;
     ctx.font = 'bold 48px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const text = title ? `${title} · Lv ${n}` : `Lv ${n}`, x = canvas.width / 2;
+    const x = canvas.width / 2;
     ctx.lineWidth = 10; ctx.strokeStyle = '#171c25'; ctx.strokeText(text, x, 32);
     ctx.fillStyle = color; ctx.fillText(text, x, 32);
     texture.needsUpdate = true;

@@ -4,9 +4,11 @@ import { paused } from './combat.js';
 import { state, player } from '../../src/game/state.js';
 import { makeLayouts } from '../../src/world/layout.js';
 import { createRun } from '../../src/core/progression.js';
-import { GUARDIAN_KINDS, makeEnemy } from '../../src/core/enemies.js';
+import { GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS, makeEnemy } from '../../src/core/enemies.js';
 import { damageEnemy } from '../../src/core/combat.js';
-import { gateLocked } from '../../src/core/guardians.js';
+import { gateLocked, portalLocked } from '../../src/core/guardians.js';
+import { DIRS, N } from '../../src/core/constants.js';
+import { faceKey, step } from '../../src/world/coords.js';
 import { allEnemies, updateEnemies, drawEnemies } from '../../src/game/enemies.js';
 import { enterCube, spawnAt, die } from '../../src/game/flow.js';
 import { checkPortals } from '../../src/game/portals.js';
@@ -23,7 +25,7 @@ export async function runGuardianChecks() {
   await propsReady;
   return paused(async () => {
     const oldCube = state.cubes.cubes.get(state.cubeKey), hero = { ...player };
-    const saved = Object.fromEntries(['run', 'arrival', 'visit', 'portalLock', 'portalCharge', 'boundaryLock', 'transitioning', 'inventoryOpen', 'fallFrom', 'statusMsg', 'statusUntil'].map(k => [k, state[k]]));
+    const saved = Object.fromEntries(['run', 'arrival', 'visit', 'portalLock', 'portalCharge', 'boundaryLock', 'transitioning', 'inventoryOpen', 'fallFrom', 'enemyGrace', 'statusMsg', 'statusUntil'].map(k => [k, state[k]]));
     const opened = new Set(state.openedFaces), key = makeLayouts(state.cubes.seed)(2).down;
     const c = await state.cubes.get(key), visits = c.visits, samples = [];
     try {
@@ -33,6 +35,7 @@ export async function runGuardianChecks() {
       const map = state.map, down = map.portals.find(p => p.kind === 'down');
       let list = allEnemies(), guard = list.find(e => e.guardian);
       check(guard && list.length > 1, 'one guardian and defenders load from worker');
+      check(guard.guardianRole === 'descent' && guard.bossPlaceholder, 'descent kind exposes the future-boss hook');
       const population = list.length;
       drawEnemies(0);
       check(guard.view?.bar.visible && guard.view.label.visible, 'guardian label and health bar always visible');
@@ -63,13 +66,13 @@ export async function runGuardianChecks() {
       guard = allEnemies().find(e => e.guardian);
       check(guard && gateLocked(map, state.run), 'new run restores guardian and seal');
       // Exercise every guardian model/material, not just this seed's selected species.
-      for (const kind of Object.values(GUARDIAN_KINDS)) {
+      for (const kind of [...Object.values(GUARDIAN_KINDS), ...Object.values(DESCENT_GUARDIAN_KINDS)]) {
         const e = makeEnemy({ f: map.guardian.floor, x: map.guardian.x, y: map.guardian.y, z: map.guardian.z,
-          level: 8, guardian: true, yaw: 0 }, kind);
+          level: 8, guardian: true, guardianRole: kind.guardianRole, bossPlaceholder: kind.bossPlaceholder, yaw: 0 }, kind);
         samples.push(e);
       }
       animateEnemies(samples, 0);
-      check(samples.every(e => e.view?.label.visible), 'all seven guardian kinds have loaded models and labels');
+      check(samples.every(e => e.view?.label.visible), 'all fourteen guardian kinds have loaded models and labels');
       renderer.compile(scene, camera);
       removeEnemyViews(samples); samples.length = 0;
       damageEnemy(guard, guard.hp); updateEnemies(.001);
@@ -79,10 +82,68 @@ export async function runGuardianChecks() {
       check(travelling(), 'destination builds and travel starts');
       for (let i = 0; i < 30 && travelling(); i++) updateTravel(.1);
       check(state.cubeKey !== map.key && !state.transitioning, 'unlocked well reaches the next depth');
-      return { guardianKinds: 7, population, deathPersistence: true, defenders: true, travelled: true };
+      return { guardianKinds: 14, population, deathPersistence: true, defenders: true, travelled: true };
     } finally {
       removeEnemyViews(samples);
       state.run = saved.run; state.openedFaces = opened; c.visits = visits;
+      enterCube(oldCube, null, { arrival: saved.arrival, visit: saved.visit,
+        portalLock: saved.portalLock, boundaryLock: saved.boundaryLock });
+      Object.assign(state, saved); Object.assign(player, hero);
+    }
+  });
+}
+
+export async function runSideGuardianChecks() {
+  await propsReady;
+  return paused(async () => {
+    const oldCube = state.cubes.cubes.get(state.cubeKey), hero = { ...player };
+    const saved = Object.fromEntries(['run', 'arrival', 'visit', 'portalLock', 'portalCharge', 'boundaryLock', 'transitioning', 'inventoryOpen', 'fallFrom', 'enemyGrace', 'statusMsg', 'statusUntil'].map(k => [k, state[k]]));
+    const opened = new Set(state.openedFaces), visits = new Map([...state.cubes.cubes].map(([k, c]) => [k, c.visits]));
+    const results = [];
+    try {
+      for (const depth of [0, 1, 19]) {
+        state.run = createRun(); state.openedFaces = new Set();
+        state.transitioning = state.inventoryOpen = false; state.fallFrom = null;
+        const L = state.cubes.layout(depth), key = [...L.guardians].find(([, g]) => g.role === 'side')[0];
+        const c = await state.cubes.get(key), entry = c.map.portals[0], exit = c.map.portals[1];
+        enterCube(c, entry.dir);
+        const guard = allEnemies().find(e => e.guardian);
+        check(guard?.guardianRole === 'side' && !guard.bossPlaceholder, 'worker preserves side guardian identity');
+        check(!portalLocked(c.map, state.run, entry), 'entry permits retreat');
+        drawEnemies(0);
+        check(guard.view?.bar.visible && guard.view.label.visible, 'side guardian indicators stay visible');
+        const fx = state.world.portalFx.find(f => f.obj.userData.portal.id === exit.id);
+        check(fx.obj.userData.guardianRole === 'side' && !fx.obj.userData.bossPlaceholder, 'gate carries recognizable identity');
+        const curtain = fx.obj.children.find(o => o.geometry?.type === 'PlaneGeometry');
+        check(curtain.material.color.getHexString() === 'ff3547', 'side gate shines red while locked');
+        startTravel(exit);
+        check(!state.transitioning && !travelling(), 'debug activation cannot bypass side guardian');
+        // Even a stale/opened face may not circumvent the runtime lock.
+        state.openedFaces.add(faceKey(key, exit.dir));
+        const [dx, dz] = DIRS[exit.dir];
+        spawnAt(dx ? dx > 0 ? N - .25 : .25 : exit.x + .5, exit.y,
+          dz ? dz > 0 ? N - .25 : .25 : exit.z + .5);
+        state.portalLock = 0; state.boundaryLock = -1;
+        check(!checkPortals(dx, dz, 1) && !state.transitioning, 'full-face crossing cannot bypass side guardian');
+        state.openedFaces.delete(faceKey(key, exit.dir));
+        damageEnemy(guard, guard.hp); updateEnemies(.001);
+        check(!gateLocked(c.map, state.run), 'side guardian death unlocks passage');
+        for (let i = 0; i < 40; i++) animateWorld(state.world, 1 / 60, i / 60);
+        check(curtain.material.color.getHexString() !== 'ff3547', 'side gate visibly changes on unlock');
+        die();
+        check(!allEnemies().some(e => e.guardian), 'side guardian stays dead after rollback');
+        startTravel(exit);
+        for (let i = 0; i < 100 && !travelling(); i++) await delay(50);
+        check(travelling(), 'unlocked side travel starts');
+        for (let i = 0; i < 30 && travelling(); i++) updateTravel(.1);
+        check(state.cubeKey === step(key, exit.dir) && !state.transitioning, 'unlocked side gate travels onward');
+        results.push({ depth, role: 'side', lockedCrossing: true, persistentUnlock: true, travelled: true });
+      }
+      renderer.compile(scene, camera);
+      return results;
+    } finally {
+      state.run = saved.run; state.openedFaces = opened;
+      for (const [k, c] of state.cubes.cubes) c.visits = visits.get(k) || 0;
       enterCube(oldCube, null, { arrival: saved.arrival, visit: saved.visit,
         portalLock: saved.portalLock, boundaryLock: saved.boundaryLock });
       Object.assign(state, saved); Object.assign(player, hero);

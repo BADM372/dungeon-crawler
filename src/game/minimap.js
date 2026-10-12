@@ -5,7 +5,7 @@ import { KIND_COLOR } from '../world/tiles.js';
 import { key, parse, step } from '../world/coords.js';
 import { state } from './state.js';
 import { isFaceOpen } from '../core/boundaries.js';
-import { gateLocked } from '../core/guardians.js';
+import { gateLocked, portalLocked } from '../core/guardians.js';
 
 const R = 3, CELL = 24, PAD = 6, SIZE = (2 * R + 1) * CELL + PAD * 2;
 const canvas = Object.assign(document.createElement('canvas'), { id: 'minimap', width: SIZE, height: SIZE + 14 });
@@ -41,7 +41,7 @@ export function drawMinimap() {
         else g.fillRect(x - CELL / 2 + 3, y - 1, CELL - 6, 2);
       } else if (f?.portal) {
         const [x, y] = edgePt(px, pz, d, (f.portal.pos + 0.5) / 16);
-        g.fillStyle = visited(step(k, d)) ? '#5fd3ff' : '#ffc94a';
+        g.fillStyle = portalLocked(c.map, state.run, { dir: d }) ? '#ff3547' : visited(step(k, d)) ? '#5fd3ff' : '#ffc94a';
         g.fillRect(x - 3, y - 3, 6, 6);
       }
     }

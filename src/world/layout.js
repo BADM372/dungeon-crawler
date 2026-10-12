@@ -1,112 +1,108 @@
-// The shape of the world: which cubes exist at each depth and how they are connected. It only
-// depends on the world seed. The way down spirals inwards around the axis under the town:
-//   depth 0: the town (0,0,0) and a short road out to the first well
-//   depth 1-19: an arc of a ring (two cubes wide) around the axis. You come up through a ring
-//     at one end and the well down is at the other, 150-240 degrees around; the next depth's
-//     arc starts right below that well. The ring gets smaller the deeper you go.
-//   depth 20: the core, around the axis
-// A spine of portals always leads from the ring up to the well down; every other cube of the
-// arc hangs off it (branches), and a few extra portals make loops.
+// Seeded, bounded routes between vertical portals. Each stratum has 7–14 rooms
+// including its endpoints; small optional branches fit inside the same room budget.
+// The core has no further descent. Adjacent, non-linked route sections stay sealed.
 import { mulberry32, hash32 } from '../core/util.js';
 import { key, faceKey } from './coords.js';
 import { MAX_DEPTH } from '../themes/depth.js';
 import { planSites } from './sites.js';
 
-const RADIUS = d => d === 0 || d >= MAX_DEPTH ? 0 : d <= 5 ? 3 : d <= 12 ? 2 : 1;
-const AXES = [[1, 0], [-1, 0], [0, 1], [0, -1]];   // same order as the face directions
-const cheb = (x, z) => Math.max(Math.abs(x), Math.abs(z));
-const TAU = Math.PI * 2, ccw = a => ((a % TAU) + TAU) % TAU;
+export const MIN_ROUTE_ROOMS = 7, MAX_ROUTE_ROOMS = 14;
+const RADIUS = d => d >= MAX_DEPTH ? 0 : d <= 5 ? 3 : d <= 12 ? 2 : 1;
+const AXES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const cheb = ([x, z]) => Math.max(Math.abs(x), Math.abs(z));
 const nb = ([x, z]) => AXES.map(([dx, dz]) => [x + dx, z + dz]);
-const id = ([x, z]) => x + ',' + z;
+const id = c => c.join(',');
+const direction = (a, b) => AXES.findIndex(([x, z]) => a[0] + x === b[0] && a[1] + z === b[1]);
 
-// cheapest path from a to b through the cells (random cell costs), as a list of cells
-function path(cells, a, b, R) {
-  const cost = new Map(cells.map(c => [id(c), 1 + R() * 1.5])), dist = new Map([[id(a), 0]]), prev = new Map();
-  const open = [a];
-  while (open.length) {
-    open.sort((p, q) => dist.get(id(p)) - dist.get(id(q)));
-    const c = open.shift();
-    if (id(c) === id(b)) break;
-    for (const n of nb(c)) {
-      if (!cost.has(id(n))) continue;
-      const g = dist.get(id(c)) + cost.get(id(n));
-      if (g < (dist.get(id(n)) ?? Infinity)) { dist.set(id(n), g); prev.set(id(n), c); open.push(n); }
+// Bounded DFS, with a stable random priority per cell. Unlike a shortest path this
+// can keep the deep, small rings long enough without creating disconnected gates.
+function route(candidates, prefix, length, goal, R) {
+  const allowed = new Set(candidates.map(id)), used = new Set(prefix.map(id));
+  const priority = new Map(candidates.map(c => [id(c), R()])), out = [...prefix];
+  function visit() {
+    const c = out.at(-1);
+    if (out.length === length) return goal(c);
+    const next = nb(c).filter(n => allowed.has(id(n)) && !used.has(id(n)));
+    next.sort((a, b) => priority.get(id(a)) - priority.get(id(b)));
+    for (const n of next) {
+      out.push(n); used.add(id(n));
+      if (visit()) return true;
+      used.delete(id(n)); out.pop();
     }
+    return false;
   }
-  const out = [b];
-  while (id(out[0]) !== id(a)) out.unshift(prev.get(id(out[0])));
-  return out;
+  return visit() ? out : null;
 }
 
-// One guardian per two-depth band, plus the introduction at depth 2. At most two
-// consecutive ordinary descents; independent of graph/terrain random streams.
-export function guardianDepth(seed, d) {
-  if (d < 2 || d >= MAX_DEPTH) return false;
-  if (d === 2) return true;
-  const band = Math.floor((d - 3) / 2), chosen = 3 + band * 2 + (hash32(seed ^ Math.imul(band + 1, 0x6a7d)) & 1);
-  return d === chosen;
-}
+export const guardianDepth = (_seed, d) => d >= 0 && d < MAX_DEPTH;
 
 function build(seed, d, above) {
-  const R = mulberry32(hash32(seed ^ (d * 0x9e3779b1))), Y = -d;
-  let cells, start, end;
+  const R = mulberry32(hash32(seed ^ Math.imul(d + 1, 0x9e3779b1))), Y = -d, r = RADIUS(d);
+  const K = c => key(c[0], Y, c[1]);
+  const candidates = [];
+  let prefix;
   if (d === 0) {
-    const a = AXES[seed % 4], r = RADIUS(1);
-    cells = Array.from({ length: r + 1 }, (_, i) => [a[0] * i, a[1] * i]);
-    start = cells[0]; end = cells[r];
+    const a = AXES[seed % 4];
+    // Preserve the authored town -> camp -> countryside road before it bends.
+    prefix = Array.from({ length: 4 }, (_, i) => [a[0] * i, a[1] * i]);
+    for (let z = -4; z <= 4; z++) for (let x = -4; x <= 4; x++)
+      if (cheb([x, z]) >= 2) candidates.push([x, z]);
   } else {
-    const r = RADIUS(d);
-    start = above.end;
-    const band = [];
-    for (let z = -r - 1; z <= r + 1; z++) for (let x = -r - 1; x <= r + 1; x++) if (cheb(x, z) === r || cheb(x, z) === r + 1) band.push([x, z]);
-    if (d === MAX_DEPTH) { cells = band; end = [0, 0]; } else {
-      const a0 = Math.atan2(start[1], start[0]), span = (150 + R() * 90) * Math.PI / 180;
-      cells = band.filter(([x, z]) => ccw(Math.atan2(z, x) - a0 + 0.3) <= span + 0.6);
-      // the well down: on the inner ring (which also belongs to the next depth's ring)
-      const inner = cells.filter(([x, z]) => cheb(x, z) === r);
-      const target = a0 + span, off = c => Math.abs(ccw(Math.atan2(c[1], c[0]) - target + Math.PI) - Math.PI);
-      end = inner.reduce((b, c) => off(c) < off(b) ? c : b);
+    prefix = [above.end];
+    for (let z = -r - 1; z <= r + 1; z++) for (let x = -r - 1; x <= r + 1; x++)
+      if (d === MAX_DEPTH || cheb([x, z]) === r || cheb([x, z]) === r + 1) candidates.push([x, z]);
+  }
+  const goal = c => d === MAX_DEPTH ? id(c) === '0,0' : cheb(c) === (d ? r : 3);
+  const max = d === MAX_DEPTH ? 9 : MAX_ROUTE_ROOMS;
+  const desired = MIN_ROUTE_ROOMS + Math.floor(R() * (max - MIN_ROUTE_ROOMS + 1));
+  let spine;
+  for (let i = 0; i <= max - MIN_ROUTE_ROOMS; i++) {
+    const length = MIN_ROUTE_ROOMS + (desired - MIN_ROUTE_ROOMS + i) % (max - MIN_ROUTE_ROOMS + 1);
+    spine = route(candidates, prefix, length, goal, R);
+    if (spine) break;
+  }
+  if (!spine) throw new Error(`No bounded route at depth ${d}`);
+  const start = spine[0], end = spine.at(-1), cells = [...spine], portals = new Set();
+  const link = (a, b) => portals.add(faceKey(K(a), direction(a, b)));
+  const exit = new Map(), routeIndex = new Map(), distance = new Map();
+  spine.forEach((c, i) => {
+    routeIndex.set(K(c), i); distance.set(K(c), 0);
+    if (i + 1 < spine.length) { link(c, spine[i + 1]); exit.set(K(c), direction(c, spine[i + 1])); }
+  });
+  if (d < MAX_DEPTH) exit.set(K(end), 4);
+  const guardians = new Map(), gateFaces = new Map();
+  if (d < MAX_DEPTH) {
+    guardians.set(K(end), { role: 'descent', exit: 4, bossPlaceholder: true });
+    const count = 1 + Math.floor(R() * 2), first = d === 0 ? 3 : 2;
+    for (let i = 0; i < count; i++) {
+      const index = first + Math.floor((spine.length - 2 - first) * (i + 1) / (count + 1));
+      const k = K(spine[index]), dir = exit.get(k);
+      guardians.set(k, { role: 'side', exit: dir, bossPlaceholder: false });
+      gateFaces.set(faceKey(k, dir), k);
     }
   }
-  const spine = d === 0 ? cells : path(cells, start, end, R), guardian = guardianDepth(seed, d);
-  const portals = new Set(), K = ([x, z]) => key(x, Y, z);
-  const link = (a, b) => { const dir = AXES.findIndex(([dx, dz]) => a[0] + dx === b[0] && a[1] + dz === b[1]); portals.add(faceKey(K(a), dir)); };
-  for (let i = 1; i < spine.length; i++) link(spine[i - 1], spine[i]);
-  // every other cell hangs off a neighbour that is closer to the spine; a few extra loops
-  const dist = new Map(spine.map(c => [id(c), 0])), inArc = new Set(cells.map(id));
-  for (let front = spine; front.length;) {
-    const next = [];
-    for (const c of front) for (const n of nb(c)) if ((!guardian || id(c) !== id(end)) && inArc.has(id(n)) && !dist.has(id(n))) { dist.set(id(n), dist.get(id(c)) + 1); link(c, n); next.push(n); }
-    front = next;
+  // One-room branches only, never attached to arenas or the safe surface prefix.
+  // No loops: all sideways guardians are articulation points on the required route.
+  const used = new Set(cells.map(id)), allowed = new Set(candidates.map(id));
+  const branchBudget = Math.min(4, MAX_ROUTE_ROOMS - cells.length);
+  for (const c of spine.slice(2, -1)) {
+    if (cells.length >= spine.length + branchBudget) break;
+    if (guardians.has(K(c))) continue;
+    const options = nb(c).filter(n => allowed.has(id(n)) && !used.has(id(n)));
+    if (!options.length || R() < .4) continue;
+    const n = options[Math.floor(R() * options.length)];
+    cells.push(n); used.add(id(n)); link(c, n); exit.set(K(n), direction(n, c));
+    routeIndex.set(K(n), routeIndex.get(K(c))); distance.set(K(n), 1);
   }
-  // A fringe cell occasionally hangs only off the descent. Trim it rather than add
-  // a confusing extra entrance to a guardian arena.
-  if (guardian) {
-    cells = cells.filter(c => dist.has(id(c)));
-    for (const c of [...inArc]) if (!dist.has(c)) inArc.delete(c);
-  }
-  for (const c of cells) for (const n of nb(c)) if (inArc.has(id(n)) && R() < 0.12
-    && (!guardian || id(c) !== id(end) && id(n) !== id(end))) link(c, n);
-  // each cube's exit: the portal one step closer to the well down (the core: to its centre)
-  const exit = new Map(), goal = d < MAX_DEPTH ? end : [0, 0], seen = new Set([id(goal)]);
-  if (d < MAX_DEPTH) exit.set(K(goal), 4);
-  for (let front = [goal]; front.length;) {
-    const next = [];
-    for (const c of front) nb(c).forEach((n, dir) => {
-      if (!inArc.has(id(n)) || seen.has(id(n)) || !portals.has(faceKey(K(c), dir))) return;
-      seen.add(id(n)); exit.set(K(n), dir ^ 1); next.push(n);
-    });
-    front = next;
-  }
-  const layout = { depth: d, cells, start, end, spine: spine.length, exists: new Set(cells.map(K)), portals, exit,
-    up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null, guardian };
-  const sites = planSites(seed, layout, new Map([...dist].map(([c, n]) => [K(c.split(',').map(Number)), n])));
+  const layout = { depth: d, cells, start, end, spine: spine.length, route: spine.map(K), routeIndex,
+    exists: new Set(cells.map(K)), portals, exit, guardians, gateFaces,
+    up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null, guardian: guardianDepth(seed, d) };
+  const sites = planSites(seed, layout, distance);
   layout.sitePlans = sites.plans; layout.roles = sites.roles;
-  if (guardian) layout.roles.set(layout.down, 'guardian');
+  for (const [k, g] of guardians) layout.roles.set(k, `${g.role}-guardian`);
   return layout;
 }
 
-// layouts for one world (each depth builds on the one above)
 export function makeLayouts(seed) {
   const cache = [];
   const get = d => cache[d] || (cache[d] = build(seed, d, d ? get(d - 1) : null));

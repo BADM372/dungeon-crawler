@@ -79,11 +79,11 @@ test('reward destinations remain accessible, framed and collider-safe across dep
 
 test('all six mine/ruin settings generate and prestige invests more space without rerolling identity', () => {
   for (const [depth, settings] of [[13, ['storage', 'gallery', 'excavation']], [15, ['burial', 'hall', 'courtyard']]]) {
-    const w = new World(3), key = w.layout(depth).sitePlans.keys().next().value;
+    const w = new World(1), key = w.layout(depth).sitePlans.keys().next().value;
     w.prepare(key);
     const spec = w.spec(key), sizes = [];
     for (const prestige of PRESTIGE) for (const setting of settings) {
-      const intent = { ...siteIntent(3, key, spec.biome, prestige), setting };
+      const intent = { ...siteIntent(1, key, spec.biome, prestige), setting };
       const custom = { ...spec, rewardSites: [intent] }, m = generate(custom);
       assert.equal(m.rewardSites.length, 1, `${spec.biome}/${prestige}/${setting}: ${JSON.stringify(m.siteFailures)}`);
       checkSites(m);

@@ -18,7 +18,7 @@ import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
 import { townAssetsReady } from '../render/townassets.js';
 import { createPlayerStats, createRun, takeDamage } from '../core/progression.js';
-import { restoreDefeated, gateLocked } from '../core/guardians.js';
+import { restoreDefeated, gateLocked, guardianLockMessage } from '../core/guardians.js';
 import { syncEquippedWeapon } from './equipment.js';
 import { clearInput } from './inputstate.js';
 import { lootMark, forgetLoot } from './loot.js';
@@ -109,7 +109,7 @@ function returnFromFall(dead) {
 // discovering a cube opens all side faces towards cubes already discovered
 export function discover(c) {
   c.visits++;
-  for (const f of discoveredFaces(state.cubes.cubes, c)) state.openedFaces.add(f);
+  for (const f of discoveredFaces(state.cubes.cubes, c, state.run)) state.openedFaces.add(f);
 }
 
 // which portals lead somewhere already explored
@@ -149,7 +149,7 @@ export function settleIn(neighbors = true) {
   showStats(c.map, state.cubeKey, state.cubes.seed, c.visits);
   drawMinimap();
   if (neighbors) showNeighbors(visitedNeighbors(state.cubeKey));
-  if (gateLocked(state.map, state.run)) setStatus('Guardian room · Defeat the pink guardian to unlock the red descent');
+  if (gateLocked(state.map, state.run)) setStatus(guardianLockMessage(state.map));
   // get the cubes behind our portals ready in the background
   state.cubes.prefetch(c.map.portals.filter(p => p.kind !== 'spawn').map(p => step(state.cubeKey, p.dir)));
 }
