@@ -1,7 +1,10 @@
 // Prepare the model first, then commit visual + inventory equipment together.
 import { player, state, setStatus } from './state.js';
 import { ITEMS } from '../core/items.js';
-import { ownedItem, equipItem, addItem } from '../core/inventory.js';
+import { ownedItem, equipItem, addInstance } from '../core/inventory.js';
+import { rollWeapon } from '../core/gear/generate.js';
+import { displayName } from '../core/gear/stats.js';
+import { dropAtFeet } from './loot.js';
 import { equippedWeapon, canChangeWeapon } from '../core/combat.js';
 import { prepareSword, equipSword } from '../render/character.js';
 
@@ -26,7 +29,7 @@ export async function equipOwnedWeapon(instanceId) {
     if (token !== request || inventory !== player.inventory || !canChangeWeapon(player) || state.transitioning
         || ownedItem(inventory, instanceId) !== slot) return false;
     equipItem(inventory, instanceId); equipSword(model);
-    setStatus(`Equipped ${def.name}`);
+    setStatus(`Equipped ${displayName(slot)}`);
     return true;
   } catch (error) {
     console.error('weapon failed to load', error);
@@ -34,12 +37,16 @@ export async function equipOwnedWeapon(instanceId) {
     return false;
   } finally { if (token === request) state.equipping = false; }
 }
-export async function devSwapWeapon(itemId) {
+// dev tools (?dev=1): roll a weapon of this base, rarity and item level into the bag and
+// equip it, or drop one at your feet
+const devRoll = (itemId, rarity, ilvl) => rollWeapon(Math.random, ilvl, { itemId, rarity });
+export async function devSwapWeapon(itemId, rarity = 'common', ilvl = 1) {
   if (!state.dev || !ITEMS[itemId]?.weapon || !equipmentAllowed()) return false;
-  let slot = player.inventory.slots.find(s => s?.itemId === itemId);
-  if (!slot) {
-    if (!addItem(player.inventory, itemId)) { setStatus('Inventory is full'); return false; }
-    slot = player.inventory.slots.find(s => s?.itemId === itemId);
-  }
-  return equipOwnedWeapon(slot.instanceId);
+  const id = addInstance(player.inventory, devRoll(itemId, rarity, ilvl));
+  if (!id) { setStatus('Inventory is full'); return false; }
+  return equipOwnedWeapon(id);
+}
+export function devDropWeapon(itemId, rarity = 'rare', ilvl = 8) {
+  if (!state.dev || !ITEMS[itemId]?.weapon) return null;
+  return dropAtFeet(devRoll(itemId, rarity, ilvl));
 }

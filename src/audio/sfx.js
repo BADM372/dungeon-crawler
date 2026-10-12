@@ -121,6 +121,13 @@ const SOUNDS = {
   pickup(t, out, p) {
     tone('sine', 660 * p, 990 * p, t, 0.1, amp(t, 0.004, 0.3, 0.1, out));
   },
+  drop(t, out, p) {      // a good weapon landing: a soft clink and a shimmering rising chime
+    tone('triangle', 1200 * p, 900 * p, t, 0.06, amp(t, 0.001, 0.25, 0.06, out));
+    for (const [i, hz] of [784, 988, 1175, 1568].entries()) {
+      const at = t + 0.05 + i * 0.06;
+      tone('sine', hz * p, hz * p * 1.005, at, 0.5, amp(at, 0.004, 0.16, 0.5, out));
+    }
+  },
 };
 
 // checks: render a sound offline, returns its peak level (0 = silent)

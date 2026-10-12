@@ -1,83 +1,241 @@
-// Pickups on the ground: they arc out of the body, hover, spin and bob, and when collected
-// they swoop into the player and shrink away. Views hang in the cube's group, so they slide
-// along with it during travel and go away with it; their geometry and materials are shared
-// between all copies, so disposing a cube leaves them alone.
+// Pickups on the ground: they arc out of the body, and when collected they swoop into the
+// player and shrink away. Coins and stackables hover, spin and bob with a faint glow of their
+// own colour; weapons lie flat, and their rarity shows in what glows around them (RARITIES
+// glow in core/gear/rarities.js): a ring on the floor, a soft pool of light, a beam, rising
+// sparks, a turning circle of runes and a real light, more of it the rarer the weapon.
+// Junk and common weapons do not glow at all.
+// Views hang in the cube's group, so they slide along with it during travel and go away with
+// it; their geometry and materials are shared between all copies (per item / per rarity), so
+// disposing a cube leaves them alone.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ITEMS } from '../core/items.js';
+import { RARITIES, rarityOf } from '../core/gear/rarities.js';
 import { player } from '../game/state.js';
+import { trackLight, untrackLight } from './lightpool.js';
+import { emit, glow as glowLayer, rand } from './particles.js';
 
 const loader = new GLTFLoader(), protos = new Map();   // itemId -> prototype (null while loading)
-const views = new Map();                               // pickup id -> Object3D
+const views = new Map();                               // pickup id -> { o, model, fx, light }
 let viewsWorld = null;
-const HOVER = 0.08, TOSS_HEIGHT = 0.75, SCALE = 1.35;
+const HOVER = 0.08, TOSS_HEIGHT = 0.75, SCALE = 1.35, WEAPON_SCALE = 0.72;
 
 function proto(itemId) {
   if (protos.has(itemId)) return protos.get(itemId);
   protos.set(itemId, null);
-  loader.loadAsync(ITEMS[itemId].model).then(g => {
-    const root = g.scene, def = ITEMS[itemId];
+  const def = ITEMS[itemId], weapon = !!def.weapon;
+  loader.loadAsync(def.model).then(g => {
+    const root = g.scene;
     root.traverse(o => {
       if (!o.isMesh) return;
       o.castShadow = true; o.userData.sharedGeo = true;
-      // a faint glow of their own colour, so pickups stand out from the ground clutter
+      // a faint glow of their own colour, so pickups stand out from the ground clutter;
+      // weapons glow by rarity instead
       o.material = [].concat(o.material).map(m => {
         m = m.clone(); m.userData.keep = true;
-        if (m.emissive) { m.emissive.copy(m.color); m.emissiveIntensity = 0.2; }
+        if (m.emissive && !weapon) { m.emissive.copy(m.color); m.emissiveIntensity = 0.2; }
         return m;
       });
       if (o.material.length === 1) o.material = o.material[0];
     });
     if (def.category === 'currency') root.rotation.x = Math.PI / 2;   // coins stand on their rim
+    if (weapon) root.rotation.x = -Math.PI / 2;   // the blade (+Y) flat along the floor, its face up
     root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root), centre = box.getCenter(new THREE.Vector3());
     root.position.sub(centre);
-    const wrap = new THREE.Group();
-    wrap.add(root); wrap.scale.setScalar(SCALE);
-    wrap.userData.half = (box.max.y - box.min.y) / 2 * SCALE;
+    const wrap = new THREE.Group(), scale = weapon ? WEAPON_SCALE : SCALE;
+    wrap.add(root); wrap.scale.setScalar(scale);
+    wrap.userData.half = (box.max.y - box.min.y) / 2 * scale;
+    wrap.userData.scale = scale;
     protos.set(itemId, wrap);
   }).catch(e => console.error('item model failed to load', itemId, e));
   return null;
 }
 
+// the shared glow pieces of each rarity, made on first use
+const fxKit = new Map();
+function gradient(draw) {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  draw(c.getContext('2d'));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+let poolTex = null, beamTex = null;
+// additive glows wash out to white on bright ground; the floor marks blend normally, so their
+// colour reads in daylight too, and only the beams and the runes add light
+const glowMat = (color, map, opacity, additive = true) => {
+  const m = new THREE.MeshBasicMaterial({ color, map, transparent: true, opacity, depthWrite: false,
+    blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, side: THREE.DoubleSide, fog: false });
+  m.userData.keep = true; m.userData.base = opacity;
+  return m;
+};
+function kit(r) {
+  if (fxKit.has(r.id)) return fxKit.get(r.id);
+  poolTex ||= gradient(g => {
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, '#fff'); grd.addColorStop(0.35, 'rgba(255,255,255,.45)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  });
+  beamTex ||= gradient(g => {   // bright at the floor, fading out upwards (v runs bottom to top)
+    const grd = g.createLinearGradient(0, 64, 0, 0);
+    grd.addColorStop(0, '#fff'); grd.addColorStop(0.25, 'rgba(255,255,255,.55)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  });
+  const color = new THREE.Color().setRGB(...r.rgb), g = r.glow;
+  const k = {
+    color,
+    ring: glowMat(color, null, 0.8 * g.ring, false),
+    pool: glowMat(color, poolTex, 0.45 * g.halo, false),
+    beam: glowMat(color, beamTex, 0.4),
+    core: glowMat(new THREE.Color(1, 1, 1).lerp(color, 0.7), beamTex, 0.45),
+    rune: glowMat(color, null, 0.9, false),
+  };
+  fxKit.set(r.id, k);
+  return k;
+}
+const GEO = {};
+function geo() {
+  if (GEO.ring) return GEO;
+  GEO.ring = new THREE.RingGeometry(0.34, 0.42, 40).rotateX(-Math.PI / 2);
+  GEO.pool = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  GEO.beam = new THREE.CylinderGeometry(0.16, 0.22, 1, 18, 1, true).translate(0, 0.5, 0);
+  GEO.core = new THREE.CylinderGeometry(0.05, 0.08, 1, 10, 1, true).translate(0, 0.5, 0);
+  GEO.rune = new THREE.PlaneGeometry(0.09, 0.09).rotateZ(Math.PI / 4).rotateX(-Math.PI / 2);
+  return GEO;
+}
+const shared = m => { m.userData.sharedGeo = true; m.renderOrder = 950; return m; };
+
+// the glow under and above a weapon of rarity r (null for none)
+function makeFx(r) {
+  const g = r.glow;
+  if (!g) return null;
+  const k = kit(r), G = geo(), fx = new THREE.Group();
+  const ring = shared(new THREE.Mesh(G.ring, k.ring));
+  ring.scale.setScalar(0.85 + 0.5 * g.ring); ring.position.y = 0.02;
+  fx.add(ring);
+  if (g.halo) {
+    const pool = shared(new THREE.Mesh(G.pool, k.pool));
+    pool.scale.setScalar(1 + 1.1 * g.halo); pool.position.y = 0.015;
+    fx.add(pool);
+  }
+  if (g.beam) {
+    const beam = shared(new THREE.Mesh(G.beam, k.beam)), core = shared(new THREE.Mesh(G.core, k.core));
+    beam.scale.y = core.scale.y = g.beam;
+    fx.add(beam, core);
+  }
+  if (g.runes) {
+    const runes = new THREE.Group();
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2, m = shared(new THREE.Mesh(G.rune, k.rune));
+      m.position.set(Math.cos(a) * 0.62, 0.025, Math.sin(a) * 0.62);
+      runes.add(m);
+    }
+    fx.add(runes); fx.userData.runes = runes;
+  }
+  if (g.light) {
+    const light = new THREE.PointLight(k.color, g.light, 3.5, 2);
+    light.position.y = 0.6;
+    fx.add(light); fx.userData.light = light;
+    trackLight(light, fx);
+  }
+  return fx;
+}
+
+// every rarity's shared materials pulse together; Ancient shimmers between gold and white-blue
+const SHIMMER = [new THREE.Color(), new THREE.Color().setRGB(0.75, 0.9, 1.15)];
+function pulse(time) {
+  for (const r of RARITIES) {
+    const k = fxKit.get(r.id);
+    if (!k) continue;
+    const s = 0.78 + 0.22 * Math.sin(time * (2 + r.rank * 0.25));
+    for (const m of [k.ring, k.pool, k.beam, k.core]) m.opacity = m.userData.base * s;
+    if (r.glow.shimmer) {
+      SHIMMER[0].setRGB(...r.rgb);
+      k.color.copy(SHIMMER[0]).lerp(SHIMMER[1], 0.5 + 0.5 * Math.sin(time * 1.3));
+      for (const m of [k.ring, k.pool, k.beam, k.rune]) m.color.copy(k.color);
+    }
+  }
+}
+
 const ease = t => t * t * (3 - 2 * t);
 const v = new THREE.Vector3(), target = new THREE.Vector3();
 
-// where p is when nobody pulls it: on its arc out of the body, then hovering in place
+// where p is when nobody pulls it: on its arc out of the body, then resting (weapons lie on
+// the floor, everything else hovers and bobs)
 function rest(p, half, time, out) {
-  const y = p.y + half + HOVER + Math.sin(time * 2.6 + p.phase) * 0.035;
+  const y = p.gen ? p.y + half + 0.01 : p.y + half + HOVER + Math.sin(time * 2.6 + p.phase) * 0.035;
   if (p.toss >= 1) return out.set(p.x, y, p.z);
   const u = Math.max(0, p.toss), e = ease(u);
   return out.set(p.from.x + (p.x - p.from.x) * u, p.from.y + (y - p.from.y) * e + TOSS_HEIGHT * 4 * u * (1 - u), p.from.z + (p.z - p.from.z) * u);
 }
 
-export function drawLoot(list, world, time) {
-  if (world !== viewsWorld) { views.clear(); viewsWorld = world; }   // old views leave with their cube
+function forget(view) {
+  view.o.removeFromParent();
+  if (view.fx?.userData.light) untrackLight(view.fx.userData.light);
+}
+
+export function drawLoot(list, world, time, dt = 0) {
+  if (world !== viewsWorld) {   // old views leave with their cube; their lights go out
+    for (const view of views.values()) if (view.fx?.userData.light) untrackLight(view.fx.userData.light);
+    views.clear(); viewsWorld = world;
+  }
   if (!world) return;
-  const seen = new Set();
+  pulse(time);
+  const seen = new Set(), off = world.group.position;
   for (const p of list) {
     seen.add(p.id);
-    let o = views.get(p.id);
-    if (!o) {
+    let view = views.get(p.id);
+    if (!view) {
       const pr = proto(p.itemId);
       if (!pr) continue;
-      o = pr.clone(); world.group.add(o); views.set(p.id, o);
+      const o = new THREE.Group(), model = pr.clone(), fx = p.gen ? makeFx(rarityOf(p)) : null;
+      o.add(model); if (fx) o.add(fx);
+      world.group.add(o);
+      view = { o, model, fx };
+      views.set(p.id, view);
     }
-    const half = o.userData.half;
+    const { o, model, fx } = view, half = model.userData.half, base = model.userData.scale;
     o.visible = p.toss >= 0;
+    o.position.set(p.x, p.y, p.z);
     rest(p, half, time, v);
-    let spin = 1.8, scale = SCALE;
-    if (p.toss < 1) spin = 9;   // tumbling out
+    let spin = p.gen ? 0 : 1.8, scale = base, yaw = p.phase;
+    if (p.toss < 1) { spin = 9; if (p.gen) { spin = 0; yaw += (1 - p.toss) * 7; } }   // tumbling out, a weapon unwinding into place
     if (p.fly) {
       const u = Math.min(1, Math.max(0, p.fly.t / p.fly.dur)), e = u * u;   // accelerate into the player
-      target.set(player.x - world.group.position.x, player.visY + 0.55 - world.group.position.y, player.z - world.group.position.z);
+      target.set(player.x - off.x, player.visY + 0.55 - off.y, player.z - off.z);
       const lift = p.fly.t < 0 ? 0.12 * Math.min(1, (p.fly.t + 0.15) / 0.15) : 0;   // a little hop before it goes
       v.lerp(target, e).y += Math.sin(u * Math.PI) * 0.35 + Math.max(0, lift);
-      spin = 4 + 14 * e; scale = SCALE * (1 - 0.65 * e);
+      spin = 4 + 14 * e; scale = base * (1 - 0.65 * e);
     }
-    o.position.copy(v);
-    o.rotation.y = time * spin + p.phase;
-    o.scale.setScalar(scale);
+    model.position.copy(v).sub(o.position);
+    model.rotation.y = time * spin + yaw;
+    model.scale.setScalar(scale);
+    if (fx) {
+      fx.visible = p.toss >= 1 && !p.fly;
+      if (fx.userData.runes) fx.userData.runes.rotation.y = time * 0.6;
+      const sparks = rarityOf(p).glow.sparks;
+      if (fx.visible && sparks && Math.random() < sparks * dt) {
+        const k = kit(rarityOf(p)), a = Math.random() * Math.PI * 2, d = Math.random() * 0.35;
+        emit(glowLayer, p.x + off.x + Math.cos(a) * d, p.y + off.y + 0.05, p.z + off.z + Math.sin(a) * d,
+          { v: [0, rand(0.7, 1.5), 0], spread: 0.3, life: rand(0.7, 1.2), size: rand(0.05, 0.09), color: k.color, drag: 0.5 });
+      }
+    }
   }
-  for (const [id, o] of views) if (!seen.has(id)) { o.removeFromParent(); views.delete(id); }
+  for (const [id, view] of views) if (!seen.has(id)) { forget(view); views.delete(id); }
 }
+
+// a weapon came down: rare and better ones burst in their colour, the best ones more
+export function lootLanded(p, world) {
+  const r = rarityOf(p);
+  if (!r.glow || !world) return;
+  const k = kit(r), off = world.group.position, n = 4 + r.rank * 3;
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2, s = rand(0.8, 1.6) * (0.6 + r.rank * 0.12);
+    emit(glowLayer, p.x + off.x, p.y + off.y + 0.08, p.z + off.z,
+      { v: [Math.cos(a) * s, rand(0.3, 1.2) + (r.glow.beam ? 1.5 : 0), Math.sin(a) * s], life: rand(0.4, 0.8),
+        size: rand(0.06, 0.12), color: k.color, gravity: 2, drag: 2 });
+  }
+}
+
+// the view of pickup p, if it has one (labels and the hover pick in game/pointer.js)
+export const lootView = p => views.get(p.id)?.model || null;

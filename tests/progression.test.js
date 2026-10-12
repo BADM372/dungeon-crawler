@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assetsRoot } from './paths.js';
-import { ITEMS, WEAPONS, BASIC_SWORD, COINS } from '../src/core/items.js';
+import { ITEMS, WEAPONS, OLD_SWORD, COINS } from '../src/core/items.js';
 import { createInventory, addItem, removeItem, equipItem, equippedItem, addCopper, spendCopper, copperTotal, coinCounts } from '../src/core/inventory.js';
 import { createPlayerStats, createRun, xpForLevel, xpToNext, levelFromXP, xpProgress, awardXP, awardKill, takeDamage, regenerate } from '../src/core/progression.js';
 import { SPIDER, STUNDER, enemyProfile, enemyRoll, makeEnemy } from '../src/core/enemies.js';
@@ -16,11 +16,11 @@ function equip(p, id) {
   equipItem(p.inventory, p.inventory.slots.find(s => s?.itemId === id).instanceId);
 }
 
-test('a new player has one owned, equipped basic sword and empty reserved currency slots', () => {
+test('a new player has one owned, equipped Old Sword and empty reserved currency slots', () => {
   const p = createPlayerStats();
   assert.deepEqual([p.xp, p.level, p.hp, p.maxHp], [0, 1, 100, 100]);
   assert.equal(p.inventory.slots.length, 24); assert.equal(p.inventory.slots.filter(Boolean).length, 1);
-  assert.equal(equippedItem(p.inventory).itemId, BASIC_SWORD.id);
+  assert.equal(equippedItem(p.inventory).itemId, OLD_SWORD.id);
   assert.deepEqual(p.inventory.currency.map(s => s.itemId), COINS.map(c => c.id));
   assert.deepEqual(p.inventory.currency.map(s => s.count), [0, 0, 0]);
 });
@@ -30,8 +30,8 @@ test('stacking, overflow into multiple slots, and weapon instances preserve coun
   assert.deepEqual(inv.slots.filter(Boolean).map(s => s.count), [99, 51]);
   assert.ok(addItem(inv, 'item_potion_health', 70));
   assert.deepEqual(inv.slots.filter(Boolean).map(s => s.count), [99, 99, 22]);
-  assert.ok(addItem(inv, BASIC_SWORD.id, 2));
-  const swords = inv.slots.filter(s => s?.itemId === BASIC_SWORD.id);
+  assert.ok(addItem(inv, OLD_SWORD.id, 2));
+  const swords = inv.slots.filter(s => s?.itemId === OLD_SWORD.id);
   assert.notEqual(swords[0].instanceId, swords[1].instanceId);
   assert.ok(equipItem(inv, swords[1].instanceId));
   assert.equal(equippedItem(inv), swords[1]); assert.equal(swords[1].count, 1);
@@ -44,7 +44,7 @@ test('stacking, overflow into multiple slots, and weapon instances preserve coun
   assert.equal(inv.equipped, null);
 });
 test('a full bag is atomic, while currency is never blocked by capacity', () => {
-  const inv = createInventory(); addItem(inv, BASIC_SWORD.id, 23); addItem(inv, 'item_potion_health', 98);
+  const inv = createInventory(); addItem(inv, OLD_SWORD.id, 23); addItem(inv, 'item_potion_health', 98);
   const before = JSON.stringify(inv);
   assert.equal(addItem(inv, 'item_potion_health', 2), false);
   assert.equal(JSON.stringify(inv), before);
@@ -70,7 +70,7 @@ test('coins roll up, make change when spent, and never use floating gold', () =>
 test('invalid counts and unsafe integer currency cannot corrupt inventory', () => {
   const inv = createInventory(), before = JSON.stringify(inv);
   for (const n of [-1, .5, Infinity, NaN, Number.MAX_SAFE_INTEGER + 1]) {
-    assert.throws(() => addItem(inv, BASIC_SWORD.id, n));
+    assert.throws(() => addItem(inv, OLD_SWORD.id, n));
     assert.throws(() => addCopper(inv, n)); assert.throws(() => spendCopper(inv, n));
   }
   assert.throws(() => addItem(inv, 'unknown'));
@@ -153,7 +153,7 @@ test('every sword has real assets, damage, reach and synchronized attack timing'
     assert.ok(startSwing(p));
     const e = makeEnemy({ x: 0, y: 0, z: w.weapon.range + SPIDER.radius - .01 }, STUNDER);
     assert.equal(swordHit(p, e), false);
-    advanceSwing(p, stats.activeStart + .001); assert.equal(swordHit(p, e), true);
+    advanceSwing(p, stats.activeStart + .001); assert.deepEqual(swordHit(p, e), { damage: stats.damage, crit: false });
     assert.equal(e.hp, STUNDER.hp - stats.damage);
     assert.equal(swordHit(p, e), false);
     advanceSwing(p, stats.duration); assert.equal(p.sword.active, false);

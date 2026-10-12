@@ -6,16 +6,20 @@
   pauses simulation/animations and suppresses gameplay input, including attacks,
   movement, respawn, new world, portal debug controls, camera keys and zoom.
   Held/queued input is cleared on opening and closing; keyboard focus stays inside.
-- Select a bag slot to inspect it; **Equip** switches to an owned sword.
-- With **`?dev=1`**, inventory has a sword selector and **Grant & equip** button.
-  It grants a missing sword (once) and equips it. Without that exact flag, the
+- **V** opens the same paused panel with a Floor column, to move items between the floor and
+  the bag (see [loot.md](loot.md)).
+- Select a bag slot to inspect it: a weapon shows its rarity, stats, affixes and how it
+  compares with the equipped one. **Equip** switches to an owned sword, **Drop** puts an item
+  down at your feet. Bag slots of Uncommon and better weapons are framed in their colour.
+- With **`?dev=1`**, inventory has a sword, rarity and item level selector with **Grant &
+  equip** and **Drop at feet** buttons that roll such a weapon. Without that exact flag, the
   controls are hidden and the dev grant API refuses the operation.
 - Equipment changes are blocked during attacks, travel, knockdown, stun, swimming
   and climbing. Close the panel to finish an action before changing weapons.
 
 ## Run state
 
-A new run starts with level 1, 0 XP, 100 HP and one owned/equipped basic sword.
+A new run starts with level 1, 0 XP, 100 HP and one owned/equipped Common Old Sword.
 Progression, currency, inventory and equipment survive cube travel and death.
 Death (or `R`) restores the current maximum HP; there is no death penalty yet. Death also
 resets the cube to how it was when you came in: enemies killed since come back (and give XP
@@ -33,12 +37,13 @@ State is **in memory only**, not saved across page reloads.
 
 ## Inventory and coins
 
-`core/items.js` defines item IDs, previews, assets, stack limits and weapon stats.
+`core/items.js` defines item IDs, previews, assets, stack limits and base weapon stats;
+`core/gear/` generates weapon instances ([loot.md](loot.md)).
 `core/inventory.js` implements atomic bag/currency/equipment operations.
 
 There are 24 normal bag slots and three reserved currency slots. Stackable items
-have a 99-item limit per slot; weapons have individual instance IDs and do not
-stack. Equipped gear references an owned instance, rather than copying an item.
+have a 99-item limit per slot; weapons have individual instance IDs, carry their own
+generated data (`gen`) and do not stack. Equipped gear references an owned instance, rather than copying an item.
 Inventory insertion is all-or-nothing if capacity is insufficient.
 
 **10 copper = 1 silver; 100 silver = 1 gold; 1 gold = 1,000 copper.**
@@ -69,16 +74,20 @@ Both coin-range endpoints are multiplied by `1 + .25 × (L−1)`, rounded, then 
 seeded integer roll is taken inclusively. IDs, levels and rewards use the cube,
 species and spawn-floor ID, with a separate stream from terrain/spawn placement.
 
-On death, XP and coins auto-credit once with status feedback. No physical loot
-pickup is implemented yet. The run remembers defeated enemy IDs, so revisiting
+On death, XP is credited at once; coins and sometimes a weapon drop as loot to pick up
+(weapon drops: [loot.md](loot.md)). The run remembers defeated enemy IDs, so revisiting
 or rebuilding a cube cannot resurrect them or duplicate rewards. Surviving
 monsters currently reset on re-entry; their levels/drop rolls remain unchanged.
 
 ## Swords
 
+These are the base types. A weapon instance scales the damage by its rarity and changes its
+stats with its affixes ([loot.md](loot.md)); combat reads only the instance's stats
+(`core/gear/stats.js`).
+
 | Sword | Base damage | Cooldown, seconds | Reach, cells |
 |---|---:|---:|---:|
-| Basic | 30 | 1.12 | .85 |
+| Old Sword | 30 | 1.12 | .85 |
 | Short | 24 | .85 | .70 |
 | Medium | 36 | 1.12 | .85 |
 | Long | 40 | 1.22 | 1.05 |
@@ -94,9 +103,9 @@ currently uses the same one-handed prototype animation, not a new moveset.
 `game/equipment.js` prepares/caches assets and then commits ownership selection
 and visual attachment together. Failed or stale asynchronous requests cannot
 replace the current weapon or cross a new-run reset. Swords mount at unit local
-scale under the already-scaled `hand.R`; swimming/climbing hides them. Only the
-basic sword is normally acquired. Other swords can be granted in dev inventory;
-no weapon drops, shops, durability or armor are implemented.
+scale under the already-scaled `hand.R`; swimming/climbing hides them. The Old Sword never
+drops; the others drop as generated weapons ([loot.md](loot.md)). Dropping every weapon is
+allowed and leaves you unable to attack. No shops, durability or armor are implemented.
 
 ## Tests
 

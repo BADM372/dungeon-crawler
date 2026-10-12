@@ -6,7 +6,8 @@ Plain ES modules and a vendored three.js; no build step.
 ## Layout
 
 - `index.html`, `style.css`, `src/`: the game.
-  - `src/core/`: pure rules and data (constants, combat, items, inventory, ...).
+  - `src/core/`: pure rules and data (constants, combat, items, inventory, ...);
+    `src/core/gear/` is the weapon generator (rarities, affixes, names, drops; `docs/loot.md`).
   - `src/world/`: the world graph and everything shared between cubes (layout, WFC, faces,
     falls across faces, sites, town plan), plus the worker that owns it.
   - `src/cubegen/`: builds one cube's map from the spec `world/` hands it. Files named like
@@ -20,7 +21,8 @@ Plain ES modules and a vendored three.js; no build step.
 - `tests/`: `node --test` unit tests; `tests/browser/` holds integration checks
   that run from the game's devtools console.
 - `tools/`: dev server, the prop metadata generator, the enemy kinds preview
-  (`/tools/kinds.html`, see `docs/enemy-kinds.md`) and the depth population measurement.
+  (`/tools/kinds.html`, see `docs/enemy-kinds.md`), the depth population measurement and the
+  weapon drop tables (`node tools/loot-table.mjs`).
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
 - `vendor/three/`: three.js and the addons in use.
 

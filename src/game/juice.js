@@ -22,8 +22,8 @@ export function cameraKick(dx, dz, amount, dy = 0) {
 }
 
 // the player's blade hit enemy e for dmg (killed: that was the last of its health);
-// (dx, dz): the direction of the blow
-export function enemyHitFx(e, dmg, killed, dx, dz) {
+// (dx, dz): the direction of the blow; crit: a critical hit (a bigger, golden number)
+export function enemyHitFx(e, dmg, killed, dx, dz, crit = false) {
   const l = Math.hypot(dx, dz) || 1, nx = dx / l, nz = dz / l;
   const x = e.x - nx * e.profile.radius * 0.5, y = e.y + Math.min(e.profile.bodyHeight * 0.6, 0.7), z = e.z - nz * e.profile.radius * 0.5;
   const [c1, c2] = e.profile.ichor ?? ['#a6d84e', '#5f8f22'], n = killed ? 16 : 9;
@@ -39,8 +39,8 @@ export function enemyHitFx(e, dmg, killed, dx, dz) {
       size: rand(0.08, 0.14), color: i % 2 ? c1 : c2, alpha: 0.95, gravity: 11 });
   }
   const top = { x: e.x, y: e.y + e.profile.bodyHeight + 0.25, z: e.z };
-  floatText(String(dmg), top, { color: killed ? '#ffb347' : '#ffffff', size: killed ? 0.3 : 0.24, life: 0.8, rise: 0.9,
-    drift: rand(-0.35, 0.35), pop: 0.7 });
+  floatText(crit ? dmg + '!' : String(dmg), top, { color: crit ? '#ffd23a' : killed ? '#ffb347' : '#ffffff',
+    size: crit ? 0.36 : killed ? 0.3 : 0.24, life: 0.8, rise: 0.9, drift: rand(-0.35, 0.35), pop: crit ? 1.1 : 0.7 });
   hitstop(killed ? 0.09 : 0.055);
   cameraKick(nx, nz, killed ? 0.16 : 0.08);
   sfx(killed ? 'kill' : 'hit', { at: e, pitch: e.profile.pitch ?? 1.1 });

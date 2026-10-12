@@ -83,6 +83,5 @@ export function updatePointer() {
   if (e === hovered) return;
   if (hovered) hovered.hovered = false;
   hovered = e;
-  if (e) e.hovered = true;
-  canvas.style.cursor = e ? 'crosshair' : '';
+  if (e) e.hovered = true;   // the cursor itself: game/lootlabels.js
 }

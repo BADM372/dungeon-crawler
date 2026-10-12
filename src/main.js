@@ -12,7 +12,7 @@ import { updateCamera } from './game/camera.js';
 import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
 import { updateInventory } from './game/inventory.js';
-import { devSwapWeapon } from './game/equipment.js';
+import { devSwapWeapon, devDropWeapon } from './game/equipment.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
 import { tickNeighbors, cullNeighbors } from './render/neighbors.js';
 import { tickProps } from './render/props.js';
@@ -22,6 +22,7 @@ import { tickSky } from './render/sky.js';
 import { updatePlayerBar } from './render/playerbar.js';
 import { updatePortalBar } from './render/portalbar.js';
 import { updateLoot } from './game/loot.js';
+import { updateLootLabels } from './game/lootlabels.js';
 import { tickFloatText } from './render/floattext.js';
 import { tickParticles } from './render/particles.js';
 import { timeScale } from './game/juice.js';
@@ -66,6 +67,7 @@ function frame() {
   updateInventory();
   updateCamera(dt);
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
+  updateLootLabels();   // after the camera too: labels sit over their items
   // the look follows the depth smoothly (also while sliding down / up)
   if (state.cubeKey) state.lookDepth += (depthOf(state.cubeKey) - state.lookDepth) * Math.min(1, dt * 2.5);
   applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));
@@ -88,6 +90,6 @@ window.__game = {
   get fireFaces() { return fireFaces; }, get triangles() { return triangles; }, get fireCats() { return fireCats; },
   get projectiles() { return projectiles; },
   get enemies() { return allEnemies(); }, updateEnemies,
-  devSwapWeapon: state.dev ? devSwapWeapon : undefined,
+  devSwapWeapon: state.dev ? devSwapWeapon : undefined, devDropWeapon: state.dev ? devDropWeapon : undefined,
 };
 frame();

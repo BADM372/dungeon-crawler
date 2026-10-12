@@ -1,5 +1,6 @@
-import { createInventory, addItem, equipItem, whole } from './inventory.js';
-import { BASIC_SWORD } from './items.js';
+import { createInventory, addInstance, equipItem, whole } from './inventory.js';
+import { OLD_SWORD } from './items.js';
+import { fixedWeapon } from './gear/generate.js';
 
 export const xpToNext = level => 100 + 50 * (level - 1);
 export const xpForLevel = level => 25 * (level - 1) * (level + 2);
@@ -18,7 +19,7 @@ export function xpProgress(p) {
 }
 export function createPlayerStats() {
   const inventory = createInventory();
-  addItem(inventory, BASIC_SWORD.id); equipItem(inventory, inventory.slots[0].instanceId);
+  equipItem(inventory, addInstance(inventory, fixedWeapon(OLD_SWORD.id)));
   return { xp: 0, level: 1, maxHp: 100, hp: 100, lastDamageAt: -Infinity, inventory };
 }
 // defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js)

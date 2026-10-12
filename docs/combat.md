@@ -27,12 +27,14 @@
   that is just out of reach.
 - Blade hits land in a forward arc, within blade reach and vertical overlap, with
   slab / prop line-of-sight. Each target can be hit once per swing. No contact /
-  landing / stomp damage.
+  landing / stomp damage. Weapon affixes can widen the arc, add critical hits (a bigger,
+  golden number), life on hit and harder knockback ([loot.md](loot.md)). Without a weapon
+  there are no attacks.
 - Hit feedback (`game/juice.js`): a short hit pause, a camera nudge, sparks and
   ichor, a knockback, a damage number and generated sounds (`audio/sfx.js`, M mutes).
   Spider bites are a short flinch; a Stunder ram or a lethal bite knocks you over.
 - Swimming, ladder climbing, stun, knockdown and travel cancel / block slashes.
-- The basic sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
+- The Old Sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
   Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
   head-down ram. The enemy under the cursor is highlighted and shows its health. Player/enemy levels and alternative weapons scale these numbers;
   see [progression.md](progression.md). Inventory (`I`) pauses simulation and input.
@@ -131,7 +133,7 @@ is unarmed: just the skinned body, clips and empty `hand.L` / `hand.R` sockets.
 The game separately loads `assets/sword.glb` and mounts it on `hand.R` at
 runtime. Gameplay equipment uses `game/equipment.js`: it loads a weapon first,
 then atomically updates inventory equipment and the hand-held model. `?dev=1`
-adds a grant-and-equip sword selector to inventory. `render/character.js` also
+adds a sword roller (base, rarity, item level) to inventory. `render/character.js` also
 exposes low-level `loadSword(url)` / `equipSword(null)` for renderer tests only;
 these do not change inventory or combat stats. Swimming / climbing hides the prop.
 `Climb` is an in-place IK loop covering two ladder rungs (0.56 game units);
@@ -158,4 +160,5 @@ const water = await import('./tests/browser/water.js');
 await water.runWaterChecks(); // all fluids: edge guard, jumps/high falls, ragdolls, effects, dry respawn
 const inventory = await import('./tests/browser/inventory.js');
 await inventory.runInventoryChecks(); // resets the run; UI, equipment, rewards, revisits
+await inventory.runWeaponLootChecks(); // weapon drops, labels, click pickup, the V panel, deaths
 ```

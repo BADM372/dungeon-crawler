@@ -48,23 +48,46 @@ kbd { display: inline-block; min-width: 1.2em; text-align: center; background: #
 .coin-slot { flex: 1; display: flex; align-items: center; gap: 8px; background: #181e28; border: 1px solid #444e5e; padding: 4px 10px; border-radius: 4px; }
 .coin-slot img { width: 42px; height: 42px; object-fit: contain; }
 .coin-slot small { display: block; color: #a4b0ba; }
-.inventory-body { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 18px; }
+.inventory-body { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 18px; }
+#inventory-panel.with-floor { width: min(1000px, 100%); }
+#inventory-panel.with-floor .inventory-body { grid-template-columns: 230px minmax(0, 1fr) 210px; }
+#inventory-floor { display: flex; flex-direction: column; gap: 4px; max-height: 360px; overflow-y: auto; }
+#inventory-panel .floor-item { display: flex; align-items: center; gap: 8px; text-align: left; background: #181e28; padding: 3px 8px 3px 3px;
+  border-color: var(--rarity, #444e5e); }
+.floor-item img { width: 34px; height: 34px; object-fit: contain; flex: none; }
+.floor-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#inventory-panel .floor-item.selected { box-shadow: inset 0 0 0 1px #ffcf7a, 0 0 0 1px #ffcf7a; }
+.floor-empty { color: #8b95a3; font-size: 12px; }
 #inventory-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-#inventory-panel .inventory-slot { aspect-ratio: 1; position: relative; background: #181e28; padding: 2px; min-width: 0; overflow: hidden; }
+#inventory-panel .inventory-slot { aspect-ratio: 1; position: relative; background: #181e28; padding: 2px; min-width: 0; overflow: hidden;
+  border-color: var(--rarity, #69746d); }
+#inventory-panel .inventory-slot[style*="--rarity"] { background: radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--rarity) 22%, transparent), #181e28 70%); }
 .inventory-slot img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .inventory-slot .count { position: absolute; right: 5px; bottom: 2px; color: #fff; text-shadow: 0 1px 3px #000; }
 .inventory-slot .equipped { position: absolute; left: 4px; top: 2px; color: #ffcf7a; font-size: 10px; }
-#inventory-panel .inventory-slot.selected { border-color: #ffcf7a; box-shadow: inset 0 0 0 1px #ffcf7a; }
+#inventory-panel .inventory-slot.selected { box-shadow: inset 0 0 0 2px #ffcf7a; }
 #inventory-details { padding: 6px 12px; background: #181e28; border-radius: 4px; }
 #inventory-item-icon { width: 100%; height: 120px; object-fit: contain; }
-#inventory-item-stats { color: #b8c2d0; white-space: pre-line; font-size: 12px; }
+#inventory-item-stats { color: #b8c2d0; white-space: pre-line; font-size: 12px; margin: 6px 0; }
+#inventory-item-name { margin-bottom: 2px !important; }
+#inventory-item-base { color: #8f9aaa; font-size: 12px; }
+#inventory-item-affixes { margin: 4px 0; padding: 0; list-style: none; color: #8fb6ff; font-size: 12px; }
+#inventory-item-compare { font-size: 12px; color: #9ea9b6; white-space: pre-line; margin: 6px 0; }
+#inventory-item-compare .up { color: #7fd87a; } #inventory-item-compare .down { color: #ff7a6a; }
+.inventory-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+#inventory-dev input { font: inherit; width: 4em; color: #e7dfcf; background: #343d46; border: 1px solid #69746d; border-radius: 4px; padding: 6px; }
+#loot-labels { position: fixed; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+.loot-label { position: absolute; left: 0; top: 0; pointer-events: auto; font: 12px/1.25 monospace; padding: 2px 6px; white-space: nowrap;
+  background: #0b0e14d0; border: 1px solid #ffffff22; border-radius: 3px; cursor: pointer; text-shadow: 0 1px 2px #000; }
+.loot-label.hovered { background: #1d2532f0; border-color: currentColor; }
+.loot-label[data-rarity="legendary"], .loot-label[data-rarity="mythic"], .loot-label[data-rarity="ancient"] { font-weight: bold; }
 #inventory-dev { margin: 18px 0 0; border: 1px solid #555c50; border-radius: 4px; }
 #inventory-dev legend { color: #ffcf7a; }
 #inventory-dev p, #inventory-panel footer { font-size: 11px; color: #9ea9b6; }
 #inventory-feedback { min-height: 18px; color: #ffcf7a; }
 @media (max-width: 540px) {
   #inventory-panel { padding: 12px; }
-  .inventory-body { grid-template-columns: 1fr; }
+  .inventory-body, #inventory-panel.with-floor .inventory-body { grid-template-columns: 1fr; }
   #inventory-details { display: grid; grid-template-columns: 60px 1fr; column-gap: 10px; }
   #inventory-item-icon { grid-row: 1 / 4; height: 70px; }
   #inventory-details h2, #inventory-details p { margin: 4px 0; }

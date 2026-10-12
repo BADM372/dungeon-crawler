@@ -1,17 +1,19 @@
 // Keyboard, mouse and wheel. Modal input never enters the game queue.
 // The player always runs; holding Ctrl walks. Holding Shift auto-attacks enemies the blade
 // can reach (and does nothing without one). Space jumps.
-// Mouse: click the floor to walk there, click an enemy to attack it (hold for more).
+// Mouse: click the floor to walk there, click an enemy to attack it (hold for more), click an
+// item on the floor to pick it up. V: the floor panel (game/inventory.js); X: item labels.
 import { stepZoom } from '../core/zoom.js';
 import { player, state, view, setStatus } from './state.js';
-import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
+import { spawnEntry, nextCube } from './flow.js';
 import { knockDown } from './ragdoll.js';
-import { toggleInventory, setInventoryOpen } from './inventory.js';
+import { toggleInventory, toggleFloor, setInventoryOpen } from './inventory.js';
 import { controls, clearInput } from './inputstate.js';
 import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
 import { requestCollect } from './loot.js';
 import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
-import { orderMove, orderAttack } from './orders.js';
+import { orderMove, orderAttack, orderPickup } from './orders.js';
+import { hoveredPickup, toggleLabels } from './lootlabels.js';
 import { queueAttack } from './sword.js';
 import { softTarget } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
@@ -32,6 +34,7 @@ addEventListener('keydown', e => {
     return;
   }
   if (e.code === 'KeyI') { if (!e.repeat) { setHelpOpen(false); toggleInventory(); } e.preventDefault(); return; }
+  if (e.code === 'KeyV') { if (!e.repeat) { setHelpOpen(false); toggleFloor(); } e.preventDefault(); return; }
   if (e.code === 'Escape' && state.inventoryOpen) { setInventoryOpen(false); e.preventDefault(); return; }
   if (state.inventoryOpen) return;
   // by key, not code: ? and / sit on different keys across layouts
@@ -48,7 +51,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyC') requestCollect();
   if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned where you came in'); }
   if (e.code === 'KeyN') nextCube();
-  if (e.code === 'KeyV') { state.showNeighbors = !state.showNeighbors; updateNeighbors(); }
+  if (e.code === 'KeyX') toggleLabels();
   if (e.code === 'KeyK' || e.code === 'KeyL') { view.zoomTarget = stepZoom(view.zoomTarget, e.code === 'KeyK' ? -1 : 1); e.preventDefault(); }
   if (e.code === 'KeyB' && !player.ragdoll) knockDown({ push: 3, hop: 2.5, reason: 'Whoops!' });
   if (e.code === 'KeyP') { state.showPath = !state.showPath; if (state.world) state.world.pathLine.visible = state.showPath; }
@@ -81,6 +84,8 @@ addEventListener('pointerdown', e => {
   pointer.down = true;
   const enemy = hoveredEnemy();
   if (enemy) { pointer.mode = 'attack'; orderAttack(enemy); return; }
+  const item = hoveredPickup();
+  if (item) { pointer.mode = null; orderPickup(item); return; }
   pointer.mode = 'move';
   const hit = pickFloor();
   if (hit) orderMove(hit);

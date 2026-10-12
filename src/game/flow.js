@@ -162,7 +162,7 @@ export function visitedNeighbors(k) {
 }
 
 export function updateNeighbors() {
-  // Travel owns detached proxy sets; do not build a third set on a V-key toggle.
+  // Travel owns detached proxy sets; do not build a third set while it runs.
   if (!state.transitioning) showNeighbors(visitedNeighbors(state.cubeKey));
 }
 

@@ -1,4 +1,6 @@
 // Browser integration checks. Resets to a fresh seed-3 run before and after testing.
+//   runInventoryChecks: the modal, equipment, rewards, revisits
+//   runWeaponLootChecks: weapon drops, labels, click pickup, the V panel, dropping, deaths
 import { player, state, view } from '../../src/game/state.js';
 import { newWorld, enterCube, spawnEntry, hurt } from '../../src/game/flow.js';
 import { updatePlayer } from '../../src/game/update.js';
@@ -7,7 +9,11 @@ import { setInventoryOpen, updateInventory } from '../../src/game/inventory.js';
 import { clearInput, inputDir } from '../../src/game/input.js';
 import { equipOwnedWeapon, devSwapWeapon } from '../../src/game/equipment.js';
 import { WEAPONS, ITEMS } from '../../src/core/items.js';
-import { lootHere, updateLoot, requestCollect } from '../../src/game/loot.js';
+import { lootHere, updateLoot, requestCollect, dropLoot, dropFromBag, floorItems } from '../../src/game/loot.js';
+import { updateLootLabels } from '../../src/game/lootlabels.js';
+import { lootView } from '../../src/render/loot.js';
+import { orderPickup, followOrder, order } from '../../src/game/orders.js';
+import { combatStats } from '../../src/core/combat.js';
 import { addItem, addCopper, copperTotal, equippedItem } from '../../src/core/inventory.js';
 import { awardXP } from '../../src/core/progression.js';
 import { startSwing, cancelSwing, damageEnemy } from '../../src/core/combat.js';
@@ -29,14 +35,14 @@ async function settleEquipment() {
 function correctModel(w) {
   return equippedItem(player.inventory)?.itemId === w.id
     && character.sword.parent === character.bones['hand.R']
-    && !!character.sword.getObjectByName(w.id === 'weapon_sword_basic' ? 'Sword' : w.id);
+    && !!character.sword.getObjectByName(w.id === 'weapon_sword_old' ? 'Sword' : w.id);
 }
 
 export async function runInventoryChecks() {
   const results = [];
   await newWorld(3); clearInput();
   try {
-    check(correctModel(WEAPONS[0]) && player.level === 1, 'Run must start with basic sword / level 1');
+    check(correctModel(WEAPONS[0]) && player.level === 1 && equippedItem(player.inventory).gen?.name === 'Old Sword', 'Run must start with the Old Sword / level 1');
     press('KeyI');
     check(state.inventoryOpen && !$('inventory-overlay').hidden, 'I must open inventory');
     check(document.querySelectorAll('.inventory-slot').length === 24, 'Inventory must have 24 bag slots');
@@ -89,14 +95,14 @@ export async function runInventoryChecks() {
       const e = allEnemies()[0]; check(e && e.level === 1, 'Need a level-1 surface enemy');
       const xp = player.xp, coins = copperTotal(player.inventory), expectedCoins = e.coinDrop, id = e.id;
       damageEnemy(e, e.hp); updateEnemies(1/60);
-      const loot = () => lootHere().reduce((n, p) => n + ITEMS[p.itemId].value * p.count, 0);
+      const loot = () => lootHere().filter(p => !p.gen).reduce((n, p) => n + ITEMS[p.itemId].value * p.count, 0);
       check(player.xp === xp + e.profile.xp && copperTotal(player.inventory) === coins && loot() === expectedCoins, 'Death must grant XP and drop the seeded coins');
       // C from a cell away pulls them all in; they count once they arrive
       Object.assign(player, { x: e.x + 1, z: e.z, y: e.y, visY: e.y });
       for (let i = 0; i < 40; i++) updateLoot(1/60, i / 60);   // let them land
       requestCollect();
       for (let i = 0; i < 120 && lootHere().length; i++) updateLoot(1/60, 1 + i / 60);
-      check(!lootHere().length && copperTotal(player.inventory) === coins + expectedCoins, 'C must collect the dropped coins');
+      check(!lootHere().some(p => !p.gen) && copperTotal(player.inventory) === coins + expectedCoins, 'C must collect the dropped coins');
       const earnedXP = player.xp, earnedCoins = copperTotal(player.inventory);
       updateEnemies(1/60); resetEnemies(); updateEnemies(1/60);
       check(!allEnemies().some(e=>e.id === id), 'Defeated enemies must not respawn');
@@ -129,4 +135,58 @@ export async function runInventoryChecks() {
     check(state.time > resumedAt, 'Browser checks must resume the main frame loop');
     return results;
   } finally { setInventoryOpen(false); clearInput(); await newWorld(3); }
+}
+
+const steps = (n, f) => { for (let i = 0; i < n; i++) f(i); };
+export async function runWeaponLootChecks() {
+  const results = [];
+  await newWorld(3); clearInput();
+  try {
+    await paused(async () => {
+      const hostile = await state.cubes.get('0,0,-2');
+      enterCube(hostile, 2);
+      const weapons = () => lootHere().filter(p => p.gen);
+      dropLoot({ id: 'browser:guardian', level: 20, guardian: true, guardianRole: 'descent', x: player.x, y: player.y, z: player.z }, 0);
+      steps(90, i => updateLoot(1 / 60, i / 60));
+      check(weapons().length === 3 && weapons().every(p => p.toss === 1), 'A level-20 descent guardian drops three weapons');
+      check(weapons().every(p => ['epic', 'legendary', 'mythic', 'ancient'].includes(p.gen.rarity)), 'Descent guardians drop Epic or better from level 20');
+      const w = weapons()[0];
+      Object.assign(player, { x: w.x, z: w.z, y: w.y, visY: w.y }); requestCollect();
+      steps(90, i => updateLoot(1 / 60, 2 + i / 60));
+      check(weapons().length === 3, 'Walking over weapons and C leave them on the floor');
+      results.push('guardian weapon drops / walk-over and C ignore weapons');
+
+      for (let i = 0; i < 100 && !weapons().every(lootView); i++) { await delay(30); updateLoot(0, 4); }   // models load
+      state.showLabels = true; updateLootLabels();
+      check(document.querySelectorAll('.loot-label').length >= 3, 'X shows a label per weapon');
+      state.showLabels = false; updateLootLabels();
+      check(document.querySelectorAll('.loot-label').length === 0 || document.querySelector('.loot-label.hovered'), 'Without X only the hovered item has a label');
+      orderPickup(w);
+      steps(30, i => { followOrder(1 / 60); updateLoot(1 / 60, 4 + i / 60); });
+      check(!lootHere().includes(w) && player.inventory.slots.some(s => s?.gen?.name === w.gen.name) && !order.kind, 'A clicked weapon in reach is picked up');
+      results.push('labels / click pickup');
+
+      press('KeyV');
+      check(state.inventoryOpen && !$('inventory-floor-col').hidden && floorItems().length === 2, 'V opens the inventory with the floor');
+      check(document.querySelectorAll('#inventory-floor [data-floor]').length === 2, 'The floor column lists the weapons in reach');
+      const before = player.inventory.slots.filter(Boolean).length;
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { code: 'Enter', bubbles: true }));
+      check(player.inventory.slots.filter(Boolean).length === before + 1 && floorItems().length === 1, 'Enter takes the selected floor item');
+      for (const s of player.inventory.slots.filter(s => s && ITEMS[s.itemId].weapon)) dropFromBag(s.instanceId);
+      check(!player.inventory.equipped && combatStats(player) === null && !startSwing(player), 'Dropping the last weapon leaves you unable to attack');
+      updateInventory();
+      check(floorItems().length === 4 && /None/.test($('inventory-equipped').textContent), 'Dropped weapons lie on the floor');
+      press('KeyV');
+      check(!state.inventoryOpen, 'V closes the panel again');
+      results.push('V panel take / drop / last weapon');
+
+      const kept = weapons().filter(p => p.kept).length;
+      dropLoot({ id: 'browser:guardian2', level: 8, guardian: true, guardianRole: 'side', x: player.x, y: player.y, z: player.z }, 0);
+      check(weapons().length === kept + 1 + 1, 'A side guardian drops one weapon (plus the one left on the floor)');
+      hurt(player.hp, 'Test death');
+      check(weapons().length === kept && weapons().every(p => p.kept), 'A death keeps what you dropped and takes back fresh drops');
+      results.push('deaths keep dropped items');
+    });
+    return results;
+  } finally { setInventoryOpen(false); clearInput(); state.showLabels = false; await newWorld(3); }
 }

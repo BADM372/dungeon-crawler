@@ -1,5 +1,6 @@
 // Mouse orders, Diablo style: click the floor to walk there, click an enemy to go and hit
-// it. Holding the button keeps walking towards the cursor / keeps attacking. WASD cancels.
+// it, click an item on the floor (or its label) to go and pick it up. Holding the button
+// keeps walking towards the cursor / keeps attacking. WASD cancels.
 // Orders steer only; the speed (run, or walk with Ctrl) is up to update.js.
 // Walks follow the floor graph where there is one (to the reachable floor closest to the
 // target), cutting corners where the way is clear, else head straight for the target.
@@ -10,11 +11,14 @@ import { containsXZ } from '../core/blockers.js';
 import { player, state } from './state.js';
 import { pointer, pickFloor, hoveredEnemy } from './pointer.js';
 import { queueAttack } from './sword.js';
+import { groundAt } from '../physics/collide.js';
+import { lootHere, takePickup, canReachPickup } from './loot.js';
 
-// kind: 'move' (to x, z) | 'attack' (enemy); path: floors to follow, i: the next one
-export const order = { kind: null, x: 0, z: 0, floor: null, enemy: null, path: null, i: 1, repath: 0, stuck: 0, lx: 0, lz: 0, hold: 0 };
+// kind: 'move' (to x, z) | 'attack' (enemy) | 'pickup' (a pickup); path: floors to follow,
+// i: the next one
+export const order = { kind: null, x: 0, z: 0, floor: null, enemy: null, pickup: null, path: null, i: 1, repath: 0, stuck: 0, lx: 0, lz: 0, hold: 0 };
 
-export function clearOrder() { order.kind = null; order.enemy = null; order.path = null; }
+export function clearOrder() { order.kind = null; order.enemy = null; order.pickup = null; order.path = null; }
 // Teleports/travel invalidate cube-local targets; a held click must not recreate them.
 export function clearMouseInput() { clearOrder(); pointer.down = false; pointer.mode = null; }
 
@@ -75,12 +79,19 @@ function begin(kind) {
 // hit: a pickFloor() result
 export function orderMove(hit) {
   begin('move');
-  Object.assign(order, { x: hit.x, z: hit.z, floor: floorOf(hit.s), enemy: null, repath: 1e9 });
+  Object.assign(order, { x: hit.x, z: hit.z, floor: floorOf(hit.s), enemy: null, pickup: null, repath: 1e9 });
   plan(order.floor);
 }
 export function orderAttack(e) {
   begin('attack');
-  Object.assign(order, { enemy: e, path: null, repath: 0 });
+  Object.assign(order, { enemy: e, pickup: null, path: null, repath: 0 });
+}
+// p: a pickup in this cube
+export function orderPickup(p) {
+  begin('pickup');
+  Object.assign(order, { x: p.x, z: p.z, floor: floorOf(groundAt(p.x, p.z, p.y + 0.3, 0).s), enemy: null, pickup: p, repath: 1e9 });
+  plan(order.floor);
+  if (canReachPickup(p)) { takePickup(p); clearOrder(); }   // already there
 }
 
 // the held button: keep walking to the cursor, or pick the next enemy under it
@@ -110,6 +121,11 @@ export function followOrder(dt) {
     }
     tx = e.x; tz = e.z;
     if ((order.repath -= dt) <= 0) { order.repath = 0.3; plan(floorOf(e.f)); }
+  }
+  if (order.kind === 'pickup') {
+    const p = order.pickup;
+    if (p.fly || !lootHere().includes(p)) { clearOrder(); return null; }   // someone (C, a death) took it
+    if (canReachPickup(p)) { takePickup(p); clearOrder(); return { dx: 0, dz: 0 }; }
   }
   // the next floor on the path (skipping those we already reached), the target at the end
   let wx = tx, wz = tz;

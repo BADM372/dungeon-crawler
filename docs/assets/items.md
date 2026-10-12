@@ -66,9 +66,10 @@ GLB extras include `cube_crawler_item`, `category`, `attach`, `units`,
 and grip hints. Potions add `potion_type`; chests add `state`. These are metadata,
 not implemented inventory effects, collision or combat rules.
 
-All five swords are registered as equipable weapons alongside the original basic
-sword. The game mounts them on `hand.R` and switches combat stats with equipment.
-With `?dev=1`, open inventory (`I`) to grant and equip any sword. Coin types and
+All five swords are base types for generated weapons, alongside the Old Sword the run starts
+with (`assets/sword.glb`). The game mounts them on `hand.R` and switches combat stats with
+equipment; on the floor they lie flat, glowing by rarity (see `docs/loot.md`).
+With `?dev=1`, open inventory (`I`) to roll and equip any sword. Coin types and
 stackable potions/sticks/crystals have inventory definitions and preview icons;
 coins normalize automatically. Potions/materials have no use actions yet. Bows,
 staffs, arrows and chests remain visual assets without gameplay behavior.

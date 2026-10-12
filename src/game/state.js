@@ -24,10 +24,11 @@ const params = new URLSearchParams(location.search);
 export const state = {
   map: null, world: null, time: 0,
   showPath: false, transitioning: false, inventoryOpen: false, equipping: false,
+  showLabels: false,   // X: name labels over every item on the floor (game/lootlabels.js)
   run: createRun(),
   statusMsg: '', statusUntil: 0,
   // the world of cubes and where we are in it; lookDepth: the depth the lighting shows
-  cubes: null, cubeKey: '', arrival: null, portalLock: 0, portalCharge: null, showNeighbors: true, lookDepth: 0,
+  cubes: null, cubeKey: '', arrival: null, portalLock: 0, portalCharge: null, showNeighbors: true, lookDepth: 0,   // showNeighbors: tests only
   openedFaces: new Set(), boundaryLock: -1,   // shared side faces unlocked this world
   enemyGrace: 0,     // s left before enemies may attack (game/enemies.js ENTRY_GRACE)
   visit: null,       // this cube as you came in: what a death restores (game/flow.js)

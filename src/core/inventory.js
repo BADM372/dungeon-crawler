@@ -1,5 +1,8 @@
 import { ITEMS, COINS } from './items.js';
 
+// A slot holds { instanceId, itemId, count, gen? }. `gen` is a generated item's own data
+// (core/gear/): a slot with it is one unique item and never stacks.
+
 export const BAG_SIZE = 24;
 export function whole(n) {
   if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('Expected a non-negative safe integer');
@@ -62,6 +65,32 @@ export function addItem(inv, itemId, count = 1) {
   if (count) inv.version++;
   return true;
 }
+// a single item instance ({ itemId, gen }) into the first free slot; its instanceId, or null
+// when the bag is full
+export function addInstance(inv, item) {
+  const def = ITEMS[item?.itemId];
+  if (!def) throw new TypeError(`Unknown item: ${item?.itemId}`);
+  if (def.category === 'currency') throw new TypeError('Coins are not instances');
+  if (!item.gen) return addItem(inv, item.itemId, item.count ?? 1) ? inv.slots.findLast(s => s?.itemId === item.itemId).instanceId : null;
+  const i = inv.slots.indexOf(null);
+  if (i < 0) return null;
+  const instanceId = `item-${inv.nextInstance++}`;
+  inv.slots[i] = { instanceId, itemId: item.itemId, count: 1, gen: item.gen };
+  inv.version++;
+  return instanceId;
+}
+// the whole slot out of the bag (unequipping it): { itemId, count, gen? }, or null
+export function takeItem(inv, instanceId) {
+  const i = inv.slots.findIndex(s => s?.instanceId === instanceId);
+  if (i < 0) return null;
+  const { itemId, count, gen } = inv.slots[i];
+  inv.slots[i] = null;
+  if (inv.equipped === instanceId) inv.equipped = null;
+  inv.version++;
+  return gen ? { itemId, count, gen } : { itemId, count };
+}
+export const hasRoom = inv => inv.slots.includes(null);
+
 export function removeItem(inv, instanceId, count = 1) {
   whole(count);
   const i = inv.slots.findIndex(s => s?.instanceId === instanceId);

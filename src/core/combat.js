@@ -2,9 +2,10 @@
 // A swing is a quick wind-up, a short contact window and a recovery that a new swing
 // (chaining) or movement can cut short. The Slash clip in character.glb is retimed to fit
 // (swingClipTime): its own frames are SLASH_CLIP.
-import { BASIC_SWORD, ITEMS } from './items.js';
+import { OLD_SWORD, ITEMS } from './items.js';
 import { equippedItem } from './inventory.js';
 import { damageBonus } from './progression.js';
+import { itemStats } from './gear/stats.js';
 
 export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
 // game time (s) for the basic sword; cooldown is the reference that weapon speeds scale by
@@ -21,10 +22,14 @@ export const LUNGE_REACH = 0.6;
 // (an enemy, a point {x, z} or null for straight ahead)
 export const swordState = () => ({ active: false, requested: false, buffer: 0, target: null,
   t: 0, cool: 0, serial: 0, yaw: 0, stats: null, hits: new Set() });
-export const equippedWeapon = p => p.inventory ? ITEMS[equippedItem(p.inventory)?.itemId] || null : BASIC_SWORD;
+// the equipped weapon instance (a bag slot), and its base type; a player without an
+// inventory (tests) holds a plain Old Sword
+export const equippedInstance = p => p.inventory ? equippedItem(p.inventory) : { itemId: OLD_SWORD.id, count: 1 };
+export const equippedWeapon = p => ITEMS[equippedInstance(p)?.itemId] || null;
 export const canChangeWeapon = p => !p.sword.active && !p.ragdoll && !p.climb && !p.swimming && p.stun <= 0 && p.hp > 0;
+// null without a weapon: no attacks at all
 export function combatStats(p) {
-  const weapon = equippedWeapon(p)?.weapon;
+  const weapon = itemStats(equippedInstance(p));
   if (!weapon) return null;
   const speed = weapon.cooldown / SWORD.cooldown;
   return { ...SWORD, ...weapon, damage: weapon.damage + damageBonus(p.level || 1),
@@ -110,8 +115,14 @@ export function damageEnemy(enemy, amount) {
   }
   return true;
 }
-export function swordHit(p, enemy) {
+// a blade hit: { damage, crit } (false for none). roll: the crit roll in 0..1. A crit
+// multiplies the damage; life on hit (leech) heals, never above the maximum
+export function swordHit(p, enemy, roll = Math.random()) {
   if (!inSwordArc(p, enemy)) return false;
   p.sword.hits.add(enemy);
-  return damageEnemy(enemy, (p.sword.stats || SWORD).damage);
+  const stats = p.sword.stats || SWORD, crit = roll < (stats.crit ?? 0);
+  const damage = crit ? Math.round(stats.damage * (stats.critDamage ?? 1.5)) : stats.damage;
+  if (!damageEnemy(enemy, damage)) return false;
+  if (stats.leech && p.hp > 0) p.hp = Math.min(p.maxHp ?? Infinity, p.hp + stats.leech);
+  return { damage, crit };
 }

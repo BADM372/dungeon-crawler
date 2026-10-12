@@ -1,17 +1,19 @@
 // Item definitions are data, not renderer objects. Equipment uses rig units on hand.R.
+// These are the base types; a weapon in the bag or on the floor is an instance of one, with its
+// own rolled rarity, affixes and name in `gen` (core/gear/). Its stats: core/gear/stats.js.
 const icon = name => `assets/items/${name}.png`;
 const model = name => `assets/items/${name}.glb`;
-const weapon = (id, name, damage, cooldown, range, basic = false) => Object.freeze({
+const weapon = (id, name, damage, cooldown, range, old = false) => Object.freeze({
   id, name, category: 'weapon', stackLimit: 1,
-  icon: icon(basic ? 'weapon_sword_medium' : id), model: basic ? 'assets/sword.glb' : model(id),
+  icon: icon(old ? 'weapon_sword_medium' : id), model: old ? 'assets/sword.glb' : model(id),
   weapon: Object.freeze({ damage, cooldown, range }),
 });
 export const WEAPONS = Object.freeze([
-  weapon('weapon_sword_basic', 'Basic sword', 30, 1.12, .85, true),
-  weapon('weapon_sword_short', 'Short sword', 24, .85, .70),
-  weapon('weapon_sword_medium', 'Medium sword', 36, 1.12, .85),
-  weapon('weapon_sword_long', 'Long sword', 40, 1.22, 1.05),
-  weapon('weapon_sword_broad', 'Broad sword', 48, 1.35, .85),
+  weapon('weapon_sword_old', 'Old Sword', 30, 1.12, .85, true),
+  weapon('weapon_sword_short', 'Short Sword', 24, .85, .70),
+  weapon('weapon_sword_medium', 'Medium Sword', 36, 1.12, .85),
+  weapon('weapon_sword_long', 'Long Sword', 40, 1.22, 1.05),
+  weapon('weapon_sword_broad', 'Broadsword', 48, 1.35, .85),
   weapon('weapon_sword_greatsword', 'Greatsword', 60, 1.65, 1.15),
 ]);
 export const COINS = Object.freeze([
@@ -26,4 +28,4 @@ const stackables = [
 ].map(([id, name]) => Object.freeze({ id, name, category: 'item', stackLimit: 99, icon: icon(id), model: model(id) }));
 // Potions/materials have inventory definitions only; no consumption, crafting or shops yet.
 export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, ...stackables].map(i => [i.id, i])));
-export const BASIC_SWORD = WEAPONS[0];
+export const OLD_SWORD = WEAPONS[0];

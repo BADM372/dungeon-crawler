@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { coinDrops, inCollectReach, inMagnetReach, steppedOn, stackable, COLLECT_RADIUS, MAGNET_RADIUS } from '../src/core/loot.js';
+import { coinDrops, inCollectReach, inMagnetReach, inFloorReach, steppedOn, stackable, walkTakes, labelled, COLLECT_RADIUS, MAGNET_RADIUS, COLLECT_HEIGHT } from '../src/core/loot.js';
 import { ITEMS, WEAPONS } from '../src/core/items.js';
 import { createInventory, addItem, copperTotal } from '../src/core/inventory.js';
 
@@ -16,7 +16,7 @@ test('coin drops hold exactly the amount, in a few piles per coin kind', () => {
   assert.equal(coinDrops(6).length, 4);   // a spider's handful scatters
 });
 
-test('C reaches stackable pickups within four cells, walking over takes anything', () => {
+test('C reaches stackable pickups within four cells, walking over takes all but weapons', () => {
   const coin = { itemId: 'item_coin_copper', x: 5, y: 1, z: 5 };
   assert.ok(stackable(coin.itemId) && stackable('item_crystal_ruby') && !stackable(WEAPONS[1].id));
   assert.ok(inCollectReach(coin, 5 + COLLECT_RADIUS, 1, 5));
@@ -25,6 +25,15 @@ test('C reaches stackable pickups within four cells, walking over takes anything
   assert.ok(!inCollectReach({ ...coin, itemId: WEAPONS[1].id }, 5, 1, 5), 'only stackables');
   assert.ok(steppedOn({ ...coin, itemId: WEAPONS[1].id }, 5.3, 1, 5));
   assert.ok(!steppedOn(coin, 5.6, 1, 5));
+  assert.ok(walkTakes(coin) && walkTakes({ itemId: 'item_crystal_ruby' }) && !walkTakes({ itemId: WEAPONS[1].id }));
+});
+
+test('labels and the V panel cover everything but coins, within C\'s reach', () => {
+  const sword = { itemId: WEAPONS[2].id, x: 5, y: 1, z: 5 }, ruby = { ...sword, itemId: 'item_crystal_ruby' };
+  assert.ok(labelled(sword) && labelled(ruby) && !labelled({ itemId: 'item_coin_gold' }));
+  assert.ok(inFloorReach(sword, 5 + COLLECT_RADIUS, 1, 5) && inFloorReach(ruby, 5, 1 + COLLECT_HEIGHT, 5));
+  assert.ok(!inFloorReach(sword, 5 + COLLECT_RADIUS + 0.01, 1, 5) && !inFloorReach(sword, 5, 1 + COLLECT_HEIGHT + 0.01, 5));
+  assert.ok(!inFloorReach({ ...sword, itemId: 'item_coin_gold' }, 5, 1, 5));
 });
 
 test('coins pull themselves in from half as far as C, other pickups do not', () => {
