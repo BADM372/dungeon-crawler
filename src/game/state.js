@@ -28,6 +28,9 @@ export const state = {
   // the world of cubes and where we are in it; lookDepth: the depth the lighting shows
   cubes: null, cubeKey: '', arrival: null, portalLock: 0, portalCharge: null, showNeighbors: true, lookDepth: 0,
   openedFaces: new Set(), boundaryLock: -1,   // shared side faces unlocked this world
+  enemyGrace: 0,     // s left before enemies may attack (game/enemies.js ENTRY_GRACE)
+  visit: null,       // this cube as you came in: what a death restores (game/flow.js)
+  fallFrom: null,    // falling through cubes: the cube the fall started in (game/fall.js)
   dev: params.get('dev') === '1',   // debug tools (?dev=1)
   baseSeed: params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0,
 };

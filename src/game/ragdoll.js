@@ -11,10 +11,10 @@ import { characterYaw } from '../render/animator.js';
 import { player, state, setStatus } from './state.js';
 import { takeDamage } from '../core/progression.js';
 import { flash } from './hud.js';
-import { hurt, spawnAt, spawnEntry } from './flow.js';
+import { hurt, die, recover } from './flow.js';
 import { cancelSword } from './sword.js';
 
-// respawn: 'safe' (last safe spot), or null (get up where you lie)
+// respawn: 'safe' (last safe spot, game/flow.js recover), or null (get up where you lie)
 export function knockDown({ damage = 0, reason = '', respawn = null, push = 0, hop = 0 } = {}) {
   player.climb = null;
   cancelSword();
@@ -62,8 +62,8 @@ export function stepRagdoll(dt) {
   if (pel[1] < -3) r.done = true;
   if (!r.done) return;
   player.ragdoll = null; player.fluidDeath = 0;
-  if (player.hp <= 0) { setStatus('You died - back to the entry'); spawnEntry(); return; }
-  if (player.ragdollThen === 'safe' || pel[1] < -3) { spawnAt(player.safe.x, player.safe.y, player.safe.z); return; }
+  if (player.hp <= 0) { setStatus('You died - back to the entry'); die(); return; }
+  if (player.ragdollThen === 'safe' || pel[1] < -3 || state.fallFrom) { recover(); return; }
   // get up where the body came to rest
   const g = groundAt(pel[0], pel[2], pel[1] + 0.3, 0);
   Object.assign(player, { y: g.h, visY: g.h, vx: 0, vy: 0, vz: 0, grounded: true, swimming: false, support: g.s, stun: 0.8 });

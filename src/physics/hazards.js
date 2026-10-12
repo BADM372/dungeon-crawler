@@ -6,7 +6,7 @@ import { player, state } from '../game/state.js';
 import { hurt } from '../game/flow.js';
 import { knockDown, dieInFluid } from '../game/ragdoll.js';
 import { inFluid } from './fluid.js';
-import { startFall } from '../game/fall.js';
+import { startFall, landFall } from '../game/fall.js';
 
 // returns false when the player got respawned. Entering any fluid is fatal; walking
 // is kept off fluid edges by canMove, so only jumps, falls and knockbacks get here.
@@ -39,7 +39,7 @@ function falls(dt, ci) {
 export function applyHazards(dt, gr) {
   // below the cube: through the void into the cube below, or out of the world
   if (player.y < -1.5 && startFall()) return false;
-  if (player.y < -3) { hurt(25, 'Fell out of the cube'); return false; }
+  if (player.y < -3) { if (state.fallFrom) landFall(); else hurt(25, 'Fell out of the cube'); return false; }
   if (state.time > state.statusUntil) state.statusMsg = '';
   if (!fluids(gr) || !falls(dt, gr.i)) return false;
   if (!player.swimming && player.grounded) regenerate(player, dt, state.time);

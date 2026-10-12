@@ -87,8 +87,13 @@
   over the ragdoll: a splash and bubbles (water); embers, smoke, a glowing then
   charred body and an orange light (lava); fizz, vapour and a green body that fades
   away (acid). The shared character material is restored when that ragdoll ends.
-- Falling through a cube into a fluid preserves the landing position, but records
-  a nearby dry entry so death does not cause a death/respawn loop.
+- Falling through a cube into a fluid preserves the landing position. A fall through
+  cubes always ends back in the cube it started in (see `docs/world.md`).
+- Dying puts the cube back as it was when you came in (`game/flow.js` `die`): enemies
+  defeated since return and the coins they dropped that are still on the floor go.
+- Entering a cube (or respawning) gives a grace period (`ENTRY_GRACE`, 1.2 s in
+  `game/enemies.js`): enemies may chase but start no attack until it runs out or you
+  land a hit.
 - Lava and acid *falls* (the sheets pouring off ledges) are unchanged: lavafalls knock
   you down for 50 damage, acid falls hurt over time.
 

@@ -1,5 +1,5 @@
 // One simulation step for the player.
-import { SIT_IMPACT, RAGDOLL_IMPACT } from '../core/constants.js';
+import { SIT_IMPACT, RAGDOLL_IMPACT, FALL_DAMAGE } from '../core/constants.js';
 import { player, state } from './state.js';
 import { inputDir, wantsRun, takeJump } from './input.js';
 import { updateSword, cancelSword } from './sword.js';
@@ -10,6 +10,7 @@ import { knockDown, stepRagdoll } from './ragdoll.js';
 import { movePlayer, updateLayer } from '../physics/move.js';
 import { applyHazards } from '../physics/hazards.js';
 import { climb } from '../physics/climb.js';
+import { landFall } from './fall.js';
 
 // during the wind-up, step in towards an enemy that is just out of reach
 function lunge(s) {
@@ -47,10 +48,12 @@ export function updatePlayer(dt) {
 
   // Fluid contact takes priority over landing damage (even a high fall into water).
   if (!applyHazards(dt, gr)) return;
+  // a fall through cubes ends on the first landing, however soft
+  if (state.fallFrom && player.grounded) { landFall(); return; }
 
   // hard landings: tumble over as a ragdoll (and get hurt), or land on your bottom
   if (gr.landed > RAGDOLL_IMPACT) {
-    knockDown({ damage: Math.min(60, (gr.landed - RAGDOLL_IMPACT) * 6), reason: 'Hard landing!' });
+    knockDown({ damage: Math.min(FALL_DAMAGE, (gr.landed - RAGDOLL_IMPACT) * 6), reason: 'Hard landing!' });
     return;
   }
   if (gr.landed > SIT_IMPACT) player.stun = 1.5;

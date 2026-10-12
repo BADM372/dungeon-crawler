@@ -2,7 +2,7 @@
 // await (await import('./tests/browser/boundary.js')).runBoundaryChecks()
 // await (await import('./tests/browser/boundary.js')).runRunKeyChecks()
 // Boundary checks reset the world before and after testing.
-import { N, DIRS, WATER } from '../../src/core/constants.js';
+import { N, DIRS, WATER, FALL_DAMAGE } from '../../src/core/constants.js';
 import { faceKey, step, OPP6 } from '../../src/world/coords.js';
 import { isFaceOpen, openedSides, boundaryArrival } from '../../src/core/boundaries.js';
 import { player, state } from '../../src/game/state.js';
@@ -213,10 +213,21 @@ export async function runBoundaryChecks() {
       check(checkPortals(0, 0, 0.1), 'Up ring must still trigger');
       await waitForSlide(); finishSlide();
       check(state.world.portalFx.some(fx => fx.obj.userData.portal.kind === 'down'), 'Well must remain after return');
+      const origin = state.cubeKey, hp = player.hp;
+      check(hp > FALL_DAMAGE, 'Need a player who survives the fall');
       check(startFall(), 'Falling into the cube below must remain possible');
       await waitForSlide(); finishSlide();
+      check(state.fallFrom?.key === origin, 'A fall must remember the cube it started in');
       check(state.openedFaces.size === opened, 'Vertical travel/falls must not unlock side faces');
-      results.push('down / up remain portals / falling unchanged');
+      // land (maybe after falling through more cubes), take full damage, back up where it started
+      for (let i = 0; i < 2000 && (state.fallFrom || state.transitioning); i++) {
+        if (travelling()) finishSlide();
+        else if (state.transitioning) await delay(20);
+        else updatePlayer(1 / 60);
+      }
+      check(!state.fallFrom && !state.transitioning && state.cubeKey === origin, 'A fall must end back in the cube it started in');
+      check(player.hp === hp - FALL_DAMAGE && !player.ragdoll, 'A fall through cubes must cost full fall damage: ' + player.hp);
+      results.push('down / up remain portals / falls cost full damage and return');
       results.push(await gatelessCheck());
       return results;
     } finally { clearInput(); await newWorld(3); }

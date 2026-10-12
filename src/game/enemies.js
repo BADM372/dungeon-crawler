@@ -14,13 +14,19 @@ import { player, state, setStatus } from './state.js';
 import { awardKill } from '../core/progression.js';
 import { dropLoot } from './loot.js';
 
+// coming into a cube (or back after a death), enemies hold their attacks this long, or until
+// you land a hit: a bad spawn spot is not an instant beating
+export const ENTRY_GRACE = 1.2;
+
 export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats];
 export function resetEnemies() {
   resetEnemyCombat(); clearProjectiles();
+  state.enemyGrace = ENTRY_GRACE;
   resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats();
 }
 export function updateEnemies(dt) {
   if (state.inventoryOpen || state.transitioning) return;
+  state.enemyGrace = Math.max(0, state.enemyGrace - dt);
   const list = allEnemies();
   hitWithSword(list); // a connecting sword strike can interrupt an enemy's wind-up
   let xp = 0, levels = 0, killed = 0;

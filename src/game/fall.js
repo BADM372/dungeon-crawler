@@ -1,6 +1,7 @@
-// Falling through the void into the cube below (a shortcut with a price: you come out a few
-// units over the ground there and land hard).
-import { CUBE_H } from '../core/constants.js';
+// Falling through the void into the cube below. For now this is no way into a cube: you
+// keep falling (through more cubes, if there is void below again) until you land, take full
+// fall damage, and are put back in the cube the fall started in (game/flow.js recover / die).
+import { CUBE_H, FALL_DAMAGE } from '../core/constants.js';
 import { floorY } from '../core/surfaces.js';
 import { step } from '../world/coords.js';
 import { depthOf } from '../themes/depth.js';
@@ -8,13 +9,22 @@ import { groundAt } from '../physics/collide.js';
 import { player, state } from './state.js';
 import { startTravel } from './travel.js';
 import { arrivalPoint } from './flow.js';
+import { knockDown } from './ragdoll.js';
 
 // fell through the void: into the cube below, if there is one there (else: false)
 export function startFall() {
   const below = step(state.cubeKey, 4);
   if (!state.cubes.layout(depthOf(below)).exists.has(below)) return false;
+  // only the first cube of a fall counts
+  state.fallFrom ||= { key: state.cubeKey, arrival: state.arrival, portalLock: state.portalLock,
+    boundaryLock: state.boundaryLock, visit: state.visit, safe: { ...player.safe } };
   startTravel({ kind: 'fall', dir: 4 });
   return true;
+}
+
+// the fall is over (landed, or out of the world): full damage, then back where it started
+export function landFall() {
+  knockDown({ damage: FALL_DAMAGE, reason: 'Fell through the void!', respawn: 'safe' });
 }
 
 // a spot that does not lead on (a sealed pit, lava, acid): the nearest top floor that does

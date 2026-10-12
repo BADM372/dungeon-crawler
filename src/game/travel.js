@@ -16,7 +16,7 @@ import { player, state, setStatus } from './state.js';
 import { whenReady } from './hud.js';
 import { resetEnemies, detachEnemies, drawEnemies, allEnemies } from './enemies.js';
 import { cancelSword } from './sword.js';
-import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors, discover } from './flow.js';
+import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors, discover, beginVisit } from './flow.js';
 import { slideVisuals, endVisuals } from './travelfx.js';
 import { fallPoint } from './fall.js';
 
@@ -69,6 +69,7 @@ function slide(p, c) {
   setCut(Infinity, null, 0, 0, 0);
   discover(c);
   state.cubeKey = k; state.arrival = fall ? fall.rest : A;
+  beginVisit();
   state.portalLock = fall || p.kind === 'side' ? 0 : arr.id;
   state.boundaryLock = p.kind === 'side' ? OPP6[p.dir] : -1;
   tr.A0 = A;

@@ -68,7 +68,7 @@ function act(e, dt) {
     const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7;
     if (d < cfg.reach && Math.abs(p.y - e.y) < (cfg.projectile ? 1.5 : 0.5) && !p.ragdoll && (!cfg.projectile || clearShot(e))) {
       e.speed = 0; turn(e, Math.atan2(dx, dz), dt);
-      if (e.cool <= 0 && facing) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); e.leap = 0; }
+      if (e.cool <= 0 && facing && state.enemyGrace <= 0) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); e.leap = 0; }
       return;
     }
     follow(e, cfg.chase, dt, [p.x, p.z]); return;

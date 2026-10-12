@@ -17,6 +17,12 @@ let gained = null, quiet = 0;      // pickups credited recently, shown together
 
 export const lootHere = () => state.run.loot.get(state.cubeKey) || [];
 export function requestCollect() { collectRequested = true; }
+// pickups dropped from now on have ids >= lootMark(); forgetLoot takes them out of a cube again
+export const lootMark = () => nextId;
+export function forgetLoot(key, mark) {
+  const list = state.run.loot.get(key);
+  if (list) state.run.loot.set(key, list.filter(p => p.id < mark || p.fly));
+}
 
 // a dry landing spot near (x, y, z) on about the same level; the body's spot otherwise
 function landing(x, y, z) {

@@ -42,6 +42,7 @@ export function hitWithSword(list) {
     if (!clearLine(p.x, p.y + 0.4, p.z, e.x, y, e.z)) continue;
     const before = e.hp;
     if (!swordHit(p, e)) continue;
+    state.enemyGrace = 0;   // you started it
     // knocked back along the blow, heavier bodies less
     const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1, push = (e.hp ? 2.6 : 3.6) / e.profile.mass;
     e.kbx = dx / l * push; e.kbz = dz / l * push;

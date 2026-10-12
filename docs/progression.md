@@ -17,7 +17,9 @@
 
 A new run starts with level 1, 0 XP, 100 HP and one owned/equipped basic sword.
 Progression, currency, inventory and equipment survive cube travel and death.
-Death (or `R`) restores the current maximum HP; there is no death penalty yet.
+Death (or `R`) restores the current maximum HP; there is no death penalty yet. Death also
+resets the cube to how it was when you came in: enemies killed since come back (and give XP
+again), uncollected coins they dropped vanish; collected rewards are kept.
 `N` / `newWorld()` resets the run, including defeated enemy IDs and equipment.
 State is **in memory only**, not saved across page reloads.
 

@@ -1,8 +1,8 @@
 // Browser integration checks. Resets to a fresh seed-3 run before and after testing.
 import { player, state, view } from '../../src/game/state.js';
-import { newWorld, enterCube, spawnEntry } from '../../src/game/flow.js';
+import { newWorld, enterCube, spawnEntry, hurt } from '../../src/game/flow.js';
 import { updatePlayer } from '../../src/game/update.js';
-import { allEnemies, resetEnemies, updateEnemies } from '../../src/game/enemies.js';
+import { allEnemies, resetEnemies, updateEnemies, ENTRY_GRACE } from '../../src/game/enemies.js';
 import { setInventoryOpen, updateInventory } from '../../src/game/inventory.js';
 import { clearInput, inputDir } from '../../src/game/input.js';
 import { equipOwnedWeapon, devSwapWeapon } from '../../src/game/equipment.js';
@@ -107,7 +107,15 @@ export async function runInventoryChecks() {
       player.hp = 1; spawnEntry();
       check(player.hp === player.maxHp && player.level === level && player.inventory.equipped === equipped
         && copperTotal(player.inventory) === earnedCoins, 'Death/respawn must preserve progression, equipment and currency');
-      results.push('real cube death reward / no duplicate rewards / revisits / max-HP respawn');
+      // a death puts the cube back as it was when you came in: enemies return, their coins go
+      const again = allEnemies()[0], againId = again.id;
+      damageEnemy(again, again.hp); updateEnemies(1/60);
+      check(again.mode === 'dead' && state.run.defeated.has(againId), 'Need a second kill');
+      hurt(player.hp, 'Test death');
+      check(!state.run.defeated.has(againId) && allEnemies().some(e=>e.id === againId) && !lootHere().length
+        && !allEnemies().some(e=>e.id === id), 'Death must restore the cube as entered (and only that)');
+      check(state.enemyGrace === ENTRY_GRACE, 'Enemies must hold their attacks after a respawn');
+      results.push('real cube death reward / no duplicate rewards / revisits / max-HP respawn / death resets the visit');
 
       const pending = equipOwnedWeapon(player.inventory.slots.find(s=>s?.itemId === WEAPONS[4].id).instanceId);
       await newWorld(3);

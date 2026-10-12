@@ -152,8 +152,10 @@ have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
 - **What stays solid:** portal pads, the ground around them and rivers. Upper slabs over
   void float without pillars.
 - **Falling in:** you fall into the cube below (`game/fall.js`) with the vertical slide. You
-  come out at the same spot, 5 units over the ground, so the hard landing costs about 20 HP.
-  If it is void there too, you keep falling.
+  come out at the same spot, 5 units over the ground. If it is void there too, you keep
+  falling. For now a fall is no way into a cube: the first landing (or leaving the world)
+  costs full fall damage (`FALL_DAMAGE`, 60 HP) and puts you back in the cube the fall
+  started in, at its last safe spot, or at its entry if the landing killed you.
 - **Relief:** themes also have a `relief` that stretches highland faces (up to level ~18 in
   the snowy peaks) and makes hills and plateaus taller.
 

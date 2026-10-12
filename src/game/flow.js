@@ -19,6 +19,7 @@ import { townAssetsReady } from '../render/townassets.js';
 import { createPlayerStats, createRun, takeDamage } from '../core/progression.js';
 import { syncEquippedWeapon } from './equipment.js';
 import { clearInput } from './inputstate.js';
+import { lootMark, forgetLoot } from './loot.js';
 
 export function spawnAt(x, y, z) {
   cancelSword(true);
@@ -48,8 +49,56 @@ export function spawnEntry() {
 export function hurt(amount, reason) {
   takeDamage(player, amount, state.time);
   flash();
-  if (player.hp <= 0) { setStatus('You died (' + reason + ') - back to where you came in'); spawnEntry(); }
-  else { setStatus(reason); spawnAt(player.safe.x, player.safe.y, player.safe.z); }
+  if (player.hp <= 0) { setStatus('You died (' + reason + ') - back to where you came in'); die(); }
+  else { setStatus(reason); recover(); }
+}
+
+// The cube as you came in. A death puts it back: the enemies you defeated since return and
+// the coins they dropped (and you did not pick up yet) go.
+export function beginVisit() {
+  state.visit = { key: state.cubeKey, defeated: new Set(state.run.defeated), loot: lootMark() };
+}
+function restoreVisit(v) {
+  if (!v) return;
+  for (const id of state.run.defeated) if (!v.defeated.has(id)) state.run.defeated.delete(id);
+  forgetLoot(v.key, v.loot);
+}
+
+// died: back to where you came in, in the cube as it was then (after a fall through cubes:
+// the cube the fall started in)
+export function die() {
+  if (state.fallFrom) { returnFromFall(true); return; }
+  restoreVisit(state.visit);
+  resetEnemies();
+  spawnEntry();
+}
+
+// back on your feet at the last safe spot (after a fall through cubes: in the cube the fall
+// started in)
+export function recover() {
+  if (state.fallFrom) { returnFromFall(false); return; }
+  spawnAt(player.safe.x, player.safe.y, player.safe.z);
+}
+
+// For now you only enter a cube through a portal: a fall through the void ends back in the
+// cube it started in, at its last safe spot (or its entry, if the landing killed you).
+function returnFromFall(dead) {
+  const f = state.fallFrom, cubes = state.cubes;
+  state.fallFrom = null;
+  state.transitioning = true;
+  cancelSword(true);
+  fadeOut();
+  setTimeout(() => whenReady(cubes.get(f.key)).then(c => {
+    if (state.cubes !== cubes) return;
+    if (dead) restoreVisit(f.visit);
+    enterCube(c, null, f);
+    if (dead) spawnEntry(); else spawnAt(f.safe.x, f.safe.y, f.safe.z);
+    state.transitioning = false;
+  }, () => {
+    if (state.cubes !== cubes) return;
+    state.transitioning = false;
+    if (dead) die(); else recover();   // stay in this cube
+  }), 380);
 }
 
 // discovering a cube opens its gateless faces towards cubes already discovered
@@ -62,18 +111,25 @@ export function discover(c) {
 export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id, p.kind !== 'spawn' && !!state.cubes.cubes.get(step(k, p.dir))?.visits]));
 
 // enter cube c (a ready cube from the world client), arriving through its portal on face
-// `from` (null: the spawn pad)
-export function enterCube(c, from = null) {
+// `from` (null: the spawn pad). `back`: returning to a cube left by a fall, with the
+// entry and visit it had then (see game/fall.js)
+export function enterCube(c, from = null, back = null) {
   const k = c.key;
-  discover(c);
+  if (!back) discover(c);
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
   state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k));
+  if (back) {
+    const { arrival, portalLock, boundaryLock, visit } = back;
+    Object.assign(state, { arrival, portalLock, boundaryLock, visit });
+  } else {
+    const p = c.map.portals.find(q => from === null ? q.kind === 'spawn' : q.dir === from);
+    state.arrival = arrivalPoint(p);
+    state.portalLock = isFaceOpen(state.openedFaces, k, p.dir) ? 0 : p.id;
+    state.boundaryLock = p.kind === 'side' ? p.dir : -1;
+    beginVisit();
+  }
   resetEnemies();
-  const p = c.map.portals.find(q => from === null ? q.kind === 'spawn' : q.dir === from);
-  state.arrival = arrivalPoint(p);
-  state.portalLock = isFaceOpen(state.openedFaces, k, p.dir) ? 0 : p.id;
-  state.boundaryLock = p.kind === 'side' ? p.dir : -1;
   const hp = player.hp;
   spawnAt(state.arrival.x, state.arrival.y, state.arrival.z);
   player.hp = hp;
@@ -117,7 +173,7 @@ export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   clearNeighbors(); clearNeighborCache();
   state.cubes?.dispose();
   state.cubes = new WorldClient(seed, { arche: state.dev && new URLSearchParams(location.search).get('arche') });
-  state.openedFaces.clear(); state.boundaryLock = -1;
+  state.openedFaces.clear(); state.boundaryLock = -1; state.fallFrom = null;
   state.transitioning = true;
   cancelSword(true);
   clearInput();
