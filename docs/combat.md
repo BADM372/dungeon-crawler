@@ -3,7 +3,13 @@
 - **Mouse (Diablo style):** click the floor to walk there (pathing over the floor
   graph, to the closest reachable floor if the spot cannot be reached), click an enemy
   to walk up and swing at it. Holding the button keeps following the cursor / keeps
-  attacking. **Shift+click** and **F** swing towards the cursor without moving. WASD
+  attacking. **Shift+click** swings towards the cursor without moving. **F** soft-targets like
+  Diablo's controller scheme: it swings at the hovered enemy if the blade can reach it,
+  else at the closest visible enemy in reach, preferring those ahead of the movement
+  keys or the facing. Without one in reach it walks up to the best enemy within two
+  more cells and swings, as when clicking it (movement keys win); with none at all it
+  swings towards the cursor. Holding F keeps attacking, re-picking the target. There is
+  no auto-attack. WASD
   still moves and cancels any mouse order. The character only turns when you click
   (or move), never just from hovering. **Space:** movement-only jump.
 - A swing is fast and buffered (`core/combat.js`, `game/sword.js`): the blade connects
@@ -135,7 +141,8 @@ in the browser console:
 
 ```js
 const checks = await import('./tests/browser/combat.js');
-await checks.runCombatChecks(); // real input (click on an enemy, F), controller, damage, GLB poses, cleanup
+await checks.runCombatChecks(); // real input (click on an enemy, F soft-target / hold), controller, damage, GLB poses, cleanup
+await checks.runAttackKeyChecks(); // Space jump, F soft-target / walk-up without the cursor, hold F to chain
 await checks.runNewEnemyChecks(); // snake bite, Octonaut slap / spin kick, their clips and corpses
 await checks.runFireChecks(); // fireball + burning, Triangle punch / dodge / walls, Fire-cat chase and pounce
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon

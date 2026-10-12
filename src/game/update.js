@@ -1,10 +1,10 @@
 // One simulation step for the player.
 import { SIT_IMPACT, RAGDOLL_IMPACT, FALL_DAMAGE } from '../core/constants.js';
 import { player, state } from './state.js';
-import { inputDir, wantsRun, takeJump } from './input.js';
+import { inputDir, wantsRun, takeJump, attackHeld, keyAttack } from './input.js';
 import { updateSword, cancelSword } from './sword.js';
 import { holdPointer, followOrder, clearOrder } from './orders.js';
-import { canMoveCancel, cancelSwing } from '../core/combat.js';
+import { canMoveCancel, cancelSwing, LUNGE_REACH } from '../core/combat.js';
 import { checkPortals } from './portals.js';
 import { knockDown, stepRagdoll } from './ragdoll.js';
 import { movePlayer, updateLayer } from '../physics/move.js';
@@ -17,7 +17,7 @@ function lunge(s) {
   const e = s.target, stats = s.stats;
   if (!e?.profile || e.mode === 'dead' || s.t >= stats.activeStart) return [0, 0];
   const d = Math.hypot(e.x - player.x, e.z - player.z);
-  return d > (stats.range + e.profile.radius) * 0.7 && d < stats.range + e.profile.radius + 0.6
+  return d > (stats.range + e.profile.radius) * 0.7 && d < stats.range + e.profile.radius + LUNGE_REACH
     ? [Math.sin(s.yaw), Math.cos(s.yaw)] : [0, 0];
 }
 
@@ -30,6 +30,8 @@ export function updatePlayer(dt) {
   // keys win over mouse orders
   const keys = inputDir();
   if (keys[0] || keys[1]) clearOrder(); else holdPointer(dt);
+  // a held attack key keeps attacking, re-picking its target (like a held click)
+  if (attackHeld()) keyAttack();
   const order = followOrder(dt);   // may queue an attack on its target
   updateSword(dt);
   let [dx, dz] = order ? [order.dx, order.dz] : keys;

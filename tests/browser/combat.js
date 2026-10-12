@@ -33,7 +33,7 @@ import { fireCatModel } from '../../src/render/firecatmodel.js';
 import { tickBurning, burningLit } from '../../src/render/burning.js';
 import { startTravel, travelling, updateTravel, drawTravelEnemies } from '../../src/game/travel.js';
 import { camera } from '../../src/render/scene.js';
-import { updatePointer, hoveredEnemy } from '../../src/game/pointer.js';
+import { updatePointer, hoveredEnemy, pointer } from '../../src/game/pointer.js';
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -348,6 +348,47 @@ export async function runFireChecks() {
       results.push('death clips on the floor, the glow dies, views released');
       return results;
     } finally {
+      state.map = originalMap; state.run = savedRun;
+      Object.assign(player, saved); cancelSwing(player, true);
+      resetEnemies(); tickBurning(1);
+    }
+  });
+}
+
+// Real key events: Space jumps, F soft-targets without the cursor, holding F keeps attacking.
+export async function runAttackKeyChecks() {
+  check(character.ready && character.sword, 'Wait for character / weapon assets');
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, savedRun = state.run, inside = pointer.inside;
+    const key = (type, code) => dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
+    try {
+      state.run = createRun(); state.map = arena(); resetEnemies(); hero();
+      for (const e of allEnemies()) place(e, 2.5, 2.5);
+      pointer.inside = false;   // the cursor plays no part in keyboard targeting
+      const spider = spiders[0], stunder = stunders[0];
+      place(spider, 6.5, 6.5); press('Space');
+      check(tick(120) > .5 && spider.hp === 30 && !player.sword.serial, 'Space jumps without attacking');
+      place(spider, 2.5, 2.5);
+      hero(); place(stunder, 7.35, 6.5);   // beside the player, who faces +z
+      press('KeyF'); tick(75);
+      check(stunder.hp === 90, 'F turns to and hits the enemy beside the player');
+      hero(); place(stunder, 6.5, 9); stunder.hp = stunder.profile.hp;
+      press('KeyF'); tick(150);
+      check(stunder.hp === 90 && player.z > 7, 'F walks up to an enemy a few cells away and hits it');
+      hero(); place(stunder, 6.5, 11); stunder.hp = stunder.profile.hp;
+      press('KeyF'); tick(75);
+      check(stunder.hp === stunder.profile.hp && Math.abs(player.z - 6.5) < 0.1, 'F ignores enemies far away');
+      hero(); place(stunder, 6.5, 7.4); stunder.hp = stunder.profile.hp;
+      const serial = player.sword.serial;
+      key('keydown', 'KeyF'); tick(150);
+      check(player.sword.serial - serial >= 3 && stunder.hp <= 30, 'Holding F keeps attacking: ' + (player.sword.serial - serial));
+      key('keyup', 'KeyF'); tick(90);
+      const after = player.sword.serial; tick(60);
+      check(player.sword.serial === after, 'Releasing F stops attacking');
+      return ['Space jumps without attacking', 'F soft-targets beside / walks up a few cells / ignores far enemies, without the cursor',
+        'holding F chains swings, releasing stops'];
+    } finally {
+      key('keyup', 'KeyF'); pointer.inside = inside;
       state.map = originalMap; state.run = savedRun;
       Object.assign(player, saved); cancelSwing(player, true);
       resetEnemies(); tickBurning(1);

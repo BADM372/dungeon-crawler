@@ -15,6 +15,8 @@ export const SWORD = Object.freeze({
   duration: 0.62, cooldown: 1.12,
 });
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
+// how far beyond blade reach the wind-up steps in towards a target (game/update.js)
+export const LUNGE_REACH = 0.6;
 // requested: an attack is queued (buffer: for how much longer); target: what it aims at
 // (an enemy, a point {x, z} or null for straight ahead)
 export const swordState = () => ({ active: false, requested: false, buffer: 0, target: null,
@@ -75,6 +77,22 @@ export function inSwordArc(p, enemy) {
   // A blade sweeps around knee-to-chest height, not through a floor below us.
   const bottom = p.y + 0.08, top = p.y + 0.85;
   return enemy.y + enemy.profile.bodyHeight > bottom && enemy.y < top;
+}
+// Keyboard soft-targeting, like Diablo's controller scheme: the closest living enemy within
+// blade reach plus `extra`, preferring those ahead along `yaw`.
+// visible(e): line of sight, checked only for the candidates that would win.
+export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra = 0) {
+  const range = (combatStats(p) || SWORD).range;
+  let best = null, bestScore = Infinity;
+  for (const e of enemies) {
+    if (e.mode === 'dead' || Math.abs(e.y - p.y) >= 0.7) continue;
+    const dx = e.x - p.x, dz = e.z - p.z, d = Math.hypot(dx, dz);
+    if (d > range + e.profile.radius + extra) continue;
+    const ahead = d > 0.01 ? Math.cos(Math.atan2(dx, dz) - yaw) : 1;
+    const score = d * (1.5 - 0.5 * ahead);   // straight behind counts as twice as far
+    if (score < bestScore && visible(e)) { best = e; bestScore = score; }
+  }
+  return best;
 }
 export function damageEnemy(enemy, amount) {
   if (enemy.mode === 'dead') return false;

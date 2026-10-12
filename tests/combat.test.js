@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy, attackOf, pickAttack,
   blowOf, lungeDistance, lungeAt } from '../src/core/enemies.js';
 import { launch, touches, stepProjectile, ignite, burnStep, burntOut } from '../src/core/projectiles.js';
-import { SWORD, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit } from '../src/core/combat.js';
+import { SWORD, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, softTarget } from '../src/core/combat.js';
 
 const hero = () => ({ x: 0, y: 0, z: 0, yaw: 0, hp: 100, stun: 0, sword: swordState() });
 const enemy = (profile = SPIDER) => makeEnemy({ x: 0, y: 0, z: 0.8, yaw: Math.PI }, profile);
@@ -19,6 +19,27 @@ test('sword is a timed, one-press attack with wind-up and recovery', () => {
   advanceSwing(p, SWORD.duration);
   assert.equal(p.sword.active, false);
   assert.equal(p.sword.cool, 0);
+});
+test('soft-targeting picks the closest reachable living enemy, preferring those ahead', () => {
+  const p = hero(), at = (x, z, profile = SPIDER) => makeEnemy({ x, y: 0, z, yaw: 0 }, profile);
+  const ahead = at(0, 1), behind = at(0, -0.9), side = at(0.5, 0), farSide = at(0.95, 0);
+  assert.equal(softTarget(p, [ahead, behind]), ahead, 'ahead wins against slightly closer behind');
+  assert.equal(softTarget(p, [ahead, behind], Math.PI), behind, 'the intended direction decides');
+  assert.equal(softTarget(p, [ahead, side]), side, 'a much closer enemy wins over one ahead');
+  assert.equal(softTarget(p, [ahead, farSide]), ahead, 'at similar distance the one ahead wins');
+  const edge = SWORD.range + SPIDER.radius;
+  assert.notEqual(softTarget(p, [at(0, edge - 0.01)]), null);
+  assert.equal(softTarget(p, [at(0, edge + 0.01)]), null, 'out of blade reach');
+  assert.notEqual(softTarget(p, [at(0, edge + 1.9)], 0, undefined, 2), null, 'extra acquisition range');
+  const dead = at(0, 0.5); dead.mode = 'dead';
+  const below = at(0, 0.5); below.y = -1;
+  assert.equal(softTarget(p, [dead, below]), null, 'dead and other-floor enemies are ignored');
+  const hidden = at(0, 0.5);
+  assert.equal(softTarget(p, [hidden, ahead], 0, e => e !== hidden), ahead, 'line of sight required');
+  const d = SWORD.range + STUNDER.radius - 0.05;
+  const big = at(0, d, STUNDER);
+  assert.equal(softTarget(p, [big]), big, 'reach includes the body radius');
+  assert.equal(softTarget(p, [at(0, d)]), null, 'a smaller body at that distance is out of reach');
 });
 test('one enemy is hit at most once per swing', () => {
   const p = hero(), e = enemy(STUNDER);
