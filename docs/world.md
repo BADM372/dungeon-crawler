@@ -405,12 +405,11 @@ is off during the slide.
 
 ### Opened side connections
 
-The first successful crossing of a side portal opens its shared face for the current
-world. Opening is tracked explicitly by `faceKey`: visiting both cubes via another route
-does not open a gated connection. A side face without a gate opens as soon as the cubes
-on both sides have been discovered (`discoveredFaces` in `core/boundaries.js`), so
-neighbouring rooms reached by different routes can be walked between. Both gates and
-both copies of the dividing glass pane disappear; cube outlines remain. Re-entry, mesh
+A shared side face opens as soon as the cubes on both sides have been discovered
+(`discoveredFaces` in `core/boundaries.js`), whether or not it has a gate or that gate
+has been crossed. Neighbouring rooms reached by different routes can be walked between.
+Opening is tracked explicitly by `faceKey` for the current world. Both gates and both
+copies of the dividing glass pane disappear; cube outlines remain. Re-entry, mesh
 rebuilds and low-detail proxies use the same opened-face state.
 
 An opened side face triggers the same cube slide wherever the player approaches it,
@@ -430,7 +429,7 @@ Checks: `npm test` includes shared-face identity, full-face triggering, arrival
 coordinates and enemy containment. From the browser's devtools, run
 `await (await import('./tests/browser/boundary.js')).runBoundaryChecks()` for
 all four side orientations, rendering/revisits, airborne travel, blocked destinations,
-generation failure, reset and unchanged vertical travel. `runRunKeyChecks()` in that
+generation failure, reset, gated neighbours discovered by another route and vertical travel. `runRunKeyChecks()` in that
 module checks left/right Shift running alongside double-tap running and input clearing.
 
 While sliding, the old cube dissolves out and the new one dissolves in (`render/fade.js`).

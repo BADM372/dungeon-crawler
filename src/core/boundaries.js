@@ -4,13 +4,13 @@ import { faceKey, step } from '../world/coords.js';
 
 export const isFaceOpen = (opened, key, dir) => dir < 4 && dir >= 0 && opened.has(faceKey(key, dir));
 export const openedSides = (opened, key) => DIRS.map((_, dir) => isFaceOpen(opened, key, dir));
-// Side faces without a gate open once the cubes on both sides have been discovered (gated
-// faces open on their first crossing). cubes: key -> { key, map, visits }; returns face keys.
+// All side faces open once the cubes on both sides have been discovered, with or without
+// a gate. cubes: key -> { key, visits }; returns face keys.
 export function discoveredFaces(cubes, c) {
   const out = [];
   if (c.visits) for (let d = 0; d < 4; d++) {
     if (!cubes.get(step(c.key, d))?.visits) continue;
-    if (!c.map.portals.some(p => p.kind === 'side' && p.dir === d)) out.push(faceKey(c.key, d));
+    out.push(faceKey(c.key, d));
   }
   return out;
 }

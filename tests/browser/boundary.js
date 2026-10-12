@@ -106,6 +106,29 @@ async function gatelessCheck() {
   throw Error('No walkable gateless face found');
 }
 
+// Discover both ends without crossing their gate (as when arriving by another route).
+async function discoveredGateCheck() {
+  await newWorld(3); clearInput();
+  const town = state.cubes.cubes.get(state.cubeKey), portal = town.map.portals.find(p => p.kind === 'side');
+  const dir = portal.dir, opposite = OPP6[dir], road = await state.cubes.get(step(town.key, dir));
+  check(!road.visits && !isFaceOpen(state.openedFaces, town.key, dir), 'Prefetching a neighbour must not open its face');
+  enterCube(road, opposite);
+  check(isFaceOpen(state.openedFaces, town.key, dir) && isFaceOpen(state.openedFaces, road.key, opposite), 'Discovering both ends must open a gated face without crossing its gate');
+  check(!state.world.portalFx.some(fx => fx.obj.userData.portal.kind === 'side' && fx.obj.userData.portal.dir === opposite), 'Discovered gate must disappear');
+  panes(state.world.glass, openedSides(state.openedFaces, road.key));
+  for (const proxy of neighbors()) panes(proxy.glass, openedSides(state.openedFaces, proxy.key));
+  const along = dir < 2 ? portal.z + 0.5 : portal.x + 0.5, elsewhere = along < N / 2 ? N - 2.5 : 2.5;
+  atFace(opposite, elsewhere, 2, 0.7);
+  checkPortals();   // release the arrival boundary lock
+  atFace(opposite, elsewhere, 2);
+  check(checkPortals(...DIRS[opposite]), 'Discovered gated face must accept a crossing away from its gate');
+  await waitForSlide(); finishSlide();
+  check(state.cubeKey === town.key, 'Discovered boundary crossing must enter the neighbour');
+  check(!state.world.portalFx.some(fx => fx.obj.userData.portal.kind === 'side'), 'Re-entry must not restore a discovered gate');
+  panes(state.world.glass, openedSides(state.openedFaces, town.key));
+  return 'gated face discovered by another route: both panes / gate removed / full-face crossing / rebuild';
+}
+
 export async function runBoundaryChecks() {
   const results = [];
   return paused(async () => {
@@ -118,9 +141,7 @@ export async function runBoundaryChecks() {
         const dir = portal.dir, opposite = OPP6[dir], roadKey = step(town.key, dir);
         const road = await state.cubes.get(roadKey), back = road.map.portals.find(p => p.dir === opposite);
         const originalPortals = town.map.portals;
-        // Visiting both ends by a different route/debug entry does not unlock a gated face.
-        enterCube(road, opposite); enterCube(town);
-        check(!isFaceOpen(state.openedFaces, town.key, dir), 'Visits must not open a gated connection');
+        check(!road.visits && !isFaceOpen(state.openedFaces, town.key, dir), 'An undiscovered neighbour must retain its gate and glass');
         const oldWorld = state.world, oldGate = oldWorld.portalFx.find(fx => fx.obj.userData.portal === portal);
         const oldProxies = neighbors();
         const along = dir < 2 ? portal.z + 0.5 : portal.x + 0.5;
@@ -200,7 +221,7 @@ export async function runBoundaryChecks() {
       // Vertical portals stay present and reusable, and falls do not unlock side connections.
       const wellCube = await state.cubes.get(state.cubes.layout(0).down);
       enterCube(wellCube, wellCube.map.portals.find(p => p.kind === 'side').dir);
-      const opened = state.openedFaces.size;   // entering may open gateless faces towards the town
+      const opened = state.openedFaces.size;   // entering may open side faces towards discovered cubes
       const well = state.map.portals.find(p => p.kind === 'down');
       spawnAt(well.x + 0.5, well.y, well.z + 0.5); state.portalLock = 0;
       check(!checkPortals(0, 0, 1) && state.portalCharge?.t === 1, 'Down well must charge before it takes you');
@@ -234,6 +255,7 @@ export async function runBoundaryChecks() {
       check(!state.fallFrom && !state.transitioning && state.cubeKey === origin, 'A fall must end back in the cube it started in');
       check(player.hp === hp - FALL_DAMAGE && !player.ragdoll, 'A fall through cubes must cost full fall damage: ' + player.hp);
       results.push('down / up charge before travel / stepping out resets charge / portals remain / falls cost full damage and return');
+      results.push(await discoveredGateCheck());
       results.push(await gatelessCheck());
       return results;
     } finally { clearInput(); await newWorld(3); }

@@ -30,13 +30,13 @@ test('opening a face is shared in both directions, not with any other side or ve
   }
 });
 
-test('gateless faces open once both cubes are discovered; gated faces wait for a crossing', () => {
+test('all side faces open once both cubes are discovered, including gates never crossed', () => {
   const key = '2,-3,4', side = d => ({ kind: 'side', dir: d });
   const c = { key, visits: 1, map: { portals: [side(0)] } };
   const cubes = new Map([[key, c]]);
-  for (let d = 0; d < 4; d++) cubes.set(step(key, d), { key: step(key, d), visits: d === 3 ? 0 : 1, map: { portals: [] } });
-  // E has a gate, N is undiscovered: only W and S open
-  assert.deepEqual(discoveredFaces(cubes, c), [faceKey(key, 1), faceKey(key, 2)]);
+  for (let d = 0; d < 4; d++) cubes.set(step(key, d), { key: step(key, d), visits: d === 3 ? 0 : 1, map: { portals: [side(OPP6[d])] } });
+  // E has a gate and all neighbours have gates: only undiscovered N stays closed.
+  assert.deepEqual(discoveredFaces(cubes, c), [faceKey(key, 0), faceKey(key, 1), faceKey(key, 2)]);
   // the neighbour discovering later opens the same shared face
   const n = cubes.get(step(key, 3));
   n.visits = 1;

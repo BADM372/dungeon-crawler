@@ -101,7 +101,7 @@ function returnFromFall(dead) {
   }), 380);
 }
 
-// discovering a cube opens its gateless faces towards cubes already discovered
+// discovering a cube opens all side faces towards cubes already discovered
 export function discover(c) {
   c.visits++;
   for (const f of discoveredFaces(state.cubes.cubes, c)) state.openedFaces.add(f);
