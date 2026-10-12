@@ -84,6 +84,7 @@ function setup(gltf) {
     fall: part(J, 'Fall', 26, 31),        // tucked pose around the apex
     land: part(J, 'Land', 37, 58),        // compression + recovery
     sit: part(S, 'SitLand', 36, 78),      // lose balance, land on the bottom, stay sitting
+    getUpBack: clips.GetUpBack, getUpFront: clips.GetUpFront,   // from lying to standing
   };
   // all actions run all the time; the animator drives their weights and times by hand
   const mixer = new THREE.AnimationMixer(model);
@@ -97,12 +98,22 @@ function setup(gltf) {
   const stride = name => extras(name).speed * clips[name].duration * CHAR_SCALE;
 
   scene.add(group);
+  // where the hips lie at the start of each get-up (group space, unturned): the game puts the
+  // player where the feet end up
+  const getUps = {};
+  for (const [side, name, a] of [['back', 'GetUpBack', actions.getUpBack], ['front', 'GetUpFront', actions.getUpFront]]) {
+    actions.idle.setEffectiveWeight(0); a.setEffectiveWeight(1); a.time = 0;
+    mixer.update(0);
+    const hips = bones.hips.getWorldPosition(new THREE.Vector3()).sub(group.position);
+    a.setEffectiveWeight(0); actions.idle.setEffectiveWeight(1);
+    getUps[side] = { action: a, duration: clips[name].duration, move: extras(name).move_time, lie: [hips.x, hips.z] };
+  }
   // reference (standing) pose for exaggerating strides
   mixer.update(0);
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
-    ready: true, group, model, mesh, bones, mixer, actions, standing, light,
-    sword: null, swordWeight: 0,
+    ready: true, group, model, mesh, bones, mixer, actions, standing, light, getUps,
+    sword: null, swordWeight: 0, getUpWeight: 0,
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
     climbStride: extras('Climb').distance * CHAR_SCALE,
   });

@@ -18,6 +18,7 @@ import { projectiles, clearProjectiles } from '../../src/game/projectiles.js';
 import { SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy } from '../../src/core/enemies.js';
 import { D } from '../../src/core/spawns.js';
 import { updatePlayer } from '../../src/game/update.js';
+import { knockDown } from '../../src/game/ragdoll.js';
 import { climb } from '../../src/physics/climb.js';
 import { W, resetMode } from '../../src/render/blendtree.js';
 import { character, equipSword, loadSword } from '../../src/render/character.js';
@@ -68,7 +69,7 @@ function place(e, x, z) {
 function hero() {
   cancelSwing(player, true);
   Object.assign(player, { x: 6.5, y: 0, visY: 0, z: 6.5, yaw: 0, vx: 0, vy: 0, vz: 0,
-    ...createPlayerStats(), grounded: true, swimming: false, climb: null, ragdoll: null, stun: 0, burning: null,
+    ...createPlayerStats(), grounded: true, swimming: false, climb: null, ragdoll: null, getUp: null, stun: 0, burning: null,
     support: at(6.5, 6.5), safe: { x: 6.5, y: 0, z: 6.5 }, coyote: 0, jumpBuf: 0 });
 }
 function press(code) {
@@ -417,6 +418,58 @@ export async function runControlChecks() {
     } finally {
       for (const code of ['KeyW', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight']) key('keyup', code);
       pointer.inside = inside;
+      state.map = originalMap; state.run = savedRun;
+      Object.assign(player, saved); cancelSwing(player, true);
+      resetEnemies(); tickBurning(1);
+    }
+  });
+}
+
+// Knockdown -> ragdoll -> exported GetUpFront / GetUpBack: the clip takes over the settled
+// ragdoll pose, holds the player until the legs are under the body, can be walked out of,
+// and leaves an idle pose that stays put.
+export async function runGetUpChecks() {
+  check(character.ready, 'Wait for the character to load');
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, savedRun = state.run;
+    const key = (type, code) => dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
+    const hips = () => character.bones.hips.getWorldPosition(new THREE.Vector3());
+    function down(push) {
+      hero(); tick(5); knockDown({ push, hop: 2.5 });
+      let frames = 0, before = hips();
+      while (player.ragdoll && frames++ < 300) { before = hips(); tick(1); }
+      check(!player.ragdoll && player.getUp, 'The ragdoll settles and the player gets up');
+      return { frames, jump: hips().distanceTo(before) };
+    }
+    try {
+      state.run = createRun(); state.map = arena(); resetEnemies();
+      for (const e of allEnemies()) place(e, 1.5, 1.5);
+      const sides = [];
+      for (const push of [3, -3]) {
+        const { frames, jump } = down(push), g = player.getUp;
+        sides.push(g.side);
+        check(frames < 90, 'A flat-ground ragdoll settles within 1.5 s: ' + frames);
+        check(jump < 0.05, 'The get-up starts from the ragdoll pose: ' + jump);
+        check(player.stun === g.move && g.move < g.duration && g.duration < 1.2, 'Held until the move time');
+        const x = player.x, z = player.z;
+        key('keydown', 'KeyW'); tick(Math.floor(g.move * 60) - 2);
+        check(player.x === x && player.z === z && player.getUp === g, 'No walking before the legs are under the body');
+        tick(20);
+        check(!player.getUp && Math.hypot(player.x - x, player.z - z) > 0.5 && character.getUpWeight === 0,
+          'Walking cuts the rest of the get-up short');
+        key('keyup', 'KeyW'); tick(30);
+      }
+      check(sides.join() === 'front,back', 'Pushed forward lands face down, backward on the back: ' + sides);
+
+      down(-3); tick(Math.ceil(player.getUp.duration * 60) + 30);
+      check(!player.getUp && character.getUpWeight === 0, 'Untouched, the get-up plays to its end');
+      character.swordWeight = 0; tick(600);   // no fading weight forcing the mixer to repose
+      const worst = Math.max(...Object.keys(character.standing).map(n => character.bones[n].quaternion.angleTo(character.standing[n])));
+      check(worst < 0.03, 'Idle keeps the idle pose (breathing only): ' + worst);
+      return ['ragdoll settles fast and hands its pose to GetUpFront / GetUpBack', 'no walking until the move time, walking cuts the tail',
+        'get-up plays out untouched / idle pose stays put'];
+    } finally {
+      key('keyup', 'KeyW');
       state.map = originalMap; state.run = savedRun;
       Object.assign(player, saved); cancelSwing(player, true);
       resetEnemies(); tickBurning(1);

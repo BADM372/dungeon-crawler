@@ -33,6 +33,11 @@
 - Hit feedback (`game/juice.js`): a short hit pause, a camera nudge, sparks and
   ichor, a knockback, a damage number and generated sounds (`audio/sfx.js`, M mutes).
   Spider bites are a short flinch; a Stunder ram or a lethal bite knocks you over.
+- Knocked over, you ragdoll until the body settles, then get up from where it lies
+  (`game/ragdoll.js`): face down or on the back picks `GetUpFront` / `GetUpBack`,
+  turned to the body; the animator morphs the ragdoll pose into the clip's first frames.
+  You can't act until the legs are under you (the clip's `move_time`); walking or
+  swinging then cuts the rest short. `GET_UP_SPEED` sets the pace.
 - Swimming, ladder climbing, stun, knockdown and travel cancel / block slashes.
 - The Old Sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
   Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
@@ -155,6 +160,7 @@ await checks.runControlChecks(); // run ramp / Ctrl walk / Ctrl+W, Space jump, S
 await checks.runNewEnemyChecks(); // snake bite, Octonaut slap / spin kick, their clips and corpses
 await checks.runFireChecks(); // fireball + burning, Triangle punch / dodge / walls, Fire-cat chase and pounce
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
+await checks.runGetUpChecks(); // knockdown -> ragdoll -> GetUpFront / GetUpBack, move time, idle pose
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
 const water = await import('./tests/browser/water.js');
 await water.runWaterChecks(); // all fluids: edge guard, jumps/high falls, ragdolls, effects, dry respawn

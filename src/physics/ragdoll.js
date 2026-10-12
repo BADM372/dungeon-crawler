@@ -36,7 +36,7 @@ export class Ragdoll {
     let vmax = 0;
     for (let i = 0; i < this.p.length; i++) vmax = Math.max(vmax, Math.hypot(...[0, 1, 2].map(k => this.p[i][k] - this.o[i][k])) / SUB);
     this.calm = vmax < 0.35 ? this.calm + dt : 0;
-    if ((this.calm > 0.5 && this.t > 1) || this.t > 4) this.done = true;
+    if ((this.calm > 0.25 && this.t > 0.6) || this.t > 4) this.done = true;
   }
 
   substep() {

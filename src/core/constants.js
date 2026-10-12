@@ -44,4 +44,5 @@ export const WALK_ANIM = 1.4, RUN_ANIM = 3.2;
 export const JUMP_V = 6.27;     // -> jumps ~0.9 units high
 export const SIT_IMPACT = 10;   // landing faster than this knocks you onto your bottom
 export const RAGDOLL_IMPACT = 14;   // ... and this turns you into a ragdoll (and hurts)
+export const GET_UP_SPEED = 1.35;   // the GetUpBack / GetUpFront clips play this much faster
 export const FALL_DAMAGE = 60;   // the most a hard landing costs; a fall through cubes always costs this

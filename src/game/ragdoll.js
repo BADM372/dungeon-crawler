@@ -1,8 +1,9 @@
 // Knocking the player over: the body turns into a ragdoll; once it has settled the player
-// either gets up where the body lies or respawns.
+// either gets up where the body lies (GetUpBack / GetUpFront, see render/animator.js) or respawns.
 import { Ragdoll } from '../physics/ragdoll.js';
 import { groundAt } from '../physics/collide.js';
-import { WATER, LAVA, LH } from '../core/constants.js';
+import { canMove } from '../physics/canmove.js';
+import { WATER, LAVA, LH, STEP, GET_UP_SPEED } from '../core/constants.js';
 import { inFluid } from '../physics/fluid.js';
 import { character } from '../render/character.js';
 import { beginRagdoll } from '../render/ragdollpose.js';
@@ -16,7 +17,7 @@ import { cancelSword } from './sword.js';
 
 // respawn: 'safe' (last safe spot, game/flow.js recover), or null (get up where you lie)
 export function knockDown({ damage = 0, reason = '', respawn = null, push = 0, hop = 0 } = {}) {
-  player.climb = null;
+  player.climb = null; player.getUp = null;
   cancelSword();
   if (!character.ready) { hurt(damage, reason); return; }
   takeDamage(player, damage, state.time);
@@ -66,6 +67,39 @@ export function stepRagdoll(dt) {
   if (player.ragdollThen === 'safe' || pel[1] < -3 || state.fallFrom) { recover(); return; }
   // get up where the body came to rest
   const g = groundAt(pel[0], pel[2], pel[1] + 0.3, 0);
-  Object.assign(player, { y: g.h, visY: g.h, vx: 0, vy: 0, vz: 0, grounded: true, swimming: false, support: g.s, stun: 0.8 });
-  player.getUpCount++;
+  Object.assign(player, { y: g.h, visY: g.h, vx: 0, vy: 0, vz: 0, grounded: true, swimming: false, support: g.s });
+  startGetUp(r.p);
+}
+
+// Face down or on the back, and which way the body lies: the get-up clip is turned to match
+// it and the player moves to where its feet end up (as far as walking there would get).
+function startGetUp(P) {
+  const d = (a, b) => [0, 1, 2].map(k => P[a][k] - P[b][k]);
+  const up = d(2, 0), left = d(4, 7);   // pelvis -> neck, right -> left shoulder
+  const side = left[2] * up[0] - left[0] * up[2] < 0 ? 'front' : 'back';   // forward = left x up
+  const s = side === 'front' ? 1 : -1;   // face down the head is ahead, on the back behind
+  if (Math.hypot(up[0], up[2]) > 1e-3) player.yaw = Math.atan2(up[0] * s, up[2] * s);
+  const clip = character.getUps[side], [ox, oz] = clip.lie, c = Math.cos(player.yaw), n = Math.sin(player.yaw);
+  shuffleTo(player.x - (ox * c + oz * n), player.z - (oz * c - ox * n));
+  player.getUp = { side, t: 0, duration: clip.duration / GET_UP_SPEED, move: clip.move / GET_UP_SPEED };
+  player.stun = player.getUp.move;
+}
+
+// move the controller towards (x, z) the way walking would (walls, fences and ledges stop it)
+function shuffleTo(x, z) {
+  const p = player, n = 8, dx = (x - p.x) / n, dz = (z - p.z) / n;
+  for (let i = 0; i < n; i++) {
+    if (Math.abs(dx) > 1e-6 && canMove(p.x + dx, p.z, 'x', Math.sign(dx))) p.x += dx;
+    if (Math.abs(dz) > 1e-6 && canMove(p.x, p.z + dz, 'z', Math.sign(dz))) p.z += dz;
+  }
+  const g = groundAt(p.x, p.z, p.y, STEP);
+  if (g.s) Object.assign(p, { y: g.h, visY: g.h, support: g.s });
+}
+
+// the clip runs to its end unless the player walks (or swings, jumps, ...) out of its tail
+export function tickGetUp(dt) {
+  const p = player, g = p.getUp;
+  g.t += dt;
+  const busy = Math.hypot(p.vx, p.vz) > 0.3 || p.sword.active || !p.grounded || p.swimming || p.climb;
+  if (g.t >= g.duration || (g.t >= g.move && busy)) p.getUp = null;
 }

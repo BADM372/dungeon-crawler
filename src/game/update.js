@@ -6,7 +6,7 @@ import { updateSword, cancelSword } from './sword.js';
 import { holdPointer, followOrder, clearOrder } from './orders.js';
 import { canMoveCancel, cancelSwing, LUNGE_REACH } from '../core/combat.js';
 import { checkPortals } from './portals.js';
-import { knockDown, stepRagdoll } from './ragdoll.js';
+import { knockDown, stepRagdoll, tickGetUp } from './ragdoll.js';
 import { movePlayer, updateLayer } from '../physics/move.js';
 import { applyHazards } from '../physics/hazards.js';
 import { climb } from '../physics/climb.js';
@@ -27,6 +27,7 @@ export function updatePlayer(dt) {
   const charge = state.portalCharge;
   state.portalCharge = null;
   if (player.ragdoll) { cancelSword(); clearOrder(); stepRagdoll(dt); return; }
+  if (player.getUp) tickGetUp(dt);
   // keys win over mouse orders
   const keys = inputDir();
   if (keys[0] || keys[1]) clearOrder(); else holdPointer(dt);
