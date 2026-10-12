@@ -1,0 +1,100 @@
+# Before writing or changing music, read music/README.md (style, moods, format).
+title    Nests
+composer Claude
+about    Webs from wall to wall and something moving in every one of them: a thin fiddle in C minor over a harpsichord that never stops scurrying, a dark string pad, a low wordless choir and an upright bass on every beat. Db and a diminished chord pull at the key. When something is near, a hi-hat ticks like many legs over a low tom heartbeat and timpani; brass joins the fight, a full choir and gong come for a guardian.
+tempo    100
+beats    4
+steps    4
+reverb   0.45
+
+# moods (music/README.md)
+# mood explore:  lead harpsi strings bass voices
+# mood treasure: harpsi strings voices wonder
+# mood sense:    hat toms timpani strings bass voices
+# mood rise:     sense lead harpsi kick snare
+# mood fight:    rise -voices brass crash
+# mood boss:     fight -lead choir gong
+
+voice lead     fiddle      vol=0.5  pan=-0.15 rev=0.45
+voice harpsi   harpsichord vol=0.42 pan=0.3
+voice strings  strings     vol=0.24 pan=-0.25 center=G3 att=0.4 rel=0.8
+voice bass     upright     vol=0.7
+voice voices   voices      vol=0.26 pan=0.1  att=0.6 rel=1
+voice wonder   musicbox    vol=0.3  pan=0.45 rev=0.7
+voice hat      hat         vol=0.35 pan=0.35
+voice toms     tomlo       vol=0.55 pan=-0.2
+voice timpani  timpani     vol=0.5  pan=-0.1
+voice kick     kick        vol=0.55
+voice snare    snare       vol=0.38 pan=0.1
+voice brass    brass       vol=0.38 pan=-0.25 gate=0.8 center=G3
+voice crash    crash       vol=0.22 pan=0.2
+voice choir    choir       vol=0.32 center=C4 att=0.4 rel=0.8
+voice gong     gong        vol=0.3  pan=-0.3
+
+# Cm Ab Fm G | Cm Db Bdim G: the motif (C D Eb G F)
+pattern A
+lead    | C5------- D5--- Eb5--- | G5------- F5------- | Ab5--- G5--- F5------- | D5----------- .--- |
+lead    | Eb5--- G5--- C6------- | Ab5------- F5------- | D5--- F5--- Ab5--- G5--- | B4----------- .--- |
+harpsi  | C4- G4- Eb4- G4- C4- G4- D4- G4- | Ab3- Eb4- C4- Eb4- Ab3- Eb4- Bb3- Eb4- | F3- C4- Ab3- C4- F3- C4- G3- C4- | G3- D4- B3- D4- G3- D4- Ab3- D4- |
+harpsi  | C4- G4- Eb4- G4- C4- G4- D4- G4- | Db4- Ab4- F4- Ab4- Db4- Ab4- C4- Ab4- | B3- F4- D4- F4- B3- F4- Ab3- F4- | G3- D4- B3- D4- G3- D4- Ab3- D4- |
+strings | [Cm]?--------------- | [Ab]?--------------- | [Fm]?--------------- | [G]?--------------- |
+strings | [Cm]?--------------- | [Db]?--------------- | [Bdim]?--------------- | [G]?--------------- |
+bass    | C2--- C2--- C2--- G1--- | Ab1--- Ab1--- Ab1--- Eb2--- | F1--- F1--- F1--- C2--- | G1--- G1--- G1--- D2--- |
+bass    | C2--- C2--- C2--- G1--- | Db2--- Db2--- Db2--- Ab1--- | B1--- B1--- B1--- F2--- | G1--- G1--- G1--- D2--- |
+voices  | C3+G3--------------- | Ab2+Eb3--------------- | F2+C3--------------- | G2+D3--------------- |
+voices  | C3+G3--------------- | Db3+Ab3--------------- | B2+F3--------------- | G2+D3--------------- |
+wonder  | G6--- C7--- Eb7--- C7--- | Ab6--- C7--- Eb7--- C7--- | F6--- Ab6--- C7--- Ab6--- | G6--- B6--- D7--- B6--- |
+wonder  | G6--- C7--- Eb7--- C7--- | Ab6--- Db7--- F7--- Db7--- | F6--- Ab6--- B6--- D7--- | G6--- B6--- D7--- G6--- |
+hat     | xooo xooo xooo xooo | % | % | % |
+hat     | % | % | % | xooo xooo xoxo xxxx |
+toms    | X..x .... X..x .... | % | % | % |
+toms    | % | % | % | X..x .... X.x. X.X. |
+timpani | C2!--- .------- G1--- | Ab1!--- .------- Eb2--- | F1!--- .------- C2--- | G1!--- .------- D2--- |
+timpani | C2!--- .------- G1--- | Db2!--- .------- Ab1--- | B1!--- .------- F2--- | G1- G1- G1- G1- G1- G1- G1!- G1!- |
+kick    | X... .... X... .... | % | % | % |
+kick    | % | % | % | X... ..X. X... X.X. |
+snare   | .... x... .... x.xo | % | % | % |
+snare   | % | % | % | x.o. x.oo xxxx XxXx |
+brass   | .--- [Cm]- .- .--- [Cm]- .- | .--- [Ab]- .- .--- [Ab]- .- | .--- [Fm]- .- .--- [Fm]- .- | .--- [G]- .- .--- [G]- .- |
+brass   | .--- [Cm]- .- .--- [Cm]- .- | .--- [Db]- .- .--- [Db]- .- | .--- [Bdim]- .- .--- [Bdim]- .- | .--- [G]- .- .--- [G]- .- |
+crash   | X... .... .... .... | .... .... .... .... | % | % |
+crash   | x... .... .... .... | .... .... .... .... | % | % |
+choir   | [Cm]--------------- | [Ab]--------------- | [Fm]--------------- | [G]--------------- |
+choir   | [Cm]--------------- | [Db]--------------- | [Bdim]--------------- | [G]--------------- |
+gong    | X... .... .... .... | .... .... .... .... | % | % |
+gong    | .... .... .... .... | % | % | % |
+
+# Fm Cm Ab Eb | Fm Db G G
+pattern B
+lead    | F5--- Ab5--- C6------- | Eb6------- D6- C6- G5--- | Ab5------- C6--- Eb6--- | Bb5----------- .--- |
+lead    | Ab5--- G5--- F5--- C5--- | Db5------- F5------- | D5--- F5--- Ab5--- B5--- | G5----------- .--- |
+harpsi  | F3- C4- Ab3- C4- F3- C4- G3- C4- | C4- G4- Eb4- G4- C4- G4- D4- G4- | Ab3- Eb4- C4- Eb4- Ab3- Eb4- Bb3- Eb4- | Eb4- Bb4- G4- Bb4- Eb4- Bb4- F4- Bb4- |
+harpsi  | F3- C4- Ab3- C4- F3- C4- G3- C4- | Db4- Ab4- F4- Ab4- Db4- Ab4- C4- Ab4- | G3- D4- B3- D4- G3- D4- Ab3- D4- | G3- D4- B3- D4- G3- D4- F4- D4- |
+strings | [Fm]?--------------- | [Cm]?--------------- | [Ab]?--------------- | [Eb]?--------------- |
+strings | [Fm]?--------------- | [Db]?--------------- | [G]?--------------- | [G]?--------------- |
+bass    | F1--- F1--- F1--- C2--- | C2--- C2--- C2--- G1--- | Ab1--- Ab1--- Ab1--- Eb2--- | Eb2--- Eb2--- Eb2--- Bb1--- |
+bass    | F1--- F1--- F1--- C2--- | Db2--- Db2--- Db2--- Ab1--- | G1--- G1--- G1--- D2--- | G1--- G1--- G1--- B1--- |
+voices  | F2+C3--------------- | C3+G3--------------- | Ab2+Eb3--------------- | Eb3+Bb3--------------- |
+voices  | F2+C3--------------- | Db3+Ab3--------------- | G2+D3--------------- | G2+D3--------------- |
+wonder  | F6--- Ab6--- C7--- Ab6--- | G6--- C7--- Eb7--- C7--- | Ab6--- C7--- Eb7--- C7--- | G6--- Bb6--- Eb7--- Bb6--- |
+wonder  | F6--- Ab6--- C7--- Ab6--- | Ab6--- Db7--- F7--- Db7--- | G6--- B6--- D7--- B6--- | G6--- B6--- D7--- F7--- |
+hat     | xooo xooo xooo xooo | % | % | % |
+hat     | % | % | % | xooo xooo xoxo xxxx |
+toms    | X..x .... X..x .... | % | % | % |
+toms    | % | % | % | X..x .... X.x. XXXX |
+timpani | F1!--- .------- C2--- | C2!--- .------- G1--- | Ab1!--- .------- Eb2--- | Eb2!--- .------- Bb1--- |
+timpani | F1!--- .------- C2--- | Db2!--- .------- Ab1--- | G1!--- .------- D2--- | G1- G1- G1- G1- G1- G1- G1!- G1!- |
+kick    | X... .... X... .... | % | % | % |
+kick    | % | % | % | X... ..X. X... X.X. |
+snare   | .... x... .... x.xo | % | % | % |
+snare   | % | % | % | x.o. x.oo xxxx XxXx |
+brass   | .--- [Fm]- .- .--- [Fm]- .- | .--- [Cm]- .- .--- [Cm]- .- | .--- [Ab]- .- .--- [Ab]- .- | .--- [Eb]- .- .--- [Eb]- .- |
+brass   | .--- [Fm]- .- .--- [Fm]- .- | .--- [Db]- .- .--- [Db]- .- | .--- [G]- .- .--- [G]- .- | .--- [G]- .- .--- [G]- .- |
+crash   | X... .... .... .... | .... .... .... .... | % | % |
+crash   | x... .... .... .... | .... .... .... .... | % | % |
+choir   | [Fm]--------------- | [Cm]--------------- | [Ab]--------------- | [Eb]--------------- |
+choir   | [Fm]--------------- | [Db]--------------- | [G]--------------- | [G]--------------- |
+gong    | X... .... .... .... | .... .... .... .... | % | % |
+gong    | .... .... .... .... | % | % | % |
+
+loop A B

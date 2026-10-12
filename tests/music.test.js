@@ -4,12 +4,23 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { repo } from './paths.js';
 import { loadScore, MOODS } from '../src/audio/score.js';
+import { SONGS } from '../src/themes/index.js';
 
 const dir = resolve(repo, 'music');
-const files = readdirSync(dir).filter(f => f.endsWith('.scrim'));
+// the game's songs, plus reference scores in subfolders (tools/player.html FOLDERS)
+const files = readdirSync(dir, { recursive: true }).filter(f => f.endsWith('.scrim'));
 
 test('the game finds its songs', () => {
-  for (const name of ['overworld', 'caves']) assert.ok(files.includes(`${name}.scrim`), name);
+  for (const name of SONGS) assert.ok(files.includes(`${name}.scrim`), name);
+  // and plays every song in music/ (subfolders hold reference scores)
+  assert.deepEqual(files.filter(f => !f.includes('/')).map(f => f.replace('.scrim', '')).sort(), [...SONGS].sort());
+});
+
+test('every reference score is listed for the player', () => {
+  for (const sub of new Set(files.filter(f => f.includes('/')).map(f => f.split('/')[0]))) {
+    const index = JSON.parse(readFileSync(resolve(dir, sub, 'index.json'), 'utf8')).map(e => `${sub}/${e.file}`);
+    assert.deepEqual(index.sort(), files.filter(f => f.startsWith(`${sub}/`)).sort());
+  }
 });
 
 for (const file of files) {

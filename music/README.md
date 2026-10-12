@@ -93,6 +93,28 @@ Guidelines:
   Phrygian, diminished chords, drones and slow tempos (60 to 80) for the deep, Diablo style
   depths.
 
+## Tricks that work
+
+What the songs in `music/` use, learned from listening closely to Golden Sun:
+
+- **Echo voice.** A second voice on the same instrument plays the lead a sixteenth to a
+  dotted eighth later, at a third of the volume, panned to the other side. It gives space
+  for nothing. Shift the lead's lines by hand: start with a rest of the delay, and continue
+  a note across a bar line with `-` at the start of the next bar.
+- **The lead for the fight.** `voice horn horn oct=-1` with the lead's lines copied plays the
+  tune an octave down, so `boss` can drop the lead and still have the tune.
+- **Colour in the arpeggio.** Add the 2nd or 6th to a broken chord (`E3- B3- E4- F#4- G4- B4-`),
+  and lean on one mode's own chord: Dorian's major IV, Lydian's raised 4th, Phrygian's flat 2nd.
+- **An ostinato against the bar.** Accents every 3 eighths in a bar of 8 (`D3!- A3- D4- F3!-
+  A3- D4- E4!- A3-`) or a six-note cycle in a 4/4 bar keep a loop from sounding square.
+- **A drone with `=`.** One note held for 8 bars (`D2+A2--------------- | = | = | = |`) under
+  changing chords gives the old, dark places their weight; a joining voice picks it up mid-note.
+- **Each place its own `sense` drums.** Toms and timpani are the default, but a woodblock
+  gallop (badlands), a ticking hi-hat over a tom heartbeat (nests), pickaxe woodblocks
+  (mines) or conga and guiro (swamp) say where you are even with the tune gone.
+- **The game's motif.** Every tune opens on scale degrees 1 2 3 5 4 in its own mode (the
+  overworld: E F# G B A), so the songs belong together.
+
 ## Format cheat sheet
 
 ```
@@ -232,9 +254,12 @@ loop A A2 B A2
 3. `npm test`: every score has to compile with no errors, use every voice it declares, and
    put every voice in some mood. Errors name the line and bar (usually a bar with the wrong
    number of steps).
-4. Listen: paste the score into the [Scrimshaw Jukebox](https://tools.simonwillison.net/scrimshaw-jukebox)
-   (it plays every voice and ignores moods), or run the game with music on (M) and hold a
+4. Listen: open `/tools/player.html` (`npm run serve`), which plays the score with the game's
+   synth and switches moods and voices; or paste it into the
+   [Scrimshaw Jukebox](https://tools.simonwillison.net/scrimshaw-jukebox) (every voice, no
+   moods); or run the game with music on (M) and hold a
    mood from the devtools console with `__game.musicMood('sense')` (`__game.musicMood()`
    lets go, `__game.musicInfo()` shows what plays).
-5. A new song: choose where it plays in `src/game/music.js`, add it to the song table in
-   `docs/music.md` and, if the game needs it, to the list in `tests/music.test.js`.
+5. A new song: set it as a theme's `music:` in `src/themes/` (or add a special case to
+   `songFor` in `src/game/music.js` and `SONGS` in `src/themes/index.js`), and add it to the
+   song table in `docs/music.md`. `npm test` fails on a score in `music/` that no place plays.

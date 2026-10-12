@@ -1,0 +1,100 @@
+# Before writing or changing music, read music/README.md (style, moods, format).
+title    Abyss
+composer Claude
+about    Black glass islands over nothing at all: very slow and sparse, a choir singing half notes over minor chords a tritone apart (Em and Bbm, Cm and F#m) on a low E that never moves, a bell tolling each bar and a music box that can't remember its tune. When something is near, a heartbeat, timpani, low toms and far thunder take over; brass joins the fight, a gong and an organ come for a guardian.
+tempo    60
+beats    4
+steps    4
+reverb   0.7
+
+# moods (music/README.md)
+# mood explore:  lead drone pad toll musicbox
+# mood treasure: pad musicbox wonder
+# mood sense:    heart thunder timpani toms drone pad
+# mood rise:     sense lead toll snare
+# mood fight:    rise brass crash
+# mood boss:     fight -lead gong organ
+
+voice lead     choir     vol=0.32 pan=-0.1 att=0.3 rel=0.8
+voice drone    voices    vol=0.3  att=1.5 rel=2
+voice pad      pad       vol=0.24 pan=0.25 center=G3 att=1 rel=1.5
+voice toll     bell      vol=0.25 pan=-0.3 rev=0.8
+voice musicbox musicbox  vol=0.25 pan=0.5  rev=0.8
+voice wonder   celesta   vol=0.32 pan=-0.4 rev=0.8
+voice heart    kick      vol=0.5
+voice thunder  thunder   vol=0.2  pan=-0.2
+voice timpani  timpani   vol=0.5  pan=-0.1
+voice toms     tomlo     vol=0.4  pan=0.25
+voice snare    snare     vol=0.3  pan=0.1
+voice brass    brass     vol=0.36 pan=-0.25 gate=0.8 center=G3
+voice crash    crash     vol=0.2  pan=0.2
+voice gong     gong      vol=0.35 pan=-0.3
+voice organ    pipe      vol=0.3  att=0.5 rel=1
+
+# Em Bbm Em Bbm | Cm F#m Em B: the motif (E F# G B A) falls apart over the tritones
+pattern A
+lead     | E4------- F#4------- | F4--------------- | G4------- B4------- | A#4------- C#5------- |
+lead     | C5------- G4------- | A4------- F#4------- | G4------- E4------- | D#4--------------- |
+drone    | E2+B2--------------- | = | = | = |
+drone    | = | = | = | = |
+pad      | [Em]?--------------- | [Bbm]?--------------- | [Em]?--------------- | [Bbm]?--------------- |
+pad      | [Cm]?--------------- | [F#m]?--------------- | [Em]?--------------- | [B]?--------------- |
+toll     | E4--------------- | Bb3--------------- | E4--------------- | Bb3--------------- |
+toll     | C4--------------- | F#3--------------- | E4--------------- | B3--------------- |
+musicbox | .------- B6--- G6--- | .------- F6--- C#6--- | .------- E6--- B6--- | .------- C#7--- F6--- |
+musicbox | .------- G6--- Eb6--- | .------- C#7--- A6--- | .------- B6--- G6--- | .------- D#6--- F#6--- |
+wonder   | E6--- G6--- B6--- G6--- | Bb5--- Db6--- F6--- Db6--- | E6--- G6--- B6--- G6--- | Bb5--- Db6--- F6--- Db6--- |
+wonder   | C6--- Eb6--- G6--- Eb6--- | F#6--- A6--- C#7--- A6--- | E6--- G6--- B6--- G6--- | B5--- D#6--- F#6--- B6--- |
+heart    | X..x .... X..x .... | % | % | % |
+heart    | % | % | % | % |
+thunder  | X... .... .... .... | .... .... .... .... | % | % |
+thunder  | x... .... .... .... | .... .... .... .... | % | % |
+timpani  | E2!--- .------- B1--- | Bb1!--- .------- F2--- | E2!--- .------- B1--- | Bb1!--- .------- F2--- |
+timpani  | C2!--- .------- G1--- | F#1!--- .------- C#2--- | E2!--- .------- B1--- | B1- B1- B1- B1- B1- B1- B1!- B1!- |
+toms     | ..x. .... ..x. .x.. | % | % | % |
+toms     | % | % | % | ..x. .x.. x.x. xxxx |
+snare    | .... .... x... .... | % | % | % |
+snare    | % | % | % | .... x... x.x. xxxx |
+brass    | [Em]--- .------- [Em]--- | [Bbm]--- .------- [Bbm]--- | [Em]--- .------- [Em]--- | [Bbm]--- .------- [Bbm]--- |
+brass    | [Cm]--- .------- [Cm]--- | [F#m]--- .------- [F#m]--- | [Em]--- .------- [Em]--- | [B]--- .------- [B]--- |
+crash    | X... .... .... .... | .... .... .... .... | % | % |
+crash    | x... .... .... .... | .... .... .... .... | % | % |
+gong     | X... .... .... .... | .... .... .... .... | % | % |
+gong     | x... .... .... .... | .... .... .... .... | % | % |
+organ    | [Em]--------------- | [Bbm]--------------- | [Em]--------------- | [Bbm]--------------- |
+organ    | [Cm]--------------- | [F#m]--------------- | [Em]--------------- | [B]--------------- |
+
+# Gm C#m Em Bbm | Cm F#m Gm B
+pattern B
+lead     | D5------- A#4------- | G#4------- E4------- | B4------- G4------- | F4------- C#5------- |
+lead     | D#5------- C5------- | C#5------- A4------- | A#4------- D5------- | B4------- D#5------- |
+drone    | E2+B2--------------- | = | = | = |
+drone    | = | = | = | = |
+pad      | [Gm]?--------------- | [C#m]?--------------- | [Em]?--------------- | [Bbm]?--------------- |
+pad      | [Cm]?--------------- | [F#m]?--------------- | [Gm]?--------------- | [B]?--------------- |
+toll     | G3--------------- | C#4--------------- | E4--------------- | Bb3--------------- |
+toll     | C4--------------- | F#3--------------- | G3--------------- | B3--------------- |
+musicbox | .------- D6--- Bb6--- | .------- G#6--- E6--- | .------- B6--- G6--- | .------- F6--- C#7--- |
+musicbox | .------- Eb6--- G6--- | .------- A6--- C#7--- | .------- D6--- Bb6--- | .------- F#6--- D#6--- |
+wonder   | G6--- Bb6--- D7--- Bb6--- | C#6--- E6--- G#6--- E6--- | E6--- G6--- B6--- G6--- | Bb5--- Db6--- F6--- Db6--- |
+wonder   | C6--- Eb6--- G6--- Eb6--- | F#6--- A6--- C#7--- A6--- | G6--- Bb6--- D7--- Bb6--- | B5--- D#6--- F#6--- B6--- |
+heart    | X..x .... X..x .... | % | % | % |
+heart    | % | % | % | % |
+thunder  | X... .... .... .... | .... .... .... .... | % | % |
+thunder  | x... .... .... .... | .... .... .... .... | % | % |
+timpani  | G1!--- .------- D2--- | C#2!--- .------- G#1--- | E2!--- .------- B1--- | Bb1!--- .------- F2--- |
+timpani  | C2!--- .------- G1--- | F#1!--- .------- C#2--- | G1!--- .------- D2--- | B1- B1- B1- B1- B1- B1- B1!- B1!- |
+toms     | ..x. .... ..x. .x.. | % | % | % |
+toms     | % | % | % | ..x. .x.. x.x. xxxx |
+snare    | .... .... x... .... | % | % | % |
+snare    | % | % | % | .... x... x.x. xxxx |
+brass    | [Gm]--- .------- [Gm]--- | [C#m]--- .------- [C#m]--- | [Em]--- .------- [Em]--- | [Bbm]--- .------- [Bbm]--- |
+brass    | [Cm]--- .------- [Cm]--- | [F#m]--- .------- [F#m]--- | [Gm]--- .------- [Gm]--- | [B]--- .------- [B]--- |
+crash    | X... .... .... .... | .... .... .... .... | % | % |
+crash    | x... .... .... .... | .... .... .... .... | % | % |
+gong     | X... .... .... .... | .... .... .... .... | % | % |
+gong     | x... .... .... .... | .... .... .... .... | % | % |
+organ    | [Gm]--------------- | [C#m]--------------- | [Em]--------------- | [Bbm]--------------- |
+organ    | [Cm]--------------- | [F#m]--------------- | [Gm]--------------- | [B]--------------- |
+
+loop A B

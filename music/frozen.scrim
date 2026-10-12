@@ -1,0 +1,105 @@
+# Before writing or changing music, read music/README.md (style, moods, format).
+title    Frozen
+composer Claude
+about    Blue ice and still lakes under the ground: a slow waltz in F# minor, a low flute and its echo over celesta arpeggios with added seconds, a vibraphone answering on the second beat, a cold string pad and a fretless bass. A G major chord near the end lets the Phrygian cold in. When something is near, a rim click ticks over timpani and a triangle; a horn joins the fight, choir and a low bell come for a guardian.
+tempo    72
+beats    3
+steps    4
+reverb   0.6
+
+# moods (music/README.md)
+# mood explore:  lead echo arp vibes pad bass
+# mood treasure: arp vibes pad wonder
+# mood sense:    timpani rim tri vibes pad bass
+# mood rise:     sense lead echo arp kick snare
+# mood fight:    rise -echo -tri horn crash
+# mood boss:     fight -lead choir bell
+
+voice lead     flute     vol=0.6  pan=-0.15 rev=0.5
+voice echo     flute     vol=0.2  pan=0.5  rev=0.7
+voice horn     horn      vol=0.6  pan=0.2
+voice arp      celesta   vol=0.45 pan=0.3
+voice vibes    vibes     vol=0.3  pan=-0.35
+voice pad      strings   vol=0.24 pan=-0.2 center=C#4 att=0.8 rel=1.2
+voice bass     fretless  vol=0.65
+voice wonder   glock     vol=0.25 pan=0.4  rev=0.7
+voice timpani  timpani   vol=0.5  pan=-0.1
+voice rim      rim       vol=0.25 pan=0.3
+voice tri      tri       vol=0.28 pan=-0.4
+voice kick     kick      vol=0.5
+voice snare    snare     vol=0.3  pan=0.1
+voice crash    crash     vol=0.2  pan=0.2
+voice choir    choir     vol=0.28 center=F#3 att=0.6 rel=1
+voice bell     bell      vol=0.25 pan=-0.2 rev=0.7
+
+# F#m D Bm C#sus4-C# | F#m D E C#: the motif (F# G# A C# B)
+pattern A
+lead    | F#4------- G#4--- | A4------- C#5--- | B4----------- | F#4----- E#4----- |
+lead    | C#5------- B4--- | A4--- F#4--- A4--- | G#4------- B4--- | G#4----------- |
+echo    | .-- F#4------- G#4 | --- A4------- C#5 | --- B4-------- | --- F#4----- E#4-- |
+echo    | --- C#5------- B4 | --- A4--- F#4--- A4 | --- G#4------- B4 | --- G#4-------- |
+horn    | F#4------- G#4--- | A4------- C#5--- | B4----------- | F#4----- E#4----- |
+horn    | C#5------- B4--- | A4--- F#4--- A4--- | G#4------- B4--- | G#4----------- |
+arp     | F#4- C#5- F#5- A5- G#5- C#5- | D4- A4- D5- F#5- E5- A4- | B3- F#4- B4- D5- C#5- F#4- | C#4- F#4- G#4- C#4- E#4- G#4- |
+arp     | F#4- C#5- F#5- A5- G#5- C#5- | D4- A4- D5- F#5- E5- A4- | E4- B4- E5- G#5- F#5- B4- | C#4- G#4- C#5- E#5- D#5- G#4- |
+vibes   | .--- C#6------- | .--- F#5------- | .--- D6------- | .--- F#5--- E#5--- |
+vibes   | .--- C#6------- | .--- F#5------- | .--- B5------- | .--- G#5------- |
+pad     | [F#m]?----------- | [D]?----------- | [Bm]?----------- | [C#sus4]?----- [C#]?----- |
+pad     | [F#m]?----------- | [D]?----------- | [E]?----------- | [C#]?----------- |
+bass    | F#1----------- | D2----------- | B1----------- | C#2----------- |
+bass    | F#1----------- | D2----------- | E2----------- | C#2----------- |
+wonder  | F#6--- C#7--- A6--- | D6--- A6--- F#6--- | B6--- F#6--- D6--- | C#7--- G#6--- E#6--- |
+wonder  | F#6--- C#7--- A6--- | D6--- A6--- F#6--- | E6--- B6--- G#6--- | C#7--- G#6--- E#6--- |
+timpani | F#1!------- C#2--- | D2!------- A1--- | B1!------- F#1--- | C#2!------- G#1--- |
+timpani | F#1!------- C#2--- | D2!------- A1--- | E2!------- B1--- | C#2- C#2- C#2- C#2- C#2!- C#2!- |
+rim     | x.o.x.o.x.o. | % | % | % |
+rim     | % | % | % | x.o.x.o.xxxx |
+tri     | x.......o... | % | % | % |
+tri     | % | % | % | x...x...x... |
+kick    | X.......x... | % | % | % |
+kick    | % | % | % | X...X...X.X. |
+snare   | ....x...o... | % | % | % |
+snare   | % | % | % | ....x.x.xxxx |
+crash   | X........... | ............ | % | % |
+crash   | x........... | ............ | % | % |
+choir   | [F#m]----------- | [D]----------- | [Bm]----------- | [C#]----------- |
+choir   | [F#m]----------- | [D]----------- | [E]----------- | [C#]----------- |
+bell    | F#4----------- | D4----------- | B3----------- | C#4----------- |
+bell    | F#4----------- | D4----------- | E4----------- | C#4----------- |
+
+# Bm F#m D E | Bm F#m G C#
+pattern B
+lead    | D5------- C#5--- | C#5------- A4--- | F#5------- E5- D5- | E5----------- |
+lead    | D5--- C#5--- B4--- | A4------- F#4--- | B4------- D5--- | E#4----------- |
+echo    | .-- D5------- C#5 | --- C#5------- A4 | --- F#5------- E5 | - D5- E5-------- |
+echo    | --- D5--- C#5--- B4 | --- A4------- F#4 | --- B4------- D5 | --- E#4-------- |
+horn    | D5------- C#5--- | C#5------- A4--- | F#5------- E5- D5- | E5----------- |
+horn    | D5--- C#5--- B4--- | A4------- F#4--- | B4------- D5--- | E#4----------- |
+arp     | B3- F#4- B4- D5- C#5- F#4- | F#4- C#5- F#5- A5- G#5- C#5- | D4- A4- D5- F#5- E5- A4- | E4- B4- E5- G#5- F#5- B4- |
+arp     | B3- F#4- B4- D5- C#5- F#4- | F#4- C#5- F#5- A5- G#5- C#5- | G3- D4- G4- B4- A4- D4- | C#4- G#4- C#5- E#5- D#5- G#4- |
+vibes   | .--- D6------- | .--- C#6------- | .--- F#5------- | .--- B5------- |
+vibes   | .--- D6------- | .--- A5------- | .--- B5------- | .--- G#5------- |
+pad     | [Bm]?----------- | [F#m]?----------- | [D]?----------- | [E]?----------- |
+pad     | [Bm]?----------- | [F#m]?----------- | [G]?----------- | [C#]?----------- |
+bass    | B1----------- | F#1----------- | D2----------- | E2----------- |
+bass    | B1----------- | F#1----------- | G1----------- | C#2----------- |
+wonder  | B6--- F#6--- D6--- | F#6--- C#7--- A6--- | D6--- A6--- F#6--- | E6--- B6--- G#6--- |
+wonder  | B6--- F#6--- D6--- | F#6--- C#7--- A6--- | G6--- D7--- B6--- | C#7--- G#6--- E#6--- |
+timpani | B1!------- F#1--- | F#1!------- C#2--- | D2!------- A1--- | E2!------- B1--- |
+timpani | B1!------- F#1--- | F#1!------- C#2--- | G1!------- D2--- | C#2- C#2- C#2- C#2- C#2!- C#2!- |
+rim     | x.o.x.o.x.o. | % | % | % |
+rim     | % | % | % | x.o.x.o.xxxx |
+tri     | x.......o... | % | % | % |
+tri     | % | % | % | x...x...x... |
+kick    | X.......x... | % | % | % |
+kick    | % | % | % | X...X...X.X. |
+snare   | ....x...o... | % | % | % |
+snare   | % | % | % | ....x.x.xxxx |
+crash   | X........... | ............ | % | % |
+crash   | x........... | ............ | % | % |
+choir   | [Bm]----------- | [F#m]----------- | [D]----------- | [E]----------- |
+choir   | [Bm]----------- | [F#m]----------- | [G]----------- | [C#]----------- |
+bell    | B3----------- | F#4----------- | D4----------- | E4----------- |
+bell    | B3----------- | F#4----------- | G3----------- | C#4----------- |
+
+loop A B

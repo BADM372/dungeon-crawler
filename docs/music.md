@@ -16,11 +16,16 @@ are not affected.
 | `src/audio/context.js` | the AudioContext shared with the sound effects, made on the first key or click |
 | `src/audio/score.js` | compiles a score and reads its moods (pure, tested in node) |
 | `src/audio/music.js` | the player: schedules notes ahead, loops, switches songs, fades voices between moods |
-| `src/game/music.js` | picks the song and the mood from the game state; `forceMood` holds one (`__game.musicMood`) |
+| `src/game/music.js` | picks the song (`songFor`) and the mood from the game state; `forceMood` holds one (`__game.musicMood`) |
 
 ## Editing
 
-Paste a score into the jukebox page to hear it, see it as a piano roll and get errors per
+`tools/player.html` (`npm run serve`, then `/tools/player.html`) plays every score with the
+game's synth: pick a song on the left (or `#overworld` in the URL), switch
+moods, click a voice to mute it or shift-click to solo it, click the bar to seek; a piano roll
+shows what plays. It reloads the score each time you pick it, so edit, then pick the song again.
+
+Or paste a score into the jukebox page to hear it, see it as a piano roll and get errors per
 line, then copy it back. Its "Read guide" section documents the format; in short, settings,
 then `voice NAME INSTRUMENT [vol= pan= rev= ...]`, then `pattern` blocks with one line per
 voice (`|` separates bars, a step per note plus one per `-`), then `play` (once) and `loop`
@@ -51,11 +56,26 @@ so a switch is heard within about 0.2 s. A leaving voice fades out from the next
 
 ## Songs
 
-| Song | Where | Notes |
-|---|---|---|
-| `overworld` | above ground (themes without `cave`) | E Dorian over a turning marimba ostinato (after Golden Sun's Sol Sanctum), 80 bpm, 32 bars in A B A2 C, all six moods |
-| `caves` | below ground | dark, driving D minor in 5/4, 76 bpm, 24 bars in three sections; explore, sense and fight only |
+Each theme names its song (`music:` in `src/themes/`); the town and the merchant camp
+(`map.enemyFree`) play `town` and depth 20 plays `core` (`songFor` in `src/game/music.js`).
+`SONGS` in `src/themes/index.js` lists them all, for the test and `tools/player.html`; the
+test also checks that every score in `music/` is one of them.
 
-`caves` was converted from an earlier MIDI score, so it is verbose (velocities as `!`/`?`
-marks, one voice per drum sound, chords spelled out) and its moods only add voices. It
-should be rewritten by hand, the way `overworld` is.
+| Song | Depths | Key, tempo, meter | Sound | `sense` drums |
+|---|---|---|---|---|
+| `town` | town, merchant camp | G major, 100, 3/4 | clarinet and echo, guitar, accordion off-beats, upright bass; explore and treasure only | — |
+| `overworld` | 0–2 meadow | E Dorian, 80 | marimba ostinato against the bar, music box echo, flute, bassoon | timpani, toms, shaker |
+| `peaks` | 3 snowy peaks | B Dorian, 56, 6/8 | oboe and echo, harp with added seconds, high pad, bell | timpani, triangle, bodhran |
+| `badlands` | 4 badlands | A minor, Andalusian (Am G F E), 84 | whistled flute with a dotted-eighth echo, guitar, trumpet in the fight | woodblock gallop, low tom, shaker |
+| `roots` | 5–6 root caves | D Dorian, 76 | clarinet and echo, pizz ostinato in 3+3+2, fretless bass, music box drips | timpani, bodhran, woodblock |
+| `frozen` | 7–8 frozen caves | F# minor, 72, 3/4 | low flute and echo, celesta arpeggios, vibes, a Phrygian G | timpani, rim, triangle |
+| `swamp` | 9–10 fungal swamp | G minor sevenths, 84, swung | oboe, bassoon, bubbling marimba, sliding fretless bass | conga, tumba, guiro |
+| `nests` | 11–12 spider nests | C minor with Db and Bdim, 100 | fiddle, scurrying harpsichord, low wordless choir | hi-hat ticking, tom heartbeat, timpani |
+| `mines` | 13–14 crystal mines | C Lydian, then A minor, 90 | flute and echo, vibes arpeggios, glockenspiel, hammering fretless bass | woodblock pickaxe, triangle, toms |
+| `ruins` | 15–16 buried ruins | D Phrygian dominant, 70 | oboe and echo, harp, a choir drone on D and A; organ for a guardian | timpani, bodhran, rim |
+| `volcanic` | 17–18 volcanic depths | C Phrygian, 84 | horn over a hammering pizz ostinato, tuba, an anvil bell; thunder for a guardian | taiko toms, timpani |
+| `abyss` | 19 obsidian abyss | minor chords a tritone apart over an E pedal, 60 | choir, bell tolls, a broken music box | heartbeat, thunder, timpani, toms |
+| `core` | 20 the core | E harmonic minor, 70 | the overworld's tune in minor, harp, organ, tuba, bell | timpani, toms |
+
+Every song but the town has all six moods. The tunes share the game's motif, scale degrees
+1 2 3 5 4 (the overworld's E F# G B A), in each song's own mode.

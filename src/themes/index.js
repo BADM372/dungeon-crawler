@@ -7,6 +7,7 @@
 //   void: how much of a cube may be open to the depth below; relief: how tall highlands get
 //   arche: weights of the cube archetypes (cubegen/archetypes.js); props: prop set (assets/props.glb), propDensity: chance of a prop per floor (0.32)
 //   light: sky [top, bottom, haze?, tint?] (backdrop, see render/sky.js), stars 0..1, hemi [sky, ground, intensity], sun [colour, intensity], fog 0..1
+//   music: the song (music/<name>.scrim) that plays here; the town and the core have their own (SONGS)
 import { WATER } from '../core/constants.js';
 import { CAVES } from './caves.js';
 
@@ -14,6 +15,7 @@ const T = (at, name, o) => ({ at, name, tiles: {}, cave: false, ...o });
 
 export const THEMES = [
   T(0, 'Meadow islands', {
+    music: 'overworld',
     props: 'meadow', propDensity: 0.15,
     void: 0.5, relief: 0.5,
     arche: { plain: 3, archipelago: 3, spire: 1, mesa: 1, chasm: 1 },
@@ -23,6 +25,7 @@ export const THEMES = [
     light: { sky: ['#163640', '#081218', '#4a6966', '#3b3656'], stars: 1, hemi: ['#dfeaff', '#3a3020', 1.1], sun: ['#fff1dd', 2.4], fog: 0 },
   }),
   T(3, 'Snowy peaks', {
+    music: 'peaks',
     props: 'peaks',
     void: 0.42, relief: 1.0,
     arche: { spire: 3, chasm: 2, mesa: 2, plain: 1 },
@@ -33,6 +36,7 @@ export const THEMES = [
     light: { sky: ['#1c2e46', '#0a0f18', '#4c5d74', '#3d3a5e'], stars: 1, hemi: ['#e6f0ff', '#565c6c', 1.15], sun: ['#f4f8ff', 2.2], fog: 0.15 },
   }),
   T(4, 'Badlands', {
+    music: 'badlands',
     props: 'badlands',
     void: 0.12, relief: 0.8,
     arche: { chasm: 3, mesa: 3, spire: 1, plain: 1 },
@@ -44,3 +48,6 @@ export const THEMES = [
   }),
   ...CAVES,
 ];
+
+// every song the game plays: the town (and the merchant camp), one per theme, and the core (depth 20)
+export const SONGS = ['town', ...new Set(THEMES.map(t => t.music)), 'core'];

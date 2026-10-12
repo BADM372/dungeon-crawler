@@ -1,5 +1,6 @@
 // Which song plays and in which mood (audio/music.js plays it; music/README.md has the moods):
-// the overworld theme above ground, the caves theme below.
+// the town's waltz in the town and the merchant camp, the core's theme at the bottom of the
+// world, and everywhere else the song of the depth's theme (themes/: music).
 //   explore   nothing going on
 //   treasure  a reward site's chest close by, no enemy around
 //   sense     a live enemy close by, not after you yet
@@ -10,7 +11,7 @@
 // The mood rises at once and falls back after the calmer reason has held for a moment.
 import { player, state } from './state.js';
 import { allEnemies } from './enemies.js';
-import { themeAt } from '../themes/depth.js';
+import { themeAt, MAX_DEPTH } from '../themes/depth.js';
 import { playSong, setMood } from '../audio/music.js';
 import { MOODS } from '../audio/score.js';
 
@@ -56,9 +57,11 @@ function wanted() {
   return want;
 }
 
+export const songFor = map => map.enemyFree ? 'town' : map.depth >= MAX_DEPTH ? 'core' : themeAt(map.depth).music;
+
 export function updateMusic(dt) {
   if (!state.map) return;
-  playSong(themeAt(state.map.depth).cave ? 'caves' : 'overworld');
+  playSong(songFor(state.map));
   const want = forced ?? wanted();
   if (forced || RANK[want] >= RANK[mood]) { mood = want; calm = 0; }
   else if ((calm += dt) > HOLD[mood]) { mood = want; calm = 0; }
