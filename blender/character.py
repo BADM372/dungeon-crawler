@@ -11,8 +11,8 @@ end in the neutral standing pose so they can be cross-faded from anything):
     Jump         -- crouch, push-off, ballistic flight, landing, recovery; the
                     game slices it by frame number (see JUMP_V0), keep timing
     JumpLandSit  -- jump, lose balance, land on the bottom, bounce, stay sitting
-    GetUpBack    -- lying on the back -> sit up, feet in, squat, stand (extras: move_time)
-    GetUpFront   -- lying face down -> push up, knees under, squat, stand (extras: move_time)
+    GetUpBack    -- lying on the back -> knees to the chest, rock onto the feet, stand (extras: move_time)
+    GetUpFront   -- lying face down -> push up, knees under, sit back on the feet, stand (extras: move_time)
     Kick         -- right front kick
     Punch        -- right straight punch from a guard
     Slash        -- right-handed overhead diagonal slash (extras: weapon_socket)
@@ -1043,12 +1043,13 @@ def jump_land_sit_params():
 # Getting up after a ragdoll.  Both clips start lying flat (the game blends the
 # ragdoll pose into frame 0, lining the clip up with the body) and end in the
 # neutral standing pose with the feet at the origin, so the game puts the player
-# where the feet will be.  `move_time`: the legs are under the body; from here
-# the game may cut the rest short for walking.
+# where the feet will be.  Feet never slide: they are either planted where they
+# end up or moved through the air.  `move_time`: nearly upright; from here the
+# game may cut the rest short for walking.
 GETUP_LIE_Z = 0.13           # hip joint height lying flat (the mesh lift settles it)
 GETUP_SQUAT = Vector((0, 0.10, 0.36))
-GETUP_BACK_T = (0.38, 0.52, 0.80, 1.12)    # sat up, feet in, squat, standing
-GETUP_FRONT_T = (0.32, 0.58, 0.86, 1.18)   # pushed up, knees under, squat, standing
+GETUP_BACK_T = (0.28, 0.48, 0.74, 0.68)    # knees to the chest, rocked onto the feet, standing, move
+GETUP_FRONT_T = (0.24, 0.48, 0.70, 0.96, 0.90)   # pushed up, kneeling, sat back on the feet, standing, move
 
 
 def _getup_feet(points):
@@ -1059,59 +1060,59 @@ def _getup_feet(points):
 
 
 def get_up_back_params():
-    """On the back: sit up with the hands pushing behind, pull the feet in,
-    rock forward over them into a squat and stand."""
-    X, y0 = figure.LEG_X, 0.40
-    t_sit, t_tuck, t_squat, t_end = GETUP_BACK_T
-    hips = keyframes((0.06, Vector((0, y0, GETUP_LIE_Z))), (t_sit, Vector((0, y0 - 0.02, 0.13))),
-                     (t_tuck, Vector((0, y0 - 0.08, 0.15))), (t_squat, GETUP_SQUAT),
-                     (t_end, Vector((0, 0, STAND_Z))))
-    pitch = keyframes((0.06, D(-88)), (t_sit, D(-25)), (t_tuck, D(-5)), (t_squat, D(40)), (t_end, 0.0))
-    lean = keyframes((0.06, 0.0), (t_sit * 0.6, D(18)), (t_tuck, D(10)), (t_squat, D(12)), (t_end, 0.0))
-    nod = keyframes((0.06, 0.0), (t_sit * 0.5, D(30)), (t_tuck, D(15)), (t_squat, D(-20)), (t_end, 0.0))
-    feet = _getup_feet([(0.10, Vector((X + 0.03, y0 - 0.66, 0.11))), (t_sit, Vector((X + 0.04, y0 - 0.50, 0.03))),
-                        (t_tuck, Vector((X + 0.02, 0.02, 0.0))), (t_end, Vector((X, 0, 0)))])
+    """On the back: pull the knees to the chest and rock forward, landing the
+    feet under the hips in a squat, and stand."""
+    X, y0 = figure.LEG_X, 0.36
+    t_tuck, t_rock, t_stand, _ = GETUP_BACK_T
+    t_land = t_rock - 0.06
+    hips = keyframes((0.06, Vector((0, y0, GETUP_LIE_Z))), (t_tuck, Vector((0, y0 + 0.02, 0.15))),
+                     (t_rock, GETUP_SQUAT), (t_stand, Vector((0, 0, STAND_Z))))
+    pitch = keyframes((0.06, D(-88)), (t_tuck, D(-70)), (t_rock, D(28)), (t_stand, 0.0))
+    lean = keyframes((0.06, 0.0), (t_tuck, D(35)), (t_rock, D(6)), (t_stand, 0.0))
+    nod = keyframes((0.06, 0.0), (t_tuck, D(35)), (t_rock, D(-10)), (t_stand, 0.0))
+    # lying feet -> lifted with the knees at the chest -> set down under the body
+    feet = _getup_feet([(0.06, Vector((X + 0.03, y0 - 0.66, 0.11))), (t_tuck, Vector((X + 0.02, y0 - 0.32, 0.30))),
+                        (t_land, Vector((X, 0.0, 0.0))), (t_stand, Vector((X, 0, 0)))])
     na = neutral_arms()
 
     def arms(s, side):
-        behind = A(D(-35), D(28), D(8), s)     # hands planted behind the hips
-        return keyframes((0.06, na[side]), (t_sit * 0.6, behind), (t_tuck, behind),
-                         (t_squat, A(D(55), D(14), D(35), s)), (t_end + 0.05, na[side]))
+        return keyframes((0.06, na[side]), (t_tuck, A(D(45), D(20), D(70), s)),   # hugging the knees
+                         (t_rock, A(D(75), D(14), D(30), s)), (t_stand + 0.08, na[side]))
     arm_l, arm_r = arms(1, "L"), arms(-1, "R")
 
     def fn(t):
         return pose_params(hips_pos=hips(t), hips_rot=(pitch(t), 0.0, 0.0), spine_lean=lean(t),
                            head_pitch=nod(t), feet=feet(t), arms={"L": arm_l(t), "R": arm_r(t)})
-    return one_shot(t_end + 0.08, fn)
+    return one_shot(t_stand + 0.10, fn)
 
 
 def get_up_front_params():
     """Face down: push up on the hands, draw the knees under the hips, sit back
-    onto the feet into a squat and stand."""
-    X, y0 = figure.LEG_X, -0.30
-    t_push, t_knees, t_squat, t_end = GETUP_FRONT_T
-    hips = keyframes((0.06, Vector((0, y0, GETUP_LIE_Z + 0.02))), (t_push, Vector((0, y0 + 0.02, 0.18))),
-                     (t_knees, Vector((0, y0 + 0.10, 0.44))), (t_squat, GETUP_SQUAT),
-                     (t_end, Vector((0, 0, STAND_Z))))
-    pitch = keyframes((0.06, D(88)), (t_push, D(80)), (t_knees, D(70)), (t_squat, D(42)), (t_end, 0.0))
-    lean = keyframes((0.06, 0.0), (t_push, D(-35)), (t_knees, D(-10)), (t_squat, D(10)), (t_end, 0.0))
-    look = keyframes((0.06, 0.0), (t_push, D(-35)), (t_knees, D(-25)), (t_squat, D(-20)), (t_end, 0.0))
-    feet = _getup_feet([(0.10, Vector((X + 0.03, y0 + 0.66, 0.11))), (t_push, Vector((X + 0.03, y0 + 0.64, 0.10))),
-                        (t_knees, Vector((X + 0.02, y0 + 0.50, 0.08))), (t_squat, Vector((X, 0.02, 0.0))),
-                        (t_end, Vector((X, 0, 0)))])
+    onto the planted feet into a squat and stand."""
+    X, y0 = figure.LEG_X, -0.64
+    t_push, t_knees, t_sit, t_stand, _ = GETUP_FRONT_T
+    hips = keyframes((0.06, Vector((0, y0, GETUP_LIE_Z + 0.02))), (t_push, Vector((0, y0 + 0.02, 0.20))),
+                     (t_knees, Vector((0, -0.34, 0.44))), (t_sit, GETUP_SQUAT),
+                     (t_stand, Vector((0, 0, STAND_Z))))
+    pitch = keyframes((0.06, D(88)), (t_push, D(82)), (t_knees, D(65)), (t_sit, D(42)), (t_stand, 0.0))
+    lean = keyframes((0.06, 0.0), (t_push, D(-35)), (t_knees, D(-5)), (t_sit, D(12)), (t_stand, 0.0))
+    look = keyframes((0.06, 0.0), (t_push, D(-35)), (t_knees, D(-25)), (t_sit, D(-20)), (t_stand, 0.0))
+    # the toes stay where they lie; the hips come back over them
+    feet = _getup_feet([(0.06, Vector((X + 0.02, 0.0, 0.11))), (t_knees, Vector((X + 0.02, 0.0, 0.10))),
+                        (t_sit, Vector((X, 0.0, 0.0))), (t_stand, Vector((X, 0, 0)))])
     na = neutral_arms()
 
     def arms(s, side):
         tucked = A(D(70), D(35), D(110), s)    # hands beside the shoulders
         press = A(D(85), D(18), D(10), s)      # straight arms, palms on the floor
-        return keyframes((0.06, na[side]), (0.16, tucked), (t_push, press), (t_knees, press),
-                         (t_squat, A(D(45), D(12), D(30), s)), (t_end + 0.05, na[side]))
+        return keyframes((0.06, na[side]), (0.14, tucked), (t_push, press), (t_knees, press),
+                         (t_sit, A(D(50), D(12), D(30), s)), (t_stand + 0.08, na[side]))
     arm_l, arm_r = arms(1, "L"), arms(-1, "R")
 
     def fn(t):
         return pose_params(hips_pos=hips(t), hips_rot=(pitch(t), 0.0, 0.0), spine_lean=lean(t),
                            head_pitch=look(t), feet=feet(t), arms={"L": arm_l(t), "R": arm_r(t)})
-    return one_shot(t_end + 0.08, fn)
+    return one_shot(t_stand + 0.10, fn)
 
 
 def flex_pose(skel):
@@ -1296,8 +1297,8 @@ def make_animations(rig, ob):
     one("Roll", roll_params(), 900.0, 0.7, 1100.0, 0.7, {"distance": round(2 * math.pi * ROLL_RADIUS, 3)},
         contact="always")
     one("JumpLandSit", jump_land_sit_params(), 200.0, 0.35, 260.0, 0.4)
-    one("GetUpBack", get_up_back_params(), 260.0, 0.5, 340.0, 0.55, {"move_time": GETUP_BACK_T[2]})
-    one("GetUpFront", get_up_front_params(), 260.0, 0.5, 340.0, 0.55, {"move_time": GETUP_FRONT_T[2]})
+    one("GetUpBack", get_up_back_params(), 260.0, 0.5, 340.0, 0.55, {"move_time": GETUP_BACK_T[-1]})
+    one("GetUpFront", get_up_front_params(), 260.0, 0.5, 340.0, 0.55, {"move_time": GETUP_FRONT_T[-1]})
 
     make_climb_animation(rig)
     bake_action(rig, "Flex", [flex_pose(skel)], False)

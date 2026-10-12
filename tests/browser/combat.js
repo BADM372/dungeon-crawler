@@ -461,13 +461,28 @@ export async function runGetUpChecks() {
       }
       check(sides.join() === 'front,back', 'Pushed forward lands face down, backward on the back: ' + sides);
 
-      down(-3); tick(Math.ceil(player.getUp.duration * 60) + 30);
+      // untouched, both clips play to their end without dragging a foot over the floor
+      const sole = side => character.bones['shin.' + side].localToWorld(new THREE.Vector3(0, 0.37, 0));
+      for (const push of [3, -3]) {
+        down(push);
+        let last = null, slide = 0;
+        while (player.getUp) {
+          tick(1);
+          const now = ['L', 'R'].map(sole);
+          if (last && player.getUp?.t > 0.3) now.forEach((v, i) => {   // after the morph from the ragdoll
+            if (Math.min(v.y, last[i].y) - player.y < 0.035) slide = Math.max(slide, Math.hypot(v.x - last[i].x, v.z - last[i].z) * 60);
+          });
+          last = now;
+        }
+        check(slide < 0.6, 'Feet on the floor stay planted while getting up: ' + slide);
+      }
+      tick(30);
       check(!player.getUp && character.getUpWeight === 0, 'Untouched, the get-up plays to its end');
       character.swordWeight = 0; tick(600);   // no fading weight forcing the mixer to repose
       const worst = Math.max(...Object.keys(character.standing).map(n => character.bones[n].quaternion.angleTo(character.standing[n])));
       check(worst < 0.03, 'Idle keeps the idle pose (breathing only): ' + worst);
       return ['ragdoll settles fast and hands its pose to GetUpFront / GetUpBack', 'no walking until the move time, walking cuts the tail',
-        'get-up plays out untouched / idle pose stays put'];
+        'get-up plays out untouched with planted feet / idle pose stays put'];
     } finally {
       key('keyup', 'KeyW');
       state.map = originalMap; state.run = savedRun;

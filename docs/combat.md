@@ -36,8 +36,9 @@
 - Knocked over, you ragdoll until the body settles, then get up from where it lies
   (`game/ragdoll.js`): face down or on the back picks `GetUpFront` / `GetUpBack`,
   turned to the body; the animator morphs the ragdoll pose into the clip's first frames.
-  You can't act until the legs are under you (the clip's `move_time`); walking or
-  swinging then cuts the rest short. `GET_UP_SPEED` sets the pace.
+  The clips keep the feet planted (or lift them), so nothing slides. You can't act until
+  you are nearly upright (the clip's `move_time`); walking or swinging then cuts the
+  rest short. `GET_UP_SPEED` sets the pace.
 - Swimming, ladder climbing, stun, knockdown and travel cancel / block slashes.
 - The Old Sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
   Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
