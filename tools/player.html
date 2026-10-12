@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="../">
+<title>Music player</title>
+<!-- Plays the scores in music/ with the game's synth: /tools/player.html
+     (#overworld picks a song). The game's songs (SONGS), then any folder of reference
+     scores listed in FOLDERS (each with an index.json of { name, title, file }).
+     Moods switch voices like the game does; click a voice to mute it, shift-click to solo. -->
+<style>
+  :root { color-scheme: dark; --bg: #1b1d22; --panel: #23262d; --line: #343842; --dim: #8a909c; --hi: #e9c46a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: #e6e6e6; font: 13px system-ui, sans-serif; display: grid; grid-template-columns: 250px 1fr; height: 100vh; }
+  nav { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 8px 0; }
+  nav h3 { margin: 12px 14px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+  nav a { display: block; padding: 4px 14px; color: inherit; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  nav a:hover { background: #2c3038; }
+  nav a.on { background: #3a3420; color: var(--hi); }
+  main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  header { padding: 14px 18px 8px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .about { color: var(--dim); margin-top: 4px; }
+  .bar { display: flex; gap: 8px; align-items: center; padding: 6px 18px; flex-wrap: wrap; }
+  button { background: #2f333c; color: inherit; border: 1px solid var(--line); border-radius: 4px; padding: 5px 12px; font: inherit; cursor: pointer; }
+  button:hover { background: #393e48; }
+  button.on { background: #4a4126; border-color: #8a7536; color: var(--hi); }
+  button.fallback { color: var(--dim); }
+  #play { min-width: 70px; }
+  #pos { font-variant-numeric: tabular-nums; color: var(--dim); min-width: 260px; }
+  #seek { flex: 1; min-width: 200px; height: 18px; background: #2a2d34; border: 1px solid var(--line); border-radius: 3px; position: relative; cursor: pointer; }
+  #seek .fill { position: absolute; inset: 0 auto 0 0; background: #5b5232; }
+  #seek .mark { position: absolute; top: 0; bottom: 0; width: 1px; background: #444955; }
+  #seek .mark.loop { background: var(--hi); width: 2px; }
+  label { color: var(--dim); display: flex; align-items: center; gap: 6px; }
+  #roll { flex: 1; min-height: 120px; width: 100%; display: block; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #15171b; }
+  #voices { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px; padding: 8px 18px; max-height: 36vh; overflow-y: auto; }
+  .voice { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 3px; background: var(--panel); cursor: pointer; user-select: none; border-left: 4px solid var(--c); }
+  .voice .lamp { width: 8px; height: 8px; border-radius: 50%; background: #333; flex: none; }
+  .voice .name { font-weight: 600; }
+  .voice .inst { color: var(--dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .voice.off { opacity: .35; }
+  .voice.solo { outline: 1px solid var(--hi); }
+  #errors { color: #ff8a80; white-space: pre-wrap; padding: 0 18px; font-family: ui-monospace, monospace; font-size: 12px; }
+  .hint { color: var(--dim); padding: 4px 18px 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+<nav id="list"></nav>
+<main>
+  <header><h1 id="title">Music player</h1><div class="about" id="about"></div></header>
+  <div class="bar">
+    <button id="play">Play</button>
+    <button id="restart">Restart</button>
+    <div id="seek"><div class="fill"></div></div>
+    <span id="pos"></span>
+  </div>
+  <div class="bar">
+    <span style="color:var(--dim)">Mood</span><span id="moods"></span>
+    <label><input type="checkbox" id="loop" checked> loop</label>
+    <label>volume <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7"></label>
+    <label><input type="checkbox" id="follow" checked> piano roll</label>
+  </div>
+  <div id="errors"></div>
+  <canvas id="roll"></canvas>
+  <div id="voices"></div>
+  <div class="hint">Click a voice to mute it, shift-click to solo it. Space plays and pauses, arrows move a pattern, [ and ] move a song.</div>
+</main>
+<script type="module">
+import { createSynth } from './vendor/scrimshaw/synth.js';
+import { loadScore, MOODS } from './src/audio/score.js';
+import { SONGS } from './src/themes/index.js';
+
+const GAME = SONGS;                           // music/<name>.scrim, as src/game/music.js plays them
+const FOLDERS = {};   // music/<dir>: label, for reference scores the game doesn't play
+const LOOKAHEAD = 0.3, HIDDEN_LOOKAHEAD = 1.6;
+const $ = id => document.getElementById(id);
+
+// ---------------------------------------------------------------- song list
+const songs = GAME.map(name => ({ id: name, title: name, group: 'Game' }));
+for (const [dir, label] of Object.entries(FOLDERS)) {
+  try {
+    const index = await (await fetch(`music/${dir}/index.json`)).json();
+    for (const e of index) songs.push({ id: `${dir}/${e.name}`, title: e.title, group: label });
+  } catch (e) { console.warn(`music/${dir}/index.json: ${e.message}`); }
+}
+let group = null;
+for (const s of songs) {
+  if (s.group !== group) { group = s.group; $('list').insertAdjacentHTML('beforeend', `<h3>${group}</h3>`); }
+  const a = document.createElement('a');
+  a.href = `tools/player.html#${s.id}`;           // <base href="../"> would send a bare #id to /
+  a.textContent = s.title; a.dataset.id = s.id;
+  $('list').append(a);
+}
+
+// ---------------------------------------------------------------- audio
+let ctx = null, syn = null;
+function audio() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    syn = createSynth(ctx, ctx.destination);
+    syn.out.gain.value = +$('vol').value;
+    setInterval(tick, 25);
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+
+// ---------------------------------------------------------------- state
+let cur = null;        // { id, score, song, total }
+let play = null;       // { sess, origin, k, i } while playing: origin is the ctx time of song position 0
+let pausedAt = 0;      // song position to resume from
+let mood = 'explore';
+const muted = new Set(), solo = new Set();
+const lit = [];        // per voice: ctx time of its last note start
+
+// song position (seconds) <-> pass: the intro once (k = -1), then loop pass k = 0, 1, ...
+function passList(k) { return k < 0 ? cur.song.intro : cur.song.loop; }
+function passStart(k) { return k < 0 ? 0 : cur.song.intro.dur + k * cur.song.loop.dur; }
+function wrap(pos) {
+  const { intro, loop } = cur.song;
+  if (pos < intro.dur || !loop.dur) return pos;
+  return intro.dur + (pos - intro.dur) % loop.dur;
+}
+function cursorAt(pos) {
+  const { intro } = cur.song;
+  const k = pos < intro.dur || !cur.song.loop.dur ? -1 : Math.floor((pos - intro.dur) / cur.song.loop.dur);
+  const evs = passList(k).events, t = pos - passStart(k);
+  let lo = 0, hi = evs.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (evs[mid].t < t - 1e-6) lo = mid + 1; else hi = mid; }
+  return { k, i: lo };
+}
+
+function voiceOn(i) {
+  if (solo.size) return solo.has(i);
+  return cur.score.moods[mood].has(i) && !muted.has(i);
+}
+function applyGains(fade = 0.03) {
+  if (!play) return;
+  play.sess.ch.forEach((c, i) => {
+    c.input.gain.cancelScheduledValues(ctx.currentTime);
+    c.input.gain.setTargetAtTime(voiceOn(i) ? c.base : 0, ctx.currentTime, fade);
+  });
+}
+
+function start(pos = pausedAt) {
+  if (!cur || cur.score.errors.length && !cur.song.loop.dur) return;
+  audio();
+  stop(true);
+  const sess = syn.session(cur.song);
+  syn.warm(cur.song);
+  sess.ch.forEach((c, i) => { c.base = c.input.gain.value; if (!voiceOn(i)) c.input.gain.value = 0; });
+  const origin = ctx.currentTime + 0.08 - pos;
+  play = { sess, origin, ...cursorAt(pos) };
+  $('play').textContent = 'Pause';
+}
+function stop(keep = false) {
+  if (!play) return;
+  if (!keep) pausedAt = position();
+  play.sess.stop(0.05);
+  play = null;
+  $('play').textContent = 'Play';
+}
+function position() {
+  if (!play) return pausedAt;
+  return Math.max(0, ctx.currentTime - play.origin);
+}
+
+function tick() {
+  if (!play || ctx.state !== 'running') return;
+  const { song } = cur, horizon = ctx.currentTime + (document.hidden ? HIDDEN_LOOKAHEAD : LOOKAHEAD);
+  for (let guard = 0; guard < 20000; guard++) {
+    const tl = passList(play.k);
+    if (play.i >= tl.events.length) {
+      const next = play.k + 1;
+      if (!song.loop.dur || (next > 0 && !$('loop').checked)) {
+        if (play.origin + passStart(next) <= ctx.currentTime) { stop(); pausedAt = 0; }
+        return;
+      }
+      if (play.origin + passStart(next) > horizon) return;
+      play.k = next; play.i = 0;
+      continue;
+    }
+    const ev = tl.events[play.i], t = play.origin + passStart(play.k) + ev.t;
+    if (t > horizon) return;
+    if (t >= ctx.currentTime - 0.03) {
+      play.sess.play(ev, Math.max(t, ctx.currentTime + 0.005));
+      lit[ev.v] = Math.max(lit[ev.v] ?? 0, t);
+    }
+    play.i++;
+  }
+}
+
+// ---------------------------------------------------------------- loading
+async function open(id) {
+  const s = songs.find(x => x.id === id) ?? songs[0];
+  if (!s) return;
+  const was = !!play;
+  stop(); pausedAt = 0;
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.dataset.id === s.id));
+  document.querySelector('nav a.on')?.scrollIntoView({ block: 'nearest' });
+  let text;
+  try {
+    const r = await fetch(`music/${s.id}.scrim`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    text = await r.text();
+  } catch (e) { $('errors').textContent = `music/${s.id}.scrim: ${e.message}`; return; }
+  const score = loadScore(text);
+  cur = { id: s.id, score, song: score.song, total: score.song.intro.dur + score.song.loop.dur };
+  muted.clear(); solo.clear(); lit.length = 0;
+  if (!score.given.includes(mood)) mood = 'explore';
+  $('title').textContent = score.song.title;
+  $('about').textContent = [score.song.composer, score.song.about].filter(Boolean).join(' · ');
+  $('errors').textContent = score.errors.join('\n');
+  document.title = `${score.song.title} · Music player`;
+  renderMoods(); renderVoices(); renderSeek();
+  if (was) start(0);
+}
+
+const COLORS = ['#e76f51', '#f4a261', '#e9c46a', '#2a9d8f', '#8ab17d', '#60a5fa', '#a78bfa', '#f472b6',
+  '#fb7185', '#34d399', '#fbbf24', '#38bdf8', '#c084fc', '#4ade80', '#f97316', '#94a3b8'];
+const colorOf = i => COLORS[i % COLORS.length];
+
+function renderMoods() {
+  $('moods').replaceChildren(...MOODS.map(m => {
+    const b = document.createElement('button');
+    b.textContent = m;
+    b.title = cur.score.given.includes(m) ? `${cur.score.moods[m].size} voices` : 'not in this score: falls back to a calmer mood';
+    b.className = (m === mood ? 'on ' : '') + (cur.score.given.includes(m) ? '' : 'fallback');
+    b.onclick = () => { mood = m; renderMoods(); renderVoices(); applyGains(0.15); };
+    return b;
+  }));
+}
+
+function renderVoices() {
+  $('voices').replaceChildren(...cur.song.voices.map((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'voice' + (voiceOn(i) ? '' : ' off') + (solo.has(i) ? ' solo' : '');
+    d.style.setProperty('--c', colorOf(i));
+    d.innerHTML = `<span class="lamp"></span><span class="name"></span><span class="inst"></span>`;
+    d.querySelector('.name').textContent = v.name;
+    d.querySelector('.inst').textContent = v.inst;
+    d.title = `${v.name}: ${v.inst}, vol ${v.vol}${v.drum ? ', drum' : ''}`;
+    d.onclick = e => {
+      if (e.shiftKey) solo.has(i) ? solo.delete(i) : solo.add(i);
+      else muted.has(i) ? muted.delete(i) : muted.add(i);
+      renderVoices(); applyGains();
+    };
+    return d;
+  }));
+}
+
+function renderSeek() {
+  const seek = $('seek');
+  seek.querySelectorAll('.mark').forEach(m => m.remove());
+  const add = (t, cls) => {
+    const m = document.createElement('div');
+    m.className = 'mark ' + cls; m.style.left = `${100 * t / cur.total}%`;
+    seek.append(m);
+  };
+  const { intro, loop } = cur.song;
+  for (const s of intro.sections) add(s.start, '');
+  for (const s of loop.sections) add(intro.dur + s.start, '');
+  if (intro.dur && loop.dur) add(intro.dur, 'loop');
+}
+$('seek').onclick = e => {
+  if (!cur) return;
+  const r = $('seek').getBoundingClientRect();
+  const pos = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * cur.total;
+  if (play) start(pos); else pausedAt = pos;
+};
+
+// where a position falls: pattern name and bar
+function whereAt(pos) {
+  const { intro } = cur.song;
+  const inIntro = pos < intro.dur || !cur.song.loop.dur;
+  const tl = inIntro ? intro : cur.song.loop, t = inIntro ? pos : pos - intro.dur;
+  const s = tl.sections.find(s => t < s.start + s.dur) ?? tl.sections.at(-1);
+  if (!s) return { label: '' };
+  const bar = Math.min(s.bars, Math.floor((t - s.start) / s.barDur) + 1);
+  return { label: `${inIntro ? 'intro' : 'loop'} · ${s.name}${s.trans ? (s.trans > 0 ? '+' : '') + s.trans : ''} bar ${bar}/${s.bars}`, s, tl };
+}
+const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+
+// ---------------------------------------------------------------- piano roll
+const roll = $('roll'), g = roll.getContext('2d');
+const WINDOW = 8;                                   // seconds shown, a quarter of it before the playhead
+function drawRoll(pos) {
+  const w = roll.clientWidth, h = roll.clientHeight, dpr = devicePixelRatio;
+  if (roll.width !== w * dpr || roll.height !== h * dpr) { roll.width = w * dpr; roll.height = h * dpr; }
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  if (!cur || !$('follow').checked) return;
+  const t0 = pos - WINDOW / 4, t1 = t0 + WINDOW, x = t => (t - t0) / WINDOW * w;
+  // gather the passes in view
+  const items = [];
+  for (let k = -1; ; k++) {
+    if (k >= 0 && !cur.song.loop.dur) break;
+    const base = passStart(k), tl = passList(k);
+    if (base > t1) break;
+    if (base + tl.dur < t0) continue;
+    for (const ev of tl.events) { const t = base + ev.t; if (t > t1) break; if (t + (ev.d ?? 0.1) >= t0) items.push([t, ev]); }
+    if (k > 0 && !$('loop').checked) break;
+  }
+  let lo = 127, hi = 0;
+  for (const [, ev] of items) if (ev.m) for (const m of ev.m) { lo = Math.min(lo, m); hi = Math.max(hi, m); }
+  if (lo > hi) { lo = 48; hi = 84; }
+  lo -= 2; hi += 2;
+  const drums = cur.song.voices.map((v, i) => v.drum ? i : -1).filter(i => i >= 0);
+  const drumH = drums.length ? Math.min(60, drums.length * 6) : 0;
+  const rowH = (h - drumH) / (hi - lo + 1);
+  // bar lines
+  g.strokeStyle = '#262a31'; g.lineWidth = 1;
+  for (let k = -1; ; k++) {
+    if (k >= 0 && !cur.song.loop.dur) break;
+    const base = passStart(k), tl = passList(k);
+    if (base > t1) break;
+    for (const s of tl.sections) for (let b = 0; b < s.bars; b++) {
+      const t = base + s.start + b * s.barDur;
+      if (t >= t0 && t <= t1) { g.beginPath(); g.moveTo(x(t) + .5, 0); g.lineTo(x(t) + .5, h); g.stroke(); }
+    }
+  }
+  for (const [t, ev] of items) {
+    const on = voiceOn(ev.v);
+    g.globalAlpha = on ? 0.9 : 0.15;
+    g.fillStyle = colorOf(ev.v);
+    if (ev.m) for (const m of ev.m) g.fillRect(x(t), (hi - m) * rowH, Math.max(2, ev.d / WINDOW * w - 1), Math.max(2, rowH - 1));
+    else { const r = drums.indexOf(ev.v); g.fillRect(x(t), h - drumH + r * (drumH / drums.length), 3, Math.max(2, drumH / drums.length - 1)); }
+  }
+  g.globalAlpha = 1;
+  g.fillStyle = '#e9c46a'; g.fillRect(x(pos), 0, 1, h);
+}
+
+// ---------------------------------------------------------------- frame
+function frame() {
+  requestAnimationFrame(frame);
+  if (!cur) return;
+  const raw = position(), pos = wrap(raw);
+  $('seek').querySelector('.fill').style.width = `${100 * pos / cur.total}%`;
+  $('pos').textContent = `${fmt(pos)} / ${fmt(cur.total)}  ${whereAt(pos).label}`;
+  const now = ctx?.currentTime ?? 0;
+  document.querySelectorAll('#voices .lamp').forEach((l, i) => {
+    const t = lit[i];
+    l.style.background = play && t != null && t <= now && now - t < 0.12 ? colorOf(i) : '#333';
+  });
+  drawRoll(raw);
+}
+requestAnimationFrame(frame);
+
+// ---------------------------------------------------------------- controls
+$('play').onclick = () => (play ? stop() : start());
+$('restart').onclick = () => { pausedAt = 0; start(0); };
+$('vol').oninput = () => { if (syn) syn.out.gain.value = +$('vol').value; };
+$('loop').onchange = () => { if (play) start(wrap(position())); };
+function jumpPattern(dir) {
+  const pos = wrap(position()), w = whereAt(pos);
+  if (!w.s) return;
+  const base = pos < cur.song.intro.dur ? 0 : cur.song.intro.dur;
+  const all = [...cur.song.intro.sections.map(s => s.start), ...cur.song.loop.sections.map(s => cur.song.intro.dur + s.start)];
+  const here = base + w.s.start, i = all.indexOf(here);
+  const target = dir < 0 ? (pos - here > 1 ? here : all[Math.max(0, i - 1)]) : all[i + 1];
+  if (target == null) return;
+  if (play) start(target); else pausedAt = target;
+}
+function stepSong(dir) {
+  const i = songs.findIndex(s => s.id === cur?.id);
+  location.hash = songs[(i + dir + songs.length) % songs.length].id;
+}
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') return;
+  if (e.key === ' ') { e.preventDefault(); play ? stop() : start(); }
+  else if (e.key === 'ArrowRight') jumpPattern(1);
+  else if (e.key === 'ArrowLeft') jumpPattern(-1);
+  else if (e.key === ']') stepSong(1);
+  else if (e.key === '[') stepSong(-1);
+});
+addEventListener('hashchange', () => open(decodeURIComponent(location.hash.slice(1))));
+open(decodeURIComponent(location.hash.slice(1)) || songs[0]?.id);
+</script>
+</body>
+</html>
