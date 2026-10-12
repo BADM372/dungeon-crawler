@@ -53,7 +53,7 @@ so a switch is heard within about 0.2 s. A leaving voice fades out from the next
 
 | Song | Where | Notes |
 |---|---|---|
-| `overworld` | above ground (themes without `cave`) | slow adventure theme in D, 92 bpm, 32 bars in A A2 B A2, all six moods |
+| `overworld` | above ground (themes without `cave`) | E Dorian over a turning marimba ostinato (after Golden Sun's Sol Sanctum), 80 bpm, 32 bars in A B A2 C, all six moods |
 | `caves` | below ground | dark, driving D minor in 5/4, 76 bpm, 24 bars in three sections; explore, sense and fight only |
 
 `caves` was converted from an earlier MIDI score, so it is verbose (velocities as `!`/`?`

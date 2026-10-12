@@ -28,12 +28,12 @@ drops out and only the bass, the pad and a pulse remain.
 
 | Mood | When | Character | Overworld voices |
 |---|---|---|---|
-| `explore` | nothing going on | the song itself: tune, harmony, gentle motion | lead harp strings tuba glock |
-| `treasure` | a chest within 6 cells, no enemy around | wonder: no drums, no bass, sparkle on top | harp strings glock wonder |
-| `sense` | a live enemy within 8 cells, not after you | suspense: the tune mostly drops out and the drums lead | toms timpani shaker pulse strings glock |
-| `rise` | an enemy chasing you from afar | the tune comes back over the drums and a light kit | sense + lead harp tuba kick snare |
-| `fight` | an enemy after you within 4 cells, or blows traded in the last 6 s | full band: horn, brass, crash | rise - harp - glock + horn brass crash |
-| `boss` | a guardian after you (or hurt and close) | the flute leaves, horn carries the tune, choir and gong | fight - lead + choir gong |
+| `explore` | nothing going on | the song itself: tune, harmony, gentle motion | lead bassoon marimba echo harp strings bass |
+| `treasure` | a chest within 6 cells, no enemy around | wonder: no drums, no bass, sparkle on top | marimba echo harp strings wonder |
+| `sense` | a live enemy within 8 cells, not after you | suspense: the tune mostly drops out and the drums lead | marimba strings bass timpani toms shaker |
+| `rise` | an enemy chasing you from afar | the tune comes back over the drums and a light kit | sense + lead echo harp kick snare |
+| `fight` | an enemy after you within 4 cells, or blows traded in the last 6 s | full band: horn, brass, crash | rise - harp - shaker + horn crash |
+| `boss` | a guardian after you (or hurt and close) | the flute leaves, horn carries the tune, choir and gong | fight - lead - echo + choir gong |
 
 The mood rises at once and falls back once the calmer reason has held for 1 to 5 seconds.
 Joining voices come in on the next sixteenth, and pick up notes already under way, so a
@@ -88,9 +88,10 @@ Guidelines:
   almost every bar.
 - Reuse material: `%` repeats a bar, `pattern A2 from A` copies a pattern and swaps a few
   lines, `loop A A2 B A2` sets the form, `A+2` transposes.
-- Moods: major and Mixolydian for the overworld and towns; Dorian and natural minor for
-  caves; Phrygian, diminished chords, drones and slow tempos (60 to 80) for the deep, Diablo
-  style depths.
+- Moods: major, Mixolydian, or Dorian leaning on its major chords (the overworld: E Dorian
+  over C, D, G and A) for the surface and towns; Dorian and natural minor for caves;
+  Phrygian, diminished chords, drones and slow tempos (60 to 80) for the deep, Diablo style
+  depths.
 
 ## Format cheat sheet
 
