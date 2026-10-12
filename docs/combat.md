@@ -31,7 +31,7 @@
   golden number), life on hit and harder knockback ([loot.md](loot.md)). Without a weapon
   there are no attacks.
 - Hit feedback (`game/juice.js`): a short hit pause, a camera nudge, sparks and
-  ichor, a knockback, a damage number and generated sounds (`audio/sfx.js`, M mutes).
+  ichor, a knockback, a damage number and generated sounds (`audio/sfx.js`).
   Spider bites are a short flinch; a Stunder ram or a lethal bite knocks you over.
 - Knocked over, you ragdoll until the body settles, then get up from where it lies
   (`game/ragdoll.js`): face down or on the back picks `GetUpFront` / `GetUpBack`,

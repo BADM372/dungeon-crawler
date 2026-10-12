@@ -19,7 +19,7 @@ import { queueAttack } from './sword.js';
 import { softTarget } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
 import { allEnemies } from './enemies.js';
-import { toggleMute } from '../audio/sfx.js';
+import { toggleMusic } from '../audio/music.js';
 import { barKey } from './quickbar.js';
 export { clearInput };
 
@@ -50,7 +50,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Space') { controls.jumpPressed = true; e.preventDefault(); }
   // a tap between two frames still swings (holding is handled every frame in update.js)
   if (ATTACK.includes(e.code) && !state.transitioning) autoAttack();
-  if (e.code === 'KeyM') setStatus(toggleMute() ? 'Sound off' : 'Sound on');
+  if (e.code === 'KeyM') setStatus(toggleMusic() ? 'Music on' : 'Music off');
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
   if (e.code === 'KeyC') requestCollect();

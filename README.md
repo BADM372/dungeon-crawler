@@ -15,7 +15,8 @@ Plain ES modules and a vendored three.js; no build step.
   - `src/themes/`: per-depth data: palettes, lighting, generator settings, structure materials.
   - `src/physics/`, `src/render/`, `src/game/`: movement, drawing and game state/flow.
 - `assets/`: exported game data (GLB models, item icons, manifests). The game
-  loads assets only from here. These files are generated; do not edit them by hand.
+  loads assets only from here (and music from `music/`). These files are generated; do not edit them by hand.
+- `music/`: hand-written Scrimshaw scores the game plays (`docs/music.md`).
 - `blender/`: authoring sources: Blender scripts and `.blend` files that export
   into `assets/`, Blender test scripts in `blender/tests/`, renders in `blender/previews/`.
 - `tests/`: `node --test` unit tests; `tests/browser/` holds integration checks
@@ -24,7 +25,7 @@ Plain ES modules and a vendored three.js; no build step.
   (`/tools/kinds.html`, see `docs/enemy-kinds.md`), the depth population measurement and the
   weapon drop tables (`node tools/loot-table.mjs`).
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
-- `vendor/three/`: three.js and the addons in use.
+- `vendor/three/`: three.js and the addons in use; `vendor/scrimshaw/`: the music score parser and synth.
 
 ## Running
 

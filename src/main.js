@@ -42,6 +42,7 @@ import { fireCats } from './game/firecats.js';
 import { projectiles } from './game/projectiles.js';
 import { tickBurning } from './render/burning.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
+import { updateMusic } from './game/music.js';
 import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
 const clock = new THREE.Clock();
@@ -80,6 +81,7 @@ function frame() {
   updatePlayerBar();
   updatePortalBar();
   updateCastBar();
+  updateMusic(elapsed);
   tickSky(performance.now() / 1000);   // real time: the stars shimmer on while paused
   renderer.render(scene, camera);
   requestAnimationFrame(frame);

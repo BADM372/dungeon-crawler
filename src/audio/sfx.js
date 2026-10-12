@@ -1,40 +1,25 @@
 // Generated sound effects (Web Audio, no sample files): a sword whoosh, hits, kills,
-// getting hurt, pickups, and thrown fireballs / punches and burning. The audio context starts on the first key or click, as browsers
-// require. M toggles mute (remembered).
+// getting hurt, pickups, and thrown fireballs / punches and burning. The audio context lives
+// in context.js.
 import * as THREE from 'three';
 import { camera } from '../render/scene.js';
+import { onAudioStart } from './context.js';
 
 let ctx = null, master = null, noiseBuf = null;
-let muted = localStorage.getItem('crawler.muted') === '1';
 const last = {};
 let combo = 0, comboAt = 0;
 
-function start() {
-  if (!ctx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    ctx = new AC();
-    master = ctx.createGain(); master.gain.value = muted ? 0 : 0.45;
-    // a gentle limiter, so many hits at once do not clip
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -10; comp.ratio.value = 6;
-    master.connect(comp).connect(ctx.destination);
-    noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-    const d = noiseBuf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  }
-  if (ctx.state === 'suspended') ctx.resume();
-}
-addEventListener('pointerdown', start, true);
-addEventListener('keydown', start, true);
-
-export const isMuted = () => muted;
-export function toggleMute() {
-  muted = !muted;
-  localStorage.setItem('crawler.muted', muted ? '1' : '0');
-  if (master) master.gain.setTargetAtTime(muted ? 0 : 0.45, ctx.currentTime, 0.02);
-  return muted;
-}
+onAudioStart((ac, output) => {
+  ctx = ac;
+  master = ctx.createGain(); master.gain.value = 0.45;
+  // a gentle limiter, so many hits at once do not clip
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -10; comp.ratio.value = 6;
+  master.connect(comp).connect(output);
+  noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+});
 
 // building blocks: a gain envelope, noise and pitch-swept oscillators
 function amp(t, attack, peak, decay, out) {
@@ -154,7 +139,7 @@ export async function renderSfx(name, pitch = 1) {
 const ndc = new THREE.Vector3();
 // sfx(name, { at: {x,y,z} (pans by screen position), pitch, volume })
 export function sfx(name, { at = null, pitch = 1, volume = 1 } = {}) {
-  if (!ctx || muted || ctx.state !== 'running') return;
+  if (!ctx || ctx.state !== 'running') return;
   const now = ctx.currentTime;
   if (name === 'coin') {
     combo = now - comboAt < 0.4 ? combo + 1 : 0; comboAt = now;
