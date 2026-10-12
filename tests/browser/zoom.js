@@ -29,12 +29,21 @@ export function runZoomChecks() {
     press('KeyK', { repeat: true });
     press('KeyL', { ctrlKey: true });
     check(view.zoomTarget === DEFAULT_ZOOM, 'Zero wheel, repeats and modified shortcuts must not zoom');
+    for (let i = 0; i < 10; i++) press('KeyK');
+    const levels = new Set([view.zoomTarget]);
+    for (let i = 0; i < 10; i++) { press('KeyL'); levels.add(view.zoomTarget); }
+    check(levels.size === 5, 'K/L must have exactly five zoom levels');
+    for (let i = 0; i < 10; i++) wheel(-100);
+    const wheelLevels = new Set([view.zoomTarget]);
+    for (let i = 0; i < 10; i++) { wheel(100); wheelLevels.add(view.zoomTarget); }
+    check(wheelLevels.size === 5 && [...wheelLevels].every(zoom => levels.has(zoom)), 'Wheel must share the same five levels');
+    view.zoomTarget = DEFAULT_ZOOM;
     setInventoryOpen(true);
     for (const input of [() => press('KeyK'), () => press('KeyL'), () => wheel(-100), () => wheel(100)]) {
       input();
       check(view.zoomTarget === DEFAULT_ZOOM, 'Inventory must suppress keyboard and wheel zoom');
     }
-    return ['K/L zoom without knockdown', 'wheel matches reversible keyboard steps', 'input guards / inventory isolation'];
+    return ['K/L zoom without knockdown', 'wheel matches reversible keyboard steps', 'exactly five shared levels', 'input guards / inventory isolation'];
   } finally {
     view.zoomTarget = original;
     setInventoryOpen(inventoryOpen);
