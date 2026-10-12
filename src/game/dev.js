@@ -9,12 +9,14 @@ import { whenReady } from './hud.js';
 import { startTravel } from './travel.js';
 import { enterCube, arrivalPoint, spawnAt } from './flow.js';
 import { clearMouseInput } from './orders.js';
+import { takeTownPortal } from './townportal.js';
 
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
 const D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 export function takePortal(q) {
   if (state.transitioning || state.inventoryOpen || q.kind === 'spawn') return;
+  if (q.kind === 'town') { takeTownPortal(); return; }
   clearMouseInput();
   const [x, z] = q.kind === 'side' ? [q.x + 0.5 + D[q.dir][0] * 0.3, q.z + 0.5 + D[q.dir][1] * 0.3] : [q.x + 0.5, q.z + 0.5];
   Object.assign(player, { x, z, y: q.y, visY: q.y, vx: 0, vy: 0, vz: 0, grounded: true, ragdoll: null });

@@ -11,6 +11,7 @@ import { movePlayer, updateLayer } from '../physics/move.js';
 import { applyHazards } from '../physics/hazards.js';
 import { climb } from '../physics/climb.js';
 import { landFall } from './fall.js';
+import { tickCast, cancelCast } from './townportal.js';
 
 // during the wind-up, step in towards an enemy that is just out of reach
 function lunge(s) {
@@ -26,7 +27,7 @@ export function updatePlayer(dt) {
   // a portal's charge only carries over while checkPortals sees us standing in it
   const charge = state.portalCharge;
   state.portalCharge = null;
-  if (player.ragdoll) { cancelSword(); clearOrder(); stepRagdoll(dt); return; }
+  if (player.ragdoll) { cancelSword(); cancelCast('Portal interrupted'); clearOrder(); stepRagdoll(dt); return; }
   if (player.getUp) tickGetUp(dt);
   // keys win over mouse orders
   const keys = inputDir();
@@ -39,6 +40,7 @@ export function updatePlayer(dt) {
   const len = Math.hypot(dx, dz);
   if (len > 1) { dx /= len; dz /= len; }
   const jump = takeJump();
+  tickCast(dt, len > 0 || jump);   // reading the town portal scroll: moving interrupts it
   if (climb(dt, dx, dz, jump)) { cancelSword(); clearOrder(); return; }   // on a ladder
   // Slash is a planted swing: no walking until the blade went through, then moving cuts it short
   const s = player.sword;

@@ -7,9 +7,9 @@ import { layerMeshes } from './layers.js';
 import { buildCubeGeometry } from './cubegeo.js';
 import { buildFalls, lavaLights } from './falls.js';
 import { addGhosts } from './ghosts.js';
-import { buildMarkers } from './markers.js';
-import { adoptLights, releaseLights } from './lightpool.js';
-import { makeFadable } from './fade.js';
+import { buildMarkers, townPortalFx } from './markers.js';
+import { adoptLights, releaseLights, trackLight, untrackLight } from './lightpool.js';
+import { makeFadable, adoptFade } from './fade.js';
 import { makeGlass, setGlassFaces } from './glass.js';
 import { buildProps } from './props.js';
 import { placeProps } from './propplace.js';
@@ -22,8 +22,9 @@ export function disposeWorld(world) {
   world.group.traverse(o => { if (!o.userData.sharedGeo) o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.userData.keep || m.dispose()); });
 }
 
-// geo: the cube's geometry arrays (from the worker); built here if missing
-export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = [], locked = !!m.guardian) {
+// geo: the cube's geometry arrays (from the worker); built here if missing; townPad: the end
+// of the open town portal standing in this cube (core/townportal.js townPadIn)
+export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = [], locked = !!m.guardian, townPad = null) {
   const group = new THREE.Group();
   const fluidMeshes = layerMeshes(geo, group);
   const { splashes, lights } = buildFalls(m, group);
@@ -39,7 +40,30 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open =
   adoptLights(group);
   makeFadable(group);
   scene.add(group);
-  return { group, glass, fluidMeshes, splashes, lights, ...markers };
+  const world = { group, glass, fluidMeshes, splashes, lights, ...markers };
+  setTownPortal(world, townPad);
+  return world;
+}
+
+// Show the town portal standing at pad in a built cube (null: none), replacing one elsewhere.
+export function setTownPortal(world, pad) {
+  if (!world) return;
+  const i = world.portalFx.findIndex(f => f.obj.userData.portal.kind === 'town'), old = world.portalFx[i];
+  const at = old?.obj.userData.portal;
+  if (old && pad && at.x === pad.x && at.y === pad.y && at.z === pad.z) return;
+  if (old) {
+    world.portalFx.splice(i, 1);
+    world.group.remove(old.obj);
+    untrackLight(old.light);
+    old.obj.traverse(o => { o.geometry?.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); });
+  }
+  if (!pad) return;
+  const fx = townPortalFx(pad);
+  fx.obj.remove(fx.light);   // a pool light source (render/lightpool.js), not a scene light
+  world.group.add(fx.obj);
+  adoptFade(world.group, fx.obj);
+  trackLight(fx.light, fx.obj, world.group);
+  world.portalFx.push(fx);
 }
 
 // The departing cube is already built when its first side connection opens.

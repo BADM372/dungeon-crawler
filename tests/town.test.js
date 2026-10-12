@@ -7,7 +7,7 @@ import { N, LH, CHAR_R, EDGE_CORNERS } from '../src/core/constants.js';
 import { containsXZ, viewBlockedAt } from '../src/core/blockers.js';
 import { World } from '../src/world/world.js';
 import { step, faceKey } from '../src/world/coords.js';
-import { BUILDINGS, MERCHANTS, TOWN_LEVEL, enemyFreeAt, merchantCampKey, rotateTownPoint } from '../src/world/town.js';
+import { BUILDINGS, MERCHANTS, TOWN_LEVEL, TOWN_PORTAL_SPOT, enemyFreeAt, merchantCampKey, rotateTownPoint } from '../src/world/town.js';
 import { state } from './fixtures.js';
 import { ENEMY_PROFILES } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
@@ -94,6 +94,27 @@ test('town is flat, has water, four permanent buildings, varied tall trees, and 
     assert.deepEqual(signature(m), signature(new World(seed).cube(w.start).map));
   }
   assert.deepEqual([...directions].sort(), [0, 1, 2, 3]);
+});
+
+test('town reserves a dry, reachable, uncluttered spot for the town portal beside the plaza', () => {
+  const ends = new Set();
+  for (let seed = 0; seed < 80; seed++) {
+    const w = new World(seed), m = state.map = w.cube(w.start).map, at = m.town.portal;
+    const spawn = m.portals.find(p => p.kind === 'spawn'), cell = Math.floor(at.z) * N + Math.floor(at.x);
+    ends.add(m.exit);
+    assert.equal(at.y, TOWN_LEVEL * LH);
+    assert.deepEqual([at.x, at.z].map(v => +v.toFixed(6)), rotateTownPoint(...TOWN_PORTAL_SPOT, m.town.yaw).map(v => +v.toFixed(6)));
+    assert.equal(m.safe[cell], 1, 'the spot is reachable from the spawn');
+    assert.ok(Math.hypot(at.x - spawn.x - .5, at.z - spawn.z - .5) > 2.5, 'clear of the spawn pad');
+    assert.ok(m.portals.filter(p => p.kind === 'side').every(p => Math.hypot(at.x - p.x - .5, at.z - p.z - .5) > 4));
+    assert.ok(!m.occluders.filter(b => b.shape !== 'ellipsoid').some(b => containsXZ(b, at.x, at.z, 1.1)));
+    assert.ok(!new Set(m.staticBlockers.flat()).values().some(b => containsXZ(b, at.x, at.z, 1)));
+    assert.ok(!m.town.placements.some(p => !p.name.startsWith('town_') && Math.hypot(p.x - at.x, p.z - at.z) < 1.1), 'nothing stands on it');
+    for (const [dx, dz] of [[0, 0], [.7, 0], [-.7, 0], [0, .7], [0, -.7]])
+      assert.equal(m.cols[Math.floor(at.z + dz) * N + Math.floor(at.x + dx)][0].fluid, 0);
+  }
+  assert.deepEqual([...ends].sort(), [0, 1, 2, 3]);
+  assert.equal(new World(3).cube(merchantCampKey(3)).map.merchantCamp.portal, undefined, 'only the town has one');
 });
 
 test('town boundary is shared and exactly flat even if the neighbour is generated first', () => {

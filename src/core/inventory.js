@@ -2,15 +2,18 @@ import { ITEMS, COINS } from './items.js';
 
 // A slot holds { instanceId, itemId, count, gen? }. `gen` is a generated item's own data
 // (core/gear/): a slot with it is one unique item and never stacks.
+// The quick bar (keys 1-6) holds references into the bag, not items: { itemId } for stackables
+// (any stack of that item; the slot stays when none are left) and { instanceId } for unique
+// items (it clears when that item leaves the bag).
 
-export const BAG_SIZE = 24;
+export const BAG_SIZE = 24, BAR_SIZE = 6;
 export function whole(n) {
   if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('Expected a non-negative safe integer');
   return n;
 }
 export function createInventory() {
   return { slots: Array(BAG_SIZE).fill(null), currency: COINS.map(c => ({ itemId: c.id, count: 0 })),
-    equipped: null, nextInstance: 1, version: 0 };
+    bar: Array(BAR_SIZE).fill(null), equipped: null, nextInstance: 1, version: 0 };
 }
 export const copperTotal = inv => whole(inv.currency.reduce((n, s) => n + s.count * ITEMS[s.itemId].value, 0));
 export function coinCounts(copper) {
@@ -79,13 +82,17 @@ export function addInstance(inv, item) {
   inv.version++;
   return instanceId;
 }
-// the whole slot out of the bag (unequipping it): { itemId, count, gen? }, or null
+// a bound item (the town portal scroll) never leaves the bag
+export const isBound = itemId => !!ITEMS[itemId]?.bound;
+// the whole slot out of the bag (unequipping it): { itemId, count, gen? }, or null (also for
+// bound items)
 export function takeItem(inv, instanceId) {
   const i = inv.slots.findIndex(s => s?.instanceId === instanceId);
-  if (i < 0) return null;
+  if (i < 0 || isBound(inv.slots[i].itemId)) return null;
   const { itemId, count, gen } = inv.slots[i];
   inv.slots[i] = null;
   if (inv.equipped === instanceId) inv.equipped = null;
+  forgetBar(inv, instanceId);
   inv.version++;
   return gen ? { itemId, count, gen } : { itemId, count };
 }
@@ -100,7 +107,39 @@ export function removeItem(inv, instanceId, count = 1) {
   if (!inv.slots[i].count) {
     inv.slots[i] = null;
     if (inv.equipped === instanceId) inv.equipped = null;
+    forgetBar(inv, instanceId);
   }
   inv.version++;
   return true;
+}
+
+// Quick bar: weapons (equip on use) and items with a use action.
+export const barAllowed = itemId => !!(ITEMS[itemId]?.weapon || ITEMS[itemId]?.use);
+const barRef = slot => ITEMS[slot.itemId].stackLimit > 1 && !slot.gen ? { itemId: slot.itemId } : { instanceId: slot.instanceId };
+const sameRef = (a, b) => !!a && !!b && a.itemId === b.itemId && a.instanceId === b.instanceId;
+function forgetBar(inv, instanceId) {
+  inv.bar.forEach((r, i) => { if (r?.instanceId === instanceId) inv.bar[i] = null; });
+}
+// Put the bag item on bar slot `index`, moving it from any other slot; on the slot it already
+// has, take it off. false: no such item, or it cannot go on the bar.
+export function assignBar(inv, index, instanceId) {
+  if (!Number.isInteger(index) || index < 0 || index >= BAR_SIZE) throw new RangeError('No such quick bar slot');
+  const slot = ownedItem(inv, instanceId);
+  if (!slot || !barAllowed(slot.itemId)) return false;
+  const ref = barRef(slot), already = sameRef(inv.bar[index], ref);
+  inv.bar.forEach((r, i) => { if (sameRef(r, ref)) inv.bar[i] = null; });
+  if (!already) inv.bar[index] = ref;
+  inv.version++;
+  return true;
+}
+// the bar slot holding this bag item (-1: none)
+export const barIndexOf = (inv, slot) => !slot ? -1 : inv.bar.findIndex(r => sameRef(r, barRef(slot)));
+// What bar slot `index` stands for: { itemId, slot: the bag slot using it takes (null when none
+// is left), count }, or null when it is empty.
+export function barEntry(inv, index) {
+  const ref = inv.bar[index];
+  if (!ref) return null;
+  const slots = ref.itemId ? inv.slots.filter(s => s?.itemId === ref.itemId && !s.gen) : [ownedItem(inv, ref.instanceId)].filter(Boolean);
+  if (!ref.itemId && !slots.length) return null;
+  return { itemId: ref.itemId ?? slots[0].itemId, slot: slots[0] ?? null, count: slots.reduce((n, s) => n + s.count, 0) };
 }

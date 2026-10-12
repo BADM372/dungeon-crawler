@@ -1,5 +1,5 @@
-import { createInventory, addInstance, equipItem, whole } from './inventory.js';
-import { OLD_SWORD } from './items.js';
+import { createInventory, addInstance, equipItem, assignBar, whole } from './inventory.js';
+import { OLD_SWORD, TOWN_PORTAL } from './items.js';
 import { fixedWeapon } from './gear/generate.js';
 
 export const xpToNext = level => 100 + 50 * (level - 1);
@@ -20,10 +20,12 @@ export function xpProgress(p) {
 export function createPlayerStats() {
   const inventory = createInventory();
   equipItem(inventory, addInstance(inventory, fixedWeapon(OLD_SWORD.id)));
+  assignBar(inventory, 0, addInstance(inventory, { itemId: TOWN_PORTAL.id }));
   return { xp: 0, level: 1, maxHp: 100, hp: 100, lastDamageAt: -Infinity, inventory };
 }
-// defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js)
-export const createRun = () => ({ defeated: new Set(), unlockedGates: new Set(), loot: new Map() });
+// defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js); townPortal: the
+// open town portal, if any (game/townportal.js)
+export const createRun = () => ({ defeated: new Set(), unlockedGates: new Set(), loot: new Map(), townPortal: null });
 export function awardXP(p, amount) {
   whole(amount);
   const xp = whole(p.xp + amount), oldLevel = p.level, oldMax = p.maxHp;

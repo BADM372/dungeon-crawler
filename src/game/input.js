@@ -3,6 +3,7 @@
 // can reach (and does nothing without one). Space jumps.
 // Mouse: click the floor to walk there, click an enemy to attack it (hold for more), click an
 // item on the floor to pick it up. V: the floor panel (game/inventory.js); X: item labels.
+// 1-6: the quick bar (game/quickbar.js).
 import { stepZoom } from '../core/zoom.js';
 import { player, state, view, setStatus } from './state.js';
 import { spawnEntry, nextCube } from './flow.js';
@@ -19,6 +20,7 @@ import { softTarget } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
 import { allEnemies } from './enemies.js';
 import { toggleMute } from '../audio/sfx.js';
+import { barKey } from './quickbar.js';
 export { clearInput };
 
 const { keys } = controls;
@@ -36,6 +38,9 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyI') { if (!e.repeat) { setHelpOpen(false); toggleInventory(); } e.preventDefault(); return; }
   if (e.code === 'KeyV') { if (!e.repeat) { setHelpOpen(false); toggleFloor(); } e.preventDefault(); return; }
   if (e.code === 'Escape' && state.inventoryOpen) { setInventoryOpen(false); e.preventDefault(); return; }
+  // 1-6: the quick bar (with the inventory open: put the selected item there); not while typing
+  const bar = /^Digit([1-6])$/.exec(e.code);
+  if (bar && !['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target?.tagName)) { if (!e.repeat) barKey(bar[1] - 1); e.preventDefault(); return; }
   if (state.inventoryOpen) return;
   // by key, not code: ? and / sit on different keys across layouts
   if (e.key === '?' || e.key === '/') { if (!e.repeat) toggleHelp(); e.preventDefault(); return; }

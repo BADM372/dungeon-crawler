@@ -1,0 +1,138 @@
+// The town portal scroll. Using it starts a 5 s cast; moving, jumping, attacking, being hurt or
+// knocked over interrupts it. Then a portal opens on free ground in front of you. It works like
+// a well: stand in it (it charges for a second) and the screen fades to town, where its other
+// end stands beside the plaza. Stepping into that end fades you back to exactly where you cast
+// it, and both ends close. Casting again moves the portal; a new world closes it.
+import { N, STEP } from '../core/constants.js';
+import { CAST_TIME, PAD_RADIUS } from '../core/townportal.js';
+import { TOWN_KEY, isTown } from '../world/town.js';
+import { groundAt, blockedAt } from '../physics/collide.js';
+import { respawnPoint, supportedPoint } from '../physics/respawn.js';
+import { setTownPortal } from '../render/world.js';
+import { floatText } from '../render/floattext.js';
+import { sfx } from '../audio/sfx.js';
+import { player, state, setStatus } from './state.js';
+import { whenReady, fadeOut, fadeIn } from './hud.js';
+import { enterCube } from './flow.js';
+import { cancelSword } from './sword.js';
+import { clearMouseInput } from './orders.js';
+import { drawMinimap } from './minimap.js';
+
+const FADE_MS = 380;
+
+// status messages are a dev overlay; what the player needs to see also rises over C
+function say(message) {
+  setStatus(message);
+  floatText(message, q => q.set(player.x, player.visY + 2.1, player.z), { color: '#d9c2ff', size: 0.2, life: 1.8, rise: 0.35 });
+}
+
+// why the scroll cannot be read right now (null: it can)
+function castBlocked() {
+  const p = player;
+  if (!state.map || state.transitioning) return 'Not now';
+  if (isTown(state.cubeKey)) return 'You are already in town';
+  if (state.fallFrom || p.hp <= 0 || p.ragdoll || p.getUp || p.climb || p.swimming || !p.grounded) return 'You need firm ground to open a portal';
+  if (p.stun > 0 || p.sword.active) return 'Finish your current action first';
+  return null;
+}
+
+// use the scroll: start casting (or stop a cast in progress)
+export function useTownPortal() {
+  if (state.cast) { cancelCast('Portal cancelled'); return false; }
+  const why = castBlocked();
+  if (why) { say(why); return false; }
+  state.cast = { kind: 'townPortal', t: 0, duration: CAST_TIME, x: player.x, z: player.z, since: state.time };
+  clearMouseInput();
+  setStatus('Opening a portal to town... hold still');
+  return true;
+}
+
+export function cancelCast(message = '') {
+  if (!state.cast) return;
+  state.cast = null;
+  if (message) say(message);
+}
+
+// every simulation step while casting; moving: the player asked to move or jump this step
+export function tickCast(dt, moving) {
+  const c = state.cast, p = player;
+  if (!c) return;
+  if (moving || p.sword.active || p.sword.requested || p.lastDamageAt > c.since || p.ragdoll || p.climb
+    || p.swimming || !p.grounded || state.fallFrom || Math.hypot(p.x - c.x, p.z - c.z) > 0.2) {
+    cancelCast('Portal interrupted');
+    return;
+  }
+  c.t += dt;
+  if (c.t >= c.duration) { state.cast = null; openTownPortal(); }
+}
+
+// on (or right next to) one of the cube's own portal pads
+const nearPortal = (x, z) => state.map.portals.some(q => q.cells.some(c => {
+  const cx = c % N, cz = Math.floor(c / N);
+  return Math.hypot(x - Math.max(cx, Math.min(cx + 1, x)), z - Math.max(cz, Math.min(cz + 1, z))) < PAD_RADIUS + 0.4;
+}));
+
+// a spot for the pad: dry, flat, supported ground a step or two in front of the player (else
+// around them), on their level, clear of the cube's own portals and reachable in a straight line
+function padSpot() {
+  const p = player, ring = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [.7, .7], [.7, -.7], [-.7, .7], [-.7, -.7]];
+  for (const r of [1.6, 2.1, 1.3, 2.7]) for (const da of [0, .4, -.4, .8, -.8, 1.3, -1.3, 1.9, -1.9, 2.5, -2.5, Math.PI]) {
+    const a = p.yaw + da, x = p.x + Math.sin(a) * r, z = p.z + Math.cos(a) * r;
+    if (x < 1.2 || z < 1.2 || x > N - 1.2 || z > N - 1.2) continue;
+    const s = supportedPoint(x, p.y, z);
+    if (!s || Math.abs(s.y - p.y) > STEP) continue;
+    if (nearPortal(x, z)) continue;
+    const flat = ring.every(([dx, dz]) => {
+      const px = x + dx * PAD_RADIUS, pz = z + dz * PAD_RADIUS, g = groundAt(px, pz, s.y, STEP);
+      return g.s && !g.s.fluid && Math.abs(g.h - s.y) < 0.25 && !blockedAt(px, pz, s.y, STEP);
+    });
+    const clear = [.25, .5, .75].every(t => !blockedAt(p.x + (x - p.x) * t, p.z + (z - p.z) * t, p.y, STEP));
+    if (flat && clear) return s;
+  }
+  return null;
+}
+
+function openTownPortal() {
+  const pad = padSpot();
+  if (!pad) { say('No room for a portal here'); return; }
+  const back = respawnPoint({ x: player.x, y: player.y, z: player.z });
+  state.run.townPortal = { key: state.cubeKey, depth: state.map.depth, pad, back };
+  setTownPortal(state.world, pad);
+  sfx('portal', { at: pad });
+  setStatus('A portal to town opens');
+  drawMinimap();
+}
+
+// where you stand in town: beside the town end, towards the plaza
+function townArrival(m, pad) {
+  const sp = m.portals.find(p => p.kind === 'spawn');
+  const dx = sp.x + .5 - pad.x, dz = sp.z + .5 - pad.z, d = Math.hypot(dx, dz) || 1;
+  return { x: pad.x + dx / d * 1.4, y: pad.y, z: pad.z + dz / d * 1.4, yaw: Math.atan2(dx, dz) };
+}
+
+// stepped through either end (game/portals.js): fade to the other one
+export function takeTownPortal() {
+  const tp = state.run.townPortal;
+  if (!tp || state.transitioning) return false;
+  const toTown = !isTown(state.cubeKey), cubes = state.cubes, run = state.run;
+  state.transitioning = true;
+  state.portalCharge = null;
+  cancelCast(); cancelSword(true); clearMouseInput();
+  sfx('portal');
+  fadeOut();
+  setTimeout(() => whenReady(cubes.get(toTown ? TOWN_KEY : tp.key)).then(c => {
+    if (state.cubes !== cubes || state.run !== run) return;
+    const at = toTown ? townArrival(c.map, c.map.town.portal) : { ...tp.back };
+    if (!toTown) run.townPortal = null;   // back through: both ends close
+    enterCube(c, null, null, at);
+    if (toTown) player.yaw = at.yaw;
+    state.transitioning = false;
+    say(toTown ? `The portal back to depth ${tp.depth} stays open` : 'The portal closes behind you');
+  }, () => {
+    if (state.cubes !== cubes) return;
+    state.transitioning = false;
+    fadeIn();
+    say('The portal does not open');
+  }), FADE_MS);
+  return true;
+}

@@ -10,7 +10,10 @@
   the bag (see [loot.md](loot.md)).
 - Select a bag slot to inspect it: a weapon shows its rarity, stats, affixes and how it
   compares with the equipped one. **Equip** switches to an owned sword, **Drop** puts an item
-  down at your feet. Bag slots of Uncommon and better weapons are framed in their colour.
+  down at your feet, **Use** uses a usable item (and closes the panel). Bag slots of Uncommon
+  and better weapons are framed in their colour.
+- **1**–**6** use the quick bar (see below). With the panel open they put the selected bag
+  item on that slot instead.
 - With **`?dev=1`**, inventory has a sword, rarity and item level selector with **Grant &
   equip** and **Drop at feet** buttons that roll such a weapon. Without that exact flag, the
   controls are hidden and the dev grant API refuses the operation.
@@ -19,7 +22,8 @@
 
 ## Run state
 
-A new run starts with level 1, 0 XP, 100 HP and one owned/equipped Common Old Sword.
+A new run starts with level 1, 0 XP, 100 HP, one owned/equipped Common Old Sword and the
+Town Portal Scroll on quick bar slot 1.
 Progression, currency, inventory and equipment survive cube travel and death.
 Death (or `R`) restores the current maximum HP; there is no death penalty yet. Death also
 resets the cube to how it was when you came in: enemies killed since come back (and give XP
@@ -54,6 +58,26 @@ blocks coin rewards. There is no second wallet balance to synchronize.
 
 Potions, crystals and sticks are registered stackables but have no use actions,
 crafting, trading or acquisition systems yet.
+
+**Tools** (`category: 'tool'`) are used, not used up. The only one is the **Town Portal
+Scroll** ([world.md](world.md#town-portal-gametownportaljs)). It is **bound**: Drop is disabled
+for it and `takeItem` refuses it, so it never lies on the floor and has no model. Its icon is
+an inline SVG placeholder in `core/items.js` until it gets artwork in `blender/items.py`.
+
+## Quick bar (`game/quickbar.js`)
+
+Six slots along the bottom of the screen, on keys **1**–**6** or a click. A slot holds a
+reference into the bag, not an item (`inventory.bar`, `assignBar` / `barEntry` in
+`core/inventory.js`):
+
+- Unique items (weapons, the scroll) are referenced by instance. Using a weapon equips it;
+  if it leaves the bag, its slot clears.
+- Stackables would be referenced by item ID, so the slot uses any stack of it, shows the total
+  and stays (greyed out) when none are left. Only items with a `use` action or a weapon go on
+  the bar, so for now no stackable does.
+- With the inventory open (the bar stays above its backdrop, framed in gold), **1**–**6** or a
+  click puts the selected bag item on that slot, moving it off any other slot. The same key
+  again takes it off. Bag slots show their bar key in the corner.
 
 ## Enemy levels and rewards
 
@@ -109,7 +133,8 @@ allowed and leaves you unable to attack. No shops, durability or armor are imple
 
 ## Tests
 
-`npm test` covers stacking/capacity/instance identity, conversion and
+`npm test` covers stacking/capacity/instance identity, the quick bar's references, the bound
+scroll, conversion and
 change, integer validation, XP thresholds and multi-level gains, scaled enemy
 profiles, deterministic rewards, exactly-once deaths, regeneration, every sword's
 assets/stats/timing and swing snapshots.

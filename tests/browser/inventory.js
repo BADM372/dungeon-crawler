@@ -127,7 +127,7 @@ export async function runInventoryChecks() {
       await newWorld(3);
       check(!await pending && correctModel(WEAPONS[0]), 'Old asynchronous equipment must not cross a new-run reset');
       check(player.xp === 0 && player.level === 1 && player.maxHp === 100 && copperTotal(player.inventory) === 0
-        && player.inventory.slots.filter(Boolean).length === 1 && state.run.defeated.size === 0, 'New world must reset the entire run');
+        && player.inventory.slots.filter(Boolean).length === 2 && state.run.defeated.size === 0, 'New world must reset the entire run');
       results.push('new-run reset / stale asynchronous weapon requests');
     });
     const resumedAt = state.time;

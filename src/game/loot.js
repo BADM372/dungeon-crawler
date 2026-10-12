@@ -8,7 +8,7 @@
 // gen: a generated weapon's own data; kept: put down by the player (a death leaves it).
 import { player, state, setStatus } from './state.js';
 import { coinDrops, inCollectReach, inMagnetReach, inFloorReach, steppedOn, walkTakes } from '../core/loot.js';
-import { addItem, addInstance, takeItem, formatCoins } from '../core/inventory.js';
+import { addItem, addInstance, takeItem, isBound, formatCoins } from '../core/inventory.js';
 import { ITEMS } from '../core/items.js';
 import { RARITY, rarityOf } from '../core/gear/rarities.js';
 import { weaponDrops } from '../core/gear/drops.js';
@@ -68,6 +68,8 @@ export function dropAtFeet(item) {
 }
 // a bag item onto the floor (the V panel): false when there is no such item
 export function dropFromBag(instanceId) {
+  const slot = player.inventory.slots.find(s => s?.instanceId === instanceId);
+  if (slot && isBound(slot.itemId)) { setStatus(`${ITEMS[slot.itemId].name} cannot be dropped`); return false; }
   const item = takeItem(player.inventory, instanceId);
   if (!item) return false;
   dropAtFeet(item);

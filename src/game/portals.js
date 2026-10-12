@@ -1,13 +1,16 @@
 // Stepping into a portal: through the face for side portals, onto the centre of a well or ring.
-// Vertical portals charge while standing in the circle: 0.75s down, 1.5s up.
+// Vertical portals charge while standing in the circle: 0.75s down, 1.5s up; the town portal
+// (game/townportal.js) for 1s.
 import { N } from '../core/constants.js';
 import { isFaceOpen, approachingFace, faceDistance } from '../core/boundaries.js';
 import { player, state, setStatus } from './state.js';
 import { portalLocked, guardianLockMessage } from '../core/guardians.js';
 import { startTravel } from './travel.js';
+import { townPadIn, onPad, TOWN_PORTAL_CHARGE } from '../core/townportal.js';
+import { takeTownPortal } from './townportal.js';
 
 export const PORTAL_CHARGE = 1.5;
-export const portalChargeDuration = kind => kind === 'down' ? PORTAL_CHARGE / 2 : PORTAL_CHARGE;
+export const portalChargeDuration = kind => kind === 'town' ? TOWN_PORTAL_CHARGE : kind === 'down' ? PORTAL_CHARGE / 2 : PORTAL_CHARGE;
 
 function inside(q) {
   const p = player;
@@ -43,6 +46,13 @@ export function checkPortals(dx = 0, dz = 0, dt = 0, charge = state.portalCharge
       if (c.t < portalChargeDuration(q.kind)) { state.portalCharge = c; continue; }
     }
     startTravel(q); return true;
+  }
+  const pad = townPadIn(state.map, state.run);
+  if (pad && onPad(player, pad)) {
+    const c = charge?.key === state.cubeKey && charge.id === 'town' ? charge : { key: state.cubeKey, id: 'town', t: 0 };
+    c.t += dt;
+    if (c.t < portalChargeDuration('town')) { state.portalCharge = c; return false; }
+    return takeTownPortal();
   }
   return false;
 }

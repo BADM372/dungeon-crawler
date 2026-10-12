@@ -97,6 +97,31 @@ function spawnPad(p) {
   return { obj: g, tick: t => { glow.material.opacity = 0.3 + Math.sin(t * 2.5) * 0.1; } };
 }
 
+// Either end of the town portal (game/townportal.js): a violet swirl on the ground under a
+// faint column of light. Not part of the generated map, so it brings its own materials and is
+// added to (or taken out of) a built cube; pad: its centre { x, y, z }.
+export function townPortalFx(pad) {
+  const g = new THREE.Group(), c = 0xb98cff, e = 0x8f4dff;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.06, 8, 32), new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 1.6 }));
+  rim.rotation.x = Math.PI / 2; rim.position.y = 0.06;
+  const swirl = new THREE.Mesh(new THREE.CircleGeometry(0.58, 32), glowMat(c, 0.7));
+  swirl.rotation.x = -Math.PI / 2; swirl.position.y = 0.03; swirl.renderOrder = 900;
+  const inner = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.4, 6), glowMat(0x2a1050, 0.8));
+  inner.rotation.x = -Math.PI / 2; inner.position.y = 0.04; inner.renderOrder = 901;
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 2.4, 24, 1, true), glowMat(c, 0.14));
+  beam.position.y = 1.2; beam.renderOrder = 900;
+  const light = new THREE.PointLight(e, 4, 4.5, 2);
+  light.position.y = 1;
+  g.add(rim, swirl, inner, beam, light);
+  g.position.set(pad.x, pad.y, pad.z);
+  g.userData.portal = { id: 'town', kind: 'town', x: pad.x, y: pad.y, z: pad.z };
+  return { obj: g, light, tick: t => {
+    inner.rotation.z = -t * 2.2;
+    swirl.material.opacity = .6 + Math.sin(t * 3) * .15;
+    beam.material.opacity = .12 + Math.sin(t * 2) * .04;
+  } };
+}
+
 // seen: portal id -> leads somewhere explored
 export function buildMarkers(m, group, showPath, seen = {}, open = [], locked = !!m.guardian) {
   STONE = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });

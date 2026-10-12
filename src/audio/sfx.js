@@ -118,6 +118,15 @@ const SOUNDS = {
     tone('sine', 160 * p, 60 * p, t, 0.15, amp(t, 0.002, 0.7, 0.15, out));
     noise(t, 0.08, filter('highpass', 2500, 0.7, amp(t, 0.001, 0.35, 0.07, out)));
   },
+  portal(t, out, p) {     // the town portal opening or taking you: a rising shimmer over a soft rush
+    const f = filter('bandpass', 300 * p, 1.2, amp(t, 0.15, 0.6, 0.6, out));
+    f.frequency.setValueAtTime(300 * p, t); f.frequency.exponentialRampToValueAtTime(2400 * p, t + 0.6);
+    noise(t, 0.75, f);
+    for (const [i, hz] of [523, 659, 784, 1047].entries()) {
+      const at = t + i * 0.08;
+      tone('sine', hz * p, hz * p * 1.02, at, 0.5, amp(at, 0.01, 0.12, 0.5, out));
+    }
+  },
   pickup(t, out, p) {
     tone('sine', 660 * p, 990 * p, t, 0.1, amp(t, 0.004, 0.3, 0.1, out));
   },

@@ -1,16 +1,20 @@
 // The inventory is a paused DOM overlay. Item/equipment rules remain renderer-free.
 // I opens the bag; V opens it with a Floor column: the items lying within C's reach. Items move
 // between floor and bag (Take / Drop, Enter on a selected item, or a double-click). You can
-// drop every weapon, even the last one: then you cannot attack until you pick one up.
+// drop every weapon, even the last one: then you cannot attack until you pick one up. Bound
+// items (the town portal scroll) cannot be dropped. Keys 1-6 put the selected bag item on the
+// quick bar (game/quickbar.js); Use uses it (and closes the bag).
 import { player, state, setStatus } from './state.js';
 import { ITEMS, COINS, WEAPONS } from '../core/items.js';
-import { equippedItem, ownedItem } from '../core/inventory.js';
+import { equippedItem, ownedItem, assignBar, barAllowed, barIndexOf } from '../core/inventory.js';
 import { xpProgress, damageBonus } from '../core/progression.js';
 import { RARITIES, rarityOf } from '../core/gear/rarities.js';
 import { itemStats, displayName, baseLine, affixLines } from '../core/gear/stats.js';
 import { equipmentAllowed, equipOwnedWeapon, devSwapWeapon, devDropWeapon, syncEquippedWeapon } from './equipment.js';
 import { floorItems, takeNow, dropFromBag } from './loot.js';
 import { clearInput } from './inputstate.js';
+import { cancelCast } from './townportal.js';
+import { useItem } from './quickbar.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -21,6 +25,7 @@ export const inventoryFloor = () => state.inventoryOpen && floorMode;
 // floor: open with the Floor column (V)
 export function setInventoryOpen(open, floor = false) {
   if (open && (!state.map || state.transitioning)) return;
+  if (open) cancelCast(state.cast ? 'Portal cancelled' : '');
   state.inventoryOpen = open; clearInput();
   $('inventory-overlay').hidden = !open;
   if (open) {
@@ -34,6 +39,17 @@ export function setInventoryOpen(open, floor = false) {
 export const toggleInventory = () => setInventoryOpen(!state.inventoryOpen);
 // V: open with the floor, or close (also an inventory opened with I)
 export const toggleFloor = () => setInventoryOpen(!state.inventoryOpen, true);
+
+// 1-6 with the bag open: the selected bag item onto that quick bar slot (or off it again)
+export function assignSelectedToBar(i) {
+  const slot = selected?.from === 'bag' && ownedItem(player.inventory, selected.id);
+  if (!slot) { setStatus('Select a bag item to put it on the quick bar'); return false; }
+  if (!barAllowed(slot.itemId)) { setStatus('Only weapons and usable items go on the quick bar'); return false; }
+  const was = player.inventory.bar[i] && barIndexOf(player.inventory, slot) === i;
+  assignBar(player.inventory, i, slot.instanceId);
+  setStatus(was ? `${displayName(slot)} taken off the quick bar` : `${displayName(slot)} on quick bar slot ${i + 1}`);
+  return true;
+}
 
 const floorPickup = id => floorItems().find(p => p.id === id) || null;
 function selectedItem() {
@@ -85,7 +101,8 @@ export function updateInventory() {
   $('inventory-grid').innerHTML = inv.slots.map((s, i) => {
     const def = s && ITEMS[s.itemId], on = !!s && selected?.from === 'bag' && s.instanceId === selected.id;
     const rarity = s?.gen && rarityOf(s).glow ? ` style="--rarity:${rarityOf(s).css}"` : '';
-    return `<button class="inventory-slot${on ? ' selected' : ''}"${rarity} data-slot="${i}" aria-pressed="${on}" aria-label="${def ? `${esc(displayName(s))}, ${s.count}${s.instanceId === inv.equipped ? ', equipped' : ''}` : `Empty slot ${i + 1}`}" title="${esc(def ? displayName(s) : 'Empty')}">${s ? `<img src="${def.icon}" alt="">${s.count > 1 ? `<span class="count">${s.count}</span>` : ''}${s.instanceId === inv.equipped ? '<span class="equipped">E</span>' : ''}` : ''}</button>`;
+    const key = s ? barIndexOf(inv, s) : -1;
+    return `<button class="inventory-slot${on ? ' selected' : ''}"${rarity} data-slot="${i}" aria-pressed="${on}" aria-label="${def ? `${esc(displayName(s))}, ${s.count}${s.instanceId === inv.equipped ? ', equipped' : ''}${key >= 0 ? `, quick bar ${key + 1}` : ''}` : `Empty slot ${i + 1}`}" title="${esc(def ? displayName(s) : 'Empty')}">${s ? `<img src="${def.icon}" alt="">${s.count > 1 ? `<span class="count">${s.count}</span>` : ''}${s.instanceId === inv.equipped ? '<span class="equipped">E</span>' : ''}${key >= 0 ? `<span class="bar-key">${key + 1}</span>` : ''}` : ''}</button>`;
   }).join('');
   if (focusSlot !== undefined) $('inventory-grid').querySelector(`[data-slot="${focusSlot}"]`)?.focus();
   if (focusFloor !== undefined) ($('inventory-floor').querySelector(`[data-floor="${focusFloor}"]`)
@@ -96,12 +113,17 @@ export function updateInventory() {
   $('inventory-item-name').textContent = item ? displayName(item) : 'Select an item';
   $('inventory-item-name').style.color = item?.gen ? rarityOf(item).css : '';
   $('inventory-item-base').textContent = item ? baseLine(item) ?? '' : '';
-  $('inventory-item-stats').textContent = def?.weapon ? weaponText(item)
-    : def ? `Count ${item.count}\nStack limit ${def.stackLimit}\nNo use action yet` : selected ? '' : 'Select a bag slot to inspect it.';
+  const barKey = selected?.from === 'bag' ? barIndexOf(inv, item) : -1;
+  const barLine = !item || selected?.from !== 'bag' || !barAllowed(item.itemId) ? ''
+    : barKey >= 0 ? `\nQuick bar: ${barKey + 1}` : '\nPress 1-6 to put it on the quick bar';
+  $('inventory-item-stats').textContent = (def?.weapon ? weaponText(item)
+    : def?.use ? `${def.description}${def.bound ? '\nBound: it cannot be dropped' : ''}`
+    : def ? `Count ${item.count}\nStack limit ${def.stackLimit}\nNo use action yet` : selected ? '' : 'Select a bag slot to inspect it.') + barLine;
   $('inventory-item-affixes').innerHTML = item ? affixLines(item).map(l => `<li>${esc(l)}</li>`).join('') : '';
   $('inventory-item-compare').innerHTML = def?.weapon ? compareText(item) : '';
   const inBag = selected?.from === 'bag', isEquipped = inBag && item?.instanceId === inv.equipped;
-  const equip = $('inventory-equip'), take = $('inventory-take'), drop = $('inventory-drop');
+  const equip = $('inventory-equip'), take = $('inventory-take'), drop = $('inventory-drop'), use = $('inventory-use');
+  use.hidden = !inBag || !def?.use;
   equip.hidden = !inBag || !def?.weapon;
   equip.disabled = !allowed || isEquipped;
   equip.textContent = isEquipped ? 'Equipped' : 'Equip';
@@ -110,7 +132,8 @@ export function updateInventory() {
   take.disabled = !!item?.gen && !inv.slots.includes(null);
   take.title = take.disabled ? 'Your bag is full' : '';
   drop.hidden = !inBag || !item;
-  drop.disabled = isEquipped && !allowed;
+  drop.disabled = isEquipped && !allowed || !!def?.bound;
+  drop.title = def?.bound ? 'Bound: it cannot be dropped' : '';
   $('inventory-dev').hidden = !state.dev;
   $('dev-equip').disabled = !allowed;
   $('inventory-feedback').textContent = state.equipping ? 'Loading weapon…' : !allowed ? 'Finish your current action before changing weapons.' : state.statusMsg;
@@ -142,8 +165,16 @@ async function drop() {
 }
 function act() {
   if (selected?.from === 'floor') take();
-  else if (selected?.from === 'bag' && floorMode) drop();
+  else if (selected?.from === 'bag' && floorMode && !$('inventory-drop').disabled) drop();
   else if (!$('inventory-equip').hidden && !$('inventory-equip').disabled) $('inventory-equip').click();
+  else if (!$('inventory-use').hidden && !floorMode) $('inventory-use').click();
+}
+// close the bag first: the game is paused while it is open
+function use() {
+  const id = selected?.from === 'bag' && selected.id;
+  if (!id) return;
+  setInventoryOpen(false);
+  useItem(id);
 }
 
 $('inventory-close').addEventListener('click', () => setInventoryOpen(false));
@@ -168,6 +199,7 @@ $('inventory-equip').addEventListener('click', async () => {
   refresh();
 });
 $('inventory-take').addEventListener('click', take);
+$('inventory-use').addEventListener('click', use);
 $('inventory-drop').addEventListener('click', drop);
 
 $('dev-weapon').innerHTML = WEAPONS.map(w => `<option value="${w.id}">${w.name}</option>`).join('');

@@ -3,13 +3,17 @@ import { N, STEP } from '../core/constants.js';
 import { topOf } from '../core/surfaces.js';
 import { player, state } from '../game/state.js';
 import { groundAt, blockedAt } from './collide.js';
+import { townPadIn, PAD_RADIUS } from '../core/townportal.js';
 
-function supportedPoint(x, y, z) {
+// (x, y, z) if a body can stand there: on dry, supported ground, off the portals
+export function supportedPoint(x, y, z) {
   const g = groundAt(x, z, y + 0.05, 0);
   if (!Number.isFinite(g.h) || g.h < -1.5 || !g.s || g.s.fluid) return null;
-  // Do not respawn on a vertical portal and immediately travel again.
+  // Do not respawn on a vertical portal (or the town portal) and immediately travel again.
   if (state.map.portals.some(p => (p.kind === 'up' || p.kind === 'down')
     && Math.abs(g.h - p.y) < 0.6 && Math.hypot(x - p.x - 0.5, z - p.z - 0.5) < 0.55)) return null;
+  const pad = townPadIn(state.map, state.run);
+  if (pad && Math.abs(g.h - pad.y) < 0.6 && Math.hypot(x - pad.x, z - pad.z) < PAD_RADIUS + 0.1) return null;
   for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1],
     [.7, .7], [.7, -.7], [-.7, .7], [-.7, -.7]]) {
     const px = x + dx * player.r, pz = z + dz * player.r;

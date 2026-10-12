@@ -22,9 +22,11 @@ import { restoreDefeated, gateLocked, guardianLockMessage } from '../core/guardi
 import { syncEquippedWeapon } from './equipment.js';
 import { clearInput } from './inputstate.js';
 import { lootMark, forgetLoot } from './loot.js';
+import { townPadIn } from '../core/townportal.js';
+import { cancelCast } from './townportal.js';
 
 export function spawnAt(x, y, z) {
-  cancelSword(true);
+  cancelSword(true); cancelCast();
   Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, getUp: null, fluidDeath: 0, stun: 0, climb: null, burning: null });
   player.safe = respawnPoint({ x, y, z });
   const gr = groundAt(x, z, y + 0.05, 0);
@@ -117,16 +119,21 @@ export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id,
 
 // enter cube c (a ready cube from the world client), arriving through its portal on face
 // `from` (null: the spawn pad). `back`: returning to a cube left by a fall, with the
-// entry and visit it had then (see game/fall.js)
-export function enterCube(c, from = null, back = null) {
+// entry and visit it had then (see game/fall.js). `at`: arriving at that point instead (the
+// town portal, game/townportal.js)
+export function enterCube(c, from = null, back = null, at = null) {
   const k = c.key;
   if (!back) discover(c);
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k), gateLocked(c.map, state.run));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k), gateLocked(c.map, state.run), townPadIn(c.map, state.run));
   if (back) {
     const { arrival, portalLock, boundaryLock, visit } = back;
     Object.assign(state, { arrival, portalLock, boundaryLock, visit });
+  } else if (at) {
+    state.arrival = { x: at.x, y: at.y, z: at.z };
+    state.portalLock = 0; state.boundaryLock = -1;
+    beginVisit();
   } else {
     const p = c.map.portals.find(q => from === null ? q.kind === 'spawn' : q.dir === from);
     state.arrival = arrivalPoint(p);
@@ -171,7 +178,7 @@ whenPropsReady(() => {
   if (!state.world || state.transitioning) return;
   const c = state.cubes.cubes.get(state.cubeKey);
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey), gateLocked(c.map, state.run));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey), gateLocked(c.map, state.run), townPadIn(c.map, state.run));
   // Props add blockers after a late load. Re-select safe, seeded spawn sites.
   cancelSword(); resetEnemies();
 });

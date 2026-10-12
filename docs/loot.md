@@ -18,6 +18,8 @@ pickup and inventory code in `src/game/loot.js`, `src/game/lootlabels.js`,
   floor item into the bag, Drop puts a bag item down at your feet. Enter (or Space) on the
   selected item, or a double-click, moves it across; arrows move through both columns. V, I or
   Esc closes. Drop also works in the plain I inventory.
+- Weapons can go on the quick bar (**1**–**6**, see `docs/progression.md`): using one equips it.
+  The Town Portal Scroll is bound and cannot be dropped.
 - You may drop every weapon, including the equipped one and the last one. Without a weapon you
   cannot attack ("No weapon equipped") until you pick one up and equip it.
 - Items you put down are `kept`: a death leaves them on the floor, while weapons enemies dropped

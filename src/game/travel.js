@@ -22,6 +22,8 @@ import { clearMouseInput } from './orders.js';
 import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors, discover, beginVisit } from './flow.js';
 import { slideVisuals, endVisuals } from './travelfx.js';
 import { fallPoint } from './fall.js';
+import { townPadIn } from '../core/townportal.js';
+import { cancelCast } from './townportal.js';
 
 const GAP = CUBE_H + BASE;   // vertical distance between strata while sliding
 let tr = null;
@@ -36,7 +38,7 @@ export function startTravel(p) {
   if (portalLocked(state.map, state.run, p)) { setStatus(guardianLockMessage(state.map)); return; }
   clearMouseInput();
   state.transitioning = true;
-  cancelSword();
+  cancelSword(); cancelCast();
   const source = state.cubeKey, cubes = state.cubes, k = step(source, p.dir);
   whenReady(cubes.get(k)).then(c => {
     if (state.cubes === cubes && state.cubeKey === source) slide(p, c);
@@ -78,7 +80,7 @@ function slide(p, c) {
   state.portalLock = fall || p.kind === 'side' ? 0 : arr.id;
   state.boundaryLock = p.kind === 'side' ? OPP6[p.dir] : -1;
   tr.A0 = A;
-  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k), gateLocked(m, state.run));
+  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k), gateLocked(m, state.run), townPadIn(m, state.run));
   // Live crossings retain their height/motion; the death entry must be supported and dry.
   state.arrival = respawnPoint(state.arrival);
   state.world.group.position.copy(D);

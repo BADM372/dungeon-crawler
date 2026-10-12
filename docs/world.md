@@ -24,7 +24,9 @@ They are non-interactive, with conservative axis-aligned envelopes of their
 rotated footprints, including attached props. Spawn is in the central clearing;
 branching curved paths connect the frontages and lead through the grove's opening.
 Paths are rendered as continuous ribbons rather than whole-cell paving. No well,
-voids or extra exits exist inside town.
+voids or extra exits exist inside town. East of the plaza a spot is kept free for the town
+portal's other end (see Travel below). The walkability flood fill also requires the way between
+two cell centres to be clear, not just the centres, so a crate cannot pinch a route shut.
 
 All three merchant tents are in a separate **merchant camp one cube in front of
 town**, along its outgoing road: `step(TOWN_KEY, seed % 4)`. They flank a winding
@@ -419,6 +421,37 @@ including body clearance and support around the feet. Unsafe entries move to the
 nearest valid floor or structure rather than repeating a fall through the void.
 Run `await (await import('./tests/browser/respawn.js')).runRespawnChecks()` to check
 void/non-finite entries and both death and recovery after a fall.
+
+### Town portal (`game/townportal.js`)
+
+The Town Portal Scroll (quick bar slot 1) opens a two-way portal to town:
+
+- **Casting:** using it starts a 5 s cast (`CAST_TIME`, `core/townportal.js`). A violet bar
+  floats over the player and fills the scroll's quick bar slot. Moving, jumping, a mouse order,
+  attacking, taking damage, being knocked over, falling, swimming, climbing, travel, opening the
+  inventory or using the scroll again cancels it. It cannot be cast in town; anywhere else
+  (merchant camp and guardian rooms included) it can.
+- **The pad:** a finished cast opens the portal on free ground 1.3–2.7 cells in front of the
+  player (else around them). The spot must be dry, flat, supported, on the player's level, off
+  the cube's own portal pads and reachable in a straight line. If nowhere fits: "No room for a
+  portal here". The run keeps one portal, `run.townPortal = { key, depth, pad, back }`, where
+  `back` is the exact spot the player cast it from. Casting again moves it.
+- **Town end:** the town plan reserves a fixed spot for it, east of the plaza
+  (`TOWN_PORTAL_SPOT`, `world/town.js`, rotated with the exit). Clutter keeps off it and town
+  generation checks that it is dry and reachable (`map.town.portal`).
+- **Going through:** either end works like a well. Stand in it for 1 s (with the white charge
+  bar) and the screen fades (no slide, the cubes are not neighbours). You arrive in town 1.4
+  cells from its end, towards the plaza, and the portal stays open. Through the town end you
+  arrive exactly where you cast it, and **both ends close**. Each arrival starts a new visit
+  (`enterCube(c, null, null, at)`), so a death respawns you at the arrival point.
+- **Drawing:** `render/markers.js townPortalFx` draws a violet swirl under a light column. It is
+  added to a built cube (`render/world.js setTownPortal`) on casting, rebuilds and travel,
+  fades with its cube and uses a pooled light. Respawn points keep off it. The minimap shows a
+  violet dot at both ends and "portal open: depth N".
+- A new world (`N`) closes it.
+
+Run `await (await import('./tests/browser/townportal.js')).runTownPortalChecks()` to check the
+quick bar, assignment, the cast and its interruptions, both trips and closing.
 
 ### Opened side connections
 

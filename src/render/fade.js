@@ -32,6 +32,12 @@ export function makeFadable(group, value = 1) {
   setFade(group, value);
 }
 
+// a part added to an already fadable cube later (the town portal) fades along with it
+export function adoptFade(group, obj) {
+  const { fadeU: u, fadeInv: inv, rangeFadeU: range } = group.userData;
+  if (u) obj.traverse(o => { if (o.material) for (const m of [].concat(o.material)) patch(m, u, inv, range); });
+}
+
 // Distance fading is independent of travel's complementary dissolve.
 export function setRangeFade(group, value) { group.userData.rangeFadeU.value = value; }
 

@@ -31,6 +31,7 @@
       <dt><kbd>V</kbd></dt><dd>items on the floor around you: take them, or drop from the bag</dd>
       <dt><kbd>X</kbd></dt><dd>show the names of all items on the floor</dd>
       <dt><kbd>I</kbd></dt><dd>inventory</dd>
+      <dt><kbd>1</kbd>&ndash;<kbd>6</kbd></dt><dd>quick bar: use an item or equip a weapon (in the inventory: put the selected item there)</dd>
       <dt><kbd>B</kbd></dt><dd>knock over</dd>
       <dt><kbd>R</kbd></dt><dd>respawn where you came in</dd>
       <dt><kbd>N</kbd></dt><dd>new world</dd>
@@ -51,6 +52,7 @@
       <div><i style="background:#ffc94a"></i>portal, unexplored</div>
       <div><i style="background:#5fd3ff"></i>portal, explored</div>
       <div><i style="background:#70d6aa"></i>open connection</div>
+      <div><i style="background:#b98cff"></i>town portal</div>
       <div><i style="background:#2e86de"></i>water (deadly)</div>
       <div><i style="background:#ff5a00"></i>lava (deadly)</div>
       <div><i style="background:#7dff3a"></i>acid (deadly)</div>
@@ -70,7 +72,7 @@
       <div><h2>Bag · 24 slots</h2><div id="inventory-grid"></div></div>
       <aside id="inventory-details"><img id="inventory-item-icon" alt="" hidden><h2 id="inventory-item-name">Select an item</h2>
         <div id="inventory-item-base"></div><p id="inventory-item-stats"></p><ul id="inventory-item-affixes"></ul><p id="inventory-item-compare"></p>
-        <div class="inventory-actions"><button id="inventory-equip" hidden>Equip</button><button id="inventory-take" hidden>Take</button><button id="inventory-drop" hidden>Drop</button></div></aside>
+        <div class="inventory-actions"><button id="inventory-equip" hidden>Equip</button><button id="inventory-use" hidden>Use</button><button id="inventory-take" hidden>Take</button><button id="inventory-drop" hidden>Drop</button></div></aside>
     </div>
     <fieldset id="inventory-dev" hidden><legend>Developer weapons</legend>
       <label for="dev-weapon">Sword</label> <select id="dev-weapon"></select>
@@ -79,9 +81,10 @@
       <button id="dev-equip">Grant &amp; equip</button> <button id="dev-drop">Drop at feet</button>
       <p>Dev only: rolls a weapon of that base, rarity and item level.</p>
     </fieldset>
-    <p id="inventory-feedback" role="status"></p><footer>Game paused · V shows the floor: Enter or double-click moves an item between floor and bag · 10 copper = 1 silver · 100 silver = 1 gold</footer>
+    <p id="inventory-feedback" role="status"></p><footer>Game paused · V shows the floor: Enter or double-click moves an item between floor and bag · 1-6 puts the selected item on the quick bar · 10 copper = 1 silver · 100 silver = 1 gold</footer>
   </section>
 </div>
+<div id="quickbar" aria-label="Quick bar"></div>
 <div id="loading"><span></span>generating&hellip;</div>
 <div id="flash"></div>
 <div id="fade"></div>

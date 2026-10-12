@@ -26,6 +26,20 @@ const stackables = [
   ['item_stick_short', 'Short stick'], ['item_stick_long', 'Long stick'], ['item_stick_forked', 'Forked stick'],
   ...['ruby', 'diamond', 'emerald', 'sapphire', 'amethyst'].map(s => [`item_crystal_${s}`, s[0].toUpperCase() + s.slice(1)]),
 ].map(([id, name]) => Object.freeze({ id, name, category: 'item', stackLimit: 99, icon: icon(id), model: model(id) }));
+// Tools are used, not consumed. `bound`: never leaves the bag (no Drop); `use`: what using it
+// does (game/quickbar.js useItem). They never lie on the floor, so they have no model.
+// Placeholder icon until the scroll has artwork in blender/items.py.
+const svg = s => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${s}</svg>`)}`;
+export const TOWN_PORTAL = Object.freeze({
+  id: 'item_town_portal', name: 'Town Portal Scroll', category: 'tool', stackLimit: 1, bound: true, use: 'townPortal',
+  description: 'Opens a portal to town after 5 seconds of standing still. Step back through it in town to return here. Never used up.',
+  icon: svg('<rect x="14" y="11" width="36" height="42" rx="2" fill="#ead9b2" stroke="#7b5a32" stroke-width="2"/>'
+    + '<rect x="9" y="6" width="46" height="9" rx="4.5" fill="#c9a46a" stroke="#7b5a32" stroke-width="2"/>'
+    + '<rect x="9" y="49" width="46" height="9" rx="4.5" fill="#c9a46a" stroke="#7b5a32" stroke-width="2"/>'
+    + '<circle cx="32" cy="32" r="12" fill="#2a1050"/>'
+    + '<path d="M32 22a10 10 0 1 1-9.6 7.2M32 27a5 5 0 1 0 4.6 3" fill="none" stroke="#c79bff" stroke-width="2.6" stroke-linecap="round"/>'
+    + '<circle cx="32" cy="32" r="2.2" fill="#f3e6ff"/>'),
+});
 // Potions/materials have inventory definitions only; no consumption, crafting or shops yet.
-export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, ...stackables].map(i => [i.id, i])));
+export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, ...stackables, TOWN_PORTAL].map(i => [i.id, i])));
 export const OLD_SWORD = WEAPONS[0];

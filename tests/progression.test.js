@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assetsRoot } from './paths.js';
-import { ITEMS, WEAPONS, OLD_SWORD, COINS } from '../src/core/items.js';
-import { createInventory, addItem, removeItem, equipItem, equippedItem, addCopper, spendCopper, copperTotal, coinCounts } from '../src/core/inventory.js';
+import { ITEMS, WEAPONS, OLD_SWORD, COINS, TOWN_PORTAL } from '../src/core/items.js';
+import { createInventory, addItem, addInstance, removeItem, takeItem, equipItem, equippedItem, addCopper, spendCopper, copperTotal, coinCounts,
+  assignBar, barEntry, barIndexOf, BAR_SIZE } from '../src/core/inventory.js';
+import { fixedWeapon } from '../src/core/gear/generate.js';
 import { createPlayerStats, createRun, xpForLevel, xpToNext, levelFromXP, xpProgress, awardXP, awardKill, takeDamage, regenerate } from '../src/core/progression.js';
 import { SPIDER, STUNDER, enemyProfile, enemyRoll, makeEnemy } from '../src/core/enemies.js';
 import { swordState, combatStats, startSwing, advanceSwing, swordHit, cancelSwing, damageEnemy, canChangeWeapon } from '../src/core/combat.js';
@@ -16,14 +18,57 @@ function equip(p, id) {
   equipItem(p.inventory, p.inventory.slots.find(s => s?.itemId === id).instanceId);
 }
 
-test('a new player has one owned, equipped Old Sword and empty reserved currency slots', () => {
+test('a new player has an equipped Old Sword, the town portal scroll on quick bar 1 and empty currency slots', () => {
   const p = createPlayerStats();
   assert.deepEqual([p.xp, p.level, p.hp, p.maxHp], [0, 1, 100, 100]);
-  assert.equal(p.inventory.slots.length, 24); assert.equal(p.inventory.slots.filter(Boolean).length, 1);
+  assert.equal(p.inventory.slots.length, 24);
+  assert.deepEqual(p.inventory.slots.filter(Boolean).map(s => s.itemId), [OLD_SWORD.id, TOWN_PORTAL.id]);
   assert.equal(equippedItem(p.inventory).itemId, OLD_SWORD.id);
+  assert.equal(p.inventory.bar.length, BAR_SIZE);
+  assert.equal(barEntry(p.inventory, 0).slot.itemId, TOWN_PORTAL.id);
+  assert.ok(p.inventory.bar.slice(1).every(r => r === null));
+  assert.equal(createRun().townPortal, null);
   assert.deepEqual(p.inventory.currency.map(s => s.itemId), COINS.map(c => c.id));
   assert.deepEqual(p.inventory.currency.map(s => s.count), [0, 0, 0]);
 });
+test('the town portal scroll is bound: it never leaves the bag and never stacks', () => {
+  const inv = createPlayerStats().inventory, scroll = inv.slots.find(s => s?.itemId === TOWN_PORTAL.id);
+  assert.ok(TOWN_PORTAL.bound && TOWN_PORTAL.use && !TOWN_PORTAL.model && TOWN_PORTAL.icon.startsWith('data:image/svg+xml,'));
+  const before = JSON.stringify(inv);
+  assert.equal(takeItem(inv, scroll.instanceId), null);
+  assert.equal(JSON.stringify(inv), before);
+  assert.ok(takeItem(inv, inv.equipped));   // ordinary items still can
+  assert.equal(TOWN_PORTAL.stackLimit, 1);
+});
+test('the quick bar references bag items: moves, toggles, keeps stacks and forgets items that leave', () => {
+  const inv = createInventory();
+  const sword = addInstance(inv, fixedWeapon(OLD_SWORD.id)), scroll = addInstance(inv, { itemId: TOWN_PORTAL.id });
+  addItem(inv, 'item_potion_health', 3);
+  const potion = inv.slots.find(s => s?.itemId === 'item_potion_health');
+  assert.equal(assignBar(inv, 0, potion.instanceId), false, 'potions have no use yet');
+  assert.equal(assignBar(inv, 0, 'missing'), false);
+  assert.throws(() => assignBar(inv, BAR_SIZE, sword), RangeError);
+  const v = inv.version;
+  assert.ok(assignBar(inv, 2, sword)); assert.ok(inv.version > v);
+  assert.deepEqual(barEntry(inv, 2), { itemId: OLD_SWORD.id, slot: ownedSlot(inv, sword), count: 1 });
+  assert.ok(assignBar(inv, 4, sword));   // moves
+  assert.equal(inv.bar[2], null); assert.equal(barIndexOf(inv, ownedSlot(inv, sword)), 4);
+  assert.ok(assignBar(inv, 4, sword));   // the same slot again: off
+  assert.ok(inv.bar.every(r => r === null));
+  assert.ok(assignBar(inv, 0, scroll)); assert.ok(assignBar(inv, 1, sword));
+  assert.ok(assignBar(inv, 0, sword));   // replaces the scroll there
+  assert.equal(barEntry(inv, 0).slot.instanceId, sword); assert.equal(barIndexOf(inv, ownedSlot(inv, scroll)), -1);
+  assert.ok(takeItem(inv, sword));
+  assert.equal(barEntry(inv, 0), null, 'a unique item that left the bag clears its slot');
+  // stackables are referenced by item: any stack of it, and the slot stays when none are left
+  inv.bar[3] = { itemId: 'item_potion_health' };
+  assert.equal(barEntry(inv, 3).count, 3);
+  assert.ok(removeItem(inv, potion.instanceId, 3));
+  assert.deepEqual(barEntry(inv, 3), { itemId: 'item_potion_health', slot: null, count: 0 });
+  addItem(inv, 'item_potion_health', 2);
+  assert.equal(barEntry(inv, 3).count, 2);
+});
+const ownedSlot = (inv, id) => inv.slots.find(s => s?.instanceId === id);
 test('stacking, overflow into multiple slots, and weapon instances preserve counts', () => {
   const inv = createInventory();
   assert.ok(addItem(inv, 'item_potion_health', 150));

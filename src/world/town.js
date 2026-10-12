@@ -124,6 +124,7 @@ function clearingPlan(exit, seed, buildings, gates) {
     for (const p of paths) for (let i = 1; i < p.points.length; i++)
       if (segmentDistance(x, z, p.points[i - 1], p.points[i]) < p.width / 2 + clearance) return false;
     if (Math.hypot(x - sx, z - sz) < 1.35 + r) return false;
+    if (plan.portal && Math.hypot(x - plan.portal.x, z - plan.portal.z) < 1.1 + r) return false;
     if (kind === 'solid' && keepOut().some(q => Math.hypot(x - q.x, z - q.z) < q.r + r)) return false;
     return !clutter.some(c => Math.hypot(x - c.x, z - c.z) < (r + c.r) * (kind === 'cover' && c.kind === 'cover' ? .55
       : kind === 'cover' || c.kind === 'cover' ? .7 : 1));
@@ -193,8 +194,14 @@ function groundCover(R, scatter, scale = 1) {
   scatter(n(70), () => variant(R, 'meadow_grass_tuft'), .3, [1, 1.45]);
 }
 
+// Where the town end of a town portal stands (town-local; the plan rotates it with the exit):
+// east of the plaza, between the stable's and the pet shop's paths. Nothing is put on it.
+export const TOWN_PORTAL_SPOT = [12, 8.5];
+
 export function townPlan(exit, seed) {
   const { plan, path, tree, put, group, scatter, shore, R } = clearingPlan(exit, seed, BUILDINGS, [[8.5, .9]]);
+  const [px, pz] = rotateTownPoint(...TOWN_PORTAL_SPOT, plan.yaw);
+  plan.portal = { x: px, z: pz };
   GROVE.forEach(([x, z], i) => tree(i, x, z));
   // Planting stays in reserved pockets, away from the walking routes.
   for (const [x, z] of [[.75, 3.3], [.8, 8.4], [.8, 13.5], [15.2, 3.5], [15.2, 8.6],

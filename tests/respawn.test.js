@@ -35,14 +35,16 @@ test('void and non-finite entries relocate to nearby solid ground', () => {
 });
 
 test('fluid, vertical portals and solid blockers are not respawn points', () => {
-  for (const hazard of ['fluid', 'portal', 'blocker', 'ceiling']) {
+  for (const hazard of ['fluid', 'portal', 'town portal', 'blocker', 'ceiling']) {
     flatMap();
     const i = cell(6, 6), point = { x: 6.5, y: 0, z: 6.5 };
     if (hazard === 'fluid') state.map.cols[i][0].fluid = WATER;
     if (hazard === 'portal') state.map.portals = [{ kind: 'down', x: 6, y: 0, z: 6 }];
+    if (hazard === 'town portal') { state.map.key = '3,-2,1'; state.run.townPortal = { key: '3,-2,1', pad: { x: 6.6, y: 0, z: 6.4 } }; }
     if (hazard === 'blocker') state.map.blockers[i].push({ x: 6.5, z: 6.5, r: 0.4, bottom: 0, top: 2 });
     if (hazard === 'ceiling') state.map.cols[i].push({ ...state.map.cols[i][0], bottom: 1, cs: [2, 2, 2, 2] });
     const p = respawnPoint(point);
+    state.run.townPortal = null;
     supported(p);
     assert.notDeepEqual(p, point, hazard);
   }

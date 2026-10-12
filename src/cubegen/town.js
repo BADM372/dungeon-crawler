@@ -40,15 +40,23 @@ export function generateClearing(spec) {
     for (const c of p.cells) floors[c].prot = p.id;
   }
   const staticBlockers = indexBlockers(plan.colliders);
-  const clear = f => !f.fluid && !plan.colliders.some(b => containsXZ(b, f.x + .5, f.z + .5, CHAR_R + .03));
+  const clearAt = (x, z) => !plan.colliders.some(b => containsXZ(b, x, z, CHAR_R + .03));
+  const clear = f => !f.fluid && clearAt(f.x + .5, f.z + .5);
+  // a body walking from f's centre to g's must pass between the props, not just stand on both
+  const between = (f, g) => [.25, .5, .75].every(t => clearAt(f.x + .5 + (g.x - f.x) * t, f.z + .5 + (g.z - f.z) * t));
   // Flood-fill after buildings AND trunks; every gate and frontage must be walkable.
   const prev = new Map([[sc, null]]), queue = [sc];
   for (let i = 0; i < queue.length; i++) for (const g of floors[queue[i]].link)
-    if (g && clear(g) && !prev.has(g.c)) { prev.set(g.c, queue[i]); queue.push(g.c); }
+    if (g && clear(g) && !prev.has(g.c) && between(floors[queue[i]], g)) { prev.set(g.c, queue[i]); queue.push(g.c); }
   if (!clear(floors[sc]) || portals.some(p => !prev.has(p.floor.c) || p.cells.some(c => !clear(floors[c]))))
     throw new Error('Clearing layout blocks spawn or a gate');
   const frontageCells = plan.frontages.map(p => Math.floor(p.z) * N + Math.floor(p.x));
   if (frontageCells.some(c => !prev.has(c))) throw new Error('Clearing layout blocks a building frontage');
+  // the town portal's spot: dry, reachable and clear of every body
+  const portal = plan.portal && { x: plan.portal.x, y: TOWN_LEVEL * LH, z: plan.portal.z };
+  if (portal && (!prev.has(Math.floor(portal.z) * N + Math.floor(portal.x))
+    || plan.colliders.some(b => containsXZ(b, portal.x, portal.z, 1.1)) || plan.pond.some(c => Math.hypot(c % N + .5 - portal.x, Math.floor(c / N) + .5 - portal.z) < 1.5)))
+    throw new Error('Clearing layout blocks the town portal spot');
   const pathTo = goal => {
     const path = [];
     for (let c = goal; c !== null; c = prev.get(c)) path.unshift(floors[c]);
@@ -60,7 +68,8 @@ export function generateClearing(spec) {
   const moves = paths.flatMap(path => path.slice(1).map((to, i) => ({ kind: 'walk', from: path[i], to,
     d: DIRS.findIndex(([dx, dz]) => path[i].x + dx === to.x && path[i].z + dz === to.z), cells: [], cost: 1 })));
   ctx.stats.layers = 1; ctx.stats.mode = camp ? 'merchant camp' : 'town'; ctx.stats.fluids = camp ? [] : ['town pond'];
-  const clearing = { placements: plan.placements, frontages: plan.frontages, pond: plan.pond, yaw: plan.yaw, paths: plan.paths };
+  const clearing = { placements: plan.placements, frontages: plan.frontages, pond: plan.pond, yaw: plan.yaw, paths: plan.paths,
+    ...(portal ? { portal } : {}) };
   return { seed: spec.seed, attempts: 1, K: 1, B: [0], cols: ctx.cols, floors,
     pieces: Array.from({ length: N * N }, () => []), runs: [], falls: [], ladders: [],
     fences: new Map(), fenceList: [], stats: ctx.stats, moves, portals, exit: spec.exit,

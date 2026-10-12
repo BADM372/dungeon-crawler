@@ -1,14 +1,16 @@
 // Overview of the cubes visited at the current depth, centred on the current cube. Cubes are
 // coloured by their WFC tile; edges show rivers (blue) and portals (gold: leads somewhere new,
-// cyan: explored); triangles are wells / rings.
+// cyan: explored); triangles are wells / rings; a violet dot is the open town portal.
 import { KIND_COLOR } from '../world/tiles.js';
 import { key, parse, step } from '../world/coords.js';
 import { state } from './state.js';
 import { isFaceOpen } from '../core/boundaries.js';
 import { gateLocked, portalLocked } from '../core/guardians.js';
+import { N } from '../core/constants.js';
+import { TOWN_KEY } from '../world/town.js';
 
 const R = 3, CELL = 24, PAD = 6, SIZE = (2 * R + 1) * CELL + PAD * 2;
-const canvas = Object.assign(document.createElement('canvas'), { id: 'minimap', width: SIZE, height: SIZE + 14 });
+const canvas = Object.assign(document.createElement('canvas'), { id: 'minimap', width: SIZE, height: SIZE + 28 });
 document.body.appendChild(canvas);
 const g = canvas.getContext('2d');
 
@@ -48,8 +50,17 @@ export function drawMinimap() {
     for (const d of [4, 5]) if (t.faces[d]?.portal)
       tri(px + CELL / 2 + (d === 4 ? -5 : 5), pz + CELL / 2, d === 5, d === 4 && gateLocked(c.map, state.run) ? '#ff3547' : visited(step(k, d)) ? '#5fd3ff' : '#ffc94a');
   }
+  // the open town portal: a violet dot where it stands (in town too, at its other end)
+  const tp = state.run.townPortal;
+  for (const [k, pad] of tp ? [[tp.key, tp.pad], [TOWN_KEY, W.cubes.get(TOWN_KEY)?.map.town?.portal]] : []) {
+    const [x, y, z] = parse(k);
+    if (!pad || y !== Y || Math.abs(x - X0) > R || Math.abs(z - Z0) > R) continue;
+    g.fillStyle = '#b98cff'; g.beginPath();
+    g.arc(PAD + (x - X0 + R) * CELL + pad.x / N * CELL, PAD + (z - Z0 + R) * CELL + pad.z / N * CELL, 3.5, 0, Math.PI * 2); g.fill();
+  }
   const c = PAD + R * CELL;
   g.strokeStyle = '#fff'; g.lineWidth = 2; g.strokeRect(c, c, CELL, CELL);
   g.fillStyle = '#aab3c2'; g.font = '11px ui-monospace, monospace';
   g.fillText(`depth ${-Y}   ${[...W.cubes.values()].filter(c => c.visits).length} cubes visited`, PAD, SIZE + 10);
+  if (tp) { g.fillStyle = '#c9a8ff'; g.fillText(`portal open: depth ${tp.depth}`, PAD, SIZE + 24); }
 }

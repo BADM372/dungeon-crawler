@@ -21,6 +21,8 @@ import { applyLook } from './render/look.js';
 import { tickSky } from './render/sky.js';
 import { updatePlayerBar } from './render/playerbar.js';
 import { updatePortalBar } from './render/portalbar.js';
+import { updateCastBar } from './render/castbar.js';
+import { updateQuickbar } from './game/quickbar.js';
 import { updateLoot } from './game/loot.js';
 import { updateLootLabels } from './game/lootlabels.js';
 import { tickFloatText } from './render/floattext.js';
@@ -65,6 +67,7 @@ function frame() {
   if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
   updateInventory();
+  updateQuickbar();
   updateCamera(dt);
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
   updateLootLabels();   // after the camera too: labels sit over their items
@@ -75,6 +78,7 @@ function frame() {
   cullNeighbors(player.x, player.z, !state.transitioning, state.showNeighbors, player.visY + (player.swimming ? 0.6 : 0.3));
   updatePlayerBar();
   updatePortalBar();
+  updateCastBar();
   tickSky(performance.now() / 1000);   // real time: the stars shimmer on while paused
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
