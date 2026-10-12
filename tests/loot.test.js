@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { coinDrops, inCollectReach, steppedOn, stackable, COLLECT_RADIUS } from '../src/core/loot.js';
+import { coinDrops, inCollectReach, inMagnetReach, steppedOn, stackable, COLLECT_RADIUS, MAGNET_RADIUS } from '../src/core/loot.js';
 import { ITEMS, WEAPONS } from '../src/core/items.js';
 import { createInventory, addItem, copperTotal } from '../src/core/inventory.js';
 
@@ -16,7 +16,7 @@ test('coin drops hold exactly the amount, in a few piles per coin kind', () => {
   assert.equal(coinDrops(6).length, 4);   // a spider's handful scatters
 });
 
-test('C reaches stackable pickups within two cells, walking over takes anything', () => {
+test('C reaches stackable pickups within four cells, walking over takes anything', () => {
   const coin = { itemId: 'item_coin_copper', x: 5, y: 1, z: 5 };
   assert.ok(stackable(coin.itemId) && stackable('item_crystal_ruby') && !stackable(WEAPONS[1].id));
   assert.ok(inCollectReach(coin, 5 + COLLECT_RADIUS, 1, 5));
@@ -25,4 +25,12 @@ test('C reaches stackable pickups within two cells, walking over takes anything'
   assert.ok(!inCollectReach({ ...coin, itemId: WEAPONS[1].id }, 5, 1, 5), 'only stackables');
   assert.ok(steppedOn({ ...coin, itemId: WEAPONS[1].id }, 5.3, 1, 5));
   assert.ok(!steppedOn(coin, 5.6, 1, 5));
+});
+
+test('coins pull themselves in from half as far as C, other pickups do not', () => {
+  const coin = { itemId: 'item_coin_copper', x: 5, y: 1, z: 5 };
+  assert.ok(inMagnetReach(coin, 5 + MAGNET_RADIUS, 1, 5));
+  assert.ok(!inMagnetReach(coin, 5 + MAGNET_RADIUS + 0.01, 1, 5));
+  assert.ok(!inMagnetReach(coin, 5, 3, 5), 'not from a different level');
+  assert.ok(!inMagnetReach({ ...coin, itemId: 'item_crystal_ruby' }, 5, 1, 5), 'only coins');
 });

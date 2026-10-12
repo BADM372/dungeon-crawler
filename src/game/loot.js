@@ -1,8 +1,9 @@
 // Loot lying in the cubes: defeated enemies scatter their coins, walking over a pickup takes
-// it, and C pulls in every stackable pickup within two cells. Pickups stay where they fell
+// it, coins within a cell pull themselves in, and C pulls in every stackable pickup within four
+// cells. Pickups stay where they fell
 // (per cube, for the whole run) until collected. They are credited when they reach the player.
 import { player, state, setStatus } from './state.js';
-import { coinDrops, inCollectReach, steppedOn } from '../core/loot.js';
+import { coinDrops, inCollectReach, inMagnetReach, steppedOn } from '../core/loot.js';
 import { addItem, formatCoins } from '../core/inventory.js';
 import { ITEMS } from '../core/items.js';
 import { groundAt } from '../physics/collide.js';
@@ -74,8 +75,13 @@ export function updateLoot(dt, time) {
     for (const p of list) {
       if (p.fly) continue;
       const settled = p.toss >= 1;
-      if (p.refused) { p.refused = steppedOn(p, player.x, player.y, player.z); continue; }
-      if (settled && steppedOn(p, player.x, player.y, player.z)) pull(p, 0, 0.16);
+      // a refused pickup waits until the player has moved out of its reach again
+      const near = steppedOn(p, player.x, player.y, player.z) || inMagnetReach(p, player.x, player.y, player.z);
+      if (p.refused) { p.refused = near; continue; }
+      if (settled && near) {
+        const d = Math.hypot(p.x - player.x, p.z - player.z);
+        pull(p, 0, 0.16 + d * 0.12);
+      }
       else if (collect && inCollectReach(p, player.x, player.y, player.z)) {
         const d = Math.hypot(p.x - player.x, p.z - player.z);
         pull(p, d * 0.07 + Math.random() * 0.05, 0.28 + d * 0.1);   // the near ones first

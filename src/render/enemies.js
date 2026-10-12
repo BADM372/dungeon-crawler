@@ -34,6 +34,7 @@ const GLOW = {
   firecat: { light: [0xff7a2a, 1.6, 2.6, 0.75], flicker: 1, embers: { rate: 5, from: 'flame_tail', spread: 0.06 } },
 };
 const EMBERS = ['#ffd25a', '#ff8a2a', '#ff5a14'];
+const GHOST = 0xff6a5a, GHOST_OPACITY = 0.4;
 const tmp = new THREE.Vector3(), wobble = new THREE.Quaternion(), axis = new THREE.Vector3(1, 0, 0);
 let clock = 0;
 const white = new THREE.Color(0xffffff), hover = new THREE.Color(0xffd9a0), inverseYaw = new THREE.Quaternion();
@@ -50,6 +51,18 @@ function makeView(e, prefab) {
     const own = m => { const c = recolor(m.clone(), colors); c.transparent = true; materials.push({ material: c, color: c.color.clone(), glow: c.emissiveIntensity ?? 0 }); return c; };
     o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material);
   });
+  // silhouette shown where the body is hidden behind terrain (like the player's); drawn
+  // before the body, so it never shows the body's own back parts through its front
+  const ghost = new THREE.MeshBasicMaterial({ color: GHOST, transparent: true, opacity: GHOST_OPACITY,
+    depthFunc: THREE.GreaterDepth, depthWrite: false });
+  const meshes = [];
+  model.traverse(o => { if (o.isMesh) meshes.push(o); });
+  for (const o of meshes) {
+    const g = o.isSkinnedMesh ? new THREE.SkinnedMesh(o.geometry, ghost) : new THREE.Mesh(o.geometry, ghost);
+    if (o.isSkinnedMesh) g.bind(o.skeleton, o.bindMatrix);
+    g.renderOrder = -1; g.frustumCulled = o.frustumCulled;
+    o.add(g);   // same world transform as the body part
+  }
   // actions: walk, fast?, death and one per attack clip (keyed like attack.clip, else 'attack')
   const mixer = new THREE.AnimationMixer(model), actions = {}, weights = {};
   const clips = { walk: prefab.walk, fast: prefab.fast, death: prefab.death, ...prefab.attacks };
@@ -73,7 +86,7 @@ function makeView(e, prefab) {
     trackLight(light, group);
   }
   const embers = typeof fx?.embers?.from === 'string' ? model.getObjectByName(fx.embers.from) : null;
-  return { group, model, mixer, actions, prefab, materials, bar, hpBar, label, yaw: e.yaw, phase: e.phase,
+  return { group, model, mixer, actions, prefab, materials, ghost, bar, hpBar, label, yaw: e.yaw, phase: e.phase,
     attacks: -1, dead: false, weights, fx, flames, light, embers, size, sparks: e.profile.sparks ?? EMBERS, seed: Math.random() * 100 };
 }
 // the hover clip's beat (matches blender/triangle.py): sharp, twice per loop
@@ -106,6 +119,7 @@ function dying(v, e) {
   v.actions.death.time = Math.min(e.deadT, v.actions.death.getClip().duration);
   const fade = Math.max(0, 1 - Math.max(0, e.deadT - e.profile.deathTime - 0.5) / 0.8);
   for (const { material } of v.materials) material.opacity = fade;
+  v.ghost.opacity = GHOST_OPACITY * fade;
   v.bar.visible = false; v.label.visible = false;
   v.group.visible = fade > 0;
   v.mixer.update(0);
@@ -160,6 +174,7 @@ export function removeEnemyViews(list) {
     if (v.light) untrackLight(v.light);
     v.mixer.stopAllAction(); v.mixer.uncacheRoot(v.model);
     v.materials.forEach(({ material }) => material.dispose());
+    v.ghost.dispose();
     v.label.material.map.dispose(); v.label.material.dispose();
     const skeletons = new Set();
     v.model.traverse(o => { if (o.isSkinnedMesh) skeletons.add(o.skeleton); });
