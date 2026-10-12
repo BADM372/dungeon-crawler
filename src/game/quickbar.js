@@ -3,6 +3,7 @@
 // (the town portal scroll starts its cast; game/townportal.js). With the inventory open, 1-6 or
 // a click puts the selected bag item on that slot instead (again on the same slot: off).
 import { player, state, setStatus } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { ITEMS } from '../core/items.js';
 import { BAR_SIZE, barEntry, ownedItem } from '../core/inventory.js';
 import { displayName } from '../core/gear/stats.js';
@@ -35,6 +36,7 @@ export function useBarSlot(i) {
   const e = barEntry(player.inventory, i);
   if (!e) return false;
   if (!e.slot) { setStatus(`No ${ITEMS[e.itemId].name} left`); return false; }
+  sfx('use', { volume: 0.6 });
   return useItem(e.slot.instanceId);
 }
 

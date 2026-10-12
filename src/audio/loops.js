@@ -1,0 +1,100 @@
+// Continuous sounds, generated like the rest: two drones the game tunes every frame (`charge`:
+// standing in a well or ring, `cast`: reading the town portal scroll) and the ambient beds
+// (water, waterfalls, lava, acid, wind, cave air) plus single drips and lava pops. Levels glide
+// to their targets, so the game just says how much of each it wants (game/ambience.js).
+import { onAudioStart } from './context.js';
+
+let ctx = null, bus = null, noiseBuf = null, beds = null, drones = null;
+
+onAudioStart((ac, output) => {
+  ctx = ac;
+  bus = ctx.createGain(); bus.gain.value = 0.5;
+  bus.connect(output);
+  noiseBuf = ctx.createBuffer(1, 2 * ctx.sampleRate, ctx.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  beds = {
+    water: bed(n => { const f = biquad('bandpass', 700, 0.5); lfo(0.3, 150, f.frequency); return chain(n, f, biquad('lowpass', 2500, 0.7)); }),
+    falls: bed(n => chain(n, biquad('highpass', 900, 0.7), biquad('lowpass', 5000, 0.7))),
+    lava: bed(n => chain(n, biquad('lowpass', 180, 2))),
+    acid: bed(n => tremolo(chain(n, biquad('highpass', 3500, 0.7)), 9)),
+    wind: bed(n => { const f = biquad('bandpass', 500, 1.2); lfo(0.13, 250, f.frequency); return gusts(chain(n, f), 0.07); }),
+    cave: bed(n => chain(n, biquad('lowpass', 300, 0.7))),
+  };
+  drones = { charge: drone([1, 1.005, 2], 'triangle', 1800), cast: drone([1, 1.5, 2.01], 'sine', 2500, 6) };
+});
+
+const biquad = (type, freq, q) => { const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q; return f; };
+// connect a -> b -> ... and return the last; the first may be a source
+function chain(...nodes) { for (let i = 1; i < nodes.length; i++) nodes[i - 1].connect(nodes[i]); return nodes.at(-1); }
+// a slow oscillator moving `param` by +-depth
+function lfo(freq, depth, param) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.value = freq; g.gain.value = depth;
+  o.connect(g).connect(param); o.start();
+}
+// a gain pulsing at `rate` (fizz) / swelling slowly (gusts)
+function tremolo(node, rate, depth = 0.5) { const g = ctx.createGain(); g.gain.value = 1 - depth; lfo(rate, depth, g.gain); return chain(node, g); }
+const gusts = (node, rate) => tremolo(node, rate, 0.45);
+
+// a looping noise source shaped by build(source) -> node, faded by its own gain
+function bed(build) {
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf; src.loop = true;
+  src.start(0, Math.random() * 2);
+  const g = ctx.createGain(); g.gain.value = 0;
+  chain(build(src), g, bus);
+  return g;
+}
+
+// oscillators at `ratios` of one pitch through a low-pass; trem: a shimmer rate
+function drone(ratios, type, cutoff, trem = 0) {
+  const f = biquad('lowpass', cutoff, 0.7), g = ctx.createGain(), oscs = [];
+  g.gain.value = 0;
+  chain(trem ? tremolo(f, trem, 0.3) : f, g, bus);
+  for (const [i, r] of ratios.entries()) {
+    const o = ctx.createOscillator(), og = ctx.createGain();
+    o.type = i ? 'sine' : type; o.frequency.value = 220 * r; og.gain.value = 1 / (i + 1.5);
+    o.connect(og).connect(f); o.start();
+    oscs.push([o, r]);
+  }
+  return { g, oscs };
+}
+
+const glide = (param, v, tau) => param.setTargetAtTime(v, ctx.currentTime, tau);
+const ready = () => ctx && ctx.state === 'running' && beds;
+
+// levels 0..1 per bed (missing: 0)
+export function setAmbience(levels) {
+  if (!ready()) return;
+  const GAIN = { water: 0.5, falls: 0.35, lava: 0.7, acid: 0.25, wind: 0.4, cave: 0.5 };
+  for (const k in beds) glide(beds[k].gain, (levels[k] ?? 0) * GAIN[k], 0.4);
+}
+
+// drone `name` (charge, cast): level 0..1, pitch in Hz
+export function setDrone(name, level, pitch) {
+  if (!ready()) return;
+  const d = drones[name];
+  glide(d.g.gain, level * 0.18, level > 0 ? 0.05 : 0.08);
+  if (level > 0) for (const [o, r] of d.oscs) glide(o.frequency, pitch * r, 0.05);
+}
+
+// one water drop in a cave (level: loudness)
+export function drip(level = 1) {
+  if (!ready()) return;
+  const t = ctx.currentTime + 0.01, hz = 1400 + Math.random() * 1600, o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.setValueAtTime(hz, t); o.frequency.exponentialRampToValueAtTime(hz * 0.55, t + 0.05);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12 * level, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+  o.connect(g).connect(bus); o.start(t); o.stop(t + 0.15);
+}
+
+// one bubble bursting on lava
+export function pop(level = 1) {
+  if (!ready()) return;
+  const t = ctx.currentTime + 0.01, hz = 90 + Math.random() * 120, o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.setValueAtTime(hz, t); o.frequency.exponentialRampToValueAtTime(hz * 2.5, t + 0.05);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35 * level, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+  o.connect(g).connect(bus); o.start(t); o.stop(t + 0.12);
+}

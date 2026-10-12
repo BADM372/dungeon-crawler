@@ -72,7 +72,7 @@ export function dropFromBag(instanceId) {
   if (slot && isBound(slot.itemId)) { setStatus(`${ITEMS[slot.itemId].name} cannot be dropped`); return false; }
   const item = takeItem(player.inventory, instanceId);
   if (!item) return false;
-  dropAtFeet(item);
+  dropAtFeet(item); sfx('toss');
   setStatus(`Dropped ${displayName(item)}`);
   return true;
 }
@@ -168,5 +168,6 @@ export function updateLoot(dt, time) {
 function landed(p) {
   const r = rarityOf(p);
   if (r.rank >= RARITY.rare.rank) sfx('drop', { at: p, pitch: 1 + 0.12 * (r.rank - RARITY.rare.rank), volume: 0.5 + 0.12 * r.rank });
+  else sfx('clink', { at: p, volume: 0.6 });
   lootLanded(p, state.world);
 }

@@ -1,6 +1,7 @@
 // One simulation step for the player.
 import { SIT_IMPACT, RAGDOLL_IMPACT, FALL_DAMAGE } from '../core/constants.js';
 import { player, state } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { inputDir, wantsWalk, takeJump, autoAttackHeld, autoAttack } from './input.js';
 import { updateSword, cancelSword } from './sword.js';
 import { holdPointer, followOrder, clearOrder } from './orders.js';
@@ -62,7 +63,7 @@ export function updatePlayer(dt) {
     knockDown({ damage: Math.min(FALL_DAMAGE, (gr.landed - RAGDOLL_IMPACT) * 6), reason: 'Hard landing!' });
     return;
   }
-  if (gr.landed > SIT_IMPACT) player.stun = 1.5;
+  if (gr.landed > SIT_IMPACT) { player.stun = 1.5; sfx('dizzy'); }
 
   checkPortals(dx, dz, dt, charge);
 }

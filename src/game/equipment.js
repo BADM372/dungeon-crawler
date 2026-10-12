@@ -1,5 +1,6 @@
 // Prepare the model first, then commit visual + inventory equipment together.
 import { player, state, setStatus } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { ITEMS } from '../core/items.js';
 import { ownedItem, equipItem, addInstance } from '../core/inventory.js';
 import { rollWeapon } from '../core/gear/generate.js';
@@ -28,7 +29,7 @@ export async function equipOwnedWeapon(instanceId) {
     const model = await prepareSword(def.model);
     if (token !== request || inventory !== player.inventory || !canChangeWeapon(player) || state.transitioning
         || ownedItem(inventory, instanceId) !== slot) return false;
-    equipItem(inventory, instanceId); equipSword(model);
+    equipItem(inventory, instanceId); equipSword(model); sfx('equip');
     setStatus(`Equipped ${displayName(slot)}`);
     return true;
   } catch (error) {

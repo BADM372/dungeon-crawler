@@ -16,6 +16,7 @@ import { showPortalCloud, hidePortalCloud, CLOUD_DELAY } from '../render/portalc
 import { setFade } from '../render/fade.js';
 import { setCut } from '../render/section.js';
 import { player, state, setStatus } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { whenReady } from './hud.js';
 import { resetEnemies, detachEnemies, drawEnemies, allEnemies } from './enemies.js';
 import { cancelSword } from './sword.js';
@@ -43,7 +44,10 @@ export function startTravel(p) {
   cancelSword(); cancelCast();
   const source = state.cubeKey, cubes = state.cubes, k = step(source, p.dir);
   const cloud = p.kind === 'side' && !showsNeighbor(k);   // somewhere new: nothing drawn there yet
-  if (cloud) showPortalCloud(p, player);
+  if (cloud) { showPortalCloud(p, player); sfx('cloud', { volume: 0.7 }); }
+  // the town portal sounds on its own (game/townportal.js), a fall whistles (game/sounds.js)
+  const sound = { side: 'gate', down: 'wellDown', up: 'ringUp' }[p.kind];
+  if (sound) sfx(sound);
   whenReady(cubes.get(k)).then(c => {
     if (state.cubes === cubes && state.cubeKey === source) slide(p, c, cloud); else hidePortalCloud();
   }, () => {

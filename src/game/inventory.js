@@ -5,6 +5,7 @@
 // items (the town portal scroll) cannot be dropped. Keys 1-6 put the selected bag item on the
 // quick bar (game/quickbar.js); Use uses it (and closes the bag).
 import { player, state, setStatus } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { ITEMS, COINS, WEAPONS } from '../core/items.js';
 import { equippedItem, ownedItem, assignBar, barAllowed, barIndexOf } from '../core/inventory.js';
 import { xpProgress, damageBonus } from '../core/progression.js';
@@ -26,6 +27,7 @@ export const inventoryFloor = () => state.inventoryOpen && floorMode;
 export function setInventoryOpen(open, floor = false) {
   if (open && (!state.map || state.transitioning)) return;
   if (open) cancelCast(state.cast ? 'Portal cancelled' : '');
+  if (open !== state.inventoryOpen) sfx(open ? 'bagOpen' : 'bagClose');
   state.inventoryOpen = open; clearInput();
   $('inventory-overlay').hidden = !open;
   if (open) {

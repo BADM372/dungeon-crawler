@@ -1,9 +1,14 @@
 // Generated sound effects (Web Audio, no sample files): a sword whoosh, hits, kills,
-// getting hurt, pickups, and thrown fireballs / punches and burning. The audio context lives
-// in context.js.
+// getting hurt, pickups, thrown fireballs / punches and burning, the player's body (jumps,
+// falls, knock-downs, fluid deaths), travel, items and the bag, and the enemies' voices
+// (voices.js). Footsteps are footsteps.js, the continuous sounds loops.js. The audio context
+// lives in context.js.
 import * as THREE from 'three';
 import { camera } from '../render/scene.js';
 import { onAudioStart } from './context.js';
+import { voices } from './voices.js';
+
+const NOISE = 3;   // seconds of noise: a layer may last up to NOISE - 0.5 s
 
 let ctx = null, master = null, noiseBuf = null;
 const last = {};
@@ -16,7 +21,7 @@ onAudioStart((ac, output) => {
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -10; comp.ratio.value = 6;
   master.connect(comp).connect(output);
-  noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  noiseBuf = ctx.createBuffer(1, NOISE * ctx.sampleRate, ctx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 });
@@ -122,14 +127,151 @@ const SOUNDS = {
       tone('sine', hz * p, hz * p * 1.005, at, 0.5, amp(at, 0.004, 0.16, 0.5, out));
     }
   },
+  clink(t, out, p) {     // any other item landing: a small dull clink
+    tone('triangle', 1400 * p, 1150 * p, t, 0.06, amp(t, 0.001, 0.2, 0.06, out));
+    tone('sine', 2100 * p, 2000 * p, t + 0.01, 0.05, amp(t + 0.01, 0.001, 0.08, 0.05, out));
+    noise(t, 0.03, filter('lowpass', 1200, 0.7, amp(t, 0.001, 0.15, 0.03, out)));
+  },
+  toss(t, out, p) {      // dropping an item from the bag: a little whoosh, then it lands
+    sweep(t, 0.16, 500 * p, 1600 * p, 700 * p, 1.2, 0.35, out);
+    tone('sine', 160 * p, 70 * p, t + 0.17, 0.08, amp(t + 0.17, 0.002, 0.4, 0.08, out));
+  },
+
+  // --- the player's body --------------------------------------------------------------------
+  levelUp(t, out, p) {   // a bright rising arpeggio over a swelling sparkle
+    for (const [i, hz] of [523, 659, 784, 1047, 1319].entries()) {
+      const at = t + i * 0.07, last = i === 4;
+      tone('triangle', hz * p, hz * p, at, last ? 0.9 : 0.35, amp(at, 0.005, 0.22, last ? 0.9 : 0.35, out));
+      tone('sine', hz * 2 * p, hz * 2 * p, at, 0.3, amp(at, 0.005, 0.06, 0.3, out));
+    }
+    sweep(t, 0.9, 1000 * p, 6000 * p, 3000 * p, 1.5, 0.18, out, 0.3);
+  },
+  jump(t, out, p) {      // a short upward whoosh off a light scuff
+    sweep(t, 0.14, 400 * p, 1500 * p, 900 * p, 1, 0.6, out, 0.02);
+    noise(t, 0.04, filter('lowpass', 900, 0.7, amp(t, 0.002, 0.4, 0.035, out)));
+  },
+  knock(t, out, p) {     // knocked over: a whoosh and a grunt
+    sweep(t, 0.3, 300 * p, 1200 * p, 300 * p, 1, 0.5, out, 0.05);
+    tone('sawtooth', 220 * p, 110 * p, t, 0.15, filter('lowpass', 900, 1, amp(t, 0.005, 0.25, 0.15, out)));
+  },
+  thud(t, out, p) {      // the body hitting the ground (volume: how hard)
+    tone('sine', 110 * p, 45 * p, t, 0.15, amp(t, 0.002, 0.9, 0.15, out));
+    noise(t, 0.1, filter('lowpass', 600 * p, 0.7, amp(t, 0.002, 0.6, 0.09, out)));
+  },
+  getUp(t, out, p) {     // getting up: two soft rustles of cloth
+    for (const at of [t, t + 0.22]) noise(at, 0.12, filter('bandpass', 1300 * p, 0.9, amp(at, 0.03, 0.4, 0.1, out)));
+  },
+  dizzy(t, out, p) {     // seeing stars after a hard landing: little twinkles going round
+    for (let i = 0; i < 6; i++) {
+      const at = t + i * 0.11, hz = [1568, 1976, 1760][i % 3] * p;
+      tone('sine', hz, hz * 1.03, at, 0.12, amp(at, 0.004, 0.18, 0.12, out));
+    }
+  },
+  fall(t, out, p) {      // a long fall: a whistle dropping away over rushing air
+    tone('sine', 1400 * p, 300 * p, t, 1.3, amp(t, 0.15, 0.08, 1.15, out));
+    sweep(t, 1.4, 2000 * p, 2200 * p, 500 * p, 0.8, 0.25, out, 0.3);
+  },
+  splash(t, out, p) {    // into the water: a big splash and gloops of air going up
+    tone('sine', 120 * p, 50 * p, t, 0.2, amp(t, 0.002, 0.6, 0.2, out));
+    sweep(t, 0.7, 4000 * p, 1500 * p, 400 * p, 0.6, 0.8, out, 0.005, 'lowpass');
+    for (let i = 0; i < 7; i++) {
+      const at = t + 0.2 + i * 0.12 + Math.random() * 0.06, hz = (300 + Math.random() * 300) * p;
+      tone('sine', hz, hz * 2.2, at, 0.05, amp(at, 0.003, 0.18 * (1 - i / 9), 0.05, out));
+    }
+  },
+  burn(t, out, p) {      // into the lava: a roaring whoomph and a long sizzle
+    sweep(t, 0.8, 300 * p, 1500 * p, 250 * p, 1, 0.9, out, 0.04, 'lowpass');
+    tone('sawtooth', 55 * p, 40 * p, t, 0.7, filter('lowpass', 200, 1, amp(t, 0.03, 0.5, 0.65, out)));
+    noise(t + 0.1, 1.1, filter('highpass', 4000 * p, 0.7, amp(t + 0.1, 0.1, 0.35, 1, out)));
+  },
+  dissolve(t, out, p) {  // into the acid: fizzing, then sinking gloops
+    for (let i = 0; i < 26; i++) {
+      const at = t + Math.random() * 1.1;
+      noise(at, 0.02, filter('bandpass', (2500 + Math.random() * 4000) * p, 4, amp(at, 0.001, 0.25, 0.015, out)));
+    }
+    noise(t, 1.1, filter('highpass', 3000 * p, 0.7, amp(t, 0.05, 0.25, 1, out)));
+    for (let i = 0; i < 4; i++) {
+      const at = t + 0.3 + i * 0.2, hz = (500 - i * 80) * p;
+      tone('sine', hz, hz * 0.6, at, 0.08, amp(at, 0.003, 0.15, 0.08, out));
+    }
+  },
+  death(t, out, p) {     // a low, falling tone; then a soft shimmer: back at the entry
+    tone('sawtooth', 330 * p, 80 * p, t, 0.6, filter('lowpass', 900, 1, amp(t, 0.01, 0.3, 0.6, out)));
+    tone('sine', 165 * p, 40 * p, t, 0.6, amp(t, 0.01, 0.4, 0.6, out));
+    for (const [i, hz] of [523, 784, 1047].entries()) {
+      const at = t + 0.6 + i * 0.06;
+      tone('sine', hz * p, hz * p, at, 0.6, amp(at, 0.05, 0.1, 0.55, out));
+    }
+  },
+
+  // --- travel ---------------------------------------------------------------------------------
+  gate(t, out, p) {      // through a side portal: an airy whoosh with a soft shimmer
+    sweep(t, 0.6, 600 * p, 2400 * p, 900 * p, 1, 0.45, out, 0.1);
+    tone('sine', 880 * p, 1320 * p, t, 0.5, amp(t, 0.1, 0.07, 0.4, out));
+  },
+  wellDown(t, out, p) {  // down the well: a swirl sinking away
+    sweep(t, 1, 2000 * p, 1200 * p, 250 * p, 1.4, 0.45, out, 0.08);
+    tone('triangle', 660 * p, 180 * p, t, 0.9, amp(t, 0.05, 0.12, 0.85, out));
+  },
+  ringUp(t, out, p) {    // up through the ring: a swirl rising, with sparkles
+    sweep(t, 1, 300 * p, 1200 * p, 2600 * p, 1.4, 0.4, out, 0.15);
+    tone('triangle', 330 * p, 990 * p, t, 0.9, amp(t, 0.1, 0.12, 0.8, out));
+    for (let i = 0; i < 5; i++) {
+      const at = t + 0.3 + i * 0.1, hz = (1568 + i * 220) * p;
+      tone('sine', hz, hz, at, 0.15, amp(at, 0.004, 0.06, 0.15, out));
+    }
+  },
+  cloud(t, out, p) {     // the cloud bridge puffing out of the gate
+    noise(t, 0.6, filter('lowpass', 900 * p, 0.7, amp(t, 0.08, 0.45, 0.5, out)));
+  },
+  castStart(t, out, p) { // reading the scroll: a soft two-note chime
+    for (const [i, hz] of [523, 784].entries()) {
+      const at = t + i * 0.08;
+      tone('sine', hz * p, hz * p, at, 0.35, amp(at, 0.005, 0.15, 0.35, out));
+    }
+  },
+  fizzle(t, out, p) {    // a cast or charge broken off: a crackle falling away
+    sweep(t, 0.3, 1500 * p, 900 * p, 300 * p, 2, 0.35, out, 0.005);
+    tone('sine', 660 * p, 330 * p, t, 0.25, amp(t, 0.005, 0.12, 0.25, out));
+  },
+
+  // --- items and the bag ----------------------------------------------------------------------
+  equip(t, out, p) {     // a blade in hand: a metallic shing
+    sweep(t, 0.18, 3000 * p, 8000 * p, 6000 * p, 1.5, 0.25, out, 0.01, 'highpass');
+    tone('triangle', 1760 * p, 1760 * p, t + 0.03, 0.35, amp(t + 0.03, 0.002, 0.12, 0.35, out));
+    tone('sine', 2637 * p, 2637 * p, t + 0.03, 0.25, amp(t + 0.03, 0.002, 0.06, 0.25, out));
+  },
+  bagOpen(t, out, p) {   // leather flap and a rummage, rising
+    noise(t, 0.08, filter('bandpass', 900 * p, 1, amp(t, 0.01, 0.6, 0.07, out)));
+    noise(t + 0.07, 0.1, filter('bandpass', 1500 * p, 1, amp(t + 0.07, 0.01, 0.45, 0.09, out)));
+  },
+  bagClose(t, out, p) {  // and back down, with a soft thump
+    noise(t, 0.08, filter('bandpass', 1300 * p, 1, amp(t, 0.01, 0.2, 0.07, out)));
+    tone('sine', 140 * p, 80 * p, t + 0.06, 0.06, amp(t + 0.06, 0.002, 0.3, 0.06, out));
+  },
+  use(t, out, p) {       // using a quick bar slot: a soft pop
+    tone('sine', 900 * p, 600 * p, t, 0.05, amp(t, 0.002, 0.2, 0.05, out));
+  },
 };
+
+// a band of noise sweeping f0 -> f1 -> f2 over dur (q: band width); attack: swell time;
+// type: the filter (bandpass by default)
+function sweep(t, dur, f0, f1, f2, q, level, out, attack = 0.02, type = 'bandpass') {
+  const f = filter(type, f0, q, amp(t, attack, level, Math.max(0.02, dur - attack), out));
+  f.frequency.setValueAtTime(f0, t);
+  f.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.35);
+  f.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  noise(t, dur, f);
+}
+Object.assign(SOUNDS, voices({ amp, noise, filter, tone, sweep }));
+export const SOUND_NAMES = Object.keys(SOUNDS);
 
 // checks: render a sound offline, returns its peak level (0 = silent)
 export async function renderSfx(name, pitch = 1) {
   const live = ctx, liveNoise = noiseBuf;
-  const off = new OfflineAudioContext(1, 44100, 44100);
+  const off = new OfflineAudioContext(1, 3 * 44100, 44100);
   ctx = off;
-  noiseBuf = off.createBuffer(1, 44100, 44100);
+  noiseBuf = off.createBuffer(1, NOISE * 44100, 44100);
   noiseBuf.getChannelData(0).forEach((_, i, d) => { d[i] = Math.random() * 2 - 1; });
   try { SOUNDS[name](0.005, off.destination, pitch); } finally { ctx = live; noiseBuf = liveNoise; }
   const data = (await off.startRendering()).getChannelData(0);

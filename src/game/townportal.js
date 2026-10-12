@@ -42,6 +42,7 @@ export function useTownPortal() {
   const why = castBlocked();
   if (why) { say(why); return false; }
   state.cast = { kind: 'townPortal', t: 0, duration: CAST_TIME, x: player.x, z: player.z, since: state.time };
+  sfx('castStart');
   clearMouseInput();
   setStatus('Opening a portal to town... hold still');
   return true;
@@ -50,7 +51,7 @@ export function useTownPortal() {
 export function cancelCast(message = '') {
   if (!state.cast) return;
   state.cast = null;
-  if (message) say(message);
+  if (message) { say(message); sfx('fizzle'); }
 }
 
 // every simulation step while casting; moving: the player asked to move or jump this step

@@ -54,6 +54,7 @@ export function updateEnemies(dt) {
   }
   if (killed) setStatus(`${unlocked ? 'Guardian defeated · Gate unlocked!' : `Defeated ${killed} enem${killed === 1 ? 'y' : 'ies'}`} · +${xp} XP${levels ? ` · Level ${player.level}!` : ''}`);
   if (unlocked) { setGuardianGate(state.world, false); drawMinimap(); sfx('unlock'); }
+  if (levels) sfx('levelUp');
   if ((defenceThink -= dt) <= 0 || unlocked) {
     defenceThink = .25;
     coordinateDefence(state.map, state.run, list, player);

@@ -10,6 +10,7 @@ import { beginRagdoll } from '../render/ragdollpose.js';
 import { fluidDeathFx } from '../render/fluiddeath.js';
 import { characterYaw } from '../render/animator.js';
 import { player, state, setStatus } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { takeDamage } from '../core/progression.js';
 import { flash } from './hud.js';
 import { hurt, die, recover } from './flow.js';
@@ -19,6 +20,7 @@ import { cancelSword } from './sword.js';
 export function knockDown({ damage = 0, reason = '', respawn = null, push = 0, hop = 0 } = {}) {
   player.climb = null; player.getUp = null;
   cancelSword();
+  sfx('knock');
   if (!character.ready) { hurt(damage, reason); return; }
   takeDamage(player, damage, state.time);
   if (damage > 0) flash();
@@ -44,6 +46,7 @@ export function dieInFluid(fluid, surface) {
   if (!player.ragdoll) knockDown({ damage: player.hp, reason: deathReason(fluid) });
   else { takeDamage(player, player.hp, state.time); flash(); setStatus(deathReason(fluid)); }
   player.fluidDeath = player.ragdoll ? fluid : 0;
+  sfx(fluid === WATER ? 'splash' : fluid === LAVA ? 'burn' : 'dissolve');
   fluidDeathFx(fluid, x, surface, z, player.ragdoll);
 }
 

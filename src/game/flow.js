@@ -10,6 +10,7 @@ import { buildWorld, disposeWorld } from '../render/world.js';
 import { groundAt } from '../physics/collide.js';
 import { respawnPoint } from '../physics/respawn.js';
 import { player, state, setStatus } from './state.js';
+import { sfx } from '../audio/sfx.js';
 import { showStats, flash, fadeOut, fadeIn, whenReady } from './hud.js';
 import { resetCut } from './cut.js';
 import { resetEnemies } from './enemies.js';
@@ -72,6 +73,7 @@ function restoreVisit(v) {
 // died: back to where you came in, in the cube as it was then (after a fall through cubes:
 // the cube the fall started in)
 export function die() {
+  sfx('death');
   if (state.fallFrom) { returnFromFall(true); return; }
   restoreVisit(state.visit);
   resetEnemies();

@@ -45,6 +45,8 @@ import { tickBurning } from './render/burning.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
 import { updateMusic, forceMood } from './game/music.js';
 import { updateFootsteps } from './game/footsteps.js';
+import { updateSounds } from './game/sounds.js';
+import { updateAmbience } from './game/ambience.js';
 import { musicInfo } from './audio/music.js';
 import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
@@ -62,6 +64,7 @@ function frame() {
   if (Math.abs(player.y - player.visY) > 1.5 || player.ragdoll) player.visY = player.y;
   animateCharacter(dt, state.time);
   updateFootsteps();   // on the cycle the animator just advanced
+  updateSounds(dt); updateAmbience(dt);
   tickFluidDeath(dt);
   tickBurning(dt);
   drawTravelEnemies(dt);
