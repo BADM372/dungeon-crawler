@@ -30,6 +30,13 @@ function follow(e, speed, dt, end) {
 function decide(e) {
   const p = player, cfg = e.profile, target = playerFloor(cfg.height);
   const alive = !p.ragdoll && p.hp > 0 && !state.transitioning, dist = Math.hypot(p.x - e.x, p.z - e.z);
+  if (e.defence) {
+    if (e.mode === 'attack') return;   // never cancel a committed wind-up
+    const engage = alive && target && e.defence.engage;
+    e.path = findPath(e.f, engage ? target : e.defence.post, 40, cfg.height);
+    e.mode = engage && e.path ? 'chase' : 'defend'; e.lost = 0;
+    return;
+  }
   if (e.mode !== 'chase' && e.mode !== 'attack') {
     if (!alive || !target || dist > cfg.aggro || Math.abs(p.y - e.y) > 1) return;
     if (!clearLine(e.x, e.y + 0.4, e.z, p.x, p.y + 0.6, p.z)) return;
@@ -72,6 +79,10 @@ function act(e, dt) {
       return;
     }
     follow(e, cfg.chase, dt, [p.x, p.z]); return;
+  }
+  if (e.mode === 'defend') {
+    if (follow(e, e.guardian ? cfg.homeSpeed : cfg.chase, dt)) turn(e, Math.atan2(dx, dz), dt, 2);
+    return;
   }
   if (e.mode === 'walk' || e.mode === 'home') {
     if (follow(e, e.mode === 'home' ? cfg.homeSpeed : cfg.wander, dt)) {

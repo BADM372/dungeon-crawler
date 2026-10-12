@@ -6,7 +6,8 @@
 // Each pack draws its kind from the roster's weights (core/spawns.js) on a stream of its own,
 // so the kinds never move a spot. A spot carries its kind's profile as `kind`.
 import { N } from '../core/constants.js';
-import { enemyRoll, ENEMY_KINDS } from '../core/enemies.js';
+import { enemyRoll, ENEMY_KINDS, GUARDIAN_KINDS } from '../core/enemies.js';
+import { guardianId } from '../core/guardians.js';
 import { population } from '../core/spawns.js';
 import { mulberry32, hash32 } from '../core/util.js';
 import { walkable, neighbors, groundY, floorAt } from '../physics/enemynav.js';
@@ -21,6 +22,7 @@ export function pickKind(kinds, r) {
 }
 
 export function enemySpots(map, profile) {
+  if (map.guardian) return guardianSpots(map).filter(s => s.kind.species === profile.species);
   const spec = population(map).get(profile.type);
   if (!spec?.count) return [];
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt)), { count, pack } = spec;
@@ -56,4 +58,42 @@ export function enemySpots(map, profile) {
     }
   }
   return spots.map((f, i) => ({ ...enemyRoll(map, kinds[i], f.id), kind: kinds[i], f, x: f.x + 0.5, z: f.z + 0.5, y: groundY(f, f.x + 0.5, f.z + 0.5), yaw: R() * Math.PI * 2 }));
+}
+
+// All species share one deterministic placement stream in an arena, avoiding overlapping
+// spawns and making exactly one promoted member part of the doubled population.
+export function guardianSpots(map) {
+  const pop = population(map), species = [...pop.keys()];
+  if (!species.length) return [];
+  const R = mulberry32(hash32(map.seed ^ 0x6a7d1a)), guard = map.guardian;
+  const chosen = species[Math.floor(R() * species.length)], kind = GUARDIAN_KINDS[chosen];
+  const f = guard.floor, roll = enemyRoll(map, kind, f.id);
+  const level = roll.level + 6 + Math.floor(map.depth / 3);
+  const spots = [{ ...roll, id: guardianId(map.key), level,
+    coinDrop: Math.round(roll.coinDrop * (1 + .25 * (level - 1)) / (1 + .25 * (roll.level - 1))),
+    guardian: true, guardianGate: map.key, kind, f, x: guard.x, z: guard.z, y: guard.y, yaw: guard.yaw }];
+  const used = new Set([f.id]), entrance = map.portals.find(p => p.kind === 'side');
+  const requests = [];
+  for (const [type, spec] of pop) for (let i = type === chosen ? 1 : 0; i < spec.count; i++)
+    requests.push(pickKind(spec.kinds, R()));
+  // The largest bodies claim their spots first, so a swarm cannot crowd them out.
+  requests.sort((a, b) => b.radius - a.radius);
+  const [dx, dz] = guard.approach;
+  for (const kind of requests) {
+    const ahead = kind.projectile ? -1 + R() * 3 : 2 + R() * 5, side = (R() - .5) * 8;
+    const tx = guard.x + dx * ahead - dz * side, tz = guard.z + dz * ahead + dx * side;
+    const candidates = map.floors.filter(f => f.encounter && !used.has(f.id) && walkable(f, kind.height)
+      && Math.hypot(f.x - entrance.x, f.z - entrance.z) >= 4
+      && map.portals.filter(p => p.kind === 'down').every(p => Math.hypot(f.x - p.x, f.z - p.z) >= 1.8)
+      && spots.every(s => Math.hypot(f.x + .5 - s.x, f.z + .5 - s.z) >= kind.radius + s.kind.radius + .12)
+      && [[kind.radius, 0], [-kind.radius, 0], [0, kind.radius], [0, -kind.radius]]
+        .every(([x, z]) => floorAt(f, f.x + .5 + x, f.z + .5 + z, kind.height)));
+    candidates.sort((a, b) => Math.hypot(a.x + .5 - tx, a.z + .5 - tz) - Math.hypot(b.x + .5 - tx, b.z + .5 - tz));
+    const f = candidates[0];
+    if (!f) throw new Error('Guardian arena cannot hold its doubled population');
+    used.add(f.id);
+    spots.push({ ...enemyRoll(map, kind, f.id), kind, f, x: f.x + .5, z: f.z + .5,
+      y: groundY(f, f.x + .5, f.z + .5), yaw: guard.yaw });
+  }
+  return spots;
 }

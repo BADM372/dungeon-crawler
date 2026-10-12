@@ -39,6 +39,7 @@ export function placeProps(m, theme) {
     && m.cols[idx(f.x + dx, f.z + dz)].some(g => g.fluid && Math.abs(g.surf - f.top) <= 3));
 
   for (const f of m.floors) {
+    if (f.encounter) continue;   // guardian arena: unobstructed sightlines and body clearance
     const col = m.cols[f.c], above = col[col.indexOf(f) + 1];
     const pieces = m.pieces[f.c], top = Math.max(...f.cs), ceiling = above ? above.bottom * LH : Infinity;
     const slope = top - Math.min(...f.cs), s = 0.85 + R() * 0.3;

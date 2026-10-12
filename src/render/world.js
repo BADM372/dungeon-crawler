@@ -23,12 +23,12 @@ export function disposeWorld(world) {
 }
 
 // geo: the cube's geometry arrays (from the worker); built here if missing
-export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = []) {
+export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = [], locked = !!m.guardian) {
   const group = new THREE.Group();
   const fluidMeshes = layerMeshes(geo, group);
   const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
-  const markers = buildMarkers(m, group, showPath, seen, open);
+  const markers = buildMarkers(m, group, showPath, seen, open, locked);
   // decoration (also sets the colliders of blocking props on the map)
   const placed = placeProps(m, themeAt(m.depth ?? 0));
   m.blockers = placed.blockers.map((list, i) => [...(m.staticBlockers?.[i] || []), ...list]);
@@ -49,6 +49,10 @@ export function setWorldOpenFaces(world, open) {
     const p = fx.obj.userData.portal;
     if (p.kind === 'side' && open[p.dir]) fx.obj.visible = false;
   }
+}
+
+export function setGuardianGate(world, locked) {
+  for (const fx of world?.portalFx || []) fx.setLocked?.(locked);
 }
 
 // per-frame animation of fluids, waterfalls, lights and the portal

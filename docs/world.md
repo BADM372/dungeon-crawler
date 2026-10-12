@@ -336,6 +336,14 @@ in game devtools for real worker, asset, shader and collision checks.
 - Drops are capped at 8 levels (deeper ones ragdoll you) and need an extra level of headroom.
 - Lake cubes and half of the underground cubes get floating islands (no pillars).
 
+## Guardian descents
+
+Starting at depth 2, selected descent cubes are deliberate guardian arenas with one
+side entrance and a framed well down. They contain twice the normal local population
+and one high-level, hot-pink guardian. Its death alone permanently unlocks the red well
+for the current run. Defenders coordinate to intercept the approach while it lives.
+See [guardian mechanics, generation and checks](guardians.md).
+
 ## The way down (`cubegen/route.js`, `cubegen/reach.js`, `cubegen/escape.js`)
 
 The world guarantees that from anywhere you can arrive, you can get to depth 20.

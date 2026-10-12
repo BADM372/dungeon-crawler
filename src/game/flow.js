@@ -17,6 +17,7 @@ import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
 import { townAssetsReady } from '../render/townassets.js';
 import { createPlayerStats, createRun, takeDamage } from '../core/progression.js';
+import { restoreDefeated, gateLocked } from '../core/guardians.js';
 import { syncEquippedWeapon } from './equipment.js';
 import { clearInput } from './inputstate.js';
 import { lootMark, forgetLoot } from './loot.js';
@@ -60,7 +61,7 @@ export function beginVisit() {
 }
 function restoreVisit(v) {
   if (!v) return;
-  for (const id of state.run.defeated) if (!v.defeated.has(id)) state.run.defeated.delete(id);
+  restoreDefeated(state.run, v.defeated);
   forgetLoot(v.key, v.loot);
 }
 
@@ -118,7 +119,7 @@ export function enterCube(c, from = null, back = null) {
   if (!back) discover(c);
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k), gateLocked(c.map, state.run));
   if (back) {
     const { arrival, portalLock, boundaryLock, visit } = back;
     Object.assign(state, { arrival, portalLock, boundaryLock, visit });
@@ -143,6 +144,7 @@ export function settleIn(neighbors = true) {
   showStats(c.map, state.cubeKey, state.cubes.seed, c.visits);
   drawMinimap();
   if (neighbors) showNeighbors(visitedNeighbors(state.cubeKey));
+  if (gateLocked(state.map, state.run)) setStatus('Guardian room · Defeat the pink guardian to unlock the red descent');
   // get the cubes behind our portals ready in the background
   state.cubes.prefetch(c.map.portals.filter(p => p.kind !== 'spawn').map(p => step(state.cubeKey, p.dir)));
 }
@@ -164,7 +166,7 @@ whenPropsReady(() => {
   if (!state.world || state.transitioning) return;
   const c = state.cubes.cubes.get(state.cubeKey);
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey), gateLocked(c.map, state.run));
   // Props add blockers after a late load. Re-select safe, seeded spawn sites.
   cancelSword(); resetEnemies();
 });

@@ -85,7 +85,7 @@ test('three snakes in rising strength; the red one bites hardest and is a fifth 
   near(BLOOD_VIPER.chase, SNAKE.chase * 1.2, 1e-9);
   near(BLOOD_VIPER.wander, SNAKE.wander * 1.2, 1e-9);
   assert.ok(BLOOD_VIPER.coins[0] > SNAKE.coins[0]);
-  const snakes = Object.values(ENEMY_KINDS).filter(k => k.species === 'snake');
+  const snakes = Object.values(ENEMY_KINDS).filter(k => k.species === 'snake' && !k.guardian);
   assert.equal(snakes.length, 6);
   for (const k of snakes) if (k !== SHADOW_MAMBA) assert.ok(SHADOW_MAMBA.hp > k.hp && SHADOW_MAMBA.damage > k.damage && SHADOW_MAMBA.chase > k.chase, k.type);
   // six snakes, told apart at a glance: their skins differ in hue or clearly in lightness
@@ -107,13 +107,13 @@ test('a kind scales its body, reach and attacks with its size', () => {
   assert.ok(Number.isInteger(e.profile.damage) && Number.isInteger(e.profile.xp));
 });
 
-test('every roster draws real kinds of its own species, and every kind lives somewhere', () => {
+test('every roster draws real kinds of its own species, and every ordinary kind lives somewhere', () => {
   const used = new Set();
   for (const [depth, row] of DEPTH_SPAWNS.entries()) for (const e of row.roster) for (const [type, w] of Object.entries(e.kinds)) {
     assert.equal(ENEMY_KINDS[type]?.species, e.type, `depth ${depth}: ${type}`);
     assert.ok(w > 0); used.add(type);
   }
-  assert.deepEqual([...used].sort(), Object.keys(ENEMY_KINDS).sort());
+  assert.deepEqual([...used].sort(), Object.values(ENEMY_KINDS).filter(k => !k.guardian).map(k => k.type).sort());
   assert.equal(pickKind({ snake: 1, bloodviper: 3 }, 0.2), SNAKE);
   assert.equal(pickKind({ snake: 1, bloodviper: 3 }, 0.3), BLOOD_VIPER);
 });

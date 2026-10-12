@@ -2,7 +2,8 @@
 // Wells down and rings up have to charge first: stand in the circle for PORTAL_CHARGE seconds.
 import { N } from '../core/constants.js';
 import { isFaceOpen, approachingFace, faceDistance } from '../core/boundaries.js';
-import { player, state } from './state.js';
+import { player, state, setStatus } from './state.js';
+import { portalLocked } from '../core/guardians.js';
 import { startTravel } from './travel.js';
 
 export const PORTAL_CHARGE = 1.5;
@@ -33,6 +34,7 @@ export function checkPortals(dx = 0, dz = 0, dt = 0, charge = state.portalCharge
     const at = inside(q);
     if (state.portalLock === q.id) { if (!at) state.portalLock = 0; continue; }
     if (!at) continue;
+    if (portalLocked(state.map, state.run, q)) { setStatus('Defeat the guardian to unlock this descent'); continue; }
     if (q.kind === 'up' || q.kind === 'down') {
       const c = charge?.key === state.cubeKey && charge.id === q.id ? charge : { key: state.cubeKey, id: q.id, t: 0 };
       c.t += dt;

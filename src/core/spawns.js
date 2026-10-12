@@ -72,6 +72,7 @@ export function population(map) {
   for (const e of present) if ((w -= e.chance) < 0) { lead = e; break; }
   return new Map(present.map(e => {
     const mid = (e.lo + e.hi) / 2, lo = e === lead ? Math.ceil(mid) : e.lo, hi = e === lead ? e.hi : Math.floor(mid);
-    return [e.type, { count: lo + Math.floor(R() * (hi - lo + 1)), pack: e.pack, lead: e === lead, kinds: e.kinds }];
+    const count = lo + Math.floor(R() * (hi - lo + 1));
+    return [e.type, { count: count * (map.guardian ? 2 : 1), pack: e.pack, lead: e === lead, kinds: e.kinds }];
   }));
 }

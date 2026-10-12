@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { N, CUBE_H } from '../core/constants.js';
 
 let STONE = null;   // one per cube (cubes fade on their own)
-const COLORS = { new: [0xffc94a, 0xffa500], seen: [0x5fd3ff, 0x1f8fd0] };
+const COLORS = { new: [0xffc94a, 0xffa500], seen: [0x5fd3ff, 0x1f8fd0], locked: [0xff3547, 0xff1530] };
 const glowMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, side: THREE.DoubleSide, depthWrite: false });
 const box = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), STONE); m.position.set(x, y, z); m.castShadow = true; return m; };
 
@@ -22,7 +22,7 @@ function gate(p, [c, e]) {
   return { obj: g, tick: t => { curtain.material.opacity = 0.32 + Math.sin(t * 3 + p.id) * 0.1; } };
 }
 
-function well(p, [c, e]) {
+function well(p, [c, e], guardian) {
   const g = new THREE.Group();
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.13, 8, 24), STONE);
   rim.rotation.x = Math.PI / 2; rim.position.y = 0.08; rim.castShadow = true;
@@ -30,9 +30,34 @@ function well(p, [c, e]) {
   swirl.rotation.x = -Math.PI / 2; swirl.position.y = 0.03; swirl.renderOrder = 900;
   const inner = new THREE.Mesh(new THREE.RingGeometry(0.15, 0.32, 5), glowMat(0x2a1440, 0.8));
   inner.rotation.x = -Math.PI / 2; inner.position.y = 0.04; inner.renderOrder = 901;
-  g.add(rim, swirl, inner, new THREE.PointLight(e, 3, 3, 2));
+  const light = new THREE.PointLight(e, 3, guardian ? 5 : 3, 2);
+  g.add(rim, swirl, inner, light);
+  let locked = false;
+  const target = new THREE.Color(c), lightTarget = new THREE.Color(e), seal = new THREE.Group();
+  if (guardian) {
+    // A visible arch behind the well, oriented towards its approach. Pure dressing:
+    // pillars stand outside the activation circle and do not obstruct the guardian.
+    const frame = new THREE.Group(), [dx, dz] = guardian.approach;
+    frame.rotation.y = Math.atan2(dx, dz); frame.position.set(-dx * .8, 0, -dz * .8);
+    frame.add(box(.22, 2.4, .22, -1, 1.2, 0), box(.22, 2.4, .22, 1, 1.2, 0), box(2.5, .24, .3, 0, 2.4, 0));
+    g.add(frame);
+    for (const yaw of [-Math.PI / 4, Math.PI / 4]) {
+      const cross = new THREE.Mesh(new THREE.PlaneGeometry(1.05, .08), glowMat(COLORS.locked[0], .9));
+      cross.rotation.x = -Math.PI / 2; cross.rotation.z = yaw; cross.position.y = .15; seal.add(cross);
+    }
+    g.add(seal);
+  }
   g.position.set(p.x + 0.5, p.y, p.z + 0.5);
-  return { obj: g, tick: t => { inner.rotation.z = -t * 2.5; swirl.material.opacity = 0.6 + Math.sin(t * 4) * 0.15; } };
+  return { obj: g, setLocked: guardian ? (value, immediate = false) => {
+    locked = value; seal.visible = value;
+    const col = value ? COLORS.locked : [c, e];
+    target.set(col[0]); lightTarget.set(col[1]);
+    if (immediate) { swirl.material.color.copy(target); light.color.copy(lightTarget); }
+  } : null, tick: t => {
+    inner.rotation.z = -t * (locked ? .6 : 2.5);
+    swirl.material.opacity = .6 + Math.sin(t * (locked ? 2 : 4)) * .15;
+    swirl.material.color.lerp(target, .15); light.color.lerp(lightTarget, .15);
+  } };
 }
 
 function ring(p, [c, e]) {
@@ -59,11 +84,12 @@ function spawnPad(p) {
 }
 
 // seen: portal id -> leads somewhere explored
-export function buildMarkers(m, group, showPath, seen = {}, open = []) {
+export function buildMarkers(m, group, showPath, seen = {}, open = [], locked = !!m.guardian) {
   STONE = new THREE.MeshStandardMaterial({ color: 0x9aa3b0, roughness: 0.8, flatShading: true });
   const portalFx = m.portals.filter(p => p.kind !== 'side' || !open[p.dir]).map(p => {
     const col = COLORS[seen[p.id] ? 'seen' : 'new'];
-    const fx = p.kind === 'side' ? gate(p, col) : p.kind === 'down' ? well(p, col) : p.kind === 'up' ? ring(p, col) : spawnPad(p);
+    const fx = p.kind === 'side' ? gate(p, col) : p.kind === 'down' ? well(p, col, m.guardian) : p.kind === 'up' ? ring(p, col) : spawnPad(p);
+    fx.setLocked?.(locked, true);
     fx.obj.userData.portal = p;   // dev tools: click to take it
     group.add(fx.obj);
     return fx;

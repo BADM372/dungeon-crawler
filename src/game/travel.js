@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { N, CUBE_H, BASE, STEP, SWIM_STEP, SNAP } from '../core/constants.js';
 import { isFaceOpen, openedSides, boundaryArrival } from '../core/boundaries.js';
+import { portalLocked, gateLocked } from '../core/guardians.js';
 import { step, D6, OPP6, faceKey } from '../world/coords.js';
 import { buildWorld, setWorldOpenFaces } from '../render/world.js';
 import { setGlassFaces } from '../render/glass.js';
@@ -30,6 +31,7 @@ export const travelling = () => !!tr;
 // the cube behind the portal may still be generating: wait for it (frozen in the portal)
 export function startTravel(p) {
   if (state.transitioning || state.inventoryOpen) return;
+  if (portalLocked(state.map, state.run, p)) { setStatus('Defeat the guardian to unlock this descent'); return; }
   state.transitioning = true;
   cancelSword();
   const source = state.cubeKey, cubes = state.cubes, k = step(source, p.dir);
@@ -73,7 +75,7 @@ function slide(p, c) {
   state.portalLock = fall || p.kind === 'side' ? 0 : arr.id;
   state.boundaryLock = p.kind === 'side' ? OPP6[p.dir] : -1;
   tr.A0 = A;
-  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k));
+  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k), gateLocked(m, state.run));
   state.world.group.position.copy(D);
   setFade(state.world.group, 0);
   tr.ghosts = buildNeighbors(visitedNeighbors(k), tr.old.ghosts);   // common cubes stay visible

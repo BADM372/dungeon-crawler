@@ -23,6 +23,7 @@ import { smooth } from './smooth.js';
 import { shapeStructures } from './shape.js';
 import { addFences } from './fences.js';
 import { generateClearing } from './town.js';
+import { generateGuardian } from './guardian.js';
 import { reserveSites, prepareSites, routeSites, finishSites } from './sites.js';
 
 function indexFloors(ctx) {
@@ -106,6 +107,7 @@ function tryGenerate(seed, spec) {
 // spec: what the world fixes for this cube (faces, portals, layers; see world/world.js)
 export function generate(spec) {
   if (spec.town || spec.merchantCamp) return generateClearing(spec);
+  if (spec.guardian) return generateGuardian(spec);
   let best = null;
   for (let a = 0; a < 200; a++) {
     const m = tryGenerate(hash32(spec.seed + a * 7919), spec);

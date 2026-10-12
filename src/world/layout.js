@@ -38,6 +38,15 @@ function path(cells, a, b, R) {
   return out;
 }
 
+// One guardian per two-depth band, plus the introduction at depth 2. At most two
+// consecutive ordinary descents; independent of graph/terrain random streams.
+export function guardianDepth(seed, d) {
+  if (d < 2 || d >= MAX_DEPTH) return false;
+  if (d === 2) return true;
+  const band = Math.floor((d - 3) / 2), chosen = 3 + band * 2 + (hash32(seed ^ Math.imul(band + 1, 0x6a7d)) & 1);
+  return d === chosen;
+}
+
 function build(seed, d, above) {
   const R = mulberry32(hash32(seed ^ (d * 0x9e3779b1))), Y = -d;
   let cells, start, end;
@@ -59,7 +68,7 @@ function build(seed, d, above) {
       end = inner.reduce((b, c) => off(c) < off(b) ? c : b);
     }
   }
-  const spine = d === 0 ? cells : path(cells, start, end, R);
+  const spine = d === 0 ? cells : path(cells, start, end, R), guardian = guardianDepth(seed, d);
   const portals = new Set(), K = ([x, z]) => key(x, Y, z);
   const link = (a, b) => { const dir = AXES.findIndex(([dx, dz]) => a[0] + dx === b[0] && a[1] + dz === b[1]); portals.add(faceKey(K(a), dir)); };
   for (let i = 1; i < spine.length; i++) link(spine[i - 1], spine[i]);
@@ -67,10 +76,17 @@ function build(seed, d, above) {
   const dist = new Map(spine.map(c => [id(c), 0])), inArc = new Set(cells.map(id));
   for (let front = spine; front.length;) {
     const next = [];
-    for (const c of front) for (const n of nb(c)) if (inArc.has(id(n)) && !dist.has(id(n))) { dist.set(id(n), dist.get(id(c)) + 1); link(c, n); next.push(n); }
+    for (const c of front) for (const n of nb(c)) if ((!guardian || id(c) !== id(end)) && inArc.has(id(n)) && !dist.has(id(n))) { dist.set(id(n), dist.get(id(c)) + 1); link(c, n); next.push(n); }
     front = next;
   }
-  for (const c of cells) for (const n of nb(c)) if (inArc.has(id(n)) && R() < 0.12) link(c, n);
+  // A fringe cell occasionally hangs only off the descent. Trim it rather than add
+  // a confusing extra entrance to a guardian arena.
+  if (guardian) {
+    cells = cells.filter(c => dist.has(id(c)));
+    for (const c of [...inArc]) if (!dist.has(c)) inArc.delete(c);
+  }
+  for (const c of cells) for (const n of nb(c)) if (inArc.has(id(n)) && R() < 0.12
+    && (!guardian || id(c) !== id(end) && id(n) !== id(end))) link(c, n);
   // each cube's exit: the portal one step closer to the well down (the core: to its centre)
   const exit = new Map(), goal = d < MAX_DEPTH ? end : [0, 0], seen = new Set([id(goal)]);
   if (d < MAX_DEPTH) exit.set(K(goal), 4);
@@ -83,9 +99,10 @@ function build(seed, d, above) {
     front = next;
   }
   const layout = { depth: d, cells, start, end, spine: spine.length, exists: new Set(cells.map(K)), portals, exit,
-    up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null };
+    up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null, guardian };
   const sites = planSites(seed, layout, new Map([...dist].map(([c, n]) => [K(c.split(',').map(Number)), n])));
   layout.sitePlans = sites.plans; layout.roles = sites.roles;
+  if (guardian) layout.roles.set(layout.down, 'guardian');
   return layout;
 }
 

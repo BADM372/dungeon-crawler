@@ -19,6 +19,7 @@ import { glow, emit, rand } from './particles.js';
 import { cloneEnemy } from './enemymodel.js';
 import { kindColors, recolor } from './recolor.js';
 import { attackOf } from '../core/enemies.js';
+import { GUARDIAN_COLOR } from '../core/guardians.js';
 import { player } from '../game/state.js';
 import { makeBar, makeLevelLabel } from './bars.js';
 
@@ -58,10 +59,11 @@ function makeView(e, prefab) {
     a.play(); a.timeScale = 0; a.setEffectiveWeight(name === 'walk' ? 1 : 0); actions[name] = a;
     weights[name] = name === 'walk' ? 1 : 0;
   }
-  const hpBar = makeBar(), bar = hpBar.group;
+  const hpBar = makeBar(e.guardian ? { color: GUARDIAN_COLOR, w: .9 } : {}), bar = hpBar.group;
   bar.position.y = e.profile.height + 0.12; group.add(bar);
-  const label = makeLevelLabel(e.level); label.position.y = e.profile.height + .33; group.add(label);
-  const fx = GLOW[e.profile.species], flames = [];
+  const label = makeLevelLabel(e.level, e.guardian ? { color: GUARDIAN_COLOR, title: '◆ Guardian' } : {});
+  label.position.y = e.profile.height + .33; group.add(label);
+  const fx = GLOW[e.profile.species] ?? (e.guardian ? { light: [GUARDIAN_COLOR, 2, 3, .5], pulse: .35 } : null), flames = [];
   model.traverse(o => { if (o.isBone && /^flame/.test(o.name)) flames.push(o); });
   let light = null;
   if (fx?.light) {
@@ -141,7 +143,7 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     }
     const flash = Math.min(0.6, e.hurtT / 0.22 * 0.6);
     for (const { material, color } of v.materials) material.color.copy(color).lerp(flash > 0.1 || !e.hovered ? white : hover, Math.max(flash, e.hovered ? 0.22 : 0));
-    v.bar.visible = e.hp < e.profile.hp || !!e.hovered;
+    v.bar.visible = !!e.guardian || e.hp < e.profile.hp || !!e.hovered;
     v.label.visible = v.bar.visible || Math.hypot(e.x - player.x, e.z - player.z) < e.profile.aggro + 1;
     inverseYaw.setFromAxisAngle(up, -v.yaw);
     v.bar.quaternion.copy(inverseYaw).multiply(camera.quaternion);

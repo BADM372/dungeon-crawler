@@ -217,7 +217,16 @@ export const CRIMSON_TRIANGLE = enemyKind(TRIANGLE, {
   colors: { glow: 'oklch(0.64 0.22 25)', eyes: 'oklch(0.95 0.05 60)' }, light: '#ff4836', sparks: Object.freeze(['#ffc0b0', '#ff4836']),
   ichor: Object.freeze(['#ffa08a', '#a01a10']), mods: { hp: 1.35, damage: 1.35 }, cooldown: TRIANGLE.cooldown * 0.8,
 });
-export const ENEMY_KINDS = Object.freeze(Object.fromEntries([...ENEMY_PROFILES, SAND_VIPER, BLOOD_VIPER, FROST_ADDER, VENOM_ADDER, SHADOW_MAMBA, FROST_SPIDER, BOG_SPIDER,
+// Guardians are distinct kinds for every species, never part of the ordinary roster.
+// Hot pink (hue 350) is reserved for them; eyes remain pale for contrast.
+export const GUARDIAN_KINDS = Object.freeze(Object.fromEntries(ENEMY_PROFILES.map(base => [base.species, enemyKind(base, {
+  type: 'guardian' + base.type, label: 'Guardian ' + base.label.toLowerCase(), guardian: true,
+  colors: Object.freeze(Object.fromEntries(Object.keys(base.parts).map(role => [role,
+    role === 'eyes' ? 'oklch(0.97 0.025 350)' : 'oklch(0.70 0.25 350)']))),
+  light: '#ff3fa8', sparks: Object.freeze(['#ff3fa8', '#ffd0ee']), ichor: Object.freeze(['#ff3fa8', '#9b165d']),
+  mods: { hp: 1.5, damage: 1.05 },
+})])));
+export const ENEMY_KINDS = Object.freeze(Object.fromEntries([...ENEMY_PROFILES, ...Object.values(GUARDIAN_KINDS), SAND_VIPER, BLOOD_VIPER, FROST_ADDER, VENOM_ADDER, SHADOW_MAMBA, FROST_SPIDER, BOG_SPIDER,
   REDBACK, FROST_STUNDER, STONE_STUNDER, MAGMA_STUNDER, BOG_OCTONAUT, CORAL_OCTONAUT, EMERALD_TRIANGLE, CRIMSON_TRIANGLE].map(k => [k.type, k])));
 
 // the attack e is performing (or about to perform): one of profile.attacks, else the profile

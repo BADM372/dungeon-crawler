@@ -85,6 +85,12 @@ const SOUNDS = {
     tone('sine', 90 * p, 50 * p, t, 0.15, amp(t, 0.003, 0.7, 0.15, out));
     noise(t, 0.08, filter('lowpass', 700, 0.7, amp(t, 0.002, 0.4, 0.07, out)));
   },
+  unlock(t, out, p) {   // rising chord: the red seal breaks
+    for (const [i, hz] of [440, 554, 660, 880].entries()) {
+      const at = t + i * .07;
+      tone('triangle', hz * p, hz * p, at, .35, amp(at, .005, .25, .35, out));
+    }
+  },
   coin(t, out, p) {    // two quick bright notes; rapid pickups climb in pitch
     tone('triangle', 1568 * p, 1568 * p, t, 0.08, amp(t, 0.002, 0.32, 0.07, out));
     tone('triangle', 2093 * p, 2093 * p, t + 0.055, 0.2, amp(t + 0.055, 0.002, 0.3, 0.18, out));

@@ -22,7 +22,7 @@ export function createPlayerStats() {
   return { xp: 0, level: 1, maxHp: 100, hp: 100, lastDamageAt: -Infinity, inventory };
 }
 // defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js)
-export const createRun = () => ({ defeated: new Set(), loot: new Map() });
+export const createRun = () => ({ defeated: new Set(), unlockedGates: new Set(), loot: new Map() });
 export function awardXP(p, amount) {
   whole(amount);
   const xp = whole(p.xp + amount), oldLevel = p.level, oldMax = p.maxHp;
@@ -37,6 +37,7 @@ export function awardKill(p, run, enemy) {
   whole(p.xp + xp);   // validate before mutating any state
   const levels = awardXP(p, xp);
   run.defeated.add(enemy.id);
+  if (enemy.guardian && enemy.guardianGate) run.unlockedGates.add(enemy.guardianGate);
   return { xp, coins, levels };
 }
 export function takeDamage(p, amount, time) {

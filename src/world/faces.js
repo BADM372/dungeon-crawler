@@ -8,18 +8,26 @@ import { profile, caveWall, VOID } from './profile.js';
 import { cascade } from './cascades.js';
 import { spout } from './spouts.js';
 import { isTown, isMerchantCamp, townExitPosition } from './town.js';
+import { MAX_DEPTH } from '../themes/depth.js';
 
 export const LAYER_BASE = [0, 10, 16, 22];   // the levels of the world-wide layers
+
+const guarded = (world, k) => {
+  const d = -parse(k)[1];
+  if (d < 2 || d >= MAX_DEPTH) return false;
+  const L = world.layout(d); return L.guardian && L.down === k;
+};
 
 function sideFace(world, k, d, withPortal) {
   const fk = faceKey(k, d), R = world.wfc.rng(fk, 0x51de);
   const sock = world.wfc.tiles.get(k).sock[d];
   const f = { sock, profile: profile(world, fk, sock), river: null, portal: null };
-  if (sock === 'W') {   // the crossing is never open to the depth below
+  const guardian = guarded(world, k) || guarded(world, step(k, d));
+  if (sock === 'W' && !guardian) {   // the crossing is never open to the depth below
     f.river = { pos: 4 + Math.floor(R() * 7), w: R() < 0.5 ? 1 : 2 };
     for (let t = f.river.pos; t < f.river.pos + f.river.w; t++) if (f.profile[t] === VOID) f.profile[t] = 3;
   }
-  if (!withPortal) { f.spout = spout(world, fk, f, LAYER_BASE); f.wall = caveWall(world, fk, f); return f; }
+  if (!withPortal) { f.spout = guardian ? null : spout(world, fk, f, LAYER_BASE); f.wall = caveWall(world, fk, f); return f; }
   const townDir = isTown(k) ? d : isTown(step(k, d)) ? d ^ 1 : null;
   const campDir = isMerchantCamp(k, world.seed) ? d : isMerchantCamp(step(k, d), world.seed) ? d ^ 1 : null;
   let pos;
@@ -28,14 +36,14 @@ function sideFace(world, k, d, withPortal) {
   else do pos = 3 + Math.floor(R() * 10); while (f.river && Math.abs(pos - f.river.pos - (f.river.w - 1) / 2) < 3.5);
   // the portal's layer: any layer both cubes have, mostly the highest one (sky routes)
   const maxL = Math.min(world.wfc.tiles.get(k).K, world.wfc.tiles.get(step(k, d)).K) - 1;
-  const layer = maxL > 0 && R() < 0.5 ? maxL : Math.floor(R() * (maxL + 1));
+  const layer = guardian ? 0 : maxL > 0 && R() < 0.5 ? maxL : Math.floor(R() * (maxL + 1));
   let level = LAYER_BASE[layer];
   if (!layer) {   // a flat pad of three cells at the highest ground level around it
     level = Math.max(4, f.profile[pos - 1], f.profile[pos], f.profile[pos + 1]);   // never void
     for (let t = pos - 1; t <= pos + 1; t++) f.profile[t] = level;
   }
   f.portal = { pos, layer, level };
-  f.spout = spout(world, fk, f, LAYER_BASE);
+  f.spout = guardian ? null : spout(world, fk, f, LAYER_BASE);
   f.wall = caveWall(world, fk, f);
   return f;
 }
@@ -43,7 +51,7 @@ function sideFace(world, k, d, withPortal) {
 function verticalFace(world, k, d, withPortal) {
   const fk = faceKey(k, d), R = world.wfc.rng(fk, 0xd0e);
   return { vertical: true, portal: withPortal ? { x: 4 + Math.floor(R() * 8), z: 4 + Math.floor(R() * 8) } : null,
-    fall: cascade(world, d === 4 ? k : step(k, 5)) };   // a fall through it (cascades.js)
+    fall: guarded(world, k) || guarded(world, step(k, d)) ? null : cascade(world, d === 4 ? k : step(k, 5)) };   // a fall through it (cascades.js)
 }
 
 // faces follow the depth's layout (layout.js): side portals where it links two cubes, the

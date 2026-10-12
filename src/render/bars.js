@@ -24,20 +24,21 @@ export function makeBar({ w = 0.66, h = 0.07, color = 0xf2a449, back = 0x231f25,
 }
 
 // "Lv N" as a sprite; setLevel redraws it only when the level changes
-export function makeLevelLabel(level, { color = '#ffe4ae', onTop = false } = {}) {
-  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
+export function makeLevelLabel(level, { color = '#ffe4ae', onTop = false, title = null } = {}) {
+  const canvas = document.createElement('canvas'); canvas.width = title ? 640 : 256; canvas.height = 64;
   const ctx = canvas.getContext('2d'), texture = new THREE.CanvasTexture(canvas);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthWrite: false, depthTest: !onTop }));
-  sprite.scale.set(.7 * INDICATOR_SCALE, .175 * INDICATOR_SCALE, 1);
+  sprite.scale.set((title ? 1.75 : .7) * INDICATOR_SCALE, .175 * INDICATOR_SCALE, 1);
   if (onTop) sprite.renderOrder = 1202;
   let shown = null;
   sprite.setLevel = n => {
     if (n === shown) return;
     shown = n;
-    ctx.clearRect(0, 0, 256, 64);
+    ctx.clearRect(0, 0, canvas.width, 64);
     ctx.font = 'bold 48px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.lineWidth = 10; ctx.strokeStyle = '#171c25'; ctx.strokeText(`Lv ${n}`, 128, 32);
-    ctx.fillStyle = color; ctx.fillText(`Lv ${n}`, 128, 32);
+    const text = title ? `${title} · Lv ${n}` : `Lv ${n}`, x = canvas.width / 2;
+    ctx.lineWidth = 10; ctx.strokeStyle = '#171c25'; ctx.strokeText(text, x, 32);
+    ctx.fillStyle = color; ctx.fillText(text, x, 32);
     texture.needsUpdate = true;
   };
   sprite.setLevel(level);
