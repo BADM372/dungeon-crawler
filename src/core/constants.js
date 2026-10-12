@@ -34,13 +34,13 @@ export const SNAP = 0.25;       // stick to the ground when walking downhill
 export const CHAR_SCALE = 0.55; // the rig is ~2 m tall -> ~1.1 units
 export const CHAR_R = 0.22;     // collision radius
 export const CHAR_H = 0.85;     // collision height
-export const WALK_SPEED = 1.9, RUN_SPEED = 4.1, SWIM_SPEED = 0.9;
+export const WALK_SPEED = 1.9, RUN_SPEED = 2.8, SWIM_SPEED = 0.9;
 // on the ground speed builds up linearly: standing to a full run in RUN_RAMP s (walking pace
-// after about half of it, so short taps stay precise); stopping brakes at BRAKE units/s²
+// after about 70% of it, so short taps stay precise); stopping brakes at BRAKE units/s²
 export const RUN_RAMP = 0.25, BRAKE = 30;
 // the walk / run cycles play at the pace of these ground speeds; the remaining
 // distance is covered with longer strides (see render/stride.js)
-export const WALK_ANIM = 1.4, RUN_ANIM = 3.2;
+export const WALK_ANIM = 1.4, RUN_ANIM = 2.8;   // the run: its authored stride, no stretch
 export const JUMP_V = 6.27;     // -> jumps ~0.9 units high
 export const SIT_IMPACT = 10;   // landing faster than this knocks you onto your bottom
 export const RAGDOLL_IMPACT = 14;   // ... and this turns you into a ragdoll (and hurts)

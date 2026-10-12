@@ -8,8 +8,8 @@
   (or move), never just from hovering. **Space:** movement-only jump.
 - **Movement speed:** the player always runs, by keyboard and by mouse order; holding
   **Ctrl** walks. On the ground speed ramps up linearly, standing to a full run in
-  `RUN_RAMP` (0.25 s, walking pace after about 0.12 s, so taps stay precise), and brakes
-  at `BRAKE` (30 units/s², about 0.14 s from a run). The direction follows the input at
+  `RUN_RAMP` (0.25 s, walking pace after about 0.17 s, so taps stay precise), and brakes
+  at `BRAKE` (30 units/s², about 0.1 s from a run). The direction follows the input at
   once, so turning keeps the speed. Swimming and air control are unchanged. Ctrl+W/A/S/D
   are tracked as movement and Ctrl+S/D/A are kept from the browser; on Windows/Linux
   browsers do not let pages stop Ctrl+W from closing the tab (use the arrow keys there).

@@ -25,7 +25,7 @@ function until(v, dx, dz, run, limit = 120) {
 test('running ramps up over RUN_RAMP, passing walking pace early, so taps stay precise', () => {
   stand();
   const walk = until(WALK_SPEED, 1, 0, true);
-  assert.ok(walk.t < RUN_RAMP * 0.55, 'walking pace after about half the ramp: ' + walk.t);
+  assert.ok(walk.t < RUN_RAMP * 0.75, 'walking pace after about 70% of the ramp: ' + walk.t);
   stand();
   const run = until(RUN_SPEED, 1, 0, true);
   assert.ok(Math.abs(run.t - RUN_RAMP) <= DT, 'full run after RUN_RAMP: ' + run.t);
