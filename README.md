@@ -16,7 +16,8 @@ Plain ES modules and a vendored three.js; no build step.
   - `src/physics/`, `src/render/`, `src/game/`: movement, drawing and game state/flow.
 - `assets/`: exported game data (GLB models, item icons, manifests). The game
   loads assets only from here (and music from `music/`). These files are generated; do not edit them by hand.
-- `music/`: hand-written Scrimshaw scores the game plays (`docs/music.md`).
+- `music/`: hand-written Scrimshaw scores the game plays (`docs/music.md`). Before writing
+  or changing a song, read `music/README.md` for the style, the layers and the format.
 - `blender/`: authoring sources: Blender scripts and `.blend` files that export
   into `assets/`, Blender test scripts in `blender/tests/`, renders in `blender/previews/`.
 - `tests/`: `node --test` unit tests; `tests/browser/` holds integration checks

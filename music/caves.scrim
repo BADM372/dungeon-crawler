@@ -1,13 +1,15 @@
+# Before writing or changing music, read music/README.md (style, layers, format).
 title    Caves
-about    A dark, driving cave theme in 5/4. Level 1 voices join when an enemy is near, level 2 while fighting.
+about    A dark, driving cave theme in 5/4. More drums join when an enemy is near, brass and kit in a fight.
 tempo    76
 beats    5
 steps    4
 reverb   0.5
 
-# the game fades voices in by intensity: unlisted voices are level 0 (exploring)
-# level 1: tremolo timpani taiko_lo taiko_hi taiko_mid shaker
-# level 2: kick snare hat crash brass strings
+# moods (music/README.md); rise falls back to sense, treasure to explore, boss to fight
+# mood explore: lead pad bass drops drops2 tom_lo tom_mid tom_hi
+# mood sense:   explore tremolo timpani taiko_lo taiko_hi taiko_mid shaker
+# mood fight:   sense kick snare hat crash brass strings
 
 voice lead      flute     vol=0.9 pan=0.15
 voice pad       strings   vol=0.49 pan=-0.2 att=0.6 rel=0.8

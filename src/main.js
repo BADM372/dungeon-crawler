@@ -43,7 +43,8 @@ import { fireCats } from './game/firecats.js';
 import { projectiles } from './game/projectiles.js';
 import { tickBurning } from './render/burning.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
-import { updateMusic } from './game/music.js';
+import { updateMusic, forceMood } from './game/music.js';
+import { musicInfo } from './audio/music.js';
 import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
 const clock = new THREE.Clock();
@@ -99,6 +100,7 @@ window.__game = {
   get fireFaces() { return fireFaces; }, get triangles() { return triangles; }, get fireCats() { return fireCats; },
   get projectiles() { return projectiles; },
   get enemies() { return allEnemies(); }, updateEnemies,
+  musicInfo, musicMood: forceMood,   // musicMood('boss') holds a mood to listen to it, musicMood() lets go
   devSwapWeapon: state.dev ? devSwapWeapon : undefined, devDropWeapon: state.dev ? devDropWeapon : undefined,
   ...(state.dev && { spawnEnemy: spawnEnemies, killEnemies, clearEnemies }),
 };
