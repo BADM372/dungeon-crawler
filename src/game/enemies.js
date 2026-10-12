@@ -7,6 +7,8 @@ import { fireFaces, resetFireFaces, updateFireFaces, detachFireFaces } from './f
 import { triangles, resetTriangles, updateTriangles, detachTriangles } from './triangles.js';
 import { fireCats, resetFireCats, updateFireCats, detachFireCats } from './firecats.js';
 import { contactEnemies, resetEnemyCombat, updateBurning } from './enemycombat.js';
+import { stepEnemies } from './enemyai.js';
+import { removeEnemyViews } from '../render/enemies.js';
 import { updateProjectiles, drawAllProjectiles, clearProjectiles } from './projectiles.js';
 import { hitWithSword } from './sword.js';
 import { animateEnemies } from '../render/enemies.js';
@@ -24,9 +26,14 @@ let defenceThink = 0;
 // you land a hit: a bad spawn spot is not an instant beating
 export const ENTRY_GRACE = 1.2;
 
-export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats];
+// enemies spawned with the dev tools (game/devspawn.js), of any species; gone when the cube resets
+let spawned = [];
+export function addEnemies(list) { spawned.push(...list); }
+
+export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats, ...spawned];
 export function resetEnemies() {
   resetEnemyCombat(); clearProjectiles();
+  removeEnemyViews(spawned); spawned = [];
   state.enemyGrace = ENTRY_GRACE;
   resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats();
   defenceThink = 0;
@@ -42,7 +49,7 @@ export function updateEnemies(dt) {
     const reward = awardKill(player, state.run, e);
     if (reward) {
       xp += reward.xp; levels += reward.levels; killed++; dropLoot(e, reward.coins);
-      if (e.guardian) unlocked = true;
+      if (e.guardianGate) unlocked = true;
     }
   }
   if (killed) setStatus(`${unlocked ? 'Guardian defeated · Gate unlocked!' : `Defeated ${killed} enem${killed === 1 ? 'y' : 'ies'}`} · +${xp} XP${levels ? ` · Level ${player.level}!` : ''}`);
@@ -53,13 +60,16 @@ export function updateEnemies(dt) {
   }
   updateSpiders(dt); updateStunders(dt); updateSnakes(dt); updateOctonauts(dt);
   updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt);
+  stepEnemies(spawned, dt);
+  spawned = spawned.filter(e => e.mode !== 'dead' || e.deadT < e.profile.corpseTime || (removeEnemyViews([e]), false));
   updateProjectiles(dt); updateBurning(dt);
   contactEnemies(allEnemies(), dt);
 }
 export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); }
+function detachSpawned() { const list = spawned; spawned = []; return list; }
 // projectiles in flight do not travel along
 export function detachEnemies() {
   clearProjectiles();
   return [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts(),
-    ...detachFireFaces(), ...detachTriangles(), ...detachFireCats()];
+    ...detachFireFaces(), ...detachTriangles(), ...detachFireCats(), ...detachSpawned()];
 }

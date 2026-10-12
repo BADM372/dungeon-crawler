@@ -31,6 +31,7 @@ import { timeScale } from './game/juice.js';
 import { updatePointer } from './game/pointer.js';
 import { depthOf } from './themes/depth.js';
 import './game/dev.js';
+import { spawnEnemies, killEnemies, clearEnemies } from './game/devspawn.js';
 import { updateSpiders, spiders } from './game/spiders.js';
 import { stunders } from './game/stunders.js';
 import { snakes } from './game/snakes.js';
@@ -95,5 +96,6 @@ window.__game = {
   get projectiles() { return projectiles; },
   get enemies() { return allEnemies(); }, updateEnemies,
   devSwapWeapon: state.dev ? devSwapWeapon : undefined, devDropWeapon: state.dev ? devDropWeapon : undefined,
+  ...(state.dev && { spawnEnemy: spawnEnemies, killEnemies, clearEnemies }),
 };
 frame();

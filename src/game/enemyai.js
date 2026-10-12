@@ -111,6 +111,7 @@ export function stepEnemies(list, dt) {
     if (e.mode === 'dead') { e.deadT += dt; continue; }
     e.cool = Math.max(0, e.cool - dt); e.hurtT = Math.max(0, e.hurtT - dt);
     if (e.stun > 0) { e.stun -= dt; e.speed = 0; continue; }
+    if (state.devPassive) { e.speed = 0; e.path = null; if (e.mode !== 'idle') { e.mode = 'idle'; e.t = 1; } continue; }
     if ((e.think -= dt) <= 0) { e.think = 0.2; decide(e); }
     act(e, dt);
   }

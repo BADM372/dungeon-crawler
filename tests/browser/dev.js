@@ -1,4 +1,5 @@
 // With ?dev=1: await (await import('/tests/browser/dev.js')).runDevPortalChecks()
+//              await (await import('/tests/browser/dev.js')).runDevSpawnChecks()
 // Resets to a fresh seed-3 run before and after testing.
 import * as THREE from 'three';
 import { player, state } from '../../src/game/state.js';
@@ -12,6 +13,9 @@ import { updateCamera } from '../../src/game/camera.js';
 import { camera, renderer, scene } from '../../src/render/scene.js';
 import { paused } from './combat.js';
 import '../../src/game/dev.js';
+import { spawnEnemies, killEnemies, clearEnemies } from '../../src/game/devspawn.js';
+import { allEnemies, updateEnemies, drawEnemies, resetEnemies } from '../../src/game/enemies.js';
+import { ENEMY_KINDS, enemyRoll } from '../../src/core/enemies.js';
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -68,5 +72,47 @@ export async function runDevPortalChecks() {
       clearInput(); remainsIdle();
       return ['dev portal click cancels normal move input', 'held mouse / attack targets cleared while keyboard preserved', 'dev G relocation cancels old input'];
     } finally { clearInput(); clearMouseInput(); await newWorld(3); }
+  });
+}
+
+// every kind spawns on a floor that fits it, at the depth's level or a chosen one; passive
+// enemies stand still; kill all pays out (a guardian opens no gate); clear and resets remove them
+export async function runDevSpawnChecks() {
+  check(state.dev, 'Open the game with ?dev=1');
+  return paused(async () => {
+    const tick = n => { for (let i = 0; i < n; i++) { updatePlayer(1 / 60); updateEnemies(1 / 60); drawEnemies(1 / 60); } };
+    try {
+      await newWorld(3); clearInput(); clearMouseInput(); clearEnemies();
+      const at = { x: player.x, y: player.y, z: player.z };
+      for (const type of Object.keys(ENEMY_KINDS)) {
+        const [e] = spawnEnemies(type, { at });
+        check(e && e.type === type && e.level === enemyRoll(state.map, e.profile, e.f.id).level, 'Spawns at the depth level: ' + type);
+        check(e.f && !e.f.fluid && e.id.startsWith('dev:') && !!e.guardian === !!ENEMY_KINDS[type].guardian && !e.guardianGate,
+          'A dev spawn has a floor, its own id and no gate: ' + type);
+        clearEnemies();
+      }
+      const pack = spawnEnemies('redback', { level: 9, n: 4, at });
+      check(pack.length === 4 && pack.every(e => e.level === 9 && e.hp === e.profile.hp) && new Set(pack.map(e => e.id)).size === 4,
+        'A chosen level and count');
+      const guardian = spawnEnemies('guardianstunder', { at })[0];
+      state.devPassive = true;
+      tick(30);   // bodies spawned around the player push apart first
+      const hp = player.hp, where = allEnemies().map(e => [e.x, e.z]);
+      tick(120);
+      const moved = Math.max(...allEnemies().map((e, i) => Math.hypot(e.x - where[i][0], e.z - where[i][1])));
+      check(player.hp === hp && moved < 0.01 && allEnemies().every(e => e.mode === 'idle'),
+        `Passive enemies stand still and never attack: moved ${moved}, hp ${hp} -> ${player.hp}, ${allEnemies().map(e => e.mode)}`);
+      state.devPassive = false;
+      const xp = player.xp, gates = state.run.unlockedGates.size;
+      check(killEnemies() === 5, 'Kill all kills every living enemy');
+      tick(1);
+      check(player.xp > xp && state.run.unlockedGates.size === gates && guardian.mode === 'dead', 'Kill all pays XP; a dev guardian opens no gate');
+      spawnEnemies('stunder', { n: 2, at }); tick(5);
+      check(clearEnemies() === 7 && !allEnemies().length && !guardian.view, 'Clear removes enemies and corpses with their views');
+      spawnEnemies('snake', { at }); resetEnemies();
+      check(!allEnemies().some(e => e.id.startsWith('dev:')), 'A cube reset drops dev spawns');
+      return ['all ' + Object.keys(ENEMY_KINDS).length + ' kinds spawn on fitting floors at the depth level', 'level / count overrides',
+        'passive enemies hold still', 'kill all pays out without opening gates', 'clear and cube resets remove spawns'];
+    } finally { state.devPassive = false; clearInput(); clearMouseInput(); await newWorld(3); }
   });
 }

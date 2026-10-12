@@ -13,6 +13,9 @@
 <div id="dev" hidden>
   <div><button id="dev-copy" title="Copy all of this">copy</button> seed <b id="dev-seed" class="pick">-</b> &middot; depth <b id="dev-depth">-</b> &middot; layer <b id="dev-layer">-</b> &middot; <b id="dev-fps">-</b> fps</div>
   <div id="dev-stats"></div>
+  <div id="dev-spawn">enemy <select id="dev-kind"></select> lv <input id="dev-elevel" type="number" min="1" max="99" placeholder="auto" title="Empty: the level this depth gives"> &times; <input id="dev-count" type="number" min="1" max="20" value="1">
+    <button id="dev-spawn-go" title="In front of you (J: at the cursor)">spawn</button> <button id="dev-kill" title="With XP and loot">kill all</button> <button id="dev-clear" title="Without XP or loot">clear</button>
+    <label title="Enemies stand still and never attack"><input id="dev-passive" type="checkbox"> passive</label></div>
   <div id="dev-status"></div>
 </div>
 <div id="help-overlay" hidden>
@@ -45,6 +48,7 @@
         <dt>click portal</dt><dd>take it</dd>
         <dt><kbd>G</kbd></dt><dd>go to the next way down</dd>
         <dt><kbd>PgDn</kbd> <kbd>PgUp</kbd></dt><dd>change depth</dd>
+        <dt><kbd>J</kbd></dt><dd>spawn the enemy picked in the dev panel at the cursor</dd>
       </dl>
     </div>
     <h2>Legend</h2>

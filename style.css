@@ -20,6 +20,13 @@ kbd { display: inline-block; min-width: 1.2em; text-align: center; background: #
 #dev-status { color: #ffd27a; min-height: 1.45em; }
 #dev-copy { font: inherit; color: #aab3c2; background: #2a2f3a; border: 1px solid #444c5c; border-radius: 2px; padding: 0 4px; cursor: pointer; }
 #dev-copy:hover { color: #fff; }
+#dev-spawn { margin-top: 2px; }
+#dev-spawn :is(select, input, button) { font: inherit; color: #e6e9ef; background: #2a2f3a; border: 1px solid #444c5c; border-radius: 2px; padding: 0 3px; }
+#dev-spawn input[type=number] { width: 3.6em; }
+#dev-spawn button { color: #aab3c2; cursor: pointer; }
+#dev-spawn button:hover { color: #fff; }
+#dev-spawn label { white-space: nowrap; cursor: pointer; }
+#dev-spawn input[type=checkbox] { vertical-align: middle; margin: 0 2px 0 4px; }
 
 #help-overlay { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; padding: 16px; pointer-events: none; }
 #help-panel { pointer-events: auto; box-sizing: border-box; width: min(520px, 100%); max-height: calc(100dvh - 32px); overflow: auto;

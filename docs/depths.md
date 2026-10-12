@@ -121,6 +121,16 @@ Each pack then draws its kind on a separate seeded stream, so kinds never move a
 With `?dev=1`, the depth line in the dev panel shows the cube's population. The lead species
 is marked with `*`.
 
+The dev panel can also spawn any enemy kind (`game/devspawn.js`): pick the kind, a level
+(empty: the level this depth rolls for it) and a count, then **spawn** in front of the player
+or press **J** to spawn at the cursor. Spawns take the nearest floors that fit their body,
+spread a little apart. **kill all** kills every enemy with XP and loot, **clear** removes them
+without, **passive** makes enemies stand still and never attack. Spawns get ids of their own,
+so they never count as the cube's defeated enemies, and vanish when the cube resets. Guardian
+kinds keep their bars and drops but guard no gate. From the console:
+`__game.spawnEnemy('redback', { level: 5, n: 3 })`, `__game.killEnemies()`,
+`__game.clearEnemies()`. Checks: `await (await import('/tests/browser/dev.js')).runDevSpawnChecks()`.
+
 ### Measured population
 
 These numbers come from 4 seeds and 32 cubes per depth on real generated cubes

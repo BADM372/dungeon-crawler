@@ -36,6 +36,7 @@ export const state = {
   visit: null,       // this cube as you came in: what a death restores (game/flow.js)
   fallFrom: null,    // falling through cubes: the cube the fall started in (game/fall.js)
   dev: params.get('dev') === '1',   // debug tools (?dev=1)
+  devPassive: false,   // dev: enemies stand still and never attack (game/devspawn.js)
   baseSeed: params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0,
 };
 

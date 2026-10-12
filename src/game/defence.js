@@ -4,7 +4,7 @@ import { gateLocked } from '../core/guardians.js';
 import { walkable, clearLine } from '../physics/enemynav.js';
 
 export function coordinateDefence(map, run, list, player) {
-  const guardian = list.find(e => e.guardian && e.mode !== 'dead');
+  const guardian = list.find(e => e.guardianGate && e.mode !== 'dead');   // not a dev-spawned one
   if (!gateLocked(map, run) || !guardian) {
     for (const e of list) {
       if (e.defence && e.mode === 'defend') { e.mode = 'idle'; e.t = 1; e.path = null; }
