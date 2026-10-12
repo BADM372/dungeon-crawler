@@ -36,9 +36,10 @@ export const travelling = () => !!tr;
 
 // the cube behind the portal may still be generating: wait for it (frozen in the portal).
 // A side portal into a cube not drawn yet gets a cloud to walk onto (render/portalcloud.js).
-export function startTravel(p) {
+// force: ignore guardian locks (dev tools, game/dev.js); the gate itself stays locked.
+export function startTravel(p, { force = false } = {}) {
   if (state.transitioning || state.inventoryOpen) return;
-  if (portalLocked(state.map, state.run, p)) { setStatus(guardianLockMessage(state.map)); return; }
+  if (!force && portalLocked(state.map, state.run, p)) { setStatus(guardianLockMessage(state.map)); return; }
   clearMouseInput();
   state.transitioning = true;
   cancelSword(); cancelCast();
@@ -74,7 +75,8 @@ function slide(p, c, cloud) {
     setStatus('The way across is blocked');
     return;
   }
-  if (p.kind === 'side') {
+  // a forced (dev) trip past a guardian leaves its gate locked and closed
+  if (p.kind === 'side' && !portalLocked(oldMap, state.run, p)) {
     state.openedFaces.add(faceKey(oldKey, p.dir));
     setWorldOpenFaces(oldWorld, openedSides(state.openedFaces, oldKey));
   }

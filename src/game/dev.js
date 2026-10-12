@@ -1,10 +1,13 @@
 // Debug tools, only with ?dev in the URL:
 //   click a portal: take it            G: go to the nearest way down on this depth
 //   PageDown / PageUp: go down / up a depth right away (finding the well / ring first)
+//   Alt + WASD / arrows: go to the adjacent cube on that side of the screen
+// None of them wait for guardians: locked portals are taken anyway (the gate stays locked).
 import * as THREE from 'three';
 import { camera, renderer } from '../render/scene.js';
 import { step } from '../world/coords.js';
-import { state, player, setStatus } from './state.js';
+import { boundaryArrival } from '../core/boundaries.js';
+import { state, player, view, setStatus } from './state.js';
 import { whenReady } from './hud.js';
 import { startTravel } from './travel.js';
 import { enterCube, arrivalPoint, spawnAt } from './flow.js';
@@ -12,7 +15,7 @@ import { clearMouseInput } from './orders.js';
 import { takeTownPortal } from './townportal.js';
 
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
-const D = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const D = [[1, 0], [-1, 0], [0, 1], [0, -1]], NAMES = ['east', 'west', 'south', 'north'];
 
 export function takePortal(q) {
   if (state.transitioning || state.inventoryOpen || q.kind === 'spawn') return;
@@ -20,7 +23,7 @@ export function takePortal(q) {
   clearMouseInput();
   const [x, z] = q.kind === 'side' ? [q.x + 0.5 + D[q.dir][0] * 0.3, q.z + 0.5 + D[q.dir][1] * 0.3] : [q.x + 0.5, q.z + 0.5];
   Object.assign(player, { x, z, y: q.y, visY: q.y, vx: 0, vy: 0, vz: 0, grounded: true, ragdoll: null });
-  startTravel(q);
+  startTravel(q, { force: true });
 }
 
 function portalAt(e) {
@@ -61,11 +64,42 @@ async function goTo(kind, take) {
   setStatus(`Next to the way ${kind}`);
 }
 
+// The cube faces sit on the screen diagonals, so the screen direction is turned an eighth
+// clockwise first: W is the upper-right face, D the lower-right, S the lower-left, A the upper-left.
+const SCREEN = { KeyW: [0, 1], ArrowUp: [0, 1], KeyS: [0, -1], ArrowDown: [0, -1], KeyD: [1, 0], ArrowRight: [1, 0], KeyA: [-1, 0], ArrowLeft: [-1, 0] };
+export function screenFace([ix, iy], yaw = view.yawTarget) {
+  const rx = (ix + iy) / Math.SQRT2, ry = (iy - ix) / Math.SQRT2;
+  const wx = Math.cos(yaw) * rx - Math.sin(yaw) * ry, wz = -Math.sin(yaw) * rx - Math.cos(yaw) * ry;
+  let best = 0;
+  for (let d = 1; d < 4; d++) if (D[d][0] * wx + D[d][1] * wz > D[best][0] * wx + D[best][1] * wz) best = d;
+  return best;
+}
+
+// Through the side portal if there is one (the real slide), otherwise straight in, at the
+// nearest safe spot to where we stand along the shared face.
+export async function goAdjacent(d) {
+  if (state.transitioning || state.inventoryOpen) return;
+  const k = step(state.cubeKey, d);
+  if (!state.cubes.layout(state.map.depth).exists.has(k)) { setStatus(`No cube to the ${NAMES[d]}`); return; }
+  const q = state.map.portals.find(p => p.kind === 'side' && p.dir === d);
+  if (q) { takePortal(q); return; }
+  clearMouseInput();
+  const cubes = state.cubes, source = state.cubeKey, at = boundaryArrival(player, d);
+  state.transitioning = true;
+  const c = await whenReady(cubes.get(k)).catch(() => null);
+  state.transitioning = false;
+  if (state.cubes !== cubes || state.cubeKey !== source) return;
+  if (!c) { setStatus(`The cube to the ${NAMES[d]} failed to generate`); return; }
+  enterCube(c, null, null, at);
+  setStatus(`Jumped ${NAMES[d]}`);
+}
+
 if (state.dev) {
   addEventListener('click', e => { const q = portalAt(e); if (q) takePortal(q); });
   addEventListener('mousemove', e => { document.body.style.cursor = portalAt(e) ? 'pointer' : ''; });
   addEventListener('keydown', e => {
     if (e.repeat || state.inventoryOpen) return;
+    if (e.altKey && !e.ctrlKey && !e.metaKey && SCREEN[e.code]) { e.preventDefault(); goAdjacent(screenFace(SCREEN[e.code])); return; }
     if (e.code === 'KeyG') goTo('down', false);
     if (e.code === 'PageDown') { e.preventDefault(); goTo('down', true); }
     if (e.code === 'PageUp') { e.preventDefault(); goTo('up', true); }
