@@ -135,7 +135,7 @@ Which cubes exist and how they connect depends only on the world seed:
   longer shrinks with it. Bounded path search preserves the room budget on small rings.
 - **Depth 20:** the core, with a 7–9-room entry-to-centre route and no further descent.
 - **Branches:** optional one-room detours fit within 14 total rooms per depth. No portal
-  loops or discovered-face shortcuts can bypass the mandatory route sections.
+  loops or discovered-face shortcuts can bypass undiscovered route rooms or guardians.
 - **Guardians:** every well has a stronger descent guardian (future boss placeholder),
   with one or two mandatory side guardian arenas on its approach.
 
@@ -467,11 +467,16 @@ quick bar, assignment, the cast and its interruptions, both trips and closing.
 A shared side face opens as soon as the cubes on both sides have been discovered
 (`discoveredFaces` in `core/boundaries.js`), whether or not it has a gate or that gate
 has been crossed. Neighbouring rooms reached by different routes can be walked between.
-Opening is tracked explicitly by `faceKey` for the current world. Non-linked progression
-sections stay sealed even when both rooms are discovered, and locked guardian faces
-cannot open through discovery. Within a section, or along an unlocked portal connection,
-both gates and both dividing glass panes disappear; cube outlines remain. Re-entry, mesh
-rebuilds and low-detail proxies use the same opened-face state.
+Opening is tracked explicitly by `faceKey` for the current world. A progression section
+is a route room plus its branches (`routeIndex`). Two sections without a portal between
+them join only over ground already covered (`sectionsJoined`): every route room between
+them discovered, and none of their forward exits still guarded. So a route that bends
+back alongside itself opens up once walked, but rooms first reached by a fall or the town
+portal cannot skip unseen rooms or guardians. Locked guardian faces never open through
+discovery. Discovering a cube or unlocking a gate re-checks every discovered cube, since
+either can join sections elsewhere. On an opened face both gates and both dividing glass
+panes disappear; cube outlines remain. Re-entry, mesh rebuilds and low-detail proxies use
+the same opened-face state.
 
 An opened side face triggers the same cube slide wherever the player approaches it,
 regardless of the original portal's position or layer. The arrival preserves the

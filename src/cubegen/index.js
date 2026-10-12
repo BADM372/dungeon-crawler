@@ -98,7 +98,7 @@ function tryGenerate(seed, spec) {
     seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals, ...sites,
     roomRole: spec.roomRole, biome: spec.biome,
     ladders: ctx.ladders.map(ladderInfo), exit: spec.exit,
-    routeIndex: spec.routeIndex, gateKeys: spec.gateKeys,
+    routeIndex: spec.routeIndex, route: spec.route, gateKeys: spec.gateKeys,
     safe: Uint8Array.from(floors, f => !safe || safe.has(f.id) ? 1 : 0),   // floors that lead to the exit
     kind: spec.kind, archetype: spec.archetype, key: spec.key, depth: spec.depth, cave: !!spec.cave, enemyFree: !!spec.enemyFree,
     routes: ctx.segments.map(s => pathPoints(ctx, s)),   // each portal -> the exit, then the way back

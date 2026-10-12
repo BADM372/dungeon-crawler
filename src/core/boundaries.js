@@ -5,15 +5,32 @@ import { portalLocked } from './guardians.js';
 
 export const isFaceOpen = (opened, key, dir) => dir < 4 && dir >= 0 && opened.has(faceKey(key, dir));
 export const openedSides = (opened, key) => DIRS.map((_, dir) => isFaceOpen(opened, key, dir));
-// Discovery opens faces within a route section, or along actual portal links.
-// Non-linked sections stay sealed so proximity cannot shorten the route or skip guards.
+// Two route sections (a room on the route plus its branches) may be joined by discovery
+// only over ground already covered: every route room between them discovered, and none of
+// their forward exits still locked by a guardian. A shortcut then never skips an unseen
+// room or a guard, even for rooms first reached by a fall or the town portal.
+export function sectionsJoined(cubes, a, b, run) {
+  if (a.routeIndex === b.routeIndex) return true;
+  const route = a.route;
+  if (!route || !run) return false;
+  const lo = Math.min(a.routeIndex, b.routeIndex), hi = Math.max(a.routeIndex, b.routeIndex);
+  for (let i = lo; i <= hi; i++) {
+    const room = cubes.get(route[i]);
+    if (!room?.visits) return false;
+    if (i < hi && portalLocked(room.map, run, { dir: room.map.exit })) return false;
+  }
+  return true;
+}
+
+// Discovery opens faces along actual portal links, or between sections already joined
+// (above), so proximity cannot shorten the route or skip guards.
 export function discoveredFaces(cubes, c, run) {
   const out = [];
   if (c.visits) for (let d = 0; d < 4; d++) {
     const neighbor = cubes.get(step(c.key, d));
     if (!neighbor?.visits) continue;
     const a = c.map?.routeIndex, b = neighbor.map?.routeIndex;
-    if (a != null && b != null && a !== b && !c.map.portals.some(p => p.dir === d)) continue;
+    if (a != null && b != null && !c.map.portals.some(p => p.dir === d) && !sectionsJoined(cubes, c.map, neighbor.map, run)) continue;
     if (run && (portalLocked(c.map, run, { dir: d }) || portalLocked(neighbor.map, run, { dir: d ^ 1 }))) continue;
     out.push(faceKey(c.key, d));
   }

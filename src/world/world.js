@@ -57,7 +57,7 @@ export class World {
       key: k, X, Y, Z, kind: t.kind, exit: this.layout(-Y).exit.get(k) ?? null, K: t.K, B: LAYER_BASE.slice(0, t.K), faces, portals,
       spawn: k === this.start, town: isTown(k), merchantCamp: isMerchantCamp(k, this.seed), enemyFree: enemyFreeAt(k), noise: this.noise, depth: -Y, cave: theme.cave,
       biome: theme.props, guardian: this.layout(-Y).guardians.get(k) || null,
-      routeIndex: this.layout(-Y).routeIndex.get(k),
+      routeIndex: this.layout(-Y).routeIndex.get(k), route: this.layout(-Y).route,
       gateKeys: [0, 1, 2, 3].map(d => this.layout(-Y).gateFaces.get(faceKey(k, d)) || null),
       roomRole: this.layout(-Y).roles.get(k), rewardSites: this.layout(-Y).sitePlans.get(k) || [],
       fluid: theme.river, fluidMix: theme.fluids, voidOK: voidAllowed(this, k), fallIn: fallMask(this, k),

@@ -10,19 +10,19 @@ import { createRun } from '../src/core/progression.js';
 // This exercises the extra full-face paths, not merely the authored portal graph.
 function rooms(L) {
   return new Map([...L.exists].map(k => [k, { key: k, visits: 1, map: {
-    key: k, exit: L.exit.get(k), guardian: L.guardians.get(k), routeIndex: L.routeIndex.get(k),
+    key: k, exit: L.exit.get(k), guardian: L.guardians.get(k), routeIndex: L.routeIndex.get(k), route: L.route,
     gateKeys: [0, 1, 2, 3].map(d => L.gateFaces.get(faceKey(k, d))),
     portals: [0, 1, 2, 3].filter(d => L.portals.has(faceKey(k, d))).map(dir => ({ dir, kind: 'side' })),
   } }]));
 }
 
-function distances(L, cubes, run, from) {
+function distances(L, cubes, run, from, avoid = null) {
   const dist = new Map([[from, 1]]), queue = [from];
   for (let i = 0; i < queue.length; i++) {
     const c = cubes.get(queue[i]), open = new Set(discoveredFaces(cubes, c, run));
     for (let dir = 0; dir < 4; dir++) {
       const n = step(c.key, dir);
-      if (!cubes.has(n) || dist.has(n) || portalLocked(c.map, run, { dir })) continue;
+      if (!cubes.has(n) || n === avoid || dist.has(n) || portalLocked(c.map, run, { dir })) continue;
       if (!L.portals.has(faceKey(c.key, dir)) && !open.has(faceKey(c.key, dir))) continue;
       dist.set(n, dist.get(c.key) + 1); queue.push(n);
     }
@@ -30,7 +30,7 @@ function distances(L, cubes, run, from) {
   return dist;
 }
 
-test('all depths have 7–14-room routes and bounded discovery, even with all neighbouring faces discovered', () => {
+test('all depths have 7–14-room routes; discovery joins neighbours only over explored, unguarded ground', () => {
   for (let seed = 0; seed < 1000; seed++) {
     const get = makeLayouts(seed);
     for (let d = 0; d <= 20; d++) {
@@ -46,9 +46,17 @@ test('all depths have 7–14-room routes and bounded discovery, even with all ne
       if (d < 20) assert.equal(goal, L.down);
       for (const k of L.guardians.keys()) run.unlockedGates.add(k);
       const forward = distances(L, cubes, run, entry), back = distances(L, cubes, run, goal);
-      assert.equal(forward.get(goal), L.spine, `seed ${seed}, depth ${d}: no shortcut`);
-      assert.equal(back.get(entry), L.spine, 'up is just as far away as down');
       assert.equal(forward.size, L.exists.size); assert.equal(back.size, L.exists.size);
+      // Fully explored and unlocked, every pair of neighbouring rooms is joined.
+      for (const c of cubes.values()) for (let dir = 0; dir < 4; dir++)
+        if (cubes.has(step(c.key, dir))) assert.ok(discoveredFaces(cubes, c, run).includes(faceKey(c.key, dir)), `seed ${seed}, depth ${d}: ${c.key} ${dir} sealed`);
+      // An undiscovered route room cannot be skipped, whatever else was discovered
+      // (rooms beyond it reached by a fall or the town portal).
+      for (const k of L.route.slice(1, -1)) {
+        cubes.get(k).visits = 0;
+        assert.equal(distances(L, cubes, run, entry, k).has(goal), false, `seed ${seed}, depth ${d}: ${k} skipped`);
+        cubes.get(k).visits = 1;
+      }
       // Every side guardian cuts all paths to the descent, even after discovery elsewhere.
       for (const [k, g] of L.guardians) if (g.role === 'side') {
         run.unlockedGates.delete(k);

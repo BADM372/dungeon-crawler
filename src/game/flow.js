@@ -6,7 +6,7 @@ import { showNeighbors, clearNeighbors, clearNeighborCache } from '../render/nei
 import { discoveredCubes } from '../core/viewdistance.js';
 import { WorldClient } from '../world/client.js';
 import { step } from '../world/coords.js';
-import { buildWorld, disposeWorld } from '../render/world.js';
+import { buildWorld, disposeWorld, setWorldOpenFaces } from '../render/world.js';
 import { groundAt } from '../physics/collide.js';
 import { respawnPoint } from '../physics/respawn.js';
 import { player, state, setStatus } from './state.js';
@@ -110,10 +110,25 @@ function returnFromFall(dead) {
   }), 380);
 }
 
-// discovering a cube opens all side faces towards cubes already discovered
+// Discovering a cube opens side faces towards cubes already discovered. It can also join
+// two sections elsewhere (the room between them was the last one missing), so all
+// discovered cubes are checked again.
 export function discover(c) {
   c.visits++;
-  for (const f of discoveredFaces(state.cubes.cubes, c, state.run)) state.openedFaces.add(f);
+  return openDiscoveredFaces();
+}
+
+function openDiscoveredFaces() {
+  const before = state.openedFaces.size, cubes = state.cubes.cubes;
+  for (const c of cubes.values()) for (const f of discoveredFaces(cubes, c, state.run)) state.openedFaces.add(f);
+  return state.openedFaces.size !== before;
+}
+
+// A gate unlocked in the cube we are in may join sections discovered earlier.
+export function refreshOpenFaces() {
+  if (!openDiscoveredFaces() || !state.world) return;
+  setWorldOpenFaces(state.world, openedSides(state.openedFaces, state.cubeKey));
+  updateNeighbors(); drawMinimap();
 }
 
 // which portals lead somewhere already explored

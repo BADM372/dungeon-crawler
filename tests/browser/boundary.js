@@ -6,7 +6,7 @@ import { N, DIRS, WATER, FALL_DAMAGE } from '../../src/core/constants.js';
 import { faceKey, step, OPP6 } from '../../src/world/coords.js';
 import { isFaceOpen, openedSides, boundaryArrival } from '../../src/core/boundaries.js';
 import { player, state } from '../../src/game/state.js';
-import { newWorld, enterCube, spawnAt, spawnEntry } from '../../src/game/flow.js';
+import { newWorld, enterCube, spawnAt, spawnEntry, refreshOpenFaces } from '../../src/game/flow.js';
 import { updatePlayer } from '../../src/game/update.js';
 import { checkPortals } from '../../src/game/portals.js';
 import { startTravel, travelling, updateTravel } from '../../src/game/travel.js';
@@ -69,7 +69,8 @@ export async function runModifierKeyChecks() {
   });
 }
 
-// Nearby but non-linked progression sections must not become a shortcut on discovery.
+// Nearby but non-linked progression sections must not become a shortcut on discovery, until
+// the route rooms between them are discovered and their guardians defeated.
 async function sealedSectionCheck() {
   for (const seed of [0, 1, 2, 3, 4, 5, 6, 7]) {
     await newWorld(seed); clearInput();
@@ -94,7 +95,20 @@ async function sealedSectionCheck() {
         state.boundaryLock = -1; state.portalLock = 0;
         check(!checkPortals(...DIRS[d]) && !state.transitioning, 'Non-linked section cannot trigger travel');
       }
-      return `section boundary ${k} ${d}: stays sealed after discovering both sides`;
+      const lo = Math.min(a.map.routeIndex, b.map.routeIndex), hi = Math.max(a.map.routeIndex, b.map.routeIndex);
+      const between = await Promise.all(L.route.slice(lo, hi + 1).map(r => state.cubes.get(r)));
+      const gates = between.slice(0, -1).filter(r => r.map.guardian).map(r => r.key);
+      for (const r of between) if (!r.visits) enterCube(r, r.map.portals[0].dir);
+      enterCube(a, a.map.portals[0].dir);
+      if (gates.length) {
+        check(!isFaceOpen(state.openedFaces, k, d), 'A guarded section boundary must stay sealed');
+        for (const g of gates) state.run.unlockedGates.add(g);
+        refreshOpenFaces();
+      }
+      check(isFaceOpen(state.openedFaces, k, d) && isFaceOpen(state.openedFaces, n, OPP6[d]), 'Explored, unguarded sections must join');
+      panes(state.world.glass, openedSides(state.openedFaces, k));
+      for (const proxy of neighbors()) panes(proxy.glass, openedSides(state.openedFaces, proxy.key));
+      return `section boundary ${k} ${d}: sealed after discovering both sides, open once ${hi - lo - 1} room(s) between${gates.length ? ' and their guardian' : ''} are done`;
     }
   }
   throw Error('No non-linked section boundary found');

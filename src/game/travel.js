@@ -86,7 +86,7 @@ function slide(p, c, cloud) {
   tr.T = p.kind === 'side' ? THREE.MathUtils.clamp(tr.S.distanceTo(tr.A) / 2.2, 0.9, 1.4) : 1.3;
   tr.delay = cloud ? CLOUD_DELAY : 0;
   setCut(Infinity, null, 0, 0, 0);
-  discover(c);
+  if (discover(c)) setWorldOpenFaces(oldWorld, openedSides(state.openedFaces, oldKey));
   state.cubeKey = k; state.arrival = fall ? fall.rest : A;
   beginVisit();
   state.portalLock = fall || p.kind === 'side' ? 0 : arr.id;
