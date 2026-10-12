@@ -203,7 +203,13 @@ export async function runBoundaryChecks() {
       const opened = state.openedFaces.size;   // entering may open gateless faces towards the town
       const well = state.map.portals.find(p => p.kind === 'down');
       spawnAt(well.x + 0.5, well.y, well.z + 0.5); state.portalLock = 0;
-      check(checkPortals(), 'Well must still trigger');
+      check(!checkPortals(0, 0, 1) && state.portalCharge?.t === 1, 'Down well must charge before it takes you');
+      spawnAt(well.x + 1.5, well.y, well.z + 0.5);
+      check(!checkPortals(0, 0, 0.4) && !state.portalCharge, 'Leaving the well must reset its charge');
+      spawnAt(well.x + 0.5, well.y, well.z + 0.5);
+      check(!checkPortals(0, 0, 1) && state.portalCharge?.t === 1, 'Returning to the well must start a fresh charge');
+      check(!checkPortals(0, 0, 0.4), 'Down well must not trigger before the charge is full');
+      check(checkPortals(0, 0, 0.1), 'Down well must trigger when fully charged');
       await waitForSlide(); finishSlide();
       const ring = state.map.portals.find(p => p.kind === 'up');
       check(state.world.portalFx.some(fx => fx.obj.userData.portal === ring), 'Up ring must remain after down travel');
@@ -227,7 +233,7 @@ export async function runBoundaryChecks() {
       }
       check(!state.fallFrom && !state.transitioning && state.cubeKey === origin, 'A fall must end back in the cube it started in');
       check(player.hp === hp - FALL_DAMAGE && !player.ragdoll, 'A fall through cubes must cost full fall damage: ' + player.hp);
-      results.push('down / up remain portals / falls cost full damage and return');
+      results.push('down / up charge before travel / stepping out resets charge / portals remain / falls cost full damage and return');
       results.push(await gatelessCheck());
       return results;
     } finally { clearInput(); await newWorld(3); }

@@ -1,7 +1,7 @@
 // Keyboard, mouse and wheel. Modal input never enters the game queue.
 // Mouse: click the floor to walk there, click an enemy to attack it (hold for more),
 // Shift+click to swing towards the cursor in place. F swings towards the cursor too.
-import { clamp } from '../core/util.js';
+import { stepZoom } from '../core/zoom.js';
 import { player, state, view, setStatus } from './state.js';
 import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
 import { knockDown } from './ragdoll.js';
@@ -44,7 +44,8 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyR') { spawnEntry(); setStatus('Respawned where you came in'); }
   if (e.code === 'KeyN') nextCube();
   if (e.code === 'KeyV') { state.showNeighbors = !state.showNeighbors; updateNeighbors(); }
-  if (e.code === 'KeyK' && !player.ragdoll) knockDown({ push: 3, hop: 2.5, reason: 'Whoops!' });
+  if (e.code === 'KeyK' || e.code === 'KeyL') { view.zoomTarget = stepZoom(view.zoomTarget, e.code === 'KeyK' ? -1 : 1); e.preventDefault(); }
+  if (e.code === 'KeyB' && !player.ragdoll) knockDown({ push: 3, hop: 2.5, reason: 'Whoops!' });
   if (e.code === 'KeyP') { state.showPath = !state.showPath; if (state.world) state.world.pathLine.visible = state.showPath; }
   if (e.code.startsWith('Arrow')) e.preventDefault();
 });
@@ -71,7 +72,7 @@ addEventListener('pointerdown', e => {
   }
 });
 addEventListener('wheel', e => {
-  if (!state.inventoryOpen) view.zoomTarget = clamp(view.zoomTarget * (e.deltaY > 0 ? 1.1 : 0.9), 0.15, 1.4);
+  if (!state.inventoryOpen) view.zoomTarget = stepZoom(view.zoomTarget, Math.sign(e.deltaY));
 }, { passive: true });
 
 // desired direction in world space (WASD relative to the camera)

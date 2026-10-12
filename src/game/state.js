@@ -1,6 +1,7 @@
 // Mutable game state shared between modules.
 import { CHAR_R, CHAR_H } from '../core/constants.js';
 import { swordState } from '../core/combat.js';
+import { DEFAULT_ZOOM } from '../core/zoom.js';
 import { createPlayerStats, createRun } from '../core/progression.js';
 
 export const player = {
@@ -36,6 +37,6 @@ export const state = {
 };
 
 // camera orientation and zoom (eased towards the targets)
-export const view = { yaw: -Math.PI / 4, yawTarget: -Math.PI / 4, zoom: 1, zoomTarget: 1 };
+export const view = { yaw: -Math.PI / 4, yawTarget: -Math.PI / 4, zoom: DEFAULT_ZOOM, zoomTarget: DEFAULT_ZOOM };
 
 export function setStatus(s) { state.statusMsg = s; state.statusUntil = state.time + 2.2; }

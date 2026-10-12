@@ -395,8 +395,8 @@ Walking into a portal does not cut to black. The next cube is built beside the c
 (or `CUBE_H + BASE` below or above it). Both slide past the fixed camera while the
 character walks through the gate, falls down the well or rises up the ring.
 
-Rings up to the depth above have to charge first: the player must stay in the circle for
-`UP_CHARGE` (1.5 s, `game/portals.js`) while a white bar fills over the ring
+Wells down and rings up have to charge first: the player must stay in the circle for
+`PORTAL_CHARGE` (1.5 s, `game/portals.js`) while a white bar fills over the portal
 (`render/portalbar.js`). Stepping out resets the charge.
 
 The new cube is active from the first frame. The player moves in its coordinates plus the

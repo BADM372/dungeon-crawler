@@ -43,7 +43,7 @@ export async function runInventoryChecks() {
     check(document.querySelectorAll('.coin-slot').length === 3, 'Currency needs three reserved slots');
     check($('inventory-dev').hidden === !state.dev, 'Developer controls must be gated by ?dev=1');
     const before = [state.time, player.x, player.y, player.z, player.hp, view.yawTarget, view.zoomTarget];
-    for (const code of ['KeyW','Space','KeyF','KeyQ','KeyR','KeyN']) press(code);
+    for (const code of ['KeyW','Space','KeyF','KeyQ','KeyK','KeyL','KeyR','KeyN']) press(code);
     document.querySelector('canvas').dispatchEvent(new PointerEvent('pointerdown', { button: 0, bubbles: true }));
     dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
     updatePlayer(1); updateEnemies(1);

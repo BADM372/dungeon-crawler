@@ -60,7 +60,7 @@ function makeView(e, prefab) {
   }
   const hpBar = makeBar(), bar = hpBar.group;
   bar.position.y = e.profile.height + 0.12; group.add(bar);
-  const label = makeLevelLabel(e.level); label.position.y = e.profile.height + .3; group.add(label);
+  const label = makeLevelLabel(e.level); label.position.y = e.profile.height + .33; group.add(label);
   const fx = GLOW[e.profile.species], flames = [];
   model.traverse(o => { if (o.isBone && /^flame/.test(o.name)) flames.push(o); });
   let light = null;
