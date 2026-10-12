@@ -150,6 +150,23 @@ export const BLOOD_VIPER = enemyKind(SNAKE, {
   colors: { skin: 'oklch(0.60 0.19 27)', eyes: 'oklch(0.93 0.18 100)' }, ichor: Object.freeze(['#e0503a', '#6a1410']),
   mods: { hp: 1.4, damage: 1.4, speed: 1.2, size: 1.1 },
 });
+// Three more for the themes: a slow, tough one in the ice, a venomous one in the swamp and a
+// near-black one, the strongest, in the ruins and the volcanic depths.
+export const FROST_ADDER = enemyKind(SNAKE, {
+  type: 'frostadder', label: 'Frost adder', reason: 'Bitten by a Frost adder!',
+  colors: { skin: 'oklch(0.88 0.04 225)', eyes: 'oklch(0.72 0.15 250)' }, ichor: Object.freeze(['#c4ecff', '#4f8fbf']),
+  mods: { hp: 1.35, damage: 1.1, speed: 0.95 },
+});
+export const VENOM_ADDER = enemyKind(SNAKE, {
+  type: 'venomadder', label: 'Venom adder', reason: 'Bitten by a Venom adder!',
+  colors: { skin: 'oklch(0.58 0.15 310)', eyes: 'oklch(0.90 0.21 125)' }, ichor: Object.freeze(['#c6ff5a', '#5a8f12']),
+  mods: { hp: 1.2, damage: 1.35, speed: 1.1 },
+});
+export const SHADOW_MAMBA = enemyKind(SNAKE, {
+  type: 'shadowmamba', label: 'Shadow mamba', reason: 'Bitten by a Shadow mamba!',
+  colors: { skin: 'oklch(0.34 0.025 280)', eyes: 'oklch(0.80 0.18 55)' }, ichor: Object.freeze(['#9a6ad8', '#2a1648']),
+  mods: { hp: 1.6, damage: 1.6, speed: 1.3, size: 1.15 },
+});
 export const FROST_SPIDER = enemyKind(SPIDER, {
   type: 'frostspider', label: 'Frost spider',
   colors: { body: 'oklch(0.82 0.035 235)', eyes: 'oklch(0.85 0.13 210)' }, ichor: Object.freeze(['#c4ecff', '#4f8fbf']),
@@ -200,7 +217,7 @@ export const CRIMSON_TRIANGLE = enemyKind(TRIANGLE, {
   colors: { glow: 'oklch(0.64 0.22 25)', eyes: 'oklch(0.95 0.05 60)' }, light: '#ff4836', sparks: Object.freeze(['#ffc0b0', '#ff4836']),
   ichor: Object.freeze(['#ffa08a', '#a01a10']), mods: { hp: 1.35, damage: 1.35 }, cooldown: TRIANGLE.cooldown * 0.8,
 });
-export const ENEMY_KINDS = Object.freeze(Object.fromEntries([...ENEMY_PROFILES, SAND_VIPER, BLOOD_VIPER, FROST_SPIDER, BOG_SPIDER,
+export const ENEMY_KINDS = Object.freeze(Object.fromEntries([...ENEMY_PROFILES, SAND_VIPER, BLOOD_VIPER, FROST_ADDER, VENOM_ADDER, SHADOW_MAMBA, FROST_SPIDER, BOG_SPIDER,
   REDBACK, FROST_STUNDER, STONE_STUNDER, MAGMA_STUNDER, BOG_OCTONAUT, CORAL_OCTONAUT, EMERALD_TRIANGLE, CRIMSON_TRIANGLE].map(k => [k.type, k])));
 
 // the attack e is performing (or about to perform): one of profile.attacks, else the profile

@@ -84,6 +84,9 @@ attack clip's hit frame. `?bg=%23202020` sets the backdrop colour.
 |---|---|---|---|---|---|---|---|---|
 | Sand viper | Grass snake | `oklch(0.80 0.12 82)` ochre | ×1.25 | ×1.2 | ×1.1 | 1 | ×1.23 | 2, 4–7, 9–11, 15–16 |
 | Blood viper | Grass snake | `oklch(0.60 0.19 27)` red | ×1.4 | ×1.4 | ×1.2 | 1.1 | ×1.4 | 4, 6, 9–11, 15–17 |
+| Frost adder | Grass snake | `oklch(0.88 0.04 225)` icy | ×1.35 | ×1.1 | ×0.95 | 1 | ×1.23 | 7 |
+| Venom adder | Grass snake | `oklch(0.58 0.15 310)` violet | ×1.2 | ×1.35 | ×1.1 | 1 | ×1.27 | 9–11 |
+| Shadow mamba | Grass snake | `oklch(0.34 0.025 280)` near-black | ×1.6 | ×1.6 | ×1.3 | 1.15 | ×1.6 | 15–17 |
 | Frost spider | Spider | `oklch(0.82 0.035 235)` icy | ×1.35 | ×1.1 | ×0.9 | 1 | ×1.2 | 3, 7–8, 13–14 |
 | Bog spider | Spider | `oklch(0.40 0.06 135)` moss | ×1.15 | ×1.25 | ×1.05 | 1 | ×1.2 | 5–6, 9–12 |
 | Redback | Spider | `oklch(0.34 0.11 25)` crimson | ×1.3 | ×1.4 | ×1.2 | 1.1 | ×1.35 | 4, 6, 11–14, 16, 18, 20 |
@@ -95,9 +98,11 @@ attack clip's hit frame. `?bg=%23202020` sets the backdrop colour.
 | Emerald triangle | Triangle | `oklch(0.80 0.20 155)` green glow | ×1.25 | ×1.1 | ×1 | 1 | ×1.17 | 13–16 |
 | Crimson triangle | Triangle | `oklch(0.64 0.22 25)` red glow | ×1.35 | ×1.35 | ×1 | 1 | ×1.35 | 15–16, 19–20 |
 
-The Crimson triangle also throws 20% more often (`cooldown` × 0.8). The three snakes are
-strength tiers: green, then ochre, then red. The red one bites 40% harder and moves 20%
-faster.
+The Crimson triangle also throws 20% more often (`cooldown` × 0.8). Grass snake, Sand viper,
+Blood viper and Shadow mamba are strength tiers: green, ochre, red, then near-black. The red
+one bites 40% harder and moves 20% faster than the green one. The mamba bites 60% harder and
+moves 30% faster. The Frost adder (slow and tough) and the Venom adder (bites hard) give the
+ice and the swamp snakes of their own.
 
 Fire-face and Fire-cat have `parts` (flame, fur, eyes) but no kinds yet. A blue-fire kind
 would also need its embers, its light and its fireball trail recoloured through `sparks`

@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { flatMap } from './fixtures.js';
 import { toOklch, fromOklch, parseColor, recolorFn, recolorTable, toHex, toLinear } from '../src/core/oklch.js';
-import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, OCTONAUT, enemyKind, enemyRoll, makeEnemy } from '../src/core/enemies.js';
+import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, enemyKind, enemyRoll, makeEnemy } from '../src/core/enemies.js';
 import { DEPTH_SPAWNS } from '../src/core/spawns.js';
 import { enemySpots, pickKind } from '../src/game/enemyspawn.js';
 
@@ -85,6 +85,14 @@ test('three snakes in rising strength; the red one bites hardest and is a fifth 
   near(BLOOD_VIPER.chase, SNAKE.chase * 1.2, 1e-9);
   near(BLOOD_VIPER.wander, SNAKE.wander * 1.2, 1e-9);
   assert.ok(BLOOD_VIPER.coins[0] > SNAKE.coins[0]);
+  const snakes = Object.values(ENEMY_KINDS).filter(k => k.species === 'snake');
+  assert.equal(snakes.length, 6);
+  for (const k of snakes) if (k !== SHADOW_MAMBA) assert.ok(SHADOW_MAMBA.hp > k.hp && SHADOW_MAMBA.damage > k.damage && SHADOW_MAMBA.chase > k.chase, k.type);
+  // six snakes, told apart at a glance: their skins differ in hue or clearly in lightness
+  for (const a of snakes) for (const b of snakes) if (a !== b) {
+    const [x, y] = [a, b].map(k => parseColor(k.colors?.skin ?? 'oklch(0.84 0.137 133)'));
+    assert.ok(Math.abs(((x.h - y.h + 540) % 360) - 180) > 40 || Math.abs(x.l - y.l) > 0.3 || Math.abs(x.c - y.c) > 0.08, a.type + ' vs ' + b.type);
+  }
   const hue = k => parseColor(k.colors.skin).h;
   assert.ok(hue(BLOOD_VIPER) < 40 && hue(SAND_VIPER) > 60 && hue(SAND_VIPER) < 100);
 });
