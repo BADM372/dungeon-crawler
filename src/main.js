@@ -27,6 +27,7 @@ import { updateLoot } from './game/loot.js';
 import { updateLootLabels } from './game/lootlabels.js';
 import { tickFloatText } from './render/floattext.js';
 import { tickParticles } from './render/particles.js';
+import { tickPortalCloud } from './render/portalcloud.js';
 import { timeScale } from './game/juice.js';
 import { updatePointer } from './game/pointer.js';
 import { depthOf } from './themes/depth.js';
@@ -64,6 +65,7 @@ function frame() {
   updateLoot(dt, state.time);
   tickFloatText(dt);
   tickParticles(dt);
+  tickPortalCloud(dt);
   tickNeighbors(dt);
   tickProps(state.time);
   if (state.world) animateWorld(state.world, dt, state.time);

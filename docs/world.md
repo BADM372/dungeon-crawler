@@ -414,6 +414,15 @@ The new cube is active from the first frame. The player moves in its coordinates
 slide offset, so when the slide ends the offset is zero and nothing jumps. The section cut
 is off during the slide.
 
+A side portal into a cube that is not drawn yet (no low-detail proxy on screen) would have
+the character walk over nothing until the new cube fades in. Instead a dark blue cloud
+spills out of the gate as the travel starts (also covering a cube still generating). The
+new cube then fades in 0.4 s later than usual (`CLOUD_DELAY`): the walk keeps its pace and
+the character waits on the cloud for that long. The cloud dissolves over 0.45 s once a
+quarter of the new cube is there, if need be after the slide has ended
+(`render/portalcloud.js`). Cubes whose proxy is visible cross-fade on their own and get no
+cloud.
+
 Respawn entries are separate from live crossing positions: airborne crossings still
 preserve height and motion, but their saved entry is snapped to dry, supported ground
 (`physics/respawn.js`). Death, recovery and returns from falls revalidate the point,

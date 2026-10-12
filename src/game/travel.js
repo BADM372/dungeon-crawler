@@ -11,7 +11,8 @@ import { buildWorld, setWorldOpenFaces } from '../render/world.js';
 import { setGlassFaces } from '../render/glass.js';
 import { blockedAt, groundAt } from '../physics/collide.js';
 import { respawnPoint } from '../physics/respawn.js';
-import { detachNeighbors, buildNeighbors } from '../render/neighbors.js';
+import { detachNeighbors, buildNeighbors, showsNeighbor } from '../render/neighbors.js';
+import { showPortalCloud, hidePortalCloud, CLOUD_DELAY } from '../render/portalcloud.js';
 import { setFade } from '../render/fade.js';
 import { setCut } from '../render/section.js';
 import { player, state, setStatus } from './state.js';
@@ -32,7 +33,8 @@ const ease = t => t * t * (3 - 2 * t);
 
 export const travelling = () => !!tr;
 
-// the cube behind the portal may still be generating: wait for it (frozen in the portal)
+// the cube behind the portal may still be generating: wait for it (frozen in the portal).
+// A side portal into a cube not drawn yet gets a cloud to walk onto (render/portalcloud.js).
 export function startTravel(p) {
   if (state.transitioning || state.inventoryOpen) return;
   if (portalLocked(state.map, state.run, p)) { setStatus(guardianLockMessage(state.map)); return; }
@@ -40,15 +42,18 @@ export function startTravel(p) {
   state.transitioning = true;
   cancelSword(); cancelCast();
   const source = state.cubeKey, cubes = state.cubes, k = step(source, p.dir);
+  const cloud = p.kind === 'side' && !showsNeighbor(k);   // somewhere new: nothing drawn there yet
+  if (cloud) showPortalCloud(p, player);
   whenReady(cubes.get(k)).then(c => {
-    if (state.cubes === cubes && state.cubeKey === source) slide(p, c);
+    if (state.cubes === cubes && state.cubeKey === source) slide(p, c, cloud); else hidePortalCloud();
   }, () => {
+    hidePortalCloud();
     if (state.cubes !== cubes || state.cubeKey !== source) return;
     state.transitioning = false; setStatus('The portal does not open');
   });
 }
 
-function slide(p, c) {
+function slide(p, c, cloud) {
   const k = c.key, m = c.map, oldKey = state.cubeKey;
   const oldWorld = state.world, oldMap = state.map;
   const crossing = p.kind === 'side' && isFaceOpen(state.openedFaces, oldKey, p.dir);
@@ -61,7 +66,7 @@ function slide(p, c) {
   // would. A body-sized footprint also prevents sliding into a pillar or cliff beside it.
   if (crossing && [[0, 0], [player.r, 0], [-player.r, 0], [0, player.r], [0, -player.r]].some(([dx, dz]) =>
     blockedAt(A.x + dx, A.z + dz, A.y, player.swimming ? SWIM_STEP : STEP))) {
-    state.map = oldMap; state.transitioning = false;
+    state.map = oldMap; state.transitioning = false; hidePortalCloud();
     setStatus('The way across is blocked');
     return;
   }
@@ -70,9 +75,12 @@ function slide(p, c) {
     setWorldOpenFaces(oldWorld, openedSides(state.openedFaces, oldKey));
   }
   const D = new THREE.Vector3(D6[p.dir][0] * N, D6[p.dir][1] * GAP, D6[p.dir][2] * N);
-  tr = { t: 0, D, kind: p.kind, k, oldKey, old: { world: oldWorld, enemies: detachEnemies(), ghosts: detachNeighbors() },
+  tr = { t: 0, s: 0, D, kind: p.kind, k, oldKey, old: { world: oldWorld, enemies: detachEnemies(), ghosts: detachNeighbors() },
     S: new THREE.Vector3(player.x, player.y, player.z).sub(D), A: new THREE.Vector3(A.x, A.y, A.z), last: null, motion };
+  // T: the walk and slide. Into a cube not drawn yet the new cube fades in CLOUD_DELAY later
+  // (game/travelfx.js), so the travel lasts that much longer: you wait on the cloud.
   tr.T = p.kind === 'side' ? THREE.MathUtils.clamp(tr.S.distanceTo(tr.A) / 2.2, 0.9, 1.4) : 1.3;
+  tr.delay = cloud ? CLOUD_DELAY : 0;
   setCut(Infinity, null, 0, 0, 0);
   discover(c);
   state.cubeKey = k; state.arrival = fall ? fall.rest : A;
@@ -97,7 +105,8 @@ function slide(p, c) {
 
 
 export function updateTravel(dt) {
-  tr.t = Math.min(1, tr.t + dt / tr.T);
+  tr.s = Math.min(tr.T + tr.delay, tr.s + dt);   // seconds; the walk ends at T
+  tr.t = Math.min(1, tr.s / tr.T);
   const t = tr.t, e = ease(t), p = player;
   off.copy(tr.D).multiplyScalar(1 - e); oldOff.copy(off).sub(tr.D);
   // the path in the new cube's coordinates: walk straight through, fall, or rise
@@ -109,7 +118,7 @@ export function updateTravel(dt) {
     grounded: tr.motion ? tr.motion.grounded : tr.kind === 'side', swimming: tr.motion?.swimming ?? false });
   p.airTime = p.grounded ? 0 : p.airTime + dt;
   slideVisuals(tr, t, off, oldOff);
-  if (t >= 1) finish();
+  if (tr.s >= tr.T + tr.delay) finish();
 }
 
 export function drawTravelEnemies(dt) {

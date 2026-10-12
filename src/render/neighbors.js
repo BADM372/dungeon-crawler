@@ -122,6 +122,7 @@ export function showNeighbors(list) {
   current = buildNeighbors(list, old);
   disposeNeighbors(old);
 }
+export const showsNeighbor = key => current.some(g => g.key === key);
 export function detachNeighbors() { const c = current; current = []; return c; }
 export function adoptNeighbors(list) { clearNeighbors(); current = list; }
 

@@ -6,6 +6,7 @@ import { disposeWorld } from '../render/world.js';
 import { removeEnemyViews, animateEnemies } from '../render/enemies.js';
 import { disposeNeighbors, adoptNeighbors } from '../render/neighbors.js';
 import { setFade } from '../render/fade.js';
+import { placePortalCloud } from '../render/portalcloud.js';
 import { state } from './state.js';
 import { allEnemies } from './enemies.js';
 
@@ -23,20 +24,24 @@ function ghosts(tr, fadeOld, fadeNew, off, oldOff) {
   }
 }
 
-// t: slide progress; off / oldOff: where the new / old cube is drawn
+// t: slide progress; off / oldOff: where the new / old cube is drawn. The fades run in seconds
+// (tr.s) over the slide's T; with a cloud (tr.delay) the new cube starts that much later.
 export function slideVisuals(tr, t, off, oldOff) {
-  const fadeOld = 1 - ease(Math.min(1, t / 0.65)), fadeNew = ease(Math.max(0, (t - 0.3) / 0.7));
+  const { s, T } = tr;
+  const fadeOld = 1 - ease(Math.min(1, s / (0.65 * T))), fadeNew = ease(Math.max(0, (s - 0.3 * T - tr.delay) / (0.7 * T)));
   state.world.group.position.copy(off);
   setFade(state.world.group, fadeNew);
   tr.old.world.group.position.copy(oldOff);
   setFade(tr.old.world.group, fadeOld);
   ghosts(tr, fadeOld, fadeNew, off, oldOff);
+  placePortalCloud(oldOff, fadeNew);   // the cloud stays where the old cube put it
   animateEnemies(tr.old.enemies, 0, oldOff);
   for (const e of tr.old.enemies) if (e.view) e.view.group.visible = fadeOld > 0.5 && e.view.group.visible;
   tr.fadeNew = fadeNew;
 }
 
 export function endVisuals(tr) {
+  placePortalCloud(tr.D.clone().negate(), 1);   // the old cube's place; the cloud dissolves on
   disposeWorld(tr.old.world);
   removeEnemyViews(tr.old.enemies);
   disposeNeighbors(tr.old.ghosts);
