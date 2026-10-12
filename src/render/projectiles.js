@@ -1,24 +1,32 @@
 // Projectiles in flight: the fireball / Triangle punch meshes exported beside their thrower
 // (enemymodel.js props), turned along the flight, each with a light and a particle trail.
+// A thrower's kind recolours the mesh and replaces the light and trail colours.
 import * as THREE from 'three';
 import { scene } from './scene.js';
 import { glow, emit, rand } from './particles.js';
 import { trackLight, untrackLight } from './lightpool.js';
 import { fireFaceModel } from './firefacemodel.js';
 import { triangleModel } from './trianglemodel.js';
+import { kindColors, recolor } from './recolor.js';
 
 const LOOKS = {
-  fireball: { prop: () => fireFaceModel.props?.FireFaceBall, light: [0xff7424, 3.5, 3.5], trail: ['#ffd25a', '#ff8a2a', '#ff4a17'], rate: 90 },
-  punch: { prop: () => triangleModel.props?.TrianglePunch, light: [0xa45cff, 2.5, 3], trail: ['#e2b8ff', '#9a55ff'], rate: 45 },
+  fireball: { model: fireFaceModel, prop: () => fireFaceModel.props?.FireFaceBall, light: [0xff7424, 3.5, 3.5], trail: ['#ffd25a', '#ff8a2a', '#ff4a17'], rate: 90 },
+  punch: { model: triangleModel, prop: () => triangleModel.props?.TrianglePunch, light: [0xa45cff, 2.5, 3], trail: ['#e2b8ff', '#9a55ff'], rate: 45 },
 };
 const ahead = new THREE.Vector3();
 
 function makeView(pr) {
   const look = LOOKS[pr.kind], group = new THREE.Group(), src = look.prop();
-  if (src) group.add(src.clone());
-  const light = new THREE.PointLight(...look.light, 2);
+  const colors = kindColors(pr.profile, look.model), owned = [];
+  const own = m => { const c = recolor(m.clone(), colors); owned.push(c); return c; };
+  if (src) {
+    const mesh = src.clone();
+    if (colors) mesh.traverse(o => { if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map(own) : own(o.material); });
+    group.add(mesh);
+  }
+  const [color, intensity, distance] = look.light, light = new THREE.PointLight(pr.profile?.light ?? color, intensity, distance, 2);
   group.add(light); scene.add(group); trackLight(light, group);
-  return { group, light, look, base: look.light[1] };
+  return { group, light, look, trail: pr.profile?.sparks ?? look.trail, owned, base: intensity };
 }
 export function drawProjectiles(list, dt, off = { x: 0, y: 0, z: 0 }) {
   for (const pr of list) {
@@ -28,7 +36,7 @@ export function drawProjectiles(list, dt, off = { x: 0, y: 0, z: 0 }) {
     if (pr.spec.spin) g.rotateZ(pr.t * pr.spec.spin);
     if (pr.kind === 'fireball') g.scale.setScalar(1 + 0.08 * Math.sin(pr.t * 40));
     v.light.intensity = v.base * (0.8 + 0.2 * Math.sin(pr.t * 31) * Math.sin(pr.t * 13));
-    const colors = v.look.trail, n = Math.floor(v.look.rate * dt + Math.random());
+    const colors = v.trail, n = Math.floor(v.look.rate * dt + Math.random());
     for (let i = 0; i < n; i++) {
       const r = pr.spec.radius * 0.6;
       emit(glow, g.position.x + rand(-r, r), g.position.y + rand(-r, r), g.position.z + rand(-r, r), {
@@ -38,5 +46,8 @@ export function drawProjectiles(list, dt, off = { x: 0, y: 0, z: 0 }) {
   }
 }
 export function removeProjectileViews(list) {
-  for (const pr of list) if (pr.view) { scene.remove(pr.view.group); untrackLight(pr.view.light); pr.view = null; }
+  for (const pr of list) if (pr.view) {
+    scene.remove(pr.view.group); untrackLight(pr.view.light);
+    pr.view.owned.forEach(m => m.dispose()); pr.view = null;
+  }
 }

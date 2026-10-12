@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="../">
+<title>Enemy kinds</title>
+<!-- Every enemy kind lined up by species, recoloured as in game: /tools/kinds.html
+     (?bg=#hex for another backdrop, ?pose=attack for the attack clip's hit frame) -->
+<style>
+  body { margin: 0; background: #222; font: 12px system-ui, sans-serif; color: #eee; overflow: hidden; }
+  .tag { position: absolute; transform: translateX(-50%); text-align: center; white-space: nowrap; text-shadow: 0 1px 2px #000; }
+  .tag small { display: block; color: #bbb; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { ENEMY_KINDS, ENEMY_PROFILES } from './src/core/enemies.js';
+import { cloneEnemy } from './src/render/enemymodel.js';
+import { kindColors, recolor } from './src/render/recolor.js';
+import { spiderModel } from './src/render/spidermodel.js';
+import { stunderModel } from './src/render/stundermodel.js';
+import { snakeModel } from './src/render/snakemodel.js';
+import { octonautModel } from './src/render/octonautmodel.js';
+import { fireFaceModel } from './src/render/firefacemodel.js';
+import { triangleModel } from './src/render/trianglemodel.js';
+import { fireCatModel } from './src/render/firecatmodel.js';
+
+const q = new URLSearchParams(location.search);
+const MODELS = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel,
+  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel };
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(devicePixelRatio); renderer.setSize(innerWidth, innerHeight);
+document.body.append(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(q.get('bg') || '#3a3d44');
+scene.add(new THREE.HemisphereLight(0xdfeaff, 0x3a3020, 1.1));
+const sun = new THREE.DirectionalLight(0xfff1dd, 2.4); sun.position.set(-4, 10, 8); scene.add(sun);
+
+const species = ENEMY_PROFILES.map(p => p.type).filter(s => Object.values(ENEMY_KINDS).some(k => k.species === s && k !== ENEMY_KINDS[s]));
+const rows = species.map(s => Object.values(ENEMY_KINDS).filter(k => k.species === s));
+const cols = Math.max(...rows.map(r => r.length)), W = 2.6, H = 2.3;
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+const fit = () => {
+  const w = cols * W + 0.4, h = rows.length * H + 0.6, a = innerWidth / innerHeight, s = Math.max(w / a, h) / 2;
+  Object.assign(camera, { left: -s * a, right: s * a, top: s, bottom: -s }); camera.updateProjectionMatrix();
+};
+camera.position.set(0, 3, 14); camera.lookAt(0, 0, 0); fit();
+const models = MODELS;
+await new Promise(done => { const t = setInterval(() => { if (species.every(s => models[s].ready || models[s].error)) { clearInterval(t); done(); } }, 50); });
+
+const tags = [];
+rows.forEach((row, r) => row.forEach((k, c) => {
+  const prefab = models[k.species];
+  if (!prefab.ready) return;
+  const model = cloneEnemy(prefab), colors = kindColors(k, prefab);
+  model.scale.multiplyScalar((k.size ?? 1) * 1.5 / ENEMY_KINDS[k.species].height);   // rows share a height, kinds keep their size
+  model.traverse(o => { if (o.isMesh) o.material = [].concat(o.material).map(m => recolor(m.clone(), colors)).at(-1); });
+  const clip = q.get('pose') === 'attack' ? Object.values(prefab.attacks)[0] : prefab.walk;
+  const mixer = new THREE.AnimationMixer(model), action = mixer.clipAction(clip);
+  action.play(); mixer.setTime(q.get('pose') === 'attack' ? k.hitAt : clip.duration * 0.25);
+  const x = (c - (cols - 1) / 2) * W, y = ((rows.length - 1) / 2 - r) * H - 0.9;
+  model.position.set(x, y, 0); model.rotation.y = 0.5;
+  scene.add(model);
+  const tag = document.createElement('div'); tag.className = 'tag';
+  tag.innerHTML = `${k.label}<small>hp ${k.hp} · dmg ${k.damage} · speed ${(k.chase / ENEMY_KINDS[k.species].chase).toFixed(2)}${(k.size ?? 1) !== 1 ? ' · size ' + k.size : ''}</small>`;
+  document.body.append(tag); tags.push([tag, new THREE.Vector3(x, y - 0.15, 0)]);
+}));
+function draw() {
+  renderer.render(scene, camera);
+  for (const [tag, at] of tags) {
+    const p = at.clone().project(camera);
+    tag.style.left = (p.x + 1) / 2 * innerWidth + 'px'; tag.style.top = (1 - p.y) / 2 * innerHeight + 'px';
+  }
+}
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); fit(); draw(); });
+draw();
+document.body.dataset.ready = '1';
+</script>
+</body>
+</html>

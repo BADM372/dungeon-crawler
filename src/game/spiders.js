@@ -9,11 +9,11 @@ export const SPIDER_R = SPIDER.radius;
 export let spiders = [];
 export function resetSpiders() {
   removeSpiderViews(spiders);
-  spiders = spiderSpots(state.map).filter(spot => !state.run.defeated.has(spot.id)).map((spot, i) => makeEnemy(spot, SPIDER, i));
+  spiders = spiderSpots(state.map).filter(spot => !state.run.defeated.has(spot.id)).map((spot, i) => makeEnemy(spot, spot.kind ?? SPIDER, i));
 }
 export function updateSpiders(dt) {
   stepEnemies(spiders, dt);
-  spiders = spiders.filter(e => e.mode !== 'dead' || e.deadT < SPIDER.corpseTime || (removeSpiderViews([e]), false));
+  spiders = spiders.filter(e => e.mode !== 'dead' || e.deadT < e.profile.corpseTime || (removeSpiderViews([e]), false));
 }
 export const drawSpiders = (dt, off) => animateSpiders(spiders, dt, off);
 export function detachSpiders() { const list = spiders; spiders = []; return list; }

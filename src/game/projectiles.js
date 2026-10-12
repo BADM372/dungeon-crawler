@@ -15,6 +15,7 @@ const solid = (x, y, z) => insideSolid(x, z, y);
 export function launchProjectile(e, a) {
   const p = player, pr = launch(e, a.projectile, { x: p.x, y: p.y + p.h * 0.55, z: p.z });
   pr.blow = blowOf(e.profile, a);
+  pr.profile = e.profile;   // the thrower's kind colours it
   projectiles.push(pr);
   projectileFx(pr, 'launch');
   return pr;

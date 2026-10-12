@@ -3,37 +3,43 @@
 // attacks lists them in `attacks` (`clip` names its animation, `weight` how often it
 // is picked). `arc` is the minimum cosine to the target (-1: hits all around),
 // `power` scales the profile's damage, `knockDown` floors the player.
+// `species` names the model (and the spawn roster's entry); `parts` groups the model's
+// recolourable materials by role (core/oklch.js), the first one being the role's anchor.
+// Teeth, pupils and mouths stay out of `parts`, so no kind recolours them.
 import { hash32, mulberry32 } from './util.js';
 
 export const SPIDER = Object.freeze({
-  type: 'spider', label: 'Spider', hp: 30, damage: 15, knock: 4.5,
+  type: 'spider', species: 'spider', label: 'Spider', hp: 30, damage: 15, knock: 4.5,
   hpPerLevel: 4, damagePerLevel: 2, xp: 20, xpPerLevel: 5, coins: Object.freeze([4, 8]),
   radius: 0.3, height: 0.9, bodyHeight: 0.45, mass: 1,
   aggro: 3, giveUp: 6, chase: 2.6, wander: 0.6, homeSpeed: 1.2,
   reach: 0.85, hitReach: 1.15, hitAt: 0.42, trackUntil: 0.42, attackTime: 1.07, cooldown: 1.2,
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a spider!', ichor: Object.freeze(['#a6d84e', '#5f8f22']), pitch: 1.1,
   hitStun: 0.18, deathTime: 2, corpseTime: 3.5,
+  parts: Object.freeze({ body: ['SpiderBody'], eyes: ['SpiderEyes'] }),
   seedSalt: 0x5b1d3a, spacing: 3,
 });
 export const STUNDER = Object.freeze({
-  type: 'stunder', label: 'Stunder', hp: 120, damage: 30, knock: 7,
+  type: 'stunder', species: 'stunder', label: 'Stunder', hp: 120, damage: 30, knock: 7,
   hpPerLevel: 14, damagePerLevel: 3, xp: 80, xpPerLevel: 20, coins: Object.freeze([20, 35]),
   radius: 0.48, height: 2.8, bodyHeight: 2.15, mass: 4,
   aggro: 4.5, giveUp: 8, chase: 1.05, wander: 0.45, homeSpeed: 0.65,
   reach: 1.15, hitReach: 1.55, hitAt: 16 / 30, trackUntil: 0.3, attackTime: 1.6, cooldown: 1.6,
   arc: 0.5, knockDown: true, hop: 4, reason: 'Rammed by a Stunder!', ichor: Object.freeze(['#d0503a', '#7a2418']), pitch: 0.8,
   hitStun: 0.25, deathTime: 2.4, corpseTime: 4,
+  parts: Object.freeze({ skin: ['StunderBody', 'StunderEarInset', 'StunderLegRidges', 'StunderMouth'], eyes: ['StunderEyes_glow'] }),
   seedSalt: 0x57a4de2, spacing: 5,
 });
 // Slithers in with its head raised and lunges forward and down to bite (clip frame 12).
 export const SNAKE = Object.freeze({
-  type: 'snake', label: 'Snake', hp: 40, damage: 16, knock: 4,
+  type: 'snake', species: 'snake', label: 'Grass snake', hp: 40, damage: 16, knock: 4,
   hpPerLevel: 5, damagePerLevel: 2, xp: 30, xpPerLevel: 7, coins: Object.freeze([6, 12]),
   radius: 0.3, height: 0.8, bodyHeight: 0.6, mass: 1.2,
   aggro: 3.5, giveUp: 6, chase: 2.2, wander: 0.6, homeSpeed: 1.1,
   reach: 0.95, hitReach: 1.25, hitAt: 12 / 30, trackUntil: 0.26, attackTime: 1, cooldown: 1.3,
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a snake!', ichor: Object.freeze(['#b4e67e', '#4f8f2a']), pitch: 1.25,
   hitStun: 0.18, deathTime: 2, corpseTime: 3.5,
+  parts: Object.freeze({ skin: ['SnakeBody', 'SnakeRibs'], eyes: ['SnakeEyes_glow'] }),
   seedSalt: 0x5a4e7c1, spacing: 3,
 });
 // Slaps with both arms (clip frame 13), or spins on five legs and sweeps the sixth
@@ -47,13 +53,14 @@ const OCTO_SPIN = Object.freeze({
   arc: -1, power: 1.4, knock: 7, knockDown: true, hop: 3.8, reason: 'Kicked by an Octonaut!',
 });
 export const OCTONAUT = Object.freeze({
-  type: 'octonaut', label: 'Octonaut', hp: 80, damage: 20, knock: 5,
+  type: 'octonaut', species: 'octonaut', label: 'Octonaut', hp: 80, damage: 20, knock: 5,
   hpPerLevel: 9, damagePerLevel: 3, xp: 55, xpPerLevel: 13, coins: Object.freeze([12, 22]),
   radius: 0.42, height: 1.7, bodyHeight: 1.2, mass: 2.5,
   aggro: 4, giveUp: 7, chase: 1.5, wander: 0.5, homeSpeed: 0.8,
   reach: 1, ...OCTO_SLAP, cooldown: 1.4, ichor: Object.freeze(['#8fd0ff', '#2f6f9f']), pitch: 0.95,
   attacks: Object.freeze([OCTO_SLAP, OCTO_SPIN]),
   hitStun: 0.22, deathTime: 2.2, corpseTime: 4,
+  parts: Object.freeze({ skin: ['OctonautBody', 'OctonautHair'], eyes: ['OctonautEyes_glow'] }),
   seedSalt: 0x0c7a9a5, spacing: 4,
 });
 // The fire species and the Triangle are much stronger than the rest. A ranged attack has a
@@ -63,7 +70,7 @@ export const OCTONAUT = Object.freeze({
 // `hover`: floats, its idle loop runs on time rather than on ground speed.
 // Spits a fireball (clip frame 18) that sets the player on fire for half a second.
 export const FIREFACE = Object.freeze({
-  type: 'fireface', label: 'Fire-face', hp: 110, damage: 22, knock: 3,
+  type: 'fireface', species: 'fireface', label: 'Fire-face', hp: 110, damage: 22, knock: 3,
   hpPerLevel: 12, damagePerLevel: 3, xp: 90, xpPerLevel: 20, coins: Object.freeze([24, 40]),
   radius: 0.34, height: 1.4, bodyHeight: 1.25, mass: 1.5, hover: true,
   aggro: 6, giveUp: 9, chase: 1.3, wander: 0.5, homeSpeed: 0.8,
@@ -72,11 +79,12 @@ export const FIREFACE = Object.freeze({
   projectile: Object.freeze({ kind: 'fireball', speed: 6.5, radius: 0.18, range: 7,
     muzzle: Object.freeze([-0.03, 0.444, 0.523]), burn: Object.freeze({ time: 0.5, damage: 6, ticks: 2 }) }),
   hitStun: 0.2, deathTime: 2, corpseTime: 3.5,
+  parts: Object.freeze({ flame: ['FireFaceCore_glow', 'FireFaceBall_glow', 'FireFaceFlame_glow', 'FireFaceTips_glow'], eyes: ['FireFaceEyes_glow'] }),
   seedSalt: 0xf12efa, spacing: 4,
 });
 // Shoots its inner triangles out like a punch (clip frame 20); a hit knocks the player over.
 export const TRIANGLE = Object.freeze({
-  type: 'triangle', label: 'Triangle', hp: 150, damage: 28, knock: 6,
+  type: 'triangle', species: 'triangle', label: 'Triangle', hp: 150, damage: 28, knock: 6,
   hpPerLevel: 16, damagePerLevel: 4, xp: 110, xpPerLevel: 25, coins: Object.freeze([28, 46]),
   radius: 0.42, height: 1.65, bodyHeight: 1.5, mass: 3, hover: true,
   aggro: 5.5, giveUp: 9, chase: 1.1, wander: 0.5, homeSpeed: 0.7,
@@ -85,13 +93,14 @@ export const TRIANGLE = Object.freeze({
   projectile: Object.freeze({ kind: 'punch', speed: 8, radius: 0.3, range: 6, spin: 14,
     muzzle: Object.freeze([-0.037, 0.699, 0.87]) }),
   hitStun: 0.22, deathTime: 2, corpseTime: 4,
+  parts: Object.freeze({ glow: ['TriangleCore_glow', 'TriangleRing_glow', 'TriangleFrame_glow', 'TriangleBrows'], eyes: ['TriangleEyes_glow'] }),
   seedSalt: 0x7a1a9e1, spacing: 5,
 });
 // Runs in fast, then pounces from up to `reach` away: between lunge.from and lunge.to of the
 // attack it is carried forward until it is lunge.stop short of the player (at most
 // lunge.max), lands and bites at clip frame 20.
 export const FIRECAT = Object.freeze({
-  type: 'firecat', label: 'Fire-cat', hp: 120, damage: 26, knock: 5,
+  type: 'firecat', species: 'firecat', label: 'Fire-cat', hp: 120, damage: 26, knock: 5,
   hpPerLevel: 13, damagePerLevel: 3, xp: 95, xpPerLevel: 22, coins: Object.freeze([22, 38]),
   radius: 0.3, height: 1, bodyHeight: 0.7, mass: 1.6,
   aggro: 6, giveUp: 10, chase: 3.4, wander: 0.6, homeSpeed: 1.2,
@@ -99,9 +108,100 @@ export const FIRECAT = Object.freeze({
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a Fire-cat!', ichor: Object.freeze(['#ff8a2a', '#7e1a14']), pitch: 1,
   lunge: Object.freeze({ from: 0.3, to: 0.6, max: 1.9, stop: 0.55 }),
   hitStun: 0.2, deathTime: 2, corpseTime: 3.5,
+  parts: Object.freeze({ fur: ['FireCatBody', 'FireCatStripes', 'FireCatNose'], flame: ['FireCatFlame_glow', 'FireCatFlameCore_glow'], eyes: ['FireCatEyes_glow'] }),
   seedSalt: 0xca7f12e, spacing: 4,
 });
 export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT]);
+
+// Enemy kinds: a species' base profile with its own name, colours and strength, drawn with
+// the species' model.
+//   colors: role (or material name) -> recolour op, see recolorFn in core/oklch.js
+//   light / sparks / ichor: the glow light, the ember and trail colours, the blood
+//   mods: multiply the base. hp and damage (with their growth per level, rounded per level), speed (chase,
+//     wander, homing), size (model, body and melee reach), xp (xp and coins; √(hp × damage)
+//     unless given, so a kind pays for its toughness without inflating XP per cube much)
+// Anything else replaces the base value. A kind keeps its species' seedSalt, so where an
+// enemy stands, its level and its id do not depend on which kind it drew.
+const times = (v, k) => Math.round(v * k);
+export function enemyKind(base, { mods = {}, ...spec }) {
+  const { hp = 1, damage = 1, speed = 1, size = 1 } = mods, xp = mods.xp ?? Math.sqrt(hp * damage);
+  const reach = a => a.hitReach * size;
+  return Object.freeze({
+    ...base,
+    hp: times(base.hp, hp), hpPerLevel: base.hpPerLevel * hp,
+    damage: times(base.damage, damage), damagePerLevel: base.damagePerLevel * damage,
+    xp: times(base.xp, xp), xpPerLevel: base.xpPerLevel * xp, coins: Object.freeze(base.coins.map(c => times(c, xp))),
+    chase: base.chase * speed, wander: base.wander * speed, homeSpeed: base.homeSpeed * speed,
+    size: (base.size ?? 1) * size, radius: base.radius * size, height: base.height * size, bodyHeight: base.bodyHeight * size,
+    reach: base.projectile ? base.reach : base.reach * size, hitReach: reach(base),
+    ...(base.attacks && { attacks: Object.freeze(base.attacks.map(a => Object.freeze({ ...a, hitReach: reach(a) }))) }),
+    ...(base.projectile && { projectile: Object.freeze({ ...base.projectile, muzzle: Object.freeze(base.projectile.muzzle.map(v => v * size)) }) }),
+    ...spec,
+  });
+}
+// Three snakes in rising strength: green, ochre, red.
+export const SAND_VIPER = enemyKind(SNAKE, {
+  type: 'sandviper', label: 'Sand viper', reason: 'Bitten by a Sand viper!',
+  colors: { skin: 'oklch(0.80 0.12 82)', eyes: 'oklch(0.62 0.22 28)' }, ichor: Object.freeze(['#d9c46a', '#8a6a22']),
+  mods: { hp: 1.25, damage: 1.2, speed: 1.1 },
+});
+export const BLOOD_VIPER = enemyKind(SNAKE, {
+  type: 'bloodviper', label: 'Blood viper', reason: 'Bitten by a Blood viper!',
+  colors: { skin: 'oklch(0.60 0.19 27)', eyes: 'oklch(0.93 0.18 100)' }, ichor: Object.freeze(['#e0503a', '#6a1410']),
+  mods: { hp: 1.4, damage: 1.4, speed: 1.2, size: 1.1 },
+});
+export const FROST_SPIDER = enemyKind(SPIDER, {
+  type: 'frostspider', label: 'Frost spider',
+  colors: { body: 'oklch(0.82 0.035 235)', eyes: 'oklch(0.85 0.13 210)' }, ichor: Object.freeze(['#c4ecff', '#4f8fbf']),
+  mods: { hp: 1.35, damage: 1.1, speed: 0.9 },
+});
+export const BOG_SPIDER = enemyKind(SPIDER, {
+  type: 'bogspider', label: 'Bog spider',
+  colors: { body: 'oklch(0.40 0.06 135)', eyes: 'oklch(0.90 0.18 105)' },
+  mods: { hp: 1.15, damage: 1.25, speed: 1.05 },
+});
+export const REDBACK = enemyKind(SPIDER, {
+  type: 'redback', label: 'Redback', reason: 'Bitten by a Redback!',
+  colors: { body: 'oklch(0.34 0.11 25)', eyes: 'oklch(0.78 0.17 55)' }, ichor: Object.freeze(['#d8442e', '#5a1008']),
+  mods: { hp: 1.3, damage: 1.4, speed: 1.2, size: 1.1 },
+});
+export const FROST_STUNDER = enemyKind(STUNDER, {
+  type: 'froststunder', label: 'Frost stunder', reason: 'Rammed by a Frost stunder!',
+  colors: { skin: 'oklch(0.80 0.04 235)', eyes: 'oklch(0.85 0.13 210)' }, ichor: Object.freeze(['#c4ecff', '#4f8fbf']),
+  mods: { hp: 1.25, speed: 0.9 },
+});
+export const STONE_STUNDER = enemyKind(STUNDER, {
+  type: 'stonestunder', label: 'Stone stunder', reason: 'Rammed by a Stone stunder!',
+  colors: { skin: 'oklch(0.55 0.03 70)', eyes: 'oklch(0.82 0.16 85)' }, ichor: Object.freeze(['#b8a890', '#5a4a3a']),
+  mods: { hp: 1.6, damage: 1.15, speed: 0.85, size: 1.12 },
+});
+export const MAGMA_STUNDER = enemyKind(STUNDER, {
+  type: 'magmastunder', label: 'Magma stunder', reason: 'Rammed by a Magma stunder!',
+  colors: { skin: 'oklch(0.30 0.09 27)', eyes: 'oklch(0.84 0.17 75)' }, ichor: Object.freeze(['#ffb030', '#a02a10']),
+  mods: { hp: 1.35, damage: 1.4, speed: 1.15 },
+});
+export const BOG_OCTONAUT = enemyKind(OCTONAUT, {
+  type: 'bogoctonaut', label: 'Bog octonaut',
+  colors: { skin: 'oklch(0.74 0.10 130)', eyes: 'oklch(0.90 0.18 105)' }, ichor: Object.freeze(['#b4e67e', '#4f8f2a']),
+  mods: { hp: 1.2, damage: 1.15 },
+});
+export const CORAL_OCTONAUT = enemyKind(OCTONAUT, {
+  type: 'coraloctonaut', label: 'Coral octonaut',
+  colors: { skin: 'oklch(0.74 0.13 30)', eyes: 'oklch(0.80 0.14 190)' }, ichor: Object.freeze(['#ff9a7a', '#a0402a']),
+  mods: { hp: 1.3, damage: 1.35, speed: 1.2 },
+});
+export const EMERALD_TRIANGLE = enemyKind(TRIANGLE, {
+  type: 'emeraldtriangle', label: 'Emerald triangle', reason: 'Punched by an Emerald triangle!',
+  colors: { glow: 'oklch(0.80 0.20 155)', eyes: 'oklch(0.96 0.06 150)' }, light: '#40e890', sparks: Object.freeze(['#c8ffd8', '#40d080']),
+  ichor: Object.freeze(['#a8ffc8', '#1e9a5a']), mods: { hp: 1.25, damage: 1.1 },
+});
+export const CRIMSON_TRIANGLE = enemyKind(TRIANGLE, {
+  type: 'crimsontriangle', label: 'Crimson triangle', reason: 'Punched by a Crimson triangle!',
+  colors: { glow: 'oklch(0.64 0.22 25)', eyes: 'oklch(0.95 0.05 60)' }, light: '#ff4836', sparks: Object.freeze(['#ffc0b0', '#ff4836']),
+  ichor: Object.freeze(['#ffa08a', '#a01a10']), mods: { hp: 1.35, damage: 1.35 }, cooldown: TRIANGLE.cooldown * 0.8,
+});
+export const ENEMY_KINDS = Object.freeze(Object.fromEntries([...ENEMY_PROFILES, SAND_VIPER, BLOOD_VIPER, FROST_SPIDER, BOG_SPIDER,
+  REDBACK, FROST_STUNDER, STONE_STUNDER, MAGMA_STUNDER, BOG_OCTONAUT, CORAL_OCTONAUT, EMERALD_TRIANGLE, CRIMSON_TRIANGLE].map(k => [k.type, k])));
 
 // the attack e is performing (or about to perform): one of profile.attacks, else the profile
 export const attackOf = e => e.profile.attacks?.[e.attack] ?? e.profile;
@@ -130,15 +230,15 @@ export function blowOf(profile, a = profile) {
 export function enemyProfile(profile, level) {
   if (!Number.isSafeInteger(level) || level < 1) throw new RangeError('Invalid enemy level');
   const n = level - 1;
-  return Object.freeze({ ...profile, hp: profile.hp + profile.hpPerLevel * n,
-    damage: profile.damage + profile.damagePerLevel * n, xp: profile.xp + profile.xpPerLevel * n });
+  return Object.freeze({ ...profile, hp: Math.round(profile.hp + profile.hpPerLevel * n),
+    damage: Math.round(profile.damage + profile.damagePerLevel * n), xp: Math.round(profile.xp + profile.xpPerLevel * n) });
 }
 export function enemyRoll(map, profile, floorId) {
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt ^ Math.imul(floorId, 7919) ^ 0x1007));
   const depth = Math.max(0, map.depth || 0), r = R();
   const level = Math.max(1, 1 + Math.floor(depth / 2) + (depth >= 2 ? r < .25 ? -1 : r >= .75 ? 1 : 0 : 0));
   const factor = 1 + .25 * (level - 1), lo = Math.round(profile.coins[0] * factor), hi = Math.round(profile.coins[1] * factor);
-  return { id: `${map.key ?? map.seed}:${profile.type}:${floorId}`, level, coinDrop: lo + Math.floor(R() * (hi - lo + 1)) };
+  return { id: `${map.key ?? map.seed}:${profile.species}:${floorId}`, level, coinDrop: lo + Math.floor(R() * (hi - lo + 1)) };
 }
 export function makeEnemy(spot, profile, i = 0) {
   profile = enemyProfile(profile, spot.level || 1);

@@ -7,10 +7,10 @@ import { removeEnemyViews } from '../render/enemies.js';
 export let fireFaces = [];
 export function resetFireFaces() {
   removeEnemyViews(fireFaces);
-  fireFaces = enemySpots(state.map, FIREFACE).filter(spot => !state.run.defeated.has(spot.id)).map((spot, i) => makeEnemy(spot, FIREFACE, i));
+  fireFaces = enemySpots(state.map, FIREFACE).filter(spot => !state.run.defeated.has(spot.id)).map((spot, i) => makeEnemy(spot, spot.kind ?? FIREFACE, i));
 }
 export function updateFireFaces(dt) {
   stepEnemies(fireFaces, dt);
-  fireFaces = fireFaces.filter(e => e.mode !== 'dead' || e.deadT < FIREFACE.corpseTime || (removeEnemyViews([e]), false));
+  fireFaces = fireFaces.filter(e => e.mode !== 'dead' || e.deadT < e.profile.corpseTime || (removeEnemyViews([e]), false));
 }
 export function detachFireFaces() { const list = fireFaces; fireFaces = []; return list; }

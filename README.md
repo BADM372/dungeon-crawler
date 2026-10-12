@@ -19,7 +19,8 @@ Plain ES modules and a vendored three.js; no build step.
   into `assets/`, Blender test scripts in `blender/tests/`, renders in `blender/previews/`.
 - `tests/`: `node --test` unit tests; `tests/browser/` holds integration checks
   that run from the game's devtools console.
-- `tools/`: dev server and the prop metadata generator.
+- `tools/`: dev server, the prop metadata generator, the enemy kinds preview
+  (`/tools/kinds.html`, see `docs/enemy-kinds.md`) and the depth population measurement.
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
 - `vendor/three/`: three.js and the addons in use.
 
