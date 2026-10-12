@@ -34,6 +34,10 @@ test('soft-targeting picks the closest reachable living enemy, preferring those 
   const dead = at(0, 0.5); dead.mode = 'dead';
   const below = at(0, 0.5); below.y = -1;
   assert.equal(softTarget(p, [dead, below]), null, 'dead and other-floor enemies are ignored');
+  const above = at(0, 0.5); above.y = 0.9;
+  const tallBelow = at(0, 0.5, STUNDER); tallBelow.y = -1;
+  assert.equal(softTarget(p, [above]), null, 'above the blade');
+  assert.equal(softTarget(p, [tallBelow]), tallBelow, 'a tall body reaching into the blade band counts');
   const hidden = at(0, 0.5);
   assert.equal(softTarget(p, [hidden, ahead], 0, e => e !== hidden), ahead, 'line of sight required');
   const d = SWORD.range + STUNDER.radius - 0.05;

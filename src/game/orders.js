@@ -1,5 +1,6 @@
 // Mouse orders, Diablo style: click the floor to walk there, click an enemy to go and hit
 // it. Holding the button keeps walking towards the cursor / keeps attacking. WASD cancels.
+// Orders steer only; the speed (run, or walk with Ctrl) is up to update.js.
 // Walks follow the floor graph where there is one (to the reachable floor closest to the
 // target), cutting corners where the way is clear, else head straight for the target.
 import { CHAR_H, CHAR_R, N } from '../core/constants.js';
@@ -7,7 +8,7 @@ import { combatStats } from '../core/combat.js';
 import { walkable, neighbors, groundY } from '../physics/enemynav.js';
 import { containsXZ } from '../core/blockers.js';
 import { player, state } from './state.js';
-import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
+import { pointer, pickFloor, hoveredEnemy } from './pointer.js';
 import { queueAttack } from './sword.js';
 
 // kind: 'move' (to x, z) | 'attack' (enemy); path: floors to follow, i: the next one
@@ -82,8 +83,7 @@ export function orderAttack(e) {
   Object.assign(order, { enemy: e, path: null, repath: 0 });
 }
 
-// the held button: keep walking to the cursor, pick the next enemy under it, or (Shift)
-// keep swinging towards the cursor
+// the held button: keep walking to the cursor, or pick the next enemy under it
 export function holdPointer(dt) {
   if (!pointer.down || state.transitioning || state.inventoryOpen) return;
   if (pointer.mode === 'move' && (order.hold -= dt) <= 0) {
@@ -91,10 +91,9 @@ export function holdPointer(dt) {
     const hit = pickFloor();
     if (hit) orderMove(hit);
   } else if (pointer.mode === 'attack' && order.kind !== 'attack' && hoveredEnemy()) orderAttack(hoveredEnemy());
-  else if (pointer.mode === 'force') queueAttack(hoveredEnemy() || aimPoint());
 }
 
-// this frame's steering { dx, dz, run }, or null without an order; in reach of the target
+// this frame's steering { dx, dz }, or null without an order; in reach of the target
 // it stands and swings instead
 export function followOrder(dt) {
   if (!order.kind) return null;
@@ -107,7 +106,7 @@ export function followOrder(dt) {
     if (Math.hypot(e.x - player.x, e.z - player.z) <= reach && Math.abs(e.y - player.y) < 0.7) {
       queueAttack(e);
       if (!pointer.down) clearOrder();   // a click is one swing; holding keeps swinging
-      return { dx: 0, dz: 0, run: false };
+      return { dx: 0, dz: 0 };
     }
     tx = e.x; tz = e.z;
     if ((order.repath -= dt) <= 0) { order.repath = 0.3; plan(floorOf(e.f)); }
@@ -125,12 +124,12 @@ export function followOrder(dt) {
     if (order.i < path.length - 1) [wx, wz] = point(order.i);
   }
   const left = Math.hypot(tx - player.x, tz - player.z);
-  if (order.kind === 'move' && left < 0.08) { clearOrder(); return { dx: 0, dz: 0, run: false }; }
+  if (order.kind === 'move' && left < 0.08) { clearOrder(); return { dx: 0, dz: 0 }; }
   // give up when walking into something for a while
   if (player.sword.active || player.stun > 0 || Math.hypot(player.x - order.lx, player.z - order.lz) > 0.2) {
     order.stuck = 0; order.lx = player.x; order.lz = player.z;
   } else if ((order.stuck += dt) > 0.6) { clearOrder(); return null; }
   const dx = wx - player.x, dz = wz - player.z, d = Math.hypot(dx, dz) || 1;
   const ease = order.kind === 'move' ? Math.min(1, Math.max(0.25, left / 0.5)) : 1;   // settle onto the spot
-  return { dx: dx / d * ease, dz: dz / d * ease, run: left > 1.2 };
+  return { dx: dx / d * ease, dz: dz / d * ease };
 }

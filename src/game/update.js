@@ -1,7 +1,7 @@
 // One simulation step for the player.
 import { SIT_IMPACT, RAGDOLL_IMPACT, FALL_DAMAGE } from '../core/constants.js';
 import { player, state } from './state.js';
-import { inputDir, wantsRun, takeJump, attackHeld, keyAttack } from './input.js';
+import { inputDir, wantsWalk, takeJump, autoAttackHeld, autoAttack } from './input.js';
 import { updateSword, cancelSword } from './sword.js';
 import { holdPointer, followOrder, clearOrder } from './orders.js';
 import { canMoveCancel, cancelSwing, LUNGE_REACH } from '../core/combat.js';
@@ -30,8 +30,8 @@ export function updatePlayer(dt) {
   // keys win over mouse orders
   const keys = inputDir();
   if (keys[0] || keys[1]) clearOrder(); else holdPointer(dt);
-  // a held attack key keeps attacking, re-picking its target (like a held click)
-  if (attackHeld()) keyAttack();
+  // held Shift: swing whenever an enemy is in reach, re-picking the target each time
+  if (autoAttackHeld()) autoAttack();
   const order = followOrder(dt);   // may queue an attack on its target
   updateSword(dt);
   let [dx, dz] = order ? [order.dx, order.dz] : keys;
@@ -45,7 +45,8 @@ export function updatePlayer(dt) {
     if ((dx || dz) && canMoveCancel(player)) cancelSwing(player);
     else [dx, dz] = lunge(s);
   }
-  const gr = movePlayer(dt, dx, dz, (order ? order.run : wantsRun()) && !s.active, jump);
+  // always run (mouse orders too), unless Ctrl is held or a swing plants the feet
+  const gr = movePlayer(dt, dx, dz, !wantsWalk() && !s.active, jump);
   updateLayer(gr);
 
   // Fluid contact takes priority over landing damage (even a high fall into water).

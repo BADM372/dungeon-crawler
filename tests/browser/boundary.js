@@ -1,6 +1,6 @@
 // Real-controller/render/travel integration checks, run from index.html's devtools:
 // await (await import('./tests/browser/boundary.js')).runBoundaryChecks()
-// await (await import('./tests/browser/boundary.js')).runRunKeyChecks()
+// await (await import('./tests/browser/boundary.js')).runModifierKeyChecks()
 // Boundary checks reset the world before and after testing.
 import { N, DIRS, WATER, FALL_DAMAGE } from '../../src/core/constants.js';
 import { faceKey, step, OPP6 } from '../../src/world/coords.js';
@@ -14,13 +14,13 @@ import { startFall } from '../../src/game/fall.js';
 import { groundAt } from '../../src/physics/collide.js';
 import { detachNeighbors, adoptNeighbors } from '../../src/render/neighbors.js';
 import { setInventoryOpen } from '../../src/game/inventory.js';
-import { wantsRun, clearInput } from '../../src/game/input.js';
+import { wantsWalk, autoAttackHeld, clearInput } from '../../src/game/input.js';
 import { paused } from './combat.js';
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
 const close = (a, b) => Math.abs(a - b) < 1e-8;
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-const key = (type, code) => dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
+const key = (type, code, init = {}) => dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, ...init }));
 const neighbors = () => { const list = detachNeighbors(); adoptNeighbors(list); return list; };
 function panes(glass, open) {
   check(glass.userData.panes.every((pane, d) => pane.visible === !open[d]), 'Glass panes do not match opened faces');
@@ -29,7 +29,7 @@ function panes(glass, open) {
 function atFace(dir, along, y, distance = 0.3) {
   spawnAt(dir === 0 ? N - distance : dir === 1 ? distance : along, y,
     dir === 2 ? N - distance : dir === 3 ? distance : along);
-  player.autoDir = null; player.autoRun = false;
+  player.autoDir = null;
 }
 async function waitForSlide() {
   for (let i = 0; i < 100 && state.transitioning && !travelling(); i++) await delay(20);
@@ -41,30 +41,30 @@ function finishSlide() {
 }
 async function travel(portal) { startTravel(portal); await waitForSlide(); finishSlide(); }
 
-export async function runRunKeyChecks() {
+// Modifier state: Ctrl (walk) and Shift (auto-attack), left and right, blur and modal isolation.
+export async function runModifierKeyChecks() {
   return paused(async () => {
     check(!state.inventoryOpen && !state.transitioning, 'Close inventory and finish travel first');
     clearInput();
     try {
-      for (const shift of ['ShiftLeft', 'ShiftRight']) {
-        key('keydown', 'KeyW'); key('keydown', shift);
-        check(wantsRun(), shift + ' must run');
-        key('keyup', shift); check(!wantsRun(), 'Releasing Shift must return to walking');
+      for (const [ctrl, shift] of [['ControlLeft', 'ShiftLeft'], ['ControlRight', 'ShiftRight']]) {
+        key('keydown', 'KeyW');
+        check(!wantsWalk() && !autoAttackHeld(), 'Running without modifiers, no auto-attack');
+        key('keydown', ctrl, { ctrlKey: true }); check(wantsWalk(), ctrl + ' must walk');
+        key('keyup', ctrl); check(!wantsWalk(), 'Releasing Ctrl must run again');
+        key('keydown', shift, { shiftKey: true }); check(autoAttackHeld(), shift + ' must auto-attack');
+        key('keyup', shift); check(!autoAttackHeld(), 'Releasing Shift must stop auto-attacking');
         key('keyup', 'KeyW'); clearInput();
       }
-      key('keydown', 'ShiftLeft'); key('keydown', 'ShiftRight'); key('keyup', 'ShiftLeft');
-      check(wantsRun(), 'Either held Shift must suffice');
-      dispatchEvent(new Event('blur')); check(!wantsRun(), 'Blur must clear held run keys');
-      key('keydown', 'KeyW'); key('keyup', 'KeyW'); key('keydown', 'KeyW');
-      check(wantsRun(), 'Double-tap running must still work');
-      key('keydown', 'ShiftLeft'); key('keyup', 'ShiftLeft');
-      check(wantsRun(), 'Releasing Shift must not cancel double-tap running');
-      key('keyup', 'KeyW'); check(!wantsRun(), 'Releasing movement must clear double-tap running');
-      key('keydown', 'ShiftLeft'); setInventoryOpen(true);
-      check(!wantsRun(), 'Inventory must clear held Shift');
-      key('keydown', 'ShiftRight'); setInventoryOpen(false);
-      check(!wantsRun(), 'Inventory input must not replay on close');
-      return ['left/right Shift hold/release', 'blur and modal isolation', 'double-tap running preserved'];
+      key('keydown', 'ControlLeft', { ctrlKey: true }); key('keydown', 'ControlRight', { ctrlKey: true }); key('keyup', 'ControlLeft');
+      check(wantsWalk(), 'Either held Ctrl must suffice');
+      key('keydown', 'ShiftLeft', { shiftKey: true });
+      dispatchEvent(new Event('blur')); check(!wantsWalk() && !autoAttackHeld(), 'Blur must clear held modifiers');
+      key('keydown', 'ControlLeft', { ctrlKey: true }); key('keydown', 'ShiftLeft', { shiftKey: true }); setInventoryOpen(true);
+      check(!wantsWalk() && !autoAttackHeld(), 'Inventory must clear held modifiers');
+      key('keydown', 'ControlRight', { ctrlKey: true }); key('keydown', 'ShiftRight', { shiftKey: true }); setInventoryOpen(false);
+      check(!wantsWalk() && !autoAttackHeld(), 'Inventory input must not replay on close');
+      return ['left/right Ctrl walk / Shift auto-attack hold/release', 'blur and modal isolation'];
     } finally { setInventoryOpen(false); clearInput(); }
   });
 }

@@ -448,8 +448,9 @@ Checks: `npm test` includes shared-face identity, full-face triggering, arrival
 coordinates and enemy containment. From the browser's devtools, run
 `await (await import('./tests/browser/boundary.js')).runBoundaryChecks()` for
 all four side orientations, rendering/revisits, airborne travel, blocked destinations,
-generation failure, reset, gated neighbours discovered by another route and vertical travel. `runRunKeyChecks()` in that
-module checks left/right Shift running alongside double-tap running and input clearing.
+generation failure, reset, gated neighbours discovered by another route and vertical travel. `runModifierKeyChecks()` in that
+module checks the Ctrl (walk) and Shift (auto-attack) modifiers and input clearing; the movement
+ramp and auto-attack themselves are checked by `runControlChecks()` in `tests/browser/combat.js`.
 
 While sliding, the old cube dissolves out and the new one dissolves in (`render/fade.js`).
 The dissolve is an ordered-dither discard per cube, so depth and sorting stay intact.

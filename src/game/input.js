@@ -1,7 +1,7 @@
 // Keyboard, mouse and wheel. Modal input never enters the game queue.
-// Mouse: click the floor to walk there, click an enemy to attack it (hold for more),
-// Shift+click to swing towards the cursor in place. F soft-targets (hold to keep
-// attacking); Space jumps.
+// The player always runs; holding Ctrl walks. Holding Shift auto-attacks enemies the blade
+// can reach (and does nothing without one). Space jumps.
+// Mouse: click the floor to walk there, click an enemy to attack it (hold for more).
 import { stepZoom } from '../core/zoom.js';
 import { player, state, view, setStatus } from './state.js';
 import { spawnEntry, nextCube, updateNeighbors } from './flow.js';
@@ -11,7 +11,7 @@ import { controls, clearInput } from './inputstate.js';
 import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
 import { requestCollect } from './loot.js';
 import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
-import { order, orderMove, orderAttack, clearOrder } from './orders.js';
+import { orderMove, orderAttack } from './orders.js';
 import { queueAttack } from './sword.js';
 import { softTarget } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
@@ -19,13 +19,18 @@ import { allEnemies } from './enemies.js';
 import { toggleMute } from '../audio/sfx.js';
 export { clearInput };
 
-const { keys, lastTap } = controls;
-// double-tapping a direction starts running while any direction is held
+const { keys } = controls;
 const MOVE = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
-const DOUBLE_TAP = 0.3;
+const WALK = ['ControlLeft', 'ControlRight'], ATTACK = ['ShiftLeft', 'ShiftRight'];
 
 addEventListener('keydown', e => {
-  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.metaKey || e.altKey) return;
+  // Ctrl is the walk modifier: track it and the movement keys (and keep Ctrl+S / Ctrl+D /
+  // Ctrl+A from saving, bookmarking or selecting), leave every other Ctrl shortcut alone
+  if (e.ctrlKey) {
+    if (!state.inventoryOpen && (WALK.includes(e.code) || MOVE.includes(e.code))) { keys.add(e.code); e.preventDefault(); }
+    return;
+  }
   if (e.code === 'KeyI') { if (!e.repeat) { setHelpOpen(false); toggleInventory(); } e.preventDefault(); return; }
   if (e.code === 'Escape' && state.inventoryOpen) { setInventoryOpen(false); e.preventDefault(); return; }
   if (state.inventoryOpen) return;
@@ -34,13 +39,9 @@ addEventListener('keydown', e => {
   if (e.code === 'Escape' && helpOpen()) { setHelpOpen(false); e.preventDefault(); return; }
   keys.add(e.code);
   if (e.repeat) return;
-  if (MOVE.includes(e.code)) {
-    const now = performance.now() / 1000;
-    if (now - (lastTap[e.code] ?? -1) < DOUBLE_TAP) controls.running = true;
-    lastTap[e.code] = now;
-  }
   if (e.code === 'Space') { controls.jumpPressed = true; e.preventDefault(); }
-  if (e.code === 'KeyF' && !state.transitioning) { keyAttack(); e.preventDefault(); }
+  // a tap between two frames still swings (holding is handled every frame in update.js)
+  if (ATTACK.includes(e.code) && !state.transitioning) autoAttack();
   if (e.code === 'KeyM') setStatus(toggleMute() ? 'Sound off' : 'Sound on');
   if (e.code === 'KeyQ') view.yawTarget -= Math.PI / 2;
   if (e.code === 'KeyE') view.yawTarget += Math.PI / 2;
@@ -53,39 +54,32 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyP') { state.showPath = !state.showPath; if (state.world) state.world.pathLine.visible = state.showPath; }
   if (e.code.startsWith('Arrow')) e.preventDefault();
 });
-addEventListener('keyup', e => {
-  keys.delete(e.code);
-  if (!MOVE.some(k => keys.has(k))) controls.running = false;
-});
+addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', clearInput);
-// what a Shift+click swing aims at: the enemy under the cursor, else the cursor's spot
-const cursorTarget = () => hoveredEnemy() || aimPoint();
-// F: swing at the best enemy in blade reach (the hovered one first, else the closest,
-// preferring those ahead of the movement keys or the facing). Without one, walk up to the
-// best enemy within ACQUIRE more cells and swing, as when clicking it (movement keys win).
-// Without any, swing towards the hovered enemy, the movement direction or the cursor.
-const ACQUIRE = 2;
+// Ctrl+click is a right click on macOS: no context menu over the game
+addEventListener('contextmenu', e => { if (e.target.tagName === 'CANVAS') e.preventDefault(); });
+// Auto-attack (Shift): swing at the best enemy the blade can reach, the hovered one first,
+// else the closest, preferring those ahead of the movement keys or the facing. Never at the
+// air and never walking up: without an enemy that close it does nothing. AUTO_REACH: the
+// wind-up's step-in still connects a little beyond blade reach. Mouse orders carry on.
+const AUTO_REACH = 0.15;
 const visible = e => clearLine(player.x, player.y + 0.4, player.z, e.x,
   Math.max(e.y + 0.1, Math.min(player.y + 0.4, e.y + e.profile.bodyHeight - 0.05)), e.z);
-export function keyAttack() {
-  const hovered = hoveredEnemy(), [dx, dz] = inputDir(), moving = dx || dz;
-  const yaw = moving ? Math.atan2(dx, dz) : player.yaw;
-  const pick = extra => (hovered && softTarget(player, [hovered], yaw, visible, extra))
-    || softTarget(player, allEnemies(), yaw, visible, extra);
-  const near = pick(0);
-  if (near) { clearOrder(); queueAttack(near); return; }
-  const far = !moving && pick(ACQUIRE);
-  if (far) { if (order.kind !== 'attack' || order.enemy !== far) orderAttack(far); return; }
-  clearOrder();
-  queueAttack(hovered || (moving ? { x: player.x + dx, z: player.z + dz } : aimPoint()));
+export function autoAttack() {
+  const hovered = hoveredEnemy(), [dx, dz] = inputDir();
+  const yaw = dx || dz ? Math.atan2(dx, dz) : player.yaw;
+  const target = (hovered && softTarget(player, [hovered], yaw, visible, AUTO_REACH))
+    || softTarget(player, allEnemies(), yaw, visible, AUTO_REACH);
+  if (target) queueAttack(target);
+  return target;
 }
-export const attackHeld = () => !state.inventoryOpen && !state.transitioning && keys.has('KeyF');
+export const autoAttackHeld = () => !state.inventoryOpen && !state.transitioning && ATTACK.some(k => keys.has(k));
+export const wantsWalk = () => WALK.some(k => keys.has(k));
 addEventListener('pointerdown', e => {
   if (e.button !== 0 || e.target.tagName !== 'CANVAS' || state.transitioning || state.inventoryOpen) return;
   e.preventDefault();
   pointer.down = true;
   const enemy = hoveredEnemy();
-  if (e.shiftKey) { pointer.mode = 'force'; clearOrder(); queueAttack(cursorTarget()); return; }
   if (enemy) { pointer.mode = 'attack'; orderAttack(enemy); return; }
   pointer.mode = 'move';
   const hit = pickFloor();
@@ -111,5 +105,4 @@ export function inputDir() {
   const y = view.yaw;
   return [Math.cos(y) * ix - Math.sin(y) * iy, -Math.sin(y) * ix - Math.cos(y) * iy];
 }
-export const wantsRun = () => player.autoRun || controls.running || keys.has('ShiftLeft') || keys.has('ShiftRight');
 export function takeJump() { const j = controls.jumpPressed; controls.jumpPressed = false; return j; }

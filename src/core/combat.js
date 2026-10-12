@@ -85,7 +85,8 @@ export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra 
   const range = (combatStats(p) || SWORD).range;
   let best = null, bestScore = Infinity;
   for (const e of enemies) {
-    if (e.mode === 'dead' || Math.abs(e.y - p.y) >= 0.7) continue;
+    // the same height band the blade sweeps (inSwordArc)
+    if (e.mode === 'dead' || e.y + e.profile.bodyHeight <= p.y + 0.08 || e.y >= p.y + 0.85) continue;
     const dx = e.x - p.x, dz = e.z - p.z, d = Math.hypot(dx, dz);
     if (d > range + e.profile.radius + extra) continue;
     const ahead = d > 0.01 ? Math.cos(Math.atan2(dx, dz) - yaw) : 1;

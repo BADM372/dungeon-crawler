@@ -16,7 +16,7 @@ export const player = {
   jumpCount: 0, landCount: 0, landImpact: 0, getUpCount: 0,
   ragdoll: null, ragdollThen: null, climb: null, climbV: 0,
   safe: { x: 0, y: 0, z: 0 }, safeTimer: 0,
-  autoDir: null, autoRun: false,   // override keyboard input (used by test bots)
+  autoDir: null,   // overrides the movement keys (used by test bots)
 };
 
 const params = new URLSearchParams(location.search);

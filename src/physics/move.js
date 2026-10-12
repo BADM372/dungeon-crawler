@@ -1,5 +1,5 @@
 // Character controller: walk / run / swim, jumping, gravity, ceilings and slopes.
-import { STEP, SWIM_STEP, GRAV, SNAP, ACID, WALK_SPEED, RUN_SPEED, SWIM_SPEED, JUMP_V } from '../core/constants.js';
+import { STEP, SWIM_STEP, GRAV, SNAP, ACID, WALK_SPEED, RUN_SPEED, SWIM_SPEED, JUMP_V, RUN_RAMP, BRAKE } from '../core/constants.js';
 import { player } from '../game/state.js';
 import { groundAt, ceilingAt, slopeAt } from './collide.js';
 import { canMove } from './canmove.js';
@@ -16,9 +16,18 @@ function horizontal(dt, dx, dz, run) {
     // too steep to stand on (stairs excepted): slide down
     if (g > 3 && p.support.kind !== 'stair') { const s = 2.5 * (g - 3) + 0.5; tx -= gx / g * s; tz -= gz / g * s; }
   }
-  // grounded characters accelerate fast, in the air there is only a little control
-  const k = Math.min(1, (p.swimming ? 5 : p.grounded ? 14 : 2.5) * dt);
-  p.vx += (tx - p.vx) * k; p.vz += (tz - p.vz) * k;
+  if (p.grounded && !p.swimming) {
+    // on the ground the speed ramps up (RUN_RAMP) and brakes quickly; the direction follows
+    // the input at once, so turning keeps the speed
+    const cur = Math.hypot(p.vx, p.vz), want = Math.hypot(tx, tz);
+    const s = want > cur ? Math.min(want, cur + RUN_SPEED / RUN_RAMP * dt) : Math.max(want, cur - BRAKE * dt);
+    const [ux, uz] = want > 1e-6 ? [tx / want, tz / want] : cur > 1e-6 ? [p.vx / cur, p.vz / cur] : [0, 0];
+    p.vx = ux * s; p.vz = uz * s;
+  } else {
+    // swimming is sluggish, in the air there is only a little control
+    const k = Math.min(1, (p.swimming ? 5 : 2.5) * dt);
+    p.vx += (tx - p.vx) * k; p.vz += (tz - p.vz) * k;
+  }
 
   // axis-separated moves so the body slides along walls
   const mx = p.vx * dt, mz = p.vz * dt;

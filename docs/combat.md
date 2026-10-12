@@ -3,15 +3,22 @@
 - **Mouse (Diablo style):** click the floor to walk there (pathing over the floor
   graph, to the closest reachable floor if the spot cannot be reached), click an enemy
   to walk up and swing at it. Holding the button keeps following the cursor / keeps
-  attacking. **Shift+click** swings towards the cursor without moving. **F** soft-targets like
-  Diablo's controller scheme: it swings at the hovered enemy if the blade can reach it,
-  else at the closest visible enemy in reach, preferring those ahead of the movement
-  keys or the facing. Without one in reach it walks up to the best enemy within two
-  more cells and swings, as when clicking it (movement keys win); with none at all it
-  swings towards the cursor. Holding F keeps attacking, re-picking the target. There is
-  no auto-attack. WASD
+  attacking. WASD
   still moves and cancels any mouse order. The character only turns when you click
   (or move), never just from hovering. **Space:** movement-only jump.
+- **Movement speed:** the player always runs, by keyboard and by mouse order; holding
+  **Ctrl** walks. On the ground speed ramps up linearly, standing to a full run in
+  `RUN_RAMP` (0.25 s, walking pace after about 0.12 s, so taps stay precise), and brakes
+  at `BRAKE` (30 units/s², about 0.14 s from a run). The direction follows the input at
+  once, so turning keeps the speed. Swimming and air control are unchanged. Ctrl+W/A/S/D
+  are tracked as movement and Ctrl+S/D/A are kept from the browser; on Windows/Linux
+  browsers do not let pages stop Ctrl+W from closing the tab (use the arrow keys there).
+- **Auto-attack (hold Shift):** swings at the best enemy the blade can reach (blade
+  reach plus 0.15 the wind-up step-in covers, the same height band as the blade, in line
+  of sight): the hovered one first, else the closest, preferring those ahead of the
+  movement keys or the facing (`softTarget`). It never swings at the air and never walks
+  up: without an enemy that close it does nothing. Holding keeps swinging and re-picks
+  the target; a mouse order carries on between swings.
 - A swing is fast and buffered (`core/combat.js`, `game/sword.js`): the blade connects
   0.16–0.27 s after it starts; from 0.3 s moving cuts the recovery short; from 0.42 s
   a queued click chains into the next swing (clicks are kept for 0.3 s). Heavier
@@ -141,8 +148,8 @@ in the browser console:
 
 ```js
 const checks = await import('./tests/browser/combat.js');
-await checks.runCombatChecks(); // real input (click on an enemy, F soft-target / hold), controller, damage, GLB poses, cleanup
-await checks.runAttackKeyChecks(); // Space jump, F soft-target / walk-up without the cursor, hold F to chain
+await checks.runCombatChecks(); // real input (click on an enemy, Shift), controller, damage, GLB poses, cleanup
+await checks.runControlChecks(); // run ramp / Ctrl walk / Ctrl+W, Space jump, Shift auto-attack only in reach, F unbound
 await checks.runNewEnemyChecks(); // snake bite, Octonaut slap / spin kick, their clips and corpses
 await checks.runFireChecks(); // fireball + burning, Triangle punch / dodge / walls, Fire-cat chase and pounce
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon

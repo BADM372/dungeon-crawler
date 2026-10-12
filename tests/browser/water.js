@@ -27,7 +27,7 @@ function arena(fluid = WATER) {
     safe: new Uint8Array(N * N).fill(1) };
 }
 function reset(x = 6.5, y = 0, z = 6.5) {
-  Object.assign(player, createPlayerStats(), { autoDir: null, autoRun: false, coyote: 0, jumpBuf: 0 });
+  Object.assign(player, createPlayerStats(), { autoDir: null, coyote: 0, jumpBuf: 0 });
   spawnAt(x, y, z);
   animateCharacter(1 / 60, 0);
 }

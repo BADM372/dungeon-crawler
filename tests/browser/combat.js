@@ -2,7 +2,7 @@
 // Uses the real controller, input handlers, enemy AI, GLTFLoader, skeletons and
 // animation mixers on a controlled floor grid. Restores the live level afterward.
 import * as THREE from 'three';
-import { N, DIRS } from '../../src/core/constants.js';
+import { N, DIRS, WALK_SPEED, RUN_SPEED, RUN_RAMP } from '../../src/core/constants.js';
 import { player, state } from '../../src/game/state.js';
 import { SWORD, cancelSwing, startSwing, damageEnemy } from '../../src/core/combat.js';
 import { createPlayerStats, createRun } from '../../src/core/progression.js';
@@ -140,8 +140,8 @@ export async function runCombatChecks() {
       check(maxY > 0.5 && spider.hp === 30 && spider.mode !== 'dead', 'A real jump / landing must not stomp-kill');
       results.push('Space jump does not damage enemies');
 
-      hero(); place(spider, 6.5, 7.25); press('KeyF'); tick(75);
-      check(spider.hp === 0 && spider.mode === 'dead', 'F must slash-kill a spider');
+      hero(); place(spider, 6.5, 7.25); press('ShiftLeft'); tick(75);
+      check(spider.hp === 0 && spider.mode === 'dead', 'A Shift auto-attack must slash-kill a spider');
       check(spider.view.actions.death.getEffectiveWeight() === 1, 'SpiderDeath must play instead of squash / hide');
       for (const time of [0.3, 0.7, 1.2, 1.9]) {
         spider.deadT = time; drawEnemies(1 / 60);
@@ -150,12 +150,12 @@ export async function runCombatChecks() {
       const held = bones(spider);
       spider.deadT = 2.4; drawEnemies(1 / 60);
       check(bones(spider).every((v, i) => Math.abs(v - held[i]) < 1e-5), 'Spider corpse must hold its final pose');
-      results.push('F slash / SpiderDeath floor contact and held corpse');
+      results.push('Shift slash / SpiderDeath floor contact and held corpse');
 
       hero(); place(stunder, 6.5, 7.4);
       for (let i = 0; i < 4; i++) {
         if (i === 0) clickOn(stunder);
-        else press('KeyF');
+        else press('ShiftLeft');
         tick(75);
         check(stunder.hp === 90 - i * 30, 'Stunder should take exactly one hit per swing');
       }
@@ -355,40 +355,68 @@ export async function runFireChecks() {
   });
 }
 
-// Real key events: Space jumps, F soft-targets without the cursor, holding F keeps attacking.
-export async function runAttackKeyChecks() {
+// Real key events: always running after a short ramp, Ctrl walks (Ctrl+W too), Space jumps,
+// held Shift auto-attacks only an enemy within reach, F does nothing.
+export async function runControlChecks() {
   check(character.ready && character.sword, 'Wait for character / weapon assets');
   return paused(async () => {
     const originalMap = state.map, saved = { ...player }, savedRun = state.run, inside = pointer.inside;
-    const key = (type, code) => dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
+    const key = (type, code, init = {}) => {
+      const e = new KeyboardEvent(type, { code, bubbles: true, cancelable: true, ...init });
+      dispatchEvent(e); return e;
+    };
+    const speed = () => Math.hypot(player.vx, player.vz), near = (a, b) => Math.abs(a - b) < 0.01;
     try {
       state.run = createRun(); state.map = arena(); resetEnemies(); hero();
-      for (const e of allEnemies()) place(e, 2.5, 2.5);
+      for (const e of allEnemies()) place(e, 1.5, 1.5);
       pointer.inside = false;   // the cursor plays no part in keyboard targeting
-      const spider = spiders[0], stunder = stunders[0];
-      place(spider, 6.5, 6.5); press('Space');
-      check(tick(120) > .5 && spider.hp === 30 && !player.sword.serial, 'Space jumps without attacking');
-      place(spider, 2.5, 2.5);
-      hero(); place(stunder, 7.35, 6.5);   // beside the player, who faces +z
-      press('KeyF'); tick(75);
-      check(stunder.hp === 90, 'F turns to and hits the enemy beside the player');
-      hero(); place(stunder, 6.5, 9); stunder.hp = stunder.profile.hp;
-      press('KeyF'); tick(150);
-      check(stunder.hp === 90 && player.z > 7, 'F walks up to an enemy a few cells away and hits it');
-      hero(); place(stunder, 6.5, 11); stunder.hp = stunder.profile.hp;
-      press('KeyF'); tick(75);
-      check(stunder.hp === stunder.profile.hp && Math.abs(player.z - 6.5) < 0.1, 'F ignores enemies far away');
-      hero(); place(stunder, 6.5, 7.4); stunder.hp = stunder.profile.hp;
-      const serial = player.sword.serial;
-      key('keydown', 'KeyF'); tick(150);
-      check(player.sword.serial - serial >= 3 && stunder.hp <= 30, 'Holding F keeps attacking: ' + (player.sword.serial - serial));
-      key('keyup', 'KeyF'); tick(90);
-      const after = player.sword.serial; tick(60);
-      check(player.sword.serial === after, 'Releasing F stops attacking');
-      return ['Space jumps without attacking', 'F soft-targets beside / walks up a few cells / ignores far enemies, without the cursor',
-        'holding F chains swings, releasing stops'];
+      const spider = spiders[0], stunder = stunders[0], ramp = Math.round(RUN_RAMP * 60);
+
+      key('keydown', 'KeyW'); tick(ramp - 3);
+      check(speed() > WALK_SPEED && speed() < RUN_SPEED, 'Speed ramps up through walking pace: ' + speed());
+      tick(6);
+      check(near(speed(), RUN_SPEED), 'Then runs by default: ' + speed());
+      key('keydown', 'ControlLeft', { ctrlKey: true }); tick(20);
+      check(near(speed(), WALK_SPEED), 'Holding Ctrl walks: ' + speed());
+      key('keyup', 'ControlLeft'); tick(20);
+      check(near(speed(), RUN_SPEED), 'Releasing Ctrl runs again');
+      key('keyup', 'KeyW'); tick(20);
+      check(speed() === 0, 'Releasing the key stops');
+      hero(); key('keydown', 'ControlRight', { ctrlKey: true });
+      const ctrlW = key('keydown', 'KeyW', { ctrlKey: true }); tick(30);
+      check(ctrlW.defaultPrevented && near(speed(), WALK_SPEED), 'Ctrl first, then W walks');
+      key('keyup', 'KeyW'); key('keyup', 'ControlRight');
+      check(!key('keydown', 'KeyL', { ctrlKey: true }).defaultPrevented, 'Other Ctrl shortcuts are left to the browser');
+
+      hero(); place(spider, 6.5, 6.5);
+      let serial = player.sword.serial;
+      press('Space');
+      check(tick(120) > .5 && spider.hp === 30 && player.sword.serial === serial, 'Space jumps without attacking');
+      place(spider, 1.5, 1.5);
+
+      hero(); place(stunder, 6.5, 9); serial = player.sword.serial;
+      key('keydown', 'ShiftLeft'); tick(60);
+      check(player.sword.serial === serial && stunder.hp === stunder.profile.hp && near(player.z, 6.5) && near(player.x, 6.5),
+        'Shift does nothing without an enemy in reach (no swing at the air, no walking up)');
+      place(stunder, 6.5, 7.4); tick(20);   // one swing connects by 0.27 s, the next chains at 0.42 s
+      check(stunder.hp === 90, 'Held Shift strikes once an enemy comes within reach: ' + stunder.hp);
+      tick(130);
+      check(player.sword.serial - serial >= 3 && stunder.hp <= 30, 'Holding Shift keeps attacking: ' + (player.sword.serial - serial));
+      key('keyup', 'ShiftLeft'); tick(60);
+      serial = player.sword.serial; tick(60);
+      check(player.sword.serial === serial, 'Releasing Shift stops attacking');
+
+      hero(); place(stunder, 7.35, 6.5); stunder.hp = stunder.profile.hp;   // beside the player, who faces +z
+      press('KeyF'); tick(60);
+      check(stunder.hp === stunder.profile.hp, 'F no longer attacks');
+      press('ShiftRight'); tick(75);
+      check(stunder.hp === 90, 'A Shift tap turns to and hits the enemy beside the player');
+      return ['always runs after a ' + RUN_RAMP + ' s ramp / Ctrl walks, also Ctrl+W / other Ctrl shortcuts untouched',
+        'Space jumps without attacking', 'Shift: nothing out of reach, strikes when in reach, holds chain, release stops',
+        'F unbound / Shift tap turns to a side enemy'];
     } finally {
-      key('keyup', 'KeyF'); pointer.inside = inside;
+      for (const code of ['KeyW', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight']) key('keyup', code);
+      pointer.inside = inside;
       state.map = originalMap; state.run = savedRun;
       Object.assign(player, saved); cancelSwing(player, true);
       resetEnemies(); tickBurning(1);
