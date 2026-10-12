@@ -23,11 +23,13 @@
   Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
   head-down ram. The enemy under the cursor is highlighted and shows its health. Player/enemy levels and alternative weapons scale these numbers;
   see [progression.md](progression.md). Inventory (`I`) pauses simulation and input.
-- Every cube/level has a separate seeded draw per species: 4–14 spiders, 0–2
-  Stunders, 0–3 snakes, 0–2 Octonauts and 0–2 each of Fire-faces, Triangles and
-  Fire-cats, at every depth for now (to be rebalanced).
+- Each depth has its own roster (`src/core/spawns.js`, see [depths.md](depths.md)):
+  snakes and a rare Stunder near the surface, then spiders, then the stronger species
+  further down. Each cube rolls which species it holds, how many, and which one leads.
+  Melee species spawn in packs that grow with depth; ranged ones stay at a few per cube.
   Spawn sites must be dry, clear for the species' height, linked to walkable floors,
-  at least four cells from portals and spaced apart. If no safe site exists, spawn fewer.
+  at least four cells from portals and spaced apart (a pack gathers closer around its
+  first member). If no safe site exists, spawn fewer.
 - All species share navigation / AI / melee (`core/enemies.js` holds the tuning).
   Stunder walks at 0.45 cells/s, pursues at 1.05 cells/s using its fast wiggling
   walk, commits its heading before the ram, and contacts at animation frame 16.

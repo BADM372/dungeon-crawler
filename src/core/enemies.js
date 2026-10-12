@@ -13,7 +13,7 @@ export const SPIDER = Object.freeze({
   reach: 0.85, hitReach: 1.15, hitAt: 0.42, trackUntil: 0.42, attackTime: 1.07, cooldown: 1.2,
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a spider!', ichor: Object.freeze(['#a6d84e', '#5f8f22']), pitch: 1.1,
   hitStun: 0.18, deathTime: 2, corpseTime: 3.5,
-  seedSalt: 0x5b1d3a, minCount: 4, maxCount: 14, spacing: 3,
+  seedSalt: 0x5b1d3a, spacing: 3,
 });
 export const STUNDER = Object.freeze({
   type: 'stunder', label: 'Stunder', hp: 120, damage: 30, knock: 7,
@@ -23,7 +23,7 @@ export const STUNDER = Object.freeze({
   reach: 1.15, hitReach: 1.55, hitAt: 16 / 30, trackUntil: 0.3, attackTime: 1.6, cooldown: 1.6,
   arc: 0.5, knockDown: true, hop: 4, reason: 'Rammed by a Stunder!', ichor: Object.freeze(['#d0503a', '#7a2418']), pitch: 0.8,
   hitStun: 0.25, deathTime: 2.4, corpseTime: 4,
-  seedSalt: 0x57a4de2, minCount: 0, maxCount: 2, spacing: 5,
+  seedSalt: 0x57a4de2, spacing: 5,
 });
 // Slithers in with its head raised and lunges forward and down to bite (clip frame 12).
 export const SNAKE = Object.freeze({
@@ -34,7 +34,7 @@ export const SNAKE = Object.freeze({
   reach: 0.95, hitReach: 1.25, hitAt: 12 / 30, trackUntil: 0.26, attackTime: 1, cooldown: 1.3,
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a snake!', ichor: Object.freeze(['#b4e67e', '#4f8f2a']), pitch: 1.25,
   hitStun: 0.18, deathTime: 2, corpseTime: 3.5,
-  seedSalt: 0x5a4e7c1, minCount: 0, maxCount: 3, spacing: 3,
+  seedSalt: 0x5a4e7c1, spacing: 3,
 });
 // Slaps with both arms (clip frame 13), or spins on five legs and sweeps the sixth
 // all around it (clip frame 19): a harder kick that knocks the player over.
@@ -54,7 +54,7 @@ export const OCTONAUT = Object.freeze({
   reach: 1, ...OCTO_SLAP, cooldown: 1.4, ichor: Object.freeze(['#8fd0ff', '#2f6f9f']), pitch: 0.95,
   attacks: Object.freeze([OCTO_SLAP, OCTO_SPIN]),
   hitStun: 0.22, deathTime: 2.2, corpseTime: 4,
-  seedSalt: 0x0c7a9a5, minCount: 0, maxCount: 2, spacing: 4,
+  seedSalt: 0x0c7a9a5, spacing: 4,
 });
 // The fire species and the Triangle are much stronger than the rest. A ranged attack has a
 // `projectile`: it is thrown from `muzzle` (model space: x, up, forward; the clip's
@@ -72,7 +72,7 @@ export const FIREFACE = Object.freeze({
   projectile: Object.freeze({ kind: 'fireball', speed: 6.5, radius: 0.18, range: 7,
     muzzle: Object.freeze([-0.03, 0.444, 0.523]), burn: Object.freeze({ time: 0.5, damage: 6, ticks: 2 }) }),
   hitStun: 0.2, deathTime: 2, corpseTime: 3.5,
-  seedSalt: 0xf12efa, minCount: 0, maxCount: 2, spacing: 4,
+  seedSalt: 0xf12efa, spacing: 4,
 });
 // Shoots its inner triangles out like a punch (clip frame 20); a hit knocks the player over.
 export const TRIANGLE = Object.freeze({
@@ -85,7 +85,7 @@ export const TRIANGLE = Object.freeze({
   projectile: Object.freeze({ kind: 'punch', speed: 8, radius: 0.3, range: 6, spin: 14,
     muzzle: Object.freeze([-0.037, 0.699, 0.87]) }),
   hitStun: 0.22, deathTime: 2, corpseTime: 4,
-  seedSalt: 0x7a1a9e1, minCount: 0, maxCount: 2, spacing: 5,
+  seedSalt: 0x7a1a9e1, spacing: 5,
 });
 // Runs in fast, then pounces from up to `reach` away: between lunge.from and lunge.to of the
 // attack it is carried forward until it is lunge.stop short of the player (at most
@@ -99,7 +99,7 @@ export const FIRECAT = Object.freeze({
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a Fire-cat!', ichor: Object.freeze(['#ff8a2a', '#7e1a14']), pitch: 1,
   lunge: Object.freeze({ from: 0.3, to: 0.6, max: 1.9, stop: 0.55 }),
   hitStun: 0.2, deathTime: 2, corpseTime: 3.5,
-  seedSalt: 0xca7f12e, minCount: 0, maxCount: 2, spacing: 4,
+  seedSalt: 0xca7f12e, spacing: 4,
 });
 export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT]);
 

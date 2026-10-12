@@ -9,7 +9,7 @@ import { World } from '../src/world/world.js';
 import { step, faceKey } from '../src/world/coords.js';
 import { BUILDINGS, MERCHANTS, TOWN_LEVEL, enemyFreeAt, merchantCampKey, rotateTownPoint } from '../src/world/town.js';
 import { state } from './fixtures.js';
-import { SPIDER, ENEMY_PROFILES } from '../src/core/enemies.js';
+import { ENEMY_PROFILES } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
 import { blockedAt, insideSolid, ceilingAt } from '../src/physics/collide.js';
 import { canMove } from '../src/physics/canmove.js';
@@ -255,7 +255,7 @@ test('safe surface buffer includes diagonals, ends after one cube, and does not 
     for (const p of ENEMY_PROFILES) assert.deepEqual(enemySpots(road, p), []);
     const outside = state.map = w.cube(step(roadKey, town.exit)).map;
     assert.equal(outside.enemyFree, false);
-    hostilePopulation += enemySpots(outside, SPIDER).length;
+    for (const p of ENEMY_PROFILES) hostilePopulation += enemySpots(outside, p).length;
     // Retrieving cached cubes retains policy, it isn't an initial-spawn exception.
     assert.equal(w.cube(roadKey).map.enemyFree, true);
     assert.equal(w.cube(w.start).map.enemyFree, true);

@@ -16,6 +16,7 @@ import { triangles } from '../../src/game/triangles.js';
 import { fireCats } from '../../src/game/firecats.js';
 import { projectiles, clearProjectiles } from '../../src/game/projectiles.js';
 import { SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy } from '../../src/core/enemies.js';
+import { D } from '../../src/core/spawns.js';
 import { updatePlayer } from '../../src/game/update.js';
 import { climb } from '../../src/physics/climb.js';
 import { W, resetMode } from '../../src/render/blendtree.js';
@@ -56,7 +57,8 @@ function arena() {
     return x >= 0 && z >= 0 && x < N && z < N ? floors[z * N + x] : null;
   });
   return { seed: 123, K: 1, B: [0], floors, cols: floors.map(f => [f]), pieces: floors.map(() => []),
-    blockers: floors.map(() => []), fences: new Map(), portals: [], ladders: [], falls: [] };
+    blockers: floors.map(() => []), fences: new Map(), portals: [], ladders: [], falls: [],
+    spawns: D(2, ['spider', 1, 4, 4, 2], ['stunder', 1, 2, 2]) };
 }
 const at = (x, z) => state.map.floors[Math.floor(z) * N + Math.floor(x)];
 function place(e, x, z) {

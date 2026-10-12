@@ -3,17 +3,19 @@ import assert from 'node:assert/strict';
 import { N, LH } from '../src/core/constants.js';
 import { edgeKey } from '../src/core/util.js';
 import { flatMap, state } from './fixtures.js';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, ENEMY_PROFILES, makeEnemy } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, ENEMY_PROFILES, makeEnemy } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
+import { DEPTH_SPAWNS, population } from '../src/core/spawns.js';
 import { walkable, neighbors, findPath, stepEnemy, clearLine } from '../src/physics/enemynav.js';
 import { World } from '../src/world/world.js';
 
 const signature = spots => spots.map(s => [s.f.id, s.x, s.y, s.z, s.yaw]);
+const at = (seed, depth) => Object.assign(flatMap(seed), { depth });
 
 test('seeded Stunder population is repeatable, spans 0-2 and stays away from entrances', () => {
   const counts = new Set();
   for (let seed = 0; seed < 150; seed++) {
-    const map = flatMap(seed), a = enemySpots(map, STUNDER);
+    const map = at(seed, 3), a = enemySpots(map, STUNDER);
     counts.add(a.length);
     assert.ok(a.length <= 2);
     assert.deepEqual(signature(a), signature(enemySpots(map, STUNDER)));
@@ -29,7 +31,8 @@ test('seeded Stunder population is repeatable, spans 0-2 and stays away from ent
   assert.deepEqual([...counts].sort(), [0, 1, 2]);
 });
 test('no dry safe floor means no Stunders, never an unsafe fallback spawn', () => {
-  const map = flatMap(3);
+  const map = at(3, 4);
+  assert.ok(population(map).size);
   for (const f of map.floors) f.fluid = true;
   assert.deepEqual(enemySpots(map, STUNDER), []);
 });
@@ -71,40 +74,59 @@ test('real generated levels keep the population cap and species clearance', () =
     for (const e of spots) assert.ok(walkable(e.f, STUNDER.height));
   }
 });
-const NEWER = [SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT];
-test('snakes, Octonauts, Fire-faces, Triangles and Fire-cats spawn on every depth, with their own seeded streams and caps', () => {
-  for (const profile of NEWER) {
-    const counts = new Set();
-    for (let seed = 0; seed < 120; seed++) {
-      const map = flatMap(seed), spots = enemySpots(map, profile);
-      counts.add(spots.length);
-      assert.ok(spots.length <= profile.maxCount);
-      assert.deepEqual(signature(spots), signature(enemySpots(map, profile)));
-      for (const e of spots) assert.ok(walkable(e.f, profile.height) && Math.hypot(e.f.x, e.f.z) >= 4);
+test('each depth draws its species from its own roster, within the counts and the mix', () => {
+  const index = new Map(ENEMY_PROFILES.map(p => [p.type, p]));
+  for (const [depth, row] of DEPTH_SPAWNS.entries()) {
+    const seen = new Set();
+    for (const e of row.roster) assert.ok(index.has(e.type) && e.lo >= 1 && e.hi >= e.lo && e.pack >= 1 && e.chance > 0, `${depth} ${e.type}`);
+    for (let seed = 0; seed < 200; seed++) {
+      const map = at(seed, depth), pop = population(map);
+      assert.deepEqual([...pop], [...population(map)]);
+      assert.ok(pop.size >= 1 && pop.size <= row.mix, `depth ${depth}`);
+      assert.equal([...pop.values()].filter(p => p.lead).length, 1);
+      for (const [type, { count }] of pop) {
+        const e = row.roster.find(e => e.type === type);
+        assert.ok(e && count >= e.lo && count <= e.hi, `${type} at depth ${depth}: ${count}`);
+        seen.add(type);
+      }
+      for (const p of ENEMY_PROFILES) {
+        const spots = enemySpots(map, p);
+        assert.ok(spots.length <= (pop.get(p.type)?.count ?? 0));
+        for (const e of spots) assert.ok(walkable(e.f, p.height) && Math.hypot(e.f.x, e.f.z) >= 4);
+      }
     }
-    assert.equal(counts.size, profile.maxCount + 1, profile.type);
+    assert.deepEqual([...seen].sort(), row.roster.map(e => e.type).sort(), `depth ${depth}`);
   }
   assert.equal(new Set(ENEMY_PROFILES.map(p => p.seedSalt)).size, ENEMY_PROFILES.length);
   assert.equal(new Set(ENEMY_PROFILES.map(p => p.type)).size, ENEMY_PROFILES.length);
-  for (const depth of [0, 3, 7, 12, 20]) {
-    const seen = Object.fromEntries(NEWER.map(p => [p.type, 0]));
-    for (let seed = 0; seed < 30; seed++) {
-      const map = flatMap(seed); map.depth = depth;
-      for (const p of NEWER) seen[p.type] += enemySpots(map, p).length;
-    }
-    for (const p of NEWER) assert.ok(seen[p.type] > 0, p.type + ' at depth ' + depth);
-  }
 });
-test('real levels hold at least twice as many spiders as the old 1-7 draw', () => {
-  let total = 0, cubes = 0;
-  for (const seed of [1, 2, 3, 8, 17, 42]) {
-    const world = new World(seed), [x, y, z] = world.start.split(',').map(Number);
-    for (let dy = -1; dy >= -4; dy--) {
-      const map = state.map = world.cube(`${x},${y + dy},${z}`).map;
-      if (map.enemyFree) continue;
-      total += enemySpots(map, SPIDER).length; cubes++;
+test('the surface rosters: snakes and a rare Stunder first, then a few spiders, then a lot', () => {
+  const share = (depth, type) => { let n = 0; for (let s = 0; s < 400; s++) n += population(at(s, depth)).has(type); return n / 400; };
+  const mean = (depth, type) => { let n = 0; for (let s = 0; s < 400; s++) n += population(at(s, depth)).get(type)?.count ?? 0; return n / 400; };
+  assert.deepEqual(DEPTH_SPAWNS[1].roster.map(e => e.type), ['snake', 'stunder']);
+  assert.equal(share(1, 'snake'), 1);
+  assert.ok(share(1, 'stunder') > 0.1 && share(1, 'stunder') < 0.35);
+  assert.ok(mean(2, 'spider') > 0.5 && mean(2, 'spider') < 3);
+  assert.equal(share(3, 'spider'), 1);
+  assert.ok(mean(3, 'spider') > 3 * mean(2, 'spider'));
+  assert.ok(share(3, 'stunder') > share(1, 'stunder'));
+  assert.ok(share(3, 'triangle') > 0.05 && share(3, 'triangle') < 0.25);
+  for (const type of ['snake', 'spider', 'stunder']) assert.ok(share(4, type) > 0.4, type);
+});
+test('melee swarms grow with depth and spawn in packs, ranged species stay few', () => {
+  const most = type => DEPTH_SPAWNS.map(r => r.roster.find(e => e.type === type)?.hi ?? 0);
+  for (const type of ['fireface', 'triangle']) assert.ok(Math.max(...most(type)) <= 4, type);
+  const spiders = most('spider');
+  assert.ok(spiders[12] > spiders[3] && spiders[3] > spiders[2] && spiders[20] > spiders[3]);
+  let packed = 0;
+  for (let seed = 0; seed < 20; seed++) {
+    const map = at(seed, 12), spots = enemySpots(map, SPIDER);
+    assert.equal(spots.length, population(map).get('spider').count);
+    for (const a of spots) for (const b of spots) if (a !== b) {
+      const d = Math.hypot(a.x - b.x, a.z - b.z);
+      assert.ok(d >= 1.2 - 1e-9);
+      if (d < SPIDER.spacing) packed++;
     }
   }
-  assert.ok(cubes >= 20);
-  assert.ok(total / cubes >= 2 * 4, `average ${total / cubes}`);   // the old draw averaged ~3.9 here
+  assert.ok(packed > 0);
 });

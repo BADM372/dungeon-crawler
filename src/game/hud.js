@@ -3,6 +3,7 @@
 import { themeAt } from '../themes/depth.js';
 import { isFaceOpen } from '../core/boundaries.js';
 import { state } from './state.js';
+import { population } from '../core/spawns.js';
 
 const $ = id => document.getElementById(id);
 const shown = {};
@@ -15,7 +16,9 @@ if (state.dev) {
 }
 
 export function showStats(map, cube, seed, visits) {
-  put('dev-depth', `${map.depth} · ${map.town ? 'Town' : map.merchantCamp ? 'Merchant camp' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : ''}`);
+  // the cube's drawn population (before placement); * marks the lead species
+  const pop = [...population(map)].map(([type, p]) => `${type} ${p.count}${p.lead ? '*' : ''}`).join(', ');
+  put('dev-depth', `${map.depth} · ${map.town ? 'Town' : map.merchantCamp ? 'Merchant camp' : themeAt(map.depth).name}${map.enemyFree ? ' · safe' : pop ? ' · ' + pop : ''}`);
   put('dev-seed', String(seed));
   const s = map.stats;
   const portals = map.portals.filter(p => p.kind !== 'spawn' && !isFaceOpen(state.openedFaces, cube, p.dir)).map(p => ['E', 'W', 'S', 'N', 'down', 'up'][p.dir] + (p.layer ? '@L' + p.layer : ''));
