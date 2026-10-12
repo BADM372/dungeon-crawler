@@ -26,7 +26,7 @@ export const state = {
   run: createRun(),
   statusMsg: '', statusUntil: 0,
   // the world of cubes and where we are in it; lookDepth: the depth the lighting shows
-  cubes: null, cubeKey: '', arrival: null, portalLock: 0, showNeighbors: true, lookDepth: 0,
+  cubes: null, cubeKey: '', arrival: null, portalLock: 0, portalCharge: null, showNeighbors: true, lookDepth: 0,
   openedFaces: new Set(), boundaryLock: -1,   // shared side faces unlocked this world
   dev: params.get('dev') === '1',   // debug tools (?dev=1)
   baseSeed: params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0,

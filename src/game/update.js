@@ -22,6 +22,9 @@ function lunge(s) {
 
 export function updatePlayer(dt) {
   if (state.inventoryOpen || state.transitioning) return;
+  // a ring's charge only carries over while checkPortals sees us standing in it
+  const charge = state.portalCharge;
+  state.portalCharge = null;
   if (player.ragdoll) { cancelSword(); clearOrder(); stepRagdoll(dt); return; }
   // keys win over mouse orders
   const keys = inputDir();
@@ -52,5 +55,5 @@ export function updatePlayer(dt) {
   }
   if (gr.landed > SIT_IMPACT) player.stun = 1.5;
 
-  checkPortals(dx, dz);
+  checkPortals(dx, dz, dt, charge);
 }

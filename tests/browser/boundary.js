@@ -208,7 +208,9 @@ export async function runBoundaryChecks() {
       const ring = state.map.portals.find(p => p.kind === 'up');
       check(state.world.portalFx.some(fx => fx.obj.userData.portal === ring), 'Up ring must remain after down travel');
       spawnAt(ring.x + 0.5, ring.y, ring.z + 0.5); state.portalLock = 0;
-      check(checkPortals(), 'Up ring must still trigger');
+      check(!checkPortals(0, 0, 1) && state.portalCharge?.t === 1, 'Up ring must charge before it takes you');
+      check(!checkPortals(0, 0, 0.4), 'Up ring must not trigger before the charge is full');
+      check(checkPortals(0, 0, 0.1), 'Up ring must still trigger');
       await waitForSlide(); finishSlide();
       check(state.world.portalFx.some(fx => fx.obj.userData.portal.kind === 'down'), 'Well must remain after return');
       check(startFall(), 'Falling into the cube below must remain possible');

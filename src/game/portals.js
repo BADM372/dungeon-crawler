@@ -1,8 +1,11 @@
 // Stepping into a portal: through the face for side portals, onto the centre of a well or ring.
+// Rings up to the depth above have to charge first: stand in the circle for UP_CHARGE seconds.
 import { N } from '../core/constants.js';
 import { isFaceOpen, approachingFace, faceDistance } from '../core/boundaries.js';
 import { player, state } from './state.js';
 import { startTravel } from './travel.js';
+
+export const UP_CHARGE = 1.5;
 
 function inside(q) {
   const p = player;
@@ -14,7 +17,10 @@ function inside(q) {
   return Math.abs(along) < 1.5 && out > -0.4;
 }
 
-export function checkPortals(dx = 0, dz = 0) {
+// dt: time spent this step (charges rings); charge: the ring charge carried over from the last
+// step. state.portalCharge only survives while we keep standing in that ring.
+export function checkPortals(dx = 0, dz = 0, dt = 0, charge = state.portalCharge) {
+  state.portalCharge = null;
   if (state.boundaryLock >= 0 && faceDistance(player, state.boundaryLock) > player.r + 0.25) state.boundaryLock = -1;
   // open side faces take you across anywhere along them, whether they ever had a gate or not
   for (let d = 0; d < 4; d++) {
@@ -26,7 +32,13 @@ export function checkPortals(dx = 0, dz = 0) {
     if (q.kind === 'spawn' || q.kind === 'side' && isFaceOpen(state.openedFaces, state.cubeKey, q.dir)) continue;
     const at = inside(q);
     if (state.portalLock === q.id) { if (!at) state.portalLock = 0; continue; }
-    if (at) { startTravel(q); return true; }
+    if (!at) continue;
+    if (q.kind === 'up') {
+      const c = charge?.key === state.cubeKey && charge.id === q.id ? charge : { key: state.cubeKey, id: q.id, t: 0 };
+      c.t += dt;
+      if (c.t < UP_CHARGE) { state.portalCharge = c; continue; }
+    }
+    startTravel(q); return true;
   }
   return false;
 }

@@ -20,6 +20,7 @@ import { tickFluidDeath } from './render/fluiddeath.js';
 import { applyLook } from './render/look.js';
 import { tickSky } from './render/sky.js';
 import { updatePlayerBar } from './render/playerbar.js';
+import { updatePortalBar } from './render/portalbar.js';
 import { updateLoot } from './game/loot.js';
 import { tickFloatText } from './render/floattext.js';
 import { tickParticles } from './render/particles.js';
@@ -71,6 +72,7 @@ function frame() {
   updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
   cullNeighbors(player.x, player.z, !state.transitioning, state.showNeighbors, player.visY + (player.swimming ? 0.6 : 0.3));
   updatePlayerBar();
+  updatePortalBar();
   tickSky(performance.now() / 1000);   // real time: the stars shimmer on while paused
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
