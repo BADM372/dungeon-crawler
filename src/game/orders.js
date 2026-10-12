@@ -14,6 +14,8 @@ import { queueAttack } from './sword.js';
 export const order = { kind: null, x: 0, z: 0, floor: null, enemy: null, path: null, i: 1, repath: 0, stuck: 0, lx: 0, lz: 0, hold: 0 };
 
 export function clearOrder() { order.kind = null; order.enemy = null; order.path = null; }
+// Teleports/travel invalidate cube-local targets; a held click must not recreate them.
+export function clearMouseInput() { clearOrder(); pointer.down = false; pointer.mode = null; }
 
 const floorOf = s => s && !s.kind ? s : null;
 

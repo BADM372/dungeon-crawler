@@ -8,6 +8,7 @@ import { WorldClient } from '../world/client.js';
 import { step } from '../world/coords.js';
 import { buildWorld, disposeWorld } from '../render/world.js';
 import { groundAt } from '../physics/collide.js';
+import { respawnPoint } from '../physics/respawn.js';
 import { player, state, setStatus } from './state.js';
 import { showStats, flash, fadeOut, fadeIn, whenReady } from './hud.js';
 import { resetCut } from './cut.js';
@@ -25,7 +26,7 @@ import { lootMark, forgetLoot } from './loot.js';
 export function spawnAt(x, y, z) {
   cancelSword(true);
   Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, fluidDeath: 0, stun: 0, climb: null, burning: null });
-  player.safe = { x, y, z };
+  player.safe = respawnPoint({ x, y, z });
   const gr = groundAt(x, z, y + 0.05, 0);
   player.support = gr.s;
   if (gr.s) player.layer = gr.s.kind ? gr.s.run.layer : gr.s.layer;
@@ -37,12 +38,13 @@ export function spawnAt(x, y, z) {
 export function arrivalPoint(p) {
   const [x, z] = p.kind === 'side' ? [p.x + 0.5 - DIRS[p.dir][0], p.z + 0.5 - DIRS[p.dir][1]]
     : p.kind === 'spawn' ? [p.x + 0.5, p.z + 0.5] : [p.x + 1.5, p.z + 0.5];
-  return { x, z, y: groundAt(x, z, p.y + 0.3, 0).h };
+  const y = groundAt(x, z, p.y + 0.3, 0).h;
+  return respawnPoint({ x, z, y: Number.isFinite(y) ? y : p.y });
 }
 
 // back to where you came into this cube
 export function spawnEntry() {
-  const a = state.arrival;
+  const a = state.arrival = respawnPoint(state.arrival);
   spawnAt(a.x, a.y, a.z);
   player.hp = player.maxHp;
 }
@@ -78,7 +80,8 @@ export function die() {
 // started in)
 export function recover() {
   if (state.fallFrom) { returnFromFall(false); return; }
-  spawnAt(player.safe.x, player.safe.y, player.safe.z);
+  const a = respawnPoint(player.safe);
+  spawnAt(a.x, a.y, a.z);
 }
 
 // For now you only enter a cube through a portal: a fall through the void ends back in the
@@ -93,7 +96,8 @@ function returnFromFall(dead) {
     if (state.cubes !== cubes) return;
     if (dead) restoreVisit(f.visit);
     enterCube(c, null, f);
-    if (dead) spawnEntry(); else spawnAt(f.safe.x, f.safe.y, f.safe.z);
+    if (dead) spawnEntry();
+    else { const a = respawnPoint(f.safe); spawnAt(a.x, a.y, a.z); }
     state.transitioning = false;
   }, () => {
     if (state.cubes !== cubes) return;
@@ -132,6 +136,7 @@ export function enterCube(c, from = null, back = null) {
   }
   resetEnemies();
   const hp = player.hp;
+  state.arrival = respawnPoint(state.arrival);
   spawnAt(state.arrival.x, state.arrival.y, state.arrival.z);
   player.hp = hp;
   settleIn();

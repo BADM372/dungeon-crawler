@@ -404,12 +404,20 @@ Walking into a portal does not cut to black. The next cube is built beside the c
 character walks through the gate, falls down the well or rises up the ring.
 
 Wells down and rings up have to charge first: the player must stay in the circle for
-`PORTAL_CHARGE` (1.5 s, `game/portals.js`) while a white bar fills over the portal
-(`render/portalbar.js`). Stepping out resets the charge.
+0.75 s going down or 1.5 s going up (`portalChargeDuration`, `game/portals.js`) while a
+white bar fills over the portal (`render/portalbar.js`). Stepping out resets the charge.
 
 The new cube is active from the first frame. The player moves in its coordinates plus the
 slide offset, so when the slide ends the offset is zero and nothing jumps. The section cut
 is off during the slide.
+
+Respawn entries are separate from live crossing positions: airborne crossings still
+preserve height and motion, but their saved entry is snapped to dry, supported ground
+(`physics/respawn.js`). Death, recovery and returns from falls revalidate the point,
+including body clearance and support around the feet. Unsafe entries move to the
+nearest valid floor or structure rather than repeating a fall through the void.
+Run `await (await import('./tests/browser/respawn.js')).runRespawnChecks()` to check
+void/non-finite entries and both death and recovery after a fall.
 
 ### Opened side connections
 

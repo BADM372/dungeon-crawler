@@ -1,11 +1,11 @@
-// The charge of the vertical portal the player stands in (PORTAL_CHARGE seconds), a
+// The charge of the vertical portal the player stands in (0.75s down, 1.5s up), a
 // white bar floating over the portal like the health bars. Lives in the scene, not the cube, so
 // cube fading never touches its shared materials.
 import * as THREE from 'three';
 import { scene, camera } from './scene.js';
 import { makeBar } from './bars.js';
 import { state } from '../game/state.js';
-import { PORTAL_CHARGE } from '../game/portals.js';
+import { portalChargeDuration } from '../game/portals.js';
 
 const bar = makeBar({ w: 0.8, h: 0.08, color: 0xffffff, onTop: true });
 const pos = new THREE.Vector3();
@@ -21,5 +21,5 @@ export function updatePortalBar() {
   fx.obj.getWorldPosition(pos);
   bar.group.position.set(pos.x, pos.y + 1.95, pos.z);   // above the well or hovering ring
   bar.group.quaternion.copy(camera.quaternion);
-  bar.set(c.t / PORTAL_CHARGE);
+  bar.set(c.t / portalChargeDuration(fx.obj.userData.portal.kind));
 }

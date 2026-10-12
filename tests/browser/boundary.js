@@ -6,7 +6,7 @@ import { N, DIRS, WATER, FALL_DAMAGE } from '../../src/core/constants.js';
 import { faceKey, step, OPP6 } from '../../src/world/coords.js';
 import { isFaceOpen, openedSides, boundaryArrival } from '../../src/core/boundaries.js';
 import { player, state } from '../../src/game/state.js';
-import { newWorld, enterCube, spawnAt } from '../../src/game/flow.js';
+import { newWorld, enterCube, spawnAt, spawnEntry } from '../../src/game/flow.js';
 import { updatePlayer } from '../../src/game/update.js';
 import { checkPortals } from '../../src/game/portals.js';
 import { startTravel, travelling, updateTravel } from '../../src/game/travel.js';
@@ -189,6 +189,11 @@ export async function runBoundaryChecks() {
         await waitForSlide(); finishSlide();
         check(close(player.y, 12) && !player.grounded && close(player.vy, 2) && close(player.vx, DIRS[dir][0] * 3) && close(player.vz, DIRS[dir][1] * 3), 'Airborne position/velocity must survive the slide');
         check(!checkPortals(), 'Airborne arrival must not bounce back');
+        spawnEntry();
+        const respawnGround = groundAt(player.x, player.z, player.y, 0);
+        check(respawnGround.s && !respawnGround.s.fluid && close(respawnGround.h, player.y), 'Airborne crossing must record a solid, dry respawn entry');
+        for (let i = 0; i < 60; i++) updatePlayer(1 / 60);
+        check(!state.transitioning && !state.fallFrom && player.grounded, 'Respawning after an airborne crossing must not fall through another cube');
 
         // A destination solid blocks crossing; do not alter routes or relocate the player.
         atFace(opposite, elsewhere, 12);
@@ -223,14 +228,15 @@ export async function runBoundaryChecks() {
       enterCube(wellCube, wellCube.map.portals.find(p => p.kind === 'side').dir);
       const opened = state.openedFaces.size;   // entering may open side faces towards discovered cubes
       const well = state.map.portals.find(p => p.kind === 'down');
+      state.run.unlockedGates.add(wellCube.key);   // guardian locking has its own integration checks
       spawnAt(well.x + 0.5, well.y, well.z + 0.5); state.portalLock = 0;
-      check(!checkPortals(0, 0, 1) && state.portalCharge?.t === 1, 'Down well must charge before it takes you');
+      check(!checkPortals(0, 0, 0.5) && state.portalCharge?.t === 0.5, 'Down well must charge before it takes you');
       spawnAt(well.x + 1.5, well.y, well.z + 0.5);
       check(!checkPortals(0, 0, 0.4) && !state.portalCharge, 'Leaving the well must reset its charge');
       spawnAt(well.x + 0.5, well.y, well.z + 0.5);
-      check(!checkPortals(0, 0, 1) && state.portalCharge?.t === 1, 'Returning to the well must start a fresh charge');
-      check(!checkPortals(0, 0, 0.4), 'Down well must not trigger before the charge is full');
-      check(checkPortals(0, 0, 0.1), 'Down well must trigger when fully charged');
+      check(!checkPortals(0, 0, 0.5) && state.portalCharge?.t === 0.5, 'Returning to the well must start a fresh charge');
+      check(!checkPortals(0, 0, 0.2), 'Down well must not trigger before the charge is full');
+      check(checkPortals(0, 0, 0.05), 'Down well must trigger after 0.75 seconds');
       await waitForSlide(); finishSlide();
       const ring = state.map.portals.find(p => p.kind === 'up');
       check(state.world.portalFx.some(fx => fx.obj.userData.portal === ring), 'Up ring must remain after down travel');

@@ -10,6 +10,7 @@ import { step, D6, OPP6, faceKey } from '../world/coords.js';
 import { buildWorld, setWorldOpenFaces } from '../render/world.js';
 import { setGlassFaces } from '../render/glass.js';
 import { blockedAt, groundAt } from '../physics/collide.js';
+import { respawnPoint } from '../physics/respawn.js';
 import { detachNeighbors, buildNeighbors } from '../render/neighbors.js';
 import { setFade } from '../render/fade.js';
 import { setCut } from '../render/section.js';
@@ -17,6 +18,7 @@ import { player, state, setStatus } from './state.js';
 import { whenReady } from './hud.js';
 import { resetEnemies, detachEnemies, drawEnemies, allEnemies } from './enemies.js';
 import { cancelSword } from './sword.js';
+import { clearMouseInput } from './orders.js';
 import { arrivalPoint, portalSeen, spawnAt, settleIn, visitedNeighbors, discover, beginVisit } from './flow.js';
 import { slideVisuals, endVisuals } from './travelfx.js';
 import { fallPoint } from './fall.js';
@@ -32,6 +34,7 @@ export const travelling = () => !!tr;
 export function startTravel(p) {
   if (state.transitioning || state.inventoryOpen) return;
   if (portalLocked(state.map, state.run, p)) { setStatus('Defeat the guardian to unlock this descent'); return; }
+  clearMouseInput();
   state.transitioning = true;
   cancelSword();
   const source = state.cubeKey, cubes = state.cubes, k = step(source, p.dir);
@@ -76,6 +79,8 @@ function slide(p, c) {
   state.boundaryLock = p.kind === 'side' ? OPP6[p.dir] : -1;
   tr.A0 = A;
   state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k), gateLocked(m, state.run));
+  // Live crossings retain their height/motion; the death entry must be supported and dry.
+  state.arrival = respawnPoint(state.arrival);
   state.world.group.position.copy(D);
   setFade(state.world.group, 0);
   tr.ghosts = buildNeighbors(visitedNeighbors(k), tr.old.ghosts);   // common cubes stay visible

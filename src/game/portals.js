@@ -1,5 +1,5 @@
 // Stepping into a portal: through the face for side portals, onto the centre of a well or ring.
-// Wells down and rings up have to charge first: stand in the circle for PORTAL_CHARGE seconds.
+// Vertical portals charge while standing in the circle: 0.75s down, 1.5s up.
 import { N } from '../core/constants.js';
 import { isFaceOpen, approachingFace, faceDistance } from '../core/boundaries.js';
 import { player, state, setStatus } from './state.js';
@@ -7,6 +7,7 @@ import { portalLocked } from '../core/guardians.js';
 import { startTravel } from './travel.js';
 
 export const PORTAL_CHARGE = 1.5;
+export const portalChargeDuration = kind => kind === 'down' ? PORTAL_CHARGE / 2 : PORTAL_CHARGE;
 
 function inside(q) {
   const p = player;
@@ -38,7 +39,7 @@ export function checkPortals(dx = 0, dz = 0, dt = 0, charge = state.portalCharge
     if (q.kind === 'up' || q.kind === 'down') {
       const c = charge?.key === state.cubeKey && charge.id === q.id ? charge : { key: state.cubeKey, id: q.id, t: 0 };
       c.t += dt;
-      if (c.t < PORTAL_CHARGE) { state.portalCharge = c; continue; }
+      if (c.t < portalChargeDuration(q.kind)) { state.portalCharge = c; continue; }
     }
     startTravel(q); return true;
   }
