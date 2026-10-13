@@ -182,8 +182,13 @@ test('drops: seeded per enemy and world, likelier from tougher kinds, guardians 
     assert.ok(Math.abs(weapons / n - dropChance(kind.xp)) < 0.01, `${kind.type}: ${weapons / n}`);
     assert.ok(Math.abs(potions / n - potionChance(kind.xp)) < 0.01, `${kind.type}: ${potions / n}`);
   }
-  for (const d of many(400, i => potionDrops({ id: `p:${i}`, level: 2, kind: TRIANGLE }, 3)).flat())
-    assert.deepEqual(d, { itemId: 'item_potion_health', count: 1 });
+  // which potion: one of those that drop at the enemy's level, health potions the likeliest
+  const kinds = new Map();
+  for (const d of many(3000, i => potionDrops({ id: `p:${i}`, level: 2, kind: TRIANGLE }, 3)).flat()) {
+    assert.equal(d.count, 1); assert.ok(ITEMS[d.itemId].level <= 2, d.itemId);
+    kinds.set(d.itemId, (kinds.get(d.itemId) ?? 0) + 1);
+  }
+  assert.ok(kinds.size > 2 && [...kinds].every(([id, n]) => id === 'item_potion_health' || n < kinds.get('item_potion_health')));
   // the world seed matters: same ids in another world drop other things
   const ids = many(400, i => ({ id: `0,-2,0:snake:${i}`, level: 5 }));
   assert.notDeepEqual(ids.map(e => weaponDrops(e, 1)), ids.map(e => weaponDrops(e, 2)));
@@ -194,7 +199,9 @@ test('drops: seeded per enemy and world, likelier from tougher kinds, guardians 
       const g = { id: `${i},0,0:guardian`, level, guardian: true, guardianRole: role }, drops = weaponDrops(g, 4);
       assert.equal(drops.length, count);
       for (const d of drops) assert.ok(RARITY[d.gen.rarity].rank >= RARITY[least].rank, `${role} L${level}: ${d.gen.rarity}`);
-      assert.deepEqual(potionDrops(g, 4), [{ itemId: 'item_potion_health', count: potions }]);
+      const got = potionDrops(g, 4);
+      assert.equal(got.reduce((n, d) => n + d.count, 0), potions);
+      assert.ok(got.every(d => ITEMS[d.itemId].category === 'potion' && ITEMS[d.itemId].level <= level));
     }
   }
   // ancient only from guardians

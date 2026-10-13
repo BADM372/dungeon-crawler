@@ -105,7 +105,8 @@ export function animateCharacter(dt, time) {
     if (attack.f >= 1) attack.prev = null;
   }
   const shown = !p.swimming && !p.climb;
-  if (ch.sword) ch.sword.visible = shown;
+  // a thrown flask has left the hand until the throw is over (the next one is drawn then)
+  if (ch.sword) ch.sword.visible = shown && !(s.active && s.fired && s.stats?.kind === 'throw');
   ch.mixer.update(0);
   keepPose();
   stretchStride(blend.stretch, (W.walk + W.run) * rest);

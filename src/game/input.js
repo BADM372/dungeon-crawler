@@ -1,8 +1,10 @@
 // Keyboard, mouse and wheel. Modal input never enters the game queue.
 // The player always runs; holding Ctrl walks. Holding Shift auto-attacks enemies the weapon
-// can reach (and does nothing without one). Space jumps.
+// can reach (and does nothing without one, or with a flask in hand). Space jumps.
 // Mouse: click the floor to walk there, click an enemy to attack it (hold for more), click an
-// item on the floor to pick it up, click a treasure chest to open it. V: the floor panel (game/inventory.js); X: item labels.
+// item on the floor to pick it up, click a treasure chest to open it, click a villager who
+// trades to go and trade. With a flask in hand (game/throws.js) a click throws it at the cursor
+// instead, whatever is there. V: the floor panel (game/inventory.js); X: item labels.
 // 1-6: the quick bar (game/quickbar.js).
 import { stepZoom } from '../core/zoom.js';
 import { player, state, view, setStatus } from './state.js';
@@ -13,10 +15,11 @@ import { controls, clearInput } from './inputstate.js';
 import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
 import { requestCollect } from './loot.js';
 import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
-import { orderMove, orderAttack, orderPickup, orderChest } from './orders.js';
-import { hoveredPickup, hoveredChest, toggleLabels } from './lootlabels.js';
+import { orderMove, orderAttack, orderPickup, orderChest, clearOrder, orderTrade } from './orders.js';
+import { hoveredPickup, hoveredChest, hoveredVillager, toggleLabels } from './lootlabels.js';
 import { queueAttack } from './sword.js';
-import { softTarget, combatStats } from '../core/combat.js';
+import { softTarget, combatStats, readiedFlask } from '../core/combat.js';
+import { throwTarget } from './throws.js';
 import { lineOfFire } from './shots.js';
 import { clearLine } from '../physics/enemynav.js';
 import { allEnemies } from './enemies.js';
@@ -76,6 +79,7 @@ const AUTO_REACH = 0.15;
 const bladeSees = e => clearLine(player.x, player.y + 0.4, player.z, e.x,
   Math.max(e.y + 0.1, Math.min(player.y + 0.4, e.y + e.profile.bodyHeight - 0.05)), e.z);
 export function autoAttack() {
+  if (readiedFlask(player)) return null;   // flasks are only ever thrown with a click
   const hovered = hoveredEnemy(), [dx, dz] = inputDir(), stats = combatStats(player);
   const visible = stats?.ranged ? e => lineOfFire(player, e, stats) : bladeSees;
   const yaw = dx || dz ? Math.atan2(dx, dz) : player.yaw;
@@ -90,8 +94,16 @@ addEventListener('pointerdown', e => {
   if (e.button !== 0 || e.target.tagName !== 'CANVAS' || state.transitioning || state.inventoryOpen) return;
   e.preventDefault();
   pointer.down = true;
+  if (readiedFlask(player)) {
+    pointer.mode = null; clearOrder();
+    const target = throwTarget();
+    if (target) queueAttack(target.enemy ?? target);
+    return;
+  }
   const enemy = hoveredEnemy();
   if (enemy) { pointer.mode = 'attack'; orderAttack(enemy); return; }
+  const villager = hoveredVillager();
+  if (villager) { pointer.mode = null; orderTrade(villager); return; }
   const item = hoveredPickup();
   if (item) { pointer.mode = null; orderPickup(item); return; }
   const chest = hoveredChest();

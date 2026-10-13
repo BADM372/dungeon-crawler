@@ -4,12 +4,15 @@ import { player } from '../game/state.js';
 import { groundAt, ceilingAt, slopeAt } from './collide.js';
 import { canMove } from './canmove.js';
 import { chillFactor } from '../core/projectiles.js';
+import { effectMod } from '../core/potions.js';
 
 // learn: physics.html#feel #walls (see learn/README.md)
 function horizontal(dt, dx, dz, run) {
   const p = player;
-  // an ice ball's chill slows every way of moving (core/projectiles.js)
-  const speed = (p.swimming ? (p.fluid === ACID ? 0.6 : SWIM_SPEED) : run ? RUN_SPEED : WALK_SPEED) * chillFactor(p.chilled);
+  // an ice ball's chill slows every way of moving (core/projectiles.js), a swiftness potion
+  // quickens it (core/potions.js)
+  const speed = (p.swimming ? (p.fluid === ACID ? 0.6 : SWIM_SPEED) : run ? RUN_SPEED : WALK_SPEED) * chillFactor(p.chilled)
+    * (1 + effectMod(p, 'moveSpeed'));
   let tx = dx * speed, tz = dz * speed;
   if (p.grounded && !p.swimming && p.support) {
     const [gx, gz] = slopeAt(p.support, p.x, p.z), g = Math.hypot(gx, gz);
@@ -48,10 +51,12 @@ function jumping(dt, jump) {
   p.coyote = p.grounded && !p.swimming ? 0.12 : p.coyote - dt;
   p.jumpBuf = jump ? 0.15 : p.jumpBuf - dt;
   if (p.jumpBuf <= 0 || !(p.coyote > 0 || p.swimming)) return;
-  p.vy = p.swimming ? 4.8 : JUMP_V;
-  // jumping while moving is a leap: enough speed to clear a one-cell gap
-  const s = Math.hypot(p.vx, p.vz);
-  if (!p.swimming && s > 0.8 && s < LEAP) { p.vx *= LEAP / s; p.vz *= LEAP / s; }
+  // a leaping potion: that share higher (the height goes with the square of the speed)
+  const boost = Math.sqrt(1 + effectMod(p, 'jump'));
+  p.vy = p.swimming ? 4.8 : JUMP_V * boost;
+  // jumping while moving is a leap: enough speed to clear a one-cell gap (more with a potion)
+  const s = Math.hypot(p.vx, p.vz), leap = LEAP * (1 + effectMod(p, 'moveSpeed'));
+  if (!p.swimming && s > 0.8 && s < leap) { p.vx *= leap / s; p.vz *= leap / s; }
   p.grounded = p.swimming = false;
   p.coyote = p.jumpBuf = 0;
   p.jumpCount++;

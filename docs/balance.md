@@ -71,8 +71,9 @@ held it in place for good, guardians included.
 - Regeneration: 4% of the maximum per second after 5 s without damage.
 - Kill XP × `xpScale(player, enemy)`: full up to two levels below the player, then −20% per
   level (at least 10%); +10% per level above the player (at most +50%).
-- Health potions restore 40% of the maximum, one a second. A run starts with three on quick
-  bar slot 2; picked-up potions go on the bar by themselves.
+- Health potions restore 25–100% of the maximum within a second, each kind once a second (the
+  common one 40%). A run starts with three on quick bar slot 2; picked-up potions go on the bar
+  by themselves. Buffs, antidotes and flasks: [potions.md](potions.md).
 
 **Weapons** (`src/core/items.js`, `src/core/gear/`): a base's damage is grown by item level
 (+5% a level, `ILVL_DAMAGE`), scaled by rarity, then changed by affixes. `interval` is the real

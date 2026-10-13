@@ -16,7 +16,9 @@ any character can wear them; for now only the villagers do (and the player throu
 | alchemist | in front of the potion tent (merchant camp) | wizard hat |
 | enchanter | in front of the herb tent (merchant camp) | headscarf, a floating crystal ball |
 
-There is no enchanting tent yet; the enchanter keeps the herb stall (`town_merchant_b`).
+There is no enchanting tent yet; the enchanter keeps the herb stall (`town_merchant_b`). The
+alchemist trades: hovered, she has a gold label and a click walks up to her to buy potions
+([potions.md](potions.md), `core/shops.js`).
 
 ## Wearing things
 

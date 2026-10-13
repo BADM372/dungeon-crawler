@@ -46,6 +46,9 @@ import { projectiles } from './game/projectiles.js';
 import { beams } from './game/beams.js';
 import { tickBurning } from './render/burning.js';
 import { tickChill } from './render/chilled.js';
+import { tickStatuses } from './render/statuses.js';
+import { updateEffects } from './game/effects.js';
+import { updateAim } from './game/throws.js';
 import { updateEnemies, allEnemies } from './game/enemies.js';
 import { updateMusic, forceMood } from './game/music.js';
 import { updateFootsteps } from './game/footsteps.js';
@@ -71,7 +74,7 @@ function frame() {
   updateFootsteps();   // on the cycle the animator just advanced
   updateSounds(dt); updateAmbience(dt);
   tickFluidDeath(dt);
-  tickBurning(dt); tickChill(dt);
+  tickBurning(dt); tickChill(dt); tickStatuses(allEnemies(), dt);
   drawTravelEnemies(dt);
   updateLoot(dt, state.time);
   tickFloatText(dt);
@@ -82,10 +85,11 @@ function frame() {
   if (state.world) animateWorld(state.world, dt, state.time);
   updateHud(player, state.map, state.statusMsg);
   updateInventory();
-  updateQuickbar();
+  updateQuickbar(); updateEffects();
   updateCamera(dt);
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
   updateLootLabels();   // after the camera too: labels sit over their items
+  updateAim(allEnemies());   // the arc a flask in hand would fly (game/throws.js)
   // the look follows the depth smoothly (also while sliding down / up)
   if (state.cubeKey) state.lookDepth += (depthOf(state.cubeKey) - state.lookDepth) * Math.min(1, dt * 2.5);
   applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));

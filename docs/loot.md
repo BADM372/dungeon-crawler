@@ -1,6 +1,6 @@
 # Loot
 
-Enemies drop coins, now and then a weapon or a health potion; guardians always drop weapons and
+Enemies drop coins, now and then a weapon or a potion; guardians always drop weapons and
 potions; treasure chests at reward sites hold all three. Weapons are generated: each one is an
 instance of a base weapon (a sword, bow, crossbow or staff) with its own rarity, item level,
 affixes and name. The generator lives
@@ -17,8 +17,8 @@ chests in `src/core/chests.js` and `src/game/chests.js`. How much of it there is
   and leaves it.
 - **Click** a closed treasure chest (or its label, "Treasure chest", coloured by how grand the
   site is) to walk up and open it. X labels chests too.
-- Health potions are taken by walking over them or with **C**, like coins, and go on the quick
-  bar by themselves.
+- Potions are taken by walking over them or with **C**, like coins, and go on the quick
+  bar by themselves (one of each family, [potions.md](potions.md)).
 - **X** toggles name labels over every item on the floor but coins. Without it only the item
   under the cursor shows its name. Labels are in the rarity's colour and stack instead of
   overlapping; they are clickable.
@@ -122,7 +122,9 @@ seeded by the world seed and the enemy id: the same enemy always drops the same 
 after a death brings it back, like its coins) as long as you fight with the same kind of weapon
 (`favor`, see smart loot). The item level is the enemy's level.
 
-- Ordinary enemies: a weapon 5% and a health potion 3% of the time, both × √(the kind's
+- Which potion is drawn by the item level from those that drop there, weighted, health
+  potions the likeliest (`potionTable`, [potions.md](potions.md)); chests likewise.
+- Ordinary enemies: a weapon 5% and a potion 3% of the time, both × √(the kind's
   level-1 XP / 30): a spider 4% / 2.5%, a Stunder 8% / 5%, a Triangle 10% / 6%.
 - Side guardians: one weapon, at least Uncommon (Rare from level 10), luck 0.1; one potion.
 - Descent guardians: two weapons, at least Uncommon (Rare from level 5, Epic from 14), luck

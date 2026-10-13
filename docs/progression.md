@@ -25,7 +25,8 @@
 ## Run state
 
 A new run starts with level 1, 0 XP, 100 HP, one owned/equipped Common Old Sword, the
-Town Portal Scroll on quick bar slot 1 and three health potions on slot 2.
+Town Portal Scroll on quick bar slot 1 and three health potions on slot 2 (with `?dev=1`, also
+5000 gold).
 Progression, currency, inventory and equipment survive cube travel and death.
 Death (or `R`) restores the current maximum HP; there is no death penalty yet. Death also
 resets the cube to how it was when you came in: enemies killed since come back (and give XP
@@ -45,9 +46,12 @@ The numbers are in `PLAYER` (`core/progression.js`); [balance.md](balance.md) ex
 - Level-ups add the maximum-HP increase to living players, rather than fully healing.
 - Grounded, non-swimming players regenerate 4% of their maximum HP per second after five
   seconds without damage. All damage paths share the same timer; inventory pauses that timer.
-- **Health potions** restore 40% of the maximum HP at once, one a second (`drinkPotion`; the
-  quick bar slot fills while the next drink is not ready). Not while knocked down or at full
-  health. Enemies drop them now and then, guardians always, and chests hold them.
+- **Potions** ([potions.md](potions.md)): health potions pour 25–100% of the maximum HP in
+  within a second, others cure poison or quicken, strengthen or lift you for 30 s; flasks are
+  thrown. Each kind has its own one-second cooldown (the quick bar slot fills meanwhile). No
+  drinking while knocked down, no health potion at full health. Enemies drop them now and then,
+  guardians always, chests hold them and the alchemist sells them.
+- While **poisoned** (venomous bites, acid) the player does not regenerate.
 
 ## Inventory and coins
 
@@ -66,8 +70,9 @@ silver 0–99, and gold is not subject to a normal stack limit. Operations use s
 integer copper values; spending returns change automatically. A full bag never
 blocks coin rewards. There is no second wallet balance to synchronize.
 
-Health potions are drunk (`use: 'heal'`). Mana and stamina potions, crystals and sticks are
-registered stackables but have no use actions, crafting, trading or acquisition systems yet.
+Potions are drunk (`use: 'drink'`) or taken in hand and thrown (`use: 'throw'`), see
+[potions.md](potions.md). Mana and stamina potions, crystals and sticks are registered
+stackables but have no use actions or crafting yet (there is no mana or stamina).
 
 **Tools** (`category: 'tool'`) are used, not used up. The only one is the **Town Portal
 Scroll** ([world.md](world.md#town-portal-gametownportaljs)). It is **bound**: Drop is disabled
@@ -82,10 +87,12 @@ reference into the bag, not an item (`inventory.bar`, `assignBar` / `barEntry` i
 
 - Unique items (weapons, the scroll) are referenced by instance. Using a weapon equips it;
   if it leaves the bag, its slot clears.
-- Stackables (health potions) are referenced by item ID, so the slot uses any stack of it,
+- Stackables (potions) are referenced by item ID, so the slot uses any stack of it,
   shows the total and stays (greyed out) when none are left. Only items with a `use` action or
   a weapon go on the bar. A usable stackable that comes into the bag goes on the first free
-  slot by itself unless it is on the bar already (`autoBar`).
+  slot by itself unless it, or another of its family, is on the bar already (`autoBar`).
+- A flask's slot takes it in hand to throw instead of the weapon (framed while it is); its slot
+  again, or the weapon's, puts it away.
 - With the inventory open (the bar stays above its backdrop, framed in gold), **1**–**6** or a
   click puts the selected bag item on that slot, moving it off any other slot. The same key
   again takes it off. Bag slots show their bar key in the corner.
@@ -183,7 +190,8 @@ replace the current weapon or cross a new-run reset. Weapons mount at unit local
 scale under the already-scaled fist their extras name (bows `hand.L`, the rest `hand.R`);
 swimming/climbing hides them. The Old Sword never
 drops; the others drop as generated weapons ([loot.md](loot.md)). Dropping every weapon is
-allowed and leaves you unable to attack. No shops, durability or armor are implemented.
+allowed and leaves you unable to attack. The alchemist sells potions ([potions.md](potions.md));
+no other shops, durability or armor are implemented. With `?dev=1` a run starts with 5000 gold.
 
 ## Tests
 

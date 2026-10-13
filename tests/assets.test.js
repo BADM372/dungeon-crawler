@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assets } from './paths.js';
-import { SLASH_CLIP, SHOOT_CLIP, CROSSBOW_CLIP, CAST_CLIP, KINDS } from '../src/core/combat.js';
+import { SLASH_CLIP, SHOOT_CLIP, CROSSBOW_CLIP, CAST_CLIP, THROW_CLIP, KINDS } from '../src/core/combat.js';
 import { MUZZLES } from '../src/core/shots.js';
-import { WEAPONS, WEARABLES, OUTFIT_SLOTS } from '../src/core/items.js';
+import { WEAPONS, WEARABLES, OUTFIT_SLOTS, POTIONS } from '../src/core/items.js';
 import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS, SPICY, fireAt } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
@@ -39,10 +39,11 @@ test('player is unarmed, retains both hand sockets and exports only its own clip
   assert.equal(slash.extras.active_end, SLASH_CLIP.activeEnd);
   assert.equal(j.images?.length || 0, 0);
 });
-test('the bow, crossbow and staff clips match the attack timing, shoot from the profile muzzles and come with hold poses', () => {
+test('the bow, crossbow, staff and throw clips match the attack timing, shoot from the profile muzzles and come with hold poses', () => {
   const { json: j, duration } = glb('character');
   const clip = name => j.animations.find(a => a.name === name);
-  for (const [kind, name, C] of [['bow', 'Shoot', SHOOT_CLIP], ['crossbow', 'CrossbowShot', CROSSBOW_CLIP], ['staff', 'Cast', CAST_CLIP]]) {
+  for (const [kind, name, C] of [['bow', 'Shoot', SHOOT_CLIP], ['crossbow', 'CrossbowShot', CROSSBOW_CLIP], ['staff', 'Cast', CAST_CLIP],
+    ['throw', 'Throw', THROW_CLIP]]) {
     const a = clip(name);
     assert.ok(a, name); assert.equal(KINDS[kind].clip, C);
     assert.ok(Math.abs(duration(a) - C.duration) < 1e-5, name);
@@ -70,6 +71,17 @@ test('every weapon model says which socket it goes in, how it sits there and whi
     assert.deepEqual(parts, want.map(p => `${w.id}_${p}`), w.id);
   }
   for (const name of ['items/weapon_arrow', 'items/weapon_bolt']) assert.ok(glb(name).json.meshes.length, name);
+});
+test('every potion has a model on the floor; a flask also says how the fist holds it to throw', () => {
+  for (const p of POTIONS) {
+    const { json: j } = glb(p.model.replace(/^assets\//, '').replace(/\.glb$/, ''));
+    const e = j.nodes.find(n => n.name === p.id).extras;
+    assert.equal(e.attach, 'ground', p.id);
+    if (p.use !== 'throw') { assert.equal(e.weapon, undefined, p.id); continue; }
+    assert.equal(e.weapon, 'throw'); assert.equal(e.attack_clip, 'Throw'); assert.equal(e.socket, 'hand.R'); assert.equal(e.hold, 'throw');
+    assert.ok(Math.abs(Math.hypot(...e.mount_quat_gltf) - 1) < 1e-3, p.id);
+    assert.ok(e.mount_scale > 0.5 && e.mount_scale < 2 && Math.hypot(...e.mount_offset_gltf) < 0.6, p.id);
+  }
 });
 test('worn and held things say where they sit and how the arm holds them, and the rig has those holds', () => {
   const { json: character } = glb('character');

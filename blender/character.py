@@ -16,9 +16,11 @@ end in the neutral standing pose so they can be cross-faded from anything):
     Kick         -- right front kick
     Punch        -- right straight punch from a guard
     Slash        -- right-handed overhead diagonal slash (extras: weapon_socket)
+    Throw        -- a flask lobbed overhand from the right fist (extras: weapon_socket,
+                    active_start: it lets go, muzzle: where)
     Roll         -- forward roll; game moves ~`distance` forward (extras: distance)
     Flex         -- static strongman pose (the original sculpt)
-    Hold<Name>   -- still poses of one arm carrying a weapon (HOLDS: Bow, Crossbow, Staff; extras:
+    Hold<Name>   -- still poses of one arm carrying a weapon (HOLDS: Bow, Crossbow, Staff, Throw; extras:
                     weapon) or a held item (CARRIES: Towel, Orb, Hammer, Pliers, Rope, Feed);
                     extras: hold, arm_bones
 
@@ -994,6 +996,8 @@ HOLDS = {   # kind: (side, arm spec, forearm twist)
     "bow": ("L", A(D(8), D(16), D(78), 1), D(62)),
     "crossbow": ("R", A(D(14), D(16), D(74), -1), 0.0),
     "staff": ("R", A(D(8), D(18), D(80), -1), 0.0),
+    # a throwing flask held up by the neck like the staff (items.flask_mount)
+    "throw": ("R", A(D(8), D(18), D(80), -1), 0.0),
 }
 # How a hand carries the held items of blender/items.py (WEARS there): a still clip Hold<Name>
 # per item, one arm each, laid over the other clips like the weapons' holds (render/figure.js).
@@ -1014,6 +1018,7 @@ CARRIES = {   # name: (side, arm spec, forearm twist)
 SHOOT_FRAMES = {"duration": 32, "active_start": 18, "active_end": 20, "redraw": 7}
 CROSSBOW_FRAMES = {"duration": 36, "active_start": 9, "active_end": 11, "reloaded": 26}
 CAST_FRAMES = {"duration": 28, "active_start": 12, "active_end": 14}
+THROW_FRAMES = {"duration": 26, "active_start": 12, "active_end": 14}
 
 
 def hold_params(kind):
@@ -1125,6 +1130,37 @@ def cast_params():
             spine_lean=lean(t), spine_twist=twist(t) * 0.7,
             head_pitch=-lean(t) * 0.7, head_twist=-twist(t) * 0.8,
             arms={"L": arm_l(t), "R": arm_r(t)}, fore_twist={"R": roll(t)},
+        )
+    return one_shot(te, fn)
+
+
+def throw_params():
+    """A flask (in the right fist) lobbed overhand: drawn back past the ear while the left hand
+    points ahead, whipped forward and up so it leaves the hand in front of the face
+    (active_start), the arm following through across the body, then back to the hold."""
+    F = {k: v / FPS for k, v in THROW_FRAMES.items()}
+    na = neutral_arms()
+    hold = HOLDS["throw"][1]
+    tw, tc, tf, te = 0.25, F["active_start"], 0.58, F["duration"]
+    back = Vector((-0.32, 0.14, 1.6))           # cocked behind the right ear
+    let_go = Vector((-0.2, -0.47, 1.6))         # out in front, above the eyes
+    after = Vector((-0.04, -0.42, 1.08))        # swung down across the body
+    arm_r = ik_keys((0.02, hold), (tw, IK(back, Vector((-1, -0.2, 0.35)), 1, hold)),
+                    (tw + 0.04, IK(back, Vector((-1, -0.2, 0.35)), 1, hold)),
+                    (tc, IK(let_go, Vector((-1, 0.25, -0.45)), 1, hold)),
+                    (tf, IK(after, Vector((-0.6, 0.25, -1)), 1, hold)), (te, hold))
+    arm_l = keyframes((0.02, na["L"]), (tw, A(D(62), D(18), D(25), 1)), (tc, A(D(25), D(28), D(45), 1)),
+                      (tf, A(D(-8), D(24), D(35), 1)), (te, na["L"]))
+    twist = keyframes((0.02, 0.0), (tw, D(-30)), (tw + 0.04, D(-30)), (tc, D(14)), (tf, D(22)), (te, 0.0))
+    lean = keyframes((0.02, 0.0), (tw, D(-7)), (tc, D(9)), (tf, D(13)), (te, 0.0))
+    hz = keyframes((0.02, STAND_Z), (tw, STAND_Z - 0.02), (tc, STAND_Z - 0.05), (tf, STAND_Z - 0.06), (te, STAND_Z))
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((0, 0, hz(t))), hips_rot=(0.0, 0.0, twist(t) * 0.35),
+            spine_lean=lean(t), spine_twist=twist(t) * 0.65,
+            head_pitch=-lean(t) * 0.7, head_twist=-twist(t) * 0.9,
+            arms={"L": arm_l(t), "R": arm_r(t)},
         )
     return one_shot(te, fn)
 
@@ -1510,12 +1546,15 @@ def make_animations(rig, ob):
     one("Shoot", shoot_params(), *stiff, {"weapon_socket": "hand.L", **timing(SHOOT_FRAMES)})
     one("CrossbowShot", crossbow_params(), *stiff, {"weapon_socket": "hand.R", **timing(CROSSBOW_FRAMES)})
     one("Cast", cast_params(), *stiff, {"weapon_socket": "hand.R", **timing(CAST_FRAMES)})
-    # where each shot leaves at its active_start: the bow fist, the bolt's tip, the staff's head
+    one("Throw", throw_params(), *stiff, {"weapon_socket": "hand.R", **timing(THROW_FRAMES)})
+    # where each shot leaves at its active_start: the bow fist, the bolt's tip, the staff's head,
+    # the thrown flask's belly
     import items
     for clip, frames, bone, kind, point in (
             ("Shoot", SHOOT_FRAMES, "hand.L", None, Vector()),
             ("CrossbowShot", CROSSBOW_FRAMES, "hand.R", "crossbow", Vector((0, items.STOCK_Y - .053, .46))),
-            ("Cast", CAST_FRAMES, "hand.R", "staff", Vector(items.staff_head(1)))):
+            ("Cast", CAST_FRAMES, "hand.R", "staff", Vector(items.staff_head(1))),
+            ("Throw", THROW_FRAMES, "hand.R", "throw", Vector((0, 0, .12)))):
         act = bpy.data.actions[clip]
         act["muzzle"] = muzzle(rig, act, frames["active_start"], bone,
                                items.mount_matrix(kind) @ point if kind else point)
@@ -1563,7 +1602,7 @@ def main(scene=None, export_path=None, active_action="Walk"):
     make_animations(rig, ob)
     register_actions(rig, ("Walk", "Run", "Swim", "SwimIdle", "Climb", "Jump", "JumpLandSit",
                            "GetUpBack", "GetUpFront", "Kick", "Punch", "Slash", "Shoot", "CrossbowShot",
-                           "Cast", "HoldBow", "HoldCrossbow", "HoldStaff",
+                           "Cast", "Throw", "HoldBow", "HoldCrossbow", "HoldStaff", "HoldThrow",
                            *("Hold" + k.capitalize() for k in CARRIES), "Roll", "Flex"))
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act

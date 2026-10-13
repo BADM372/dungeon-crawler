@@ -5,11 +5,14 @@
 // core/shots.js). Each kind has its clip in character.glb, retimed to fit (swingClipTime): their
 // own frames are the *_CLIP below.
 // A weapon's `interval` is the time from one attack to the next when chaining (its attack
-// speed); every other attack time scales with it.
+// speed); every other attack time scales with it. A flask in hand (core/inventory.js readied)
+// attacks too: a throw, its flask lobbed at the target (game/throws.js). Potion buffs (core/
+// potions.js) quicken attacks and add damage.
 import { OLD_SWORD, ITEMS } from './items.js';
-import { equippedItem } from './inventory.js';
+import { equippedItem, readiedItem } from './inventory.js';
 import { levelDamage } from './progression.js';
 import { itemStats } from './gear/stats.js';
+import { effectMod, flaskStats } from './potions.js';
 
 // the clips' own timing (s): character.glb extras (blender/character.py)
 export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
@@ -18,6 +21,8 @@ export const SHOOT_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 18 / 3
 // the bolt flies at activeStart, the crossbow is drawn and loaded again at `reloaded`
 export const CROSSBOW_CLIP = Object.freeze({ duration: 36 / 30, activeStart: 9 / 30, activeEnd: 11 / 30, reloaded: 26 / 30 });
 export const CAST_CLIP = Object.freeze({ duration: 28 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 });
+// the flask leaves the hand at activeStart
+export const THROW_CLIP = Object.freeze({ duration: 26 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 });
 // game time (s) for the basic sword (the Old Sword's timing)
 // learn: checks.html#try-test, combat.html#chain #damage (see learn/README.md)
 export const SWORD = Object.freeze({
@@ -30,6 +35,7 @@ export const SWORD = Object.freeze({
 export const BOW = Object.freeze({ activeStart: 0.36, activeEnd: 0.4, moveCancel: 0.44, chain: 0.62, duration: 0.78 });
 export const CROSSBOW = Object.freeze({ activeStart: 0.2, activeEnd: 0.24, moveCancel: 0.3, chain: 0.84, duration: 0.95 });
 export const STAFF = Object.freeze({ activeStart: 0.28, activeEnd: 0.32, moveCancel: 0.38, chain: 0.62, duration: 0.72 });
+export const THROW = Object.freeze({ activeStart: 0.3, activeEnd: 0.34, moveCancel: 0.38, chain: 0.7, duration: 0.8 });
 // how each kind of weapon attacks: its timing, its clip, and what it shoots (core/shots.js SHOTS)
 // learn: combat.html#shoot (see learn/README.md)
 export const KINDS = Object.freeze({
@@ -37,6 +43,7 @@ export const KINDS = Object.freeze({
   bow: Object.freeze({ timing: BOW, clip: SHOOT_CLIP, shot: 'arrow', verb: 'Bow shot' }),
   crossbow: Object.freeze({ timing: CROSSBOW, clip: CROSSBOW_CLIP, shot: 'bolt', verb: 'Crossbow shot' }),
   staff: Object.freeze({ timing: STAFF, clip: CAST_CLIP, shot: 'spell', verb: 'Spell cast' }),
+  throw: Object.freeze({ timing: THROW, clip: THROW_CLIP, shot: 'flask', verb: 'Throw' }),
 });
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
 // how far above and below their feet the ranged kinds can aim (a sword sweeps knee to chest)
@@ -59,13 +66,22 @@ export const equippedWeapon = p => ITEMS[equippedInstance(p)?.itemId] || null;
 // the kind of weapon p fights with (what loot leans towards, core/gear/bases.js), or null
 export const favoredKind = p => equippedWeapon(p)?.weapon?.kind ?? null;
 export const canChangeWeapon = p => !p.sword.active && !p.ragdoll && !p.climb && !p.swimming && p.stun <= 0 && p.hp > 0;
-// null without a weapon: no attacks at all
+// the flask p holds ready to throw, if any
+export const readiedFlask = p => p.inventory ? readiedItem(p.inventory) : null;
+// null without a weapon (or a flask in hand): no attacks at all. Haste (attackSpeed) shortens
+// every attack time, might (damage) adds to the damage (a flask's too).
 export function combatStats(p) {
+  const haste = 1 + effectMod(p, 'attackSpeed'), might = 1 + effectMod(p, 'damage'), flask = readiedFlask(p);
+  if (flask) {
+    const f = flaskStats(flask, p.level, might), T = THROW, speed = 1 / haste;
+    return { ...SWORD, kind: 'throw', ranged: true, flask: flask.id, ...f, damage: f.blast, crit: 0, critDamage: 1, knockback: 1,
+      pierce: 0, burst: f.radius, ...Object.fromEntries(TIMES.map(k => [k, T[k] * speed])) };
+  }
   const weapon = itemStats(equippedInstance(p));
   if (!weapon) return null;
-  const T = KINDS[weapon.kind].timing, speed = weapon.interval / T.chain;
-  return { ...SWORD, ...weapon, damage: Math.round(weapon.damage * levelDamage(p.level || 1)),
-    ...Object.fromEntries(TIMES.map(k => [k, T[k] * speed])), chain: weapon.interval };
+  const interval = weapon.interval / haste, T = KINDS[weapon.kind].timing, speed = interval / T.chain;
+  return { ...SWORD, ...weapon, damage: Math.round(weapon.damage * levelDamage(p.level || 1) * might),
+    ...Object.fromEntries(TIMES.map(k => [k, T[k] * speed])), chain: interval };
 }
 
 // the attack clip's time for attack time t: wind-up, active window and recovery are each
@@ -156,12 +172,14 @@ export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra 
 }
 // A hit staggers: it interrupts a wind-up (each swing can hit an enemy only once). Then the
 // enemy is poised for profile.poise s: lighter hits hurt it but do not stagger it again, so it
-// can strike back (enemy.staggered says which it was).
+// can strike back (enemy.staggered says which it was). stagger: false for damage that only
+// hurts (burning, poison ticks; core/status.js)
 // learn: combat.html#damage #stagger-code (see learn/README.md)
-export function damageEnemy(enemy, amount) {
+export function damageEnemy(enemy, amount, stagger = true) {
   if (enemy.mode === 'dead') return false;
   enemy.hp = Math.max(0, enemy.hp - amount);
   enemy.hurtT = 0.22;
+  if (!stagger && enemy.hp) return true;
   enemy.staggered = !enemy.hp || !(enemy.poised > 0) || amount >= HEAVY_HIT * enemy.profile.hp;
   if (!enemy.hp) {
     enemy.mode = 'dead'; enemy.deadT = 0; enemy.path = null; enemy.speed = 0;

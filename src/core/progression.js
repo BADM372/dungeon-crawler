@@ -1,6 +1,7 @@
 import { createInventory, addInstance, addItem, equipItem, assignBar, whole } from './inventory.js';
 import { OLD_SWORD, TOWN_PORTAL, HEALTH_POTION } from './items.js';
 import { fixedWeapon } from './gear/generate.js';
+import { createPotionState } from './potions.js';
 
 // The player's numbers. docs/balance.md explains the targets; tools/balance.mjs plays them through.
 //   a level costs XP_BASE + XP_STEP (L - 1) + XP_CURVE (L - 1)² XP, so the first levels come in a
@@ -41,15 +42,16 @@ export function xpProgress(p) {
   return { current: p.xp - xpForLevel(p.level), required: xpToNext(p.level) };
 }
 // a new run: the Old Sword in hand, the town portal scroll on quick bar slot 1 and a few health
-// potions on slot 2
-export const START_POTIONS = 3;
-export function createPlayerStats() {
+// potions on slot 2; with the dev tools (dev: true) also DEV_GOLD gold to try the shops with
+export const START_POTIONS = 3, DEV_GOLD = 5000;
+export function createPlayerStats(dev = false) {
   const inventory = createInventory();
+  if (dev) addItem(inventory, 'item_coin_gold', DEV_GOLD);
   equipItem(inventory, addInstance(inventory, fixedWeapon(OLD_SWORD.id)));
   assignBar(inventory, 0, addInstance(inventory, { itemId: TOWN_PORTAL.id }));
   addItem(inventory, HEALTH_POTION.id, START_POTIONS);
   assignBar(inventory, 1, inventory.slots.find(s => s?.itemId === HEALTH_POTION.id).instanceId);
-  return { xp: 0, level: 1, maxHp: maxHealth(1), hp: maxHealth(1), lastDamageAt: -Infinity, drankAt: -Infinity, inventory };
+  return { xp: 0, level: 1, maxHp: maxHealth(1), hp: maxHealth(1), lastDamageAt: -Infinity, toxic: null, ...createPotionState(), inventory };
 }
 // defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js); chests: the reward
 // sites whose chests are open (game/chests.js); townPortal: the open town portal, if any
@@ -79,16 +81,7 @@ export function takeDamage(p, amount, time) {
   if (!Number.isFinite(amount) || amount < 0) throw new RangeError('Invalid damage');
   if (amount > 0) { p.hp = Math.max(0, p.hp - amount); p.lastDamageAt = time; }
 }
-// Drink a health potion (def: its item): it restores def.heal of the maximum health, at most one
-// every def.cooldown s. The health restored, or why not: 'dead', 'wait' (too soon), 'full'.
-export function drinkPotion(p, def, time) {
-  if (p.hp <= 0) return 'dead';
-  if (time < p.drankAt + def.cooldown) return 'wait';
-  if (p.hp >= p.maxHp) return 'full';
-  const before = p.hp;
-  p.hp = Math.min(p.maxHp, p.hp + def.heal * p.maxHp); p.drankAt = time;
-  return p.hp - before;
-}
+// no regeneration while poisoned (core/status.js)
 export function regenerate(p, dt, time) {
-  if (p.hp > 0 && time - p.lastDamageAt >= PLAYER.REGEN_DELAY) p.hp = Math.min(p.maxHp, p.hp + PLAYER.REGEN * p.maxHp * dt);
+  if (p.hp > 0 && !p.toxic && time - p.lastDamageAt >= PLAYER.REGEN_DELAY) p.hp = Math.min(p.maxHp, p.hp + PLAYER.REGEN * p.maxHp * dt);
 }

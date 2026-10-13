@@ -54,12 +54,53 @@ export const COINS = Object.freeze([
   { id: 'item_coin_silver', name: 'Silver', value: 10, suffix: 's' },
   { id: 'item_coin_copper', name: 'Copper', value: 1, suffix: 'c' },
 ].map(c => Object.freeze({ ...c, category: 'currency', stackLimit: Infinity, icon: icon(c.id), model: model(c.id) })));
-// Health potions are drunk (game/quickbar.js useItem): `use` names the action, `heal` the share
-// of the maximum health they restore. They drop from enemies and lie in chests (core/gear/drops.js,
-// core/chests.js); a new run starts with a few on the quick bar.
-export const HEALTH_POTION = Object.freeze({ id: 'item_potion_health', name: 'Health potion', category: 'item', stackLimit: 99,
-  icon: icon('item_potion_health'), model: model('item_potion_health'), use: 'heal', heal: 0.4, cooldown: 1,
-  description: 'Restores 40% of your health at once. One drink a second.' });
+// Potions (core/potions.js has their rules). Two families, both stackable:
+//   drinks (`use: 'drink'`): drinking one puts its `effect` on you for `effect.time` s:
+//     { heal }: that share of the maximum health, poured in over the time (well under a second)
+//     { cure, immune }: ends that status (core/status.js) and keeps it off for the time
+//     { buff, value }: a share more of `buff` (core/potions.js BUFFS) for the time
+//   flasks (`use: 'throw'`): readied into the hand (game/equipment.js), thrown with a click at
+//     what the arc points at, within `flask.range` cells (game/throws.js). They burst over
+//     `flask.radius` cells and never hurt the player: `blast` damages, `burn` sets on fire
+//     and leaves a burning `patch` for that many s, `toxin` poisons and leaves a `cloud`. Their
+//     damage grows with the player's level (core/potions.js flaskPower).
+// Each kind has its own cooldown (`cooldown` s; core/potions.js cooldownLeft). `price`: copper
+// at the alchemist (core/shops.js); `level`: the least item level they drop at, `weight`: how
+// likely they drop against the others (core/gear/drops.js, core/chests.js). `family`: which
+// quick bar slot they share by themselves (core/inventory.js autoBar). A new run starts with a
+// few health potions on the quick bar.
+const potionDef = (id, name, use, spec, description) => Object.freeze({ id, name, category: 'potion', stackLimit: 99,
+  icon: icon(id), model: model(id), use, cooldown: 1, level: 1, weight: 1, ...spec, description });
+const pct = v => `${Math.round(v * 100)}%`;
+const BUFF_TEXT = { moveSpeed: v => `You move ${pct(v)} faster`, attackSpeed: v => `You attack ${pct(v)} faster`,
+  damage: v => `Your attacks deal ${pct(v)} more damage`, jump: v => `You jump ${pct(v)} higher` };
+const drink = (id, name, effect, spec) => potionDef(id, name, 'drink', { family: effect.buff ? 'buff' : effect.heal ? 'heal' : 'cure', ...spec,
+  effect: Object.freeze(effect) }, effect.heal ? `Restores ${pct(effect.heal)} of your health in an instant.`
+  : effect.cure ? `Cures poison and keeps it off you for ${effect.time} seconds.` : `${BUFF_TEXT[effect.buff](effect.value)} for ${effect.time} seconds.`);
+const flask = (id, name, spec, text) => potionDef(id, name, 'throw', { family: 'flask', ...spec, flask: Object.freeze(spec.flask) },
+  `Click its quick bar slot to take it in hand, then click where to throw it (up to ${spec.flask.range} cells away). ${text} It never hurts you.`);
+export const POTIONS = Object.freeze([
+  drink('item_potion_health_minor', 'Minor health potion', { heal: 0.25, time: 0.5 }, { price: 15, weight: 5 }),
+  drink('item_potion_health', 'Health potion', { heal: 0.4, time: 0.6 }, { price: 40, weight: 6 }),
+  drink('item_potion_health_greater', 'Greater health potion', { heal: 0.6, time: 0.7 }, { price: 110, level: 5, weight: 3 }),
+  drink('item_potion_health_superior', 'Superior health potion', { heal: 1, time: 0.8 }, { price: 260, level: 10, weight: 1.5 }),
+  drink('item_potion_antidote', 'Antidote', { cure: 'toxic', immune: 'toxic', time: 30 }, { price: 30, level: 3, weight: 2 }),
+  drink('item_potion_swiftness', 'Swiftness potion', { buff: 'moveSpeed', value: 0.3, time: 30 }, { price: 70, level: 2 }),
+  drink('item_potion_haste', 'Haste potion', { buff: 'attackSpeed', value: 0.25, time: 30 }, { price: 90, level: 3 }),
+  drink('item_potion_might', 'Potion of might', { buff: 'damage', value: 0.3, time: 30 }, { price: 90, level: 3 }),
+  drink('item_potion_leaping', 'Leaping potion', { buff: 'jump', value: 0.5, time: 30 }, { price: 60, level: 2 }),
+  flask('item_flask_blast', 'Blast flask', { price: 60, level: 2, weight: 1.5,
+    flask: { range: 6, radius: 1.6, blast: 55, color: '#ffb347' } }, 'It explodes where it lands, hurting and throwing back everything around.'),
+  flask('item_flask_fire', 'Fire flask', { price: 70, level: 3,
+    flask: { range: 6, radius: 1.4, blast: 12, burn: { damage: 45, time: 4, ticks: 8 }, patch: 4, color: '#ff7a2a' } },
+    'It bursts into flames: everything around catches fire, and the ground burns on for a while.'),
+  flask('item_flask_toxic', 'Toxic flask', { price: 70, level: 4,
+    flask: { range: 6, radius: 1.8, toxin: { damage: 60, time: 6, ticks: 6 }, cloud: 6, color: '#8fdc3c' } },
+    'It bursts into a poison cloud that lingers; everything in it is poisoned.'),
+]);
+export const HEALTH_POTION = POTIONS.find(p => p.id === 'item_potion_health');
+// Mana and stamina potions and the materials have inventory definitions only (no mana or
+// stamina yet); no use or crafting.
 const stackables = [
   ['item_potion_mana', 'Mana potion'], ['item_potion_stamina', 'Stamina potion'],
   ['item_stick_short', 'Short stick'], ['item_stick_long', 'Long stick'], ['item_stick_forked', 'Forked stick'],
@@ -104,7 +145,5 @@ export function outfitOf(ids) {
   }
   return out;
 }
-// Mana and stamina potions and the materials have inventory definitions only; no use, crafting
-// or shops yet.
-export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, HEALTH_POTION, ...stackables, TOWN_PORTAL, ...WEARABLES].map(i => [i.id, i])));
+export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, ...POTIONS, ...stackables, TOWN_PORTAL, ...WEARABLES].map(i => [i.id, i])));
 export const OLD_SWORD = WEAPONS[0];

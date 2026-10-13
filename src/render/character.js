@@ -20,8 +20,9 @@ let loadRequest = 0;
 const itemNode = weapon => { let n = null; weapon.traverse(o => { if (!n && o.userData.weapon) n = o; }); return n; };
 
 // Weapons are separate props. The character GLB contains only the body and hand sockets. A
-// weapon says in its extras which socket it goes in and how it sits there (mount_quat_gltf);
-// the Old Sword (assets/sword.glb) predates that and sits like the other swords.
+// weapon says in its extras which socket it goes in and how it sits there (mount_quat_gltf;
+// a flask readied to throw also mount_offset_gltf and mount_scale, as it is modelled to stand
+// on the floor); the Old Sword (assets/sword.glb) predates that and sits like the other swords.
 export function equipSword(weapon) {
   loadRequest++;
   if (character.sword) character.sword.removeFromParent();
@@ -30,7 +31,8 @@ export function equipSword(weapon) {
   if (!weapon) return;
   const item = itemNode(weapon), d = item?.userData ?? {};
   character.bones[d.socket ?? 'hand.R'].add(weapon);
-  weapon.position.set(0, 0, 0);   // glTF bone origins are socket heads, not Blender tails
+  weapon.position.fromArray(d.mount_offset_gltf ?? [0, 0, 0]);   // glTF bone origins are socket heads, not Blender tails
+  weapon.scale.setScalar(d.mount_scale ?? 1);
   if (d.mount_quat_gltf) weapon.quaternion.fromArray(d.mount_quat_gltf);
   else weapon.rotation.set(Math.PI / 3, 0, 0);   // +Y blade axis -> 60 degrees from forearm
   weapon.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
@@ -107,7 +109,7 @@ function setup(gltf) {
   }
   // each kind of weapon's attack clip, twice: a chained attack cross-fades from one to the other
   const attacks = {};
-  for (const [kind, name] of [['sword', 'Slash'], ['bow', 'Shoot'], ['crossbow', 'CrossbowShot'], ['staff', 'Cast']]) {
+  for (const [kind, name] of [['sword', 'Slash'], ['bow', 'Shoot'], ['crossbow', 'CrossbowShot'], ['staff', 'Cast'], ['throw', 'Throw']]) {
     attacks[kind] = [clips[name], clips[name].clone()].map(clip => {
       const a = mixer.clipAction(clip);
       a.play(); a.timeScale = 0; a.setEffectiveWeight(0);

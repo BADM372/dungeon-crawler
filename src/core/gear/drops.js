@@ -1,4 +1,4 @@
-// What a defeated enemy drops besides its coins: maybe a weapon, maybe a health potion. Seeded by
+// What a defeated enemy drops besides its coins: maybe a weapon, maybe a potion. Seeded by
 // the world seed and the enemy's id, so the same enemy always drops the same thing (also when
 // it comes back after a death, like its coins). The item level is the enemy's level, so deeper
 // drops hit harder (core/gear/stats.js).
@@ -8,11 +8,13 @@
 //   descent guardians: two weapons, at least Uncommon (Rare from level 5, Epic from 14), and two
 //     potions
 // Guardians also roll with luck (rarer results) and are the only source of Ancient items.
+// Which potion is drawn by the enemy's level (core/potions.js potionTable): mostly health
+// potions, the stronger ones and the rest deeper down.
 // favor: the kind of weapon the player fights with; drops lean towards it (gear/bases.js).
 import { mulberry32, hash32 } from '../util.js';
 import { RARITY } from './rarities.js';
 import { rollWeapon } from './generate.js';
-import { HEALTH_POTION } from '../items.js';
+import { rollPotions } from '../potions.js';
 
 // learn: loot.html#drops (see learn/README.md)
 export const WEAPON_CHANCE = 0.05, POTION_CHANCE = 0.03;
@@ -44,11 +46,12 @@ export function weaponDrops(enemy, seed = 0, favor = null) {
   for (let i = 0; i < g.count; i++) out.push(rollWeapon(R, level, { ...g, favor }));
   return out;
 }
-// health potions, on a stream of their own (so weapon drops do not depend on them)
+// potions, on a stream of their own (so weapon drops do not depend on them)
 export function potionDrops(enemy, seed = 0) {
-  const n = enemy.guardian ? guardianDrops(enemy.guardianRole ?? 'descent', enemy.level || 1).potions
-    : stream(enemy, seed, 0x9071)() < potionChance(enemy.kind?.dropXP ?? enemy.kind?.xp) * (enemy.kind?.dropScale ?? 1) ? 1 : 0;
-  return n ? [{ itemId: HEALTH_POTION.id, count: n }] : [];
+  const R = stream(enemy, seed, 0x9071), level = Math.max(1, enemy.level || 1);
+  const n = enemy.guardian ? guardianDrops(enemy.guardianRole ?? 'descent', level).potions
+    : R() < potionChance(enemy.kind?.dropXP ?? enemy.kind?.xp) * (enemy.kind?.dropScale ?? 1) ? 1 : 0;
+  return rollPotions(R, level, n);
 }
 // everything but the coins
 export const enemyDrops = (enemy, seed = 0, favor = null) => [...weaponDrops(enemy, seed, favor), ...potionDrops(enemy, seed)];

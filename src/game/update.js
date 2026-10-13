@@ -13,6 +13,7 @@ import { applyHazards } from '../physics/hazards.js';
 import { climb } from '../physics/climb.js';
 import { landFall } from './fall.js';
 import { tickCast, cancelCast } from './townportal.js';
+import { tickEffects, effectMod } from '../core/potions.js';
 
 // during the wind-up, step in towards an enemy that is just out of reach
 // learn: combat.html#chain (see learn/README.md)
@@ -27,6 +28,7 @@ function lunge(s) {
 // learn: physics.html#landing (see learn/README.md)
 export function updatePlayer(dt) {
   if (state.inventoryOpen || state.transitioning) return;
+  tickEffects(player, dt, state.time);   // potions at work (core/potions.js)
   // a portal's charge only carries over while checkPortals sees us standing in it
   const charge = state.portalCharge;
   state.portalCharge = null;
@@ -61,12 +63,14 @@ export function updatePlayer(dt) {
   // a fall through cubes ends on the first landing, however soft
   if (state.fallFrom && player.grounded) { landFall(); return; }
 
-  // hard landings: tumble over as a ragdoll (and get hurt), or land on your bottom
-  if (gr.landed > RAGDOLL_IMPACT) {
-    knockDown({ damage: Math.min(FALL_DAMAGE, (gr.landed - RAGDOLL_IMPACT) * 6), reason: 'Hard landing!' });
+  // hard landings: tumble over as a ragdoll (and get hurt), or land on your bottom; a leaping
+  // potion's higher jumps land as softly as plain ones
+  const landed = gr.landed / Math.sqrt(1 + effectMod(player, 'jump'));
+  if (landed > RAGDOLL_IMPACT) {
+    knockDown({ damage: Math.min(FALL_DAMAGE, (landed - RAGDOLL_IMPACT) * 6), reason: 'Hard landing!' });
     return;
   }
-  if (gr.landed > SIT_IMPACT) { player.stun = 1.5; sfx('dizzy'); }
+  if (landed > SIT_IMPACT) { player.stun = 1.5; sfx('dizzy'); }
 
   checkPortals(dx, dz, dt, charge);
 }

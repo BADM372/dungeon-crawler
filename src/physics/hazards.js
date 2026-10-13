@@ -7,6 +7,8 @@ import { hurt } from '../game/flow.js';
 import { knockDown, dieInFluid } from '../game/ragdoll.js';
 import { inFluid } from './fluid.js';
 import { startFall, landFall } from '../game/fall.js';
+import { poisonPlayer } from '../game/enemycombat.js';
+import { toxinOf, ACID_TOXIN } from '../core/status.js';
 
 // returns false when the player got respawned. Entering any fluid is fatal; walking
 // is kept off fluid edges by canMove, so only jumps, falls and knockbacks get here.
@@ -17,7 +19,7 @@ function fluids(gr) {
   return true;
 }
 
-// standing in a waterfall: the current pushes you out; lava and acid falls hurt
+// standing in a waterfall: the current pushes you out; lava and acid falls hurt (acid poisons)
 function falls(dt, ci) {
   for (const f of state.map.falls) {
     if (ci !== f.c) continue;
@@ -27,6 +29,7 @@ function falls(dt, ci) {
     if (f.type === LAVA) { knockDown({ damage: 50, reason: 'Burned by a lavafall!', respawn: 'safe' }); return false; }
     if (f.type === ACID) {
       takeDamage(player, 40 * dt, state.time);
+      if (!player.toxic) poisonPlayer(toxinOf(ACID_TOXIN, player.maxHp), 'Poisoned by acid');
       if (!state.statusMsg) state.statusMsg = 'Acid rain!';
       if (player.hp <= 0) { knockDown({ reason: 'Dissolved by acid' }); return false; }
     }

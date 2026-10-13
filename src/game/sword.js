@@ -2,12 +2,15 @@
 // attack. Attacks are queued with a target (an enemy, a point, or null for straight ahead) and
 // stay queued for a moment, so a click during an attack chains into the next one. Swords hit
 // what is in the blade's arc (hitWithSword); bows, crossbows and staffs turn to their target
-// while they draw and let a shot go (game/shots.js).
+// while they draw and let a shot go (game/shots.js); a flask in hand is thrown the same way
+// (game/throws.js), once its cooldown allows.
 import { player, state, setStatus } from './state.js';
 import { startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, combatStats, shotDue, reloadTime, KINDS } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
 import { enemyHitFx, swingFx, shotFx } from './juice.js';
 import { fireShot } from './shots.js';
+import { throwFlask } from './throws.js';
+import { cooldownLeft } from '../core/potions.js';
 
 const BUFFER = 0.3;   // s a queued attack waits for the current swing to allow the next
 // the critical-hit roll of each blade hit, in 0..1 (browser checks pin it to keep numbers exact)
@@ -32,13 +35,18 @@ export function updateSword(dt) {
   const s = player.sword;
   // a drawn shot follows its target until it goes, then flies
   if (s.active && s.stats?.ranged && !s.fired && s.target?.profile && s.target.mode !== 'dead') s.yaw = aimYaw(s.target);
-  if (shotDue(player)) { s.fired = true; s.reloading = s.stats.kind === 'crossbow'; fireShot(player, s.stats, s.target, s.yaw); }
+  if (shotDue(player)) {
+    s.fired = true; s.reloading = s.stats.kind === 'crossbow';
+    if (s.stats.kind === 'throw') throwFlask(player, s.stats, s.target, s.yaw);
+    else fireShot(player, s.stats, s.target, s.yaw);
+  }
   // a crossbow's string ratchets back and a bolt clicks in a moment before it is loaded again
   if (s.reloading && s.stats.chain - s.cool >= reloadTime(s.stats) - 0.25) { s.reloading = false; shotFx({ stats: s.stats }, 'reload'); }
   if (!s.requested) return;
   if ((s.buffer -= dt) < 0) { s.requested = false; return; }
-  const target = s.target;
-  if (!combatStats(player)) { s.requested = false; setStatus('No weapon equipped'); return; }
+  const target = s.target, stats = combatStats(player);
+  if (!stats) { s.requested = false; setStatus('No weapon equipped'); return; }
+  if (stats.kind === 'throw' && cooldownLeft(player, stats.flask, state.time) > 0) return;   // waits in the buffer
   if (!startSwing(player, aimYaw(target))) return;
   s.requested = false; s.target = target;
   setStatus(KINDS[s.stats.kind].verb);

@@ -16,6 +16,7 @@
 // recovers; 'brute' (the default) holds its ground. `charge`: how much faster it runs the last
 // few cells at a player it sees.
 import { hash32, mulberry32 } from './util.js';
+import { toxinOf } from './status.js';
 
 // what every species gains per level, as a share of its level-1 value: health keeps pace with
 // the weapons and levels a player finds and gains on the way down, damage with the player's
@@ -100,7 +101,7 @@ export const OCTONAUT = Object.freeze({
 // `hover`: floats, its idle loop runs on time rather than on ground speed.
 // Spits a fireball (clip frame 18) that sets the player on fire for half a second.
 export const FIREFACE = Object.freeze({
-  type: 'fireface', species: 'fireface', label: 'Fire-face', hp: 120, damage: 22, knock: 3,
+  type: 'fireface', species: 'fireface', label: 'Fire-face', hp: 120, damage: 22, knock: 3, fireproof: true,
   xp: 90, coins: Object.freeze([24, 40]),
   radius: 0.34, height: 1.4, bodyHeight: 1.25, mass: 1.5, hover: true,
   aggro: 6, giveUp: 9, chase: 1.3, wander: 0.5, homeSpeed: 0.8,
@@ -132,7 +133,7 @@ export const TRIANGLE = Object.freeze({
 // attack it is carried forward until it is lunge.stop short of the player (at most
 // lunge.max), lands and bites at clip frame 20.
 export const FIRECAT = Object.freeze({
-  type: 'firecat', species: 'firecat', label: 'Fire-cat', hp: 130, damage: 26, knock: 5,
+  type: 'firecat', species: 'firecat', label: 'Fire-cat', hp: 130, damage: 26, knock: 5, fireproof: true,
   xp: 95, coins: Object.freeze([22, 38]),
   radius: 0.3, height: 1, bodyHeight: 0.7, mass: 1.6,
   aggro: 6, giveUp: 10, chase: 3.4, wander: 0.6, homeSpeed: 1.2,
@@ -206,6 +207,8 @@ export const shotOf = a => a.projectile ?? a.beam ?? null;
 // the species' model.
 //   colors: role (or material name) -> recolour op, see recolorFn in core/oklch.js
 //   light / sparks / ichor: the glow light, the ember and trail colours, the blood
+//   toxin: its bites poison ({ time, ticks, share }: share of the bite's damage, core/status.js)
+//   fireproof: fire does not hurt it (a fire flask, core/status.js; the fiery species are)
 //   mods: multiply the base. hp and damage (their growth per level follows), speed (chase,
 //     wander, homing), size (model, body and melee reach), xp (xp and coins; √(hp × damage)
 //     unless given, so a kind pays for its toughness without inflating XP per cube much)
@@ -258,7 +261,7 @@ export const FROST_ADDER = enemyKind(SNAKE, {
   mods: { hp: 1.35, damage: 1.1, speed: 0.95 },
 });
 export const VENOM_ADDER = enemyKind(SNAKE, {
-  type: 'venomadder', label: 'Venom adder', reason: 'Bitten by a Venom adder!',
+  type: 'venomadder', label: 'Venom adder', reason: 'Bitten by a Venom adder!', toxin: Object.freeze({ time: 5, ticks: 5, share: 0.7 }),
   colors: { skin: 'oklch(0.58 0.15 310)', eyes: 'oklch(0.90 0.21 125)' }, ichor: Object.freeze(['#c6ff5a', '#5a8f12']),
   mods: { hp: 1.2, damage: 1.35, speed: 1.1 },
 });
@@ -273,12 +276,12 @@ export const FROST_SPIDER = enemyKind(SPIDER, {
   mods: { hp: 1.35, damage: 1.1, speed: 0.9 },
 });
 export const BOG_SPIDER = enemyKind(SPIDER, {
-  type: 'bogspider', label: 'Bog spider',
+  type: 'bogspider', label: 'Bog spider', toxin: Object.freeze({ time: 4, ticks: 4, share: 0.5 }),
   colors: { body: 'oklch(0.40 0.06 135)', eyes: 'oklch(0.90 0.18 105)' },
   mods: { hp: 1.15, damage: 1.25, speed: 1.05 },
 });
 export const REDBACK = enemyKind(SPIDER, {
-  type: 'redback', label: 'Redback', reason: 'Bitten by a Redback!',
+  type: 'redback', label: 'Redback', reason: 'Bitten by a Redback!', toxin: Object.freeze({ time: 5, ticks: 5, share: 0.6 }),
   colors: { body: 'oklch(0.34 0.11 25)', eyes: 'oklch(0.78 0.17 55)' }, ichor: Object.freeze(['#d8442e', '#5a1008']),
   mods: { hp: 1.3, damage: 1.4, speed: 1.2, size: 1.1 },
 });
@@ -293,7 +296,7 @@ export const STONE_STUNDER = enemyKind(STUNDER, {
   mods: { hp: 1.6, damage: 1.15, speed: 0.85, size: 1.12 },
 });
 export const MAGMA_STUNDER = enemyKind(STUNDER, {
-  type: 'magmastunder', label: 'Magma stunder', reason: 'Rammed by a Magma stunder!',
+  type: 'magmastunder', label: 'Magma stunder', reason: 'Rammed by a Magma stunder!', fireproof: true,
   colors: { skin: 'oklch(0.30 0.09 27)', eyes: 'oklch(0.84 0.17 75)' }, ichor: Object.freeze(['#ffb030', '#a02a10']),
   mods: { hp: 1.35, damage: 1.4, speed: 1.15 },
 });
@@ -321,7 +324,7 @@ export const CRIMSON_TRIANGLE = enemyKind(TRIANGLE, {
 // fireballs (the Fire-face's, burn included) instead of ice balls. `fx` picks its glow in
 // render/enemies.js: a light, flickering flame tongues and embers.
 export const FIRE_SHRAPS = enemyKind(SHRAPS, {
-  type: 'fireshraps', label: 'Fire shraps', reason: 'Pinched by a Fire shraps!',
+  type: 'fireshraps', label: 'Fire shraps', reason: 'Pinched by a Fire shraps!', fireproof: true,
   colors: { shell: 'oklch(0.56 0.17 32)', eyes: 'oklch(0.95 0.12 95)' }, hide: ICE_HEAD, fx: 'fireshraps',
   attacks: [{ ...SHRAPS_PINCH, reason: 'Pinched by a Fire shraps!' }, { ...SHRAPS_THROW, reason: 'Scorched by a Fire shraps!',
     projectile: Object.freeze({ ...FIREFACE.projectile, speed: 6.5, range: 7, muzzle: SHRAPS_THROW.projectile.muzzle }) }],
@@ -415,9 +418,10 @@ export function lungeAt(lunge, t) {
 
 // what a strike (or a projectile) does to the player
 export function blowOf(profile, a = profile) {
-  return { damage: Math.round(profile.damage * (a.power ?? 1)), knock: a.knock ?? profile.knock,
+  const damage = Math.round(profile.damage * (a.power ?? 1));
+  return { damage, knock: a.knock ?? profile.knock,
     knockDown: !!a.knockDown, hop: a.hop, reason: a.reason, burn: a.projectile?.burn ?? a.burn ?? null,
-    chill: a.projectile?.chill ?? a.chill ?? null };
+    chill: a.projectile?.chill ?? a.chill ?? null, toxin: toxinOf(a.toxin ?? profile.toxin, damage) };
 }
 
 // a level-1 value grown to `level`

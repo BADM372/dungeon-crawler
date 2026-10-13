@@ -1,6 +1,6 @@
 // Mouse orders, Diablo style: click the floor to walk there, click an enemy to go and hit
 // it (with a bow, crossbow or staff: until it is in range and in sight, then shoot), click an item on the floor (or its label) to go and pick it up, click a treasure chest to
-// go and open it. Holding the button
+// go and open it, click a villager who trades to walk up and trade (core/shops.js). Holding the button
 // keeps walking towards the cursor / keeps attacking. WASD cancels.
 // Orders steer only; the speed (run, or walk with Ctrl) is up to update.js.
 // Walks follow the floor graph where there is one (floors, stairs, bridges and landings; to
@@ -17,12 +17,14 @@ import { queueAttack } from './sword.js';
 import { groundAt } from '../physics/collide.js';
 import { lootHere, takePickup, canReachPickup } from './loot.js';
 import { canReachChest, openChest } from './chests.js';
+import { TRADE_REACH } from '../core/shops.js';
+import { openShop } from './inventory.js';
 
-// kind: 'move' (to x, z) | 'attack' (enemy) | 'pickup' (a pickup) | 'chest' (a reward site);
-// path: floors to follow, i: the next one
-export const order = { kind: null, x: 0, z: 0, floor: null, enemy: null, pickup: null, chest: null, path: null, i: 1, repath: 0, stuck: 0, lx: 0, lz: 0, hold: 0 };
+// kind: 'move' (to x, z) | 'attack' (enemy) | 'pickup' (a pickup) | 'chest' (a reward site) |
+// 'trade' (a villager); path: floors to follow, i: the next one
+export const order = { kind: null, x: 0, z: 0, floor: null, enemy: null, pickup: null, chest: null, villager: null, path: null, i: 1, repath: 0, stuck: 0, lx: 0, lz: 0, hold: 0 };
 
-export function clearOrder() { order.kind = null; order.enemy = null; order.pickup = null; order.chest = null; order.path = null; }
+export function clearOrder() { order.kind = null; order.enemy = null; order.pickup = null; order.chest = null; order.villager = null; order.path = null; }
 // Teleports/travel invalidate cube-local targets; a held click must not recreate them.
 export function clearMouseInput() { clearOrder(); pointer.down = false; pointer.mode = null; }
 
@@ -106,6 +108,17 @@ export function orderChest(site) {
   if (canReachChest(site)) { openChest(site); clearOrder(); }
 }
 
+// a villager (state.map.villagers) close enough to trade with
+export const canTrade = v => Math.hypot(v.x - player.x, v.z - player.z) <= TRADE_REACH && Math.abs(v.y - player.y) <= 0.8;
+// v: a villager with a shop; walk to the spot in front of them
+export function orderTrade(v) {
+  begin('trade');
+  const x = v.x + Math.sin(v.yaw) * 0.85, z = v.z + Math.cos(v.yaw) * 0.85;
+  Object.assign(order, { x, z, floor: floorOf(groundAt(x, z, v.y + 0.3, 0).s), enemy: null, pickup: null, chest: null, villager: v, repath: 1e9 });
+  plan(order.floor);
+  if (canTrade(v)) { clearOrder(); openShop(v); }
+}
+
 // the held button: keep walking to the cursor, or pick the next enemy under it
 export function holdPointer(dt) {
   if (!pointer.down || state.transitioning || state.inventoryOpen) return;
@@ -145,6 +158,7 @@ export function followOrder(dt) {
     if (state.run.chests.has(order.chest.id)) { clearOrder(); return null; }
     if (canReachChest(order.chest)) { openChest(order.chest); clearOrder(); return { dx: 0, dz: 0 }; }
   }
+  if (order.kind === 'trade' && canTrade(order.villager)) { const v = order.villager; clearOrder(); openShop(v); return { dx: 0, dz: 0 }; }
   // the next floor on the path (skipping those we already reached), the target at the end
   let wx = tx, wz = tz;
   const path = order.path;
@@ -158,12 +172,12 @@ export function followOrder(dt) {
     if (order.i < path.length - 1) [wx, wz] = point(order.i);
   }
   const left = Math.hypot(tx - player.x, tz - player.z);
-  if ((order.kind === 'move' || order.kind === 'chest') && left < 0.08) { clearOrder(); return { dx: 0, dz: 0 }; }
+  if ((order.kind === 'move' || order.kind === 'chest' || order.kind === 'trade') && left < 0.08) { clearOrder(); return { dx: 0, dz: 0 }; }
   // give up when walking into something for a while
   if (player.sword.active || player.stun > 0 || Math.hypot(player.x - order.lx, player.z - order.lz) > 0.2) {
     order.stuck = 0; order.lx = player.x; order.lz = player.z;
   } else if ((order.stuck += dt) > 0.6) { clearOrder(); return null; }
   const dx = wx - player.x, dz = wz - player.z, d = Math.hypot(dx, dz) || 1;
-  const ease = order.kind === 'move' || order.kind === 'chest' ? Math.min(1, Math.max(0.25, left / 0.5)) : 1;   // settle onto the spot
+  const ease = order.kind === 'move' || order.kind === 'chest' || order.kind === 'trade' ? Math.min(1, Math.max(0.25, left / 0.5)) : 1;   // settle onto the spot
   return { dx: dx / d * ease, dz: dz / d * ease };
 }

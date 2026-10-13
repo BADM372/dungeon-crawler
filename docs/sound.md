@@ -33,7 +33,8 @@ click.
 | `door` | through a house door (`game/doors.js`): a wooden creak and the latch |
 | `castStart`, `fizzle` | reading the scroll, a broken cast or charge (`game/townportal.js`, `game/ambience.js`) |
 | `equip`, `bagOpen`, `bagClose`, `use` | equipping, the inventory, quick bar slots |
-| `drink`, `chest` | drinking a health potion (`game/quickbar.js`), opening a treasure chest (`game/chests.js`) |
+| `drink`, `buff`, `chest` | drinking a potion and a buff or cure taking hold (`game/quickbar.js`), opening a treasure chest (`game/chests.js`) |
+| `lob`, `glass`, `boom`, `hiss`, `poison` | a flask thrown, breaking, a blast, a toxic cloud, a poison tick (`game/juice.js`) |
 | `<species>_alert/_windup/_death` | an enemy starts chasing you (at most every 0.3 s), winds up an attack, dies |
 
 ## Continuous sounds

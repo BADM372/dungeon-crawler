@@ -3,7 +3,7 @@ The player with each kind of weapon: a lineup of the attack clips' key frames, t
 mounted in the fist the way the game mounts it (items.MOUNTS, render/character.js).
 
 Rows: sword (Slash), bow (Shoot), crossbow (HoldCrossbow, CrossbowShot), staff (HoldStaff,
-Cast). Each figure is a copy of the rig playing its clip at one frame (an NLA strip offset).
+Cast), a throwing flask (HoldThrow, Throw; held by the neck, items.flask_mount). Each figure is a copy of the rig playing its clip at one frame (an NLA strip offset).
 A last image shows the town's villagers (src/world/town.js VILLAGERS) standing in their hold
 poses, tinted, wearing and holding their things (items.WEARS) the way render/figure.js mounts
 them. Nothing is exported; this is for checking poses, grips and aim.
@@ -41,6 +41,7 @@ ROWS = [
     ('weapon_crossbow_light', [('HoldCrossbow', 0), ('CrossbowShot', 6), ('CrossbowShot', 9), ('CrossbowShot', 12),
                                ('CrossbowShot', 19), ('CrossbowShot', 23), ('CrossbowShot', 27)]),
     ('weapon_staff_arcane', [('HoldStaff', 0), ('Cast', 7), ('Cast', 12), ('Cast', 16), ('Cast', 22)]),
+    ('item_flask_fire', [('HoldThrow', 0), ('Throw', 4), ('Throw', 8), ('Throw', 12), ('Throw', 17), ('Throw', 22)]),
 ]
 
 
@@ -58,13 +59,15 @@ VILLAGERS = [
 def weapon_kind(name):
     if name in items.WEARS:
         return name
+    if name.startswith('item_flask_'):
+        return 'throw'
     return next(k for k in ('sword', 'bow', 'crossbow', 'staff') if name.startswith('weapon_' + k))
 
 
 def mount(rig, weapon, kind):
     """A copy of `weapon` (and its parts) in the rig's socket for `kind` (a weapon kind, or the
     name of a worn or held thing)."""
-    socket = items.WEARS[kind][0] if kind in items.WEARS else items.MOUNTS[kind][0]
+    socket = items.WEARS[kind][0] if kind in items.WEARS else 'hand.R' if kind == 'throw' else items.MOUNTS[kind][0]
     obj = weapon.copy()
     bpy.context.scene.collection.objects.link(obj)
     obj.hide_render = False

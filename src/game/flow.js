@@ -20,6 +20,7 @@ import { whenPropsReady } from '../render/props.js';
 import { townAssetsReady } from '../render/townassets.js';
 import { villagersReady } from '../render/villagers.js';
 import { createPlayerStats, createRun, takeDamage } from '../core/progression.js';
+import { clearEffects } from '../core/potions.js';
 import { restoreDefeated, gateLocked, guardianLockMessage } from '../core/guardians.js';
 import { syncEquippedWeapon } from './equipment.js';
 import { clearInput } from './inputstate.js';
@@ -30,7 +31,7 @@ import { isInterior } from '../world/town.js';
 
 export function spawnAt(x, y, z) {
   cancelSword(true); cancelCast();
-  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, getUp: null, fluidDeath: 0, stun: 0, climb: null, burning: null, chilled: null });
+  Object.assign(player, { x, y, z, vy: 0, vx: 0, vz: 0, visY: y, grounded: true, swimming: false, support: null, ragdoll: null, getUp: null, fluidDeath: 0, stun: 0, climb: null, burning: null, chilled: null, toxic: null });
   player.safe = respawnPoint({ x, y, z });
   const gr = groundAt(x, z, y + 0.05, 0);
   player.support = gr.s;
@@ -47,11 +48,12 @@ export function arrivalPoint(p) {
   return respawnPoint({ x, z, y: Number.isFinite(y) ? y : p.y });
 }
 
-// back to where you came into this cube
+// back to where you came into this cube (after a death: the potions you drank wore off)
 export function spawnEntry() {
   const a = state.arrival = respawnPoint(state.arrival);
   spawnAt(a.x, a.y, a.z);
   player.hp = player.maxHp;
+  clearEffects(player);
 }
 
 export function hurt(amount, reason) {
@@ -215,7 +217,7 @@ export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   state.transitioning = true;
   cancelSword(true);
   clearInput();
-  Object.assign(player, createPlayerStats());
+  Object.assign(player, createPlayerStats(state.dev));
   state.run = createRun(); state.inventoryOpen = false;
   // the villagers are a nicety: a failure to load them (logged) does not hold the game up
   return whenReady(Promise.all([state.cubes.get(state.cubes.start), townAssetsReady, syncEquippedWeapon(),

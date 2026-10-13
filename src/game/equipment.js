@@ -1,19 +1,20 @@
-// Prepare the model first, then commit visual + inventory equipment together.
+// Prepare the model first, then commit visual + inventory equipment together. The hand holds the
+// weapon, or a flask readied to throw (core/inventory.js readyItem; game/throws.js) instead.
 import { player, state, setStatus } from './state.js';
 import { sfx } from '../audio/sfx.js';
 import { ITEMS } from '../core/items.js';
-import { ownedItem, equipItem, addInstance } from '../core/inventory.js';
+import { ownedItem, equipItem, addInstance, readyItem } from '../core/inventory.js';
 import { rollWeapon } from '../core/gear/generate.js';
 import { displayName } from '../core/gear/stats.js';
 import { dropAtFeet } from './loot.js';
-import { equippedWeapon, canChangeWeapon } from '../core/combat.js';
+import { equippedWeapon, canChangeWeapon, readiedFlask } from '../core/combat.js';
 import { prepareSword, equipSword, character } from '../render/character.js';
 import { loadThing, wear, takeOff } from '../render/figure.js';
 
 let request = 0;
 export const equipmentAllowed = () => !state.transitioning && !state.equipping && canChangeWeapon(player);
 export async function syncEquippedWeapon() {
-  const token = ++request, inventory = player.inventory, def = equippedWeapon(player);
+  const token = ++request, inventory = player.inventory, def = readiedFlask(player) ?? equippedWeapon(player);
   state.equipping = true;
   try {
     const model = def ? await prepareSword(def.model) : null;
@@ -39,6 +40,19 @@ export async function equipOwnedWeapon(instanceId) {
     return false;
   } finally { if (token === request) state.equipping = false; }
 }
+// Take flask `itemId` in hand to throw it (null: put it away, the weapon back in hand).
+export async function readyFlask(itemId) {
+  const inventory = player.inventory, def = itemId && ITEMS[itemId];
+  if (!equipmentAllowed()) { setStatus('Finish your current action first'); return false; }
+  if (itemId && !readyItem(inventory, itemId)) { setStatus(`No ${def?.name ?? 'flask'} left`); return false; }
+  if (!itemId) readyItem(inventory, null);
+  await syncEquippedWeapon();
+  if (inventory !== player.inventory) return false;
+  sfx(itemId ? 'toss' : 'equip', { volume: 0.6 });
+  setStatus(itemId ? `${def.name} in hand: click where to throw it` : `${displayName(equippedItemOf(inventory)) || 'Weapon'} back in hand`);
+  return true;
+}
+const equippedItemOf = inv => ownedItem(inv, inv.equipped);
 // dev tools (?dev=1): roll a weapon of this base, rarity and item level into the bag and
 // equip it, or drop one at your feet
 const devRoll = (itemId, rarity, ilvl) => rollWeapon(Math.random, ilvl, { itemId, rarity });

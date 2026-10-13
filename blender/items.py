@@ -78,7 +78,7 @@ MOUNTS = {
     'staff': ('hand.R', (-0.0989, -0.6061, -0.7408, 0.2723)),
 }
 # the player's attack clip for each kind (character.py)
-CLIPS = {'sword': 'Slash', 'bow': 'Shoot', 'crossbow': 'CrossbowShot', 'staff': 'Cast'}
+CLIPS = {'sword': 'Slash', 'bow': 'Shoot', 'crossbow': 'CrossbowShot', 'staff': 'Cast', 'throw': 'Throw'}
 
 # Things a character wears or carries (category 'wearable' / 'held'): name: (socket bone,
 # rotation (glTF x y z w) and offset (rig units) in the socket bone's head frame, the arm's
@@ -103,14 +103,25 @@ SLOTS = {'head': 'head', 'hand.R': 'right', 'hand.L': 'left'}
 BALL_FLOAT = .34
 
 
+def flask_mount():
+    """A throwing flask in the fist: upright like a staff in its hold (the same pose), held by
+    the neck (FLASK_GRIP) at FLASK_SCALE. (rotation, offset) in the socket bone's frame."""
+    x, y, z, w = MOUNTS['staff'][1]
+    q = Quaternion((w, x, y, z))
+    return q, -(q @ Vector((0, FLASK_GRIP * FLASK_SCALE, 0)))
+
+
 def mount_matrix(kind):
     """The weapon's own (Blender) space in its socket bone's head frame, from MOUNTS (or a worn
-    or held item's, from WEARS, by its name)."""
+    or held item's, from WEARS, by its name; 'throw': a flask's)."""
+    to_gltf = Matrix(((1, 0, 0), (0, 0, 1), (0, -1, 0)))
+    if kind == 'throw':
+        q, offset = flask_mount()
+        return Matrix.Translation(offset) @ (q.to_matrix() @ to_gltf).to_4x4() @ Matrix.Scale(FLASK_SCALE, 4)
     if kind in WEARS:
         _, (x, y, z, w), offset, _ = WEARS[kind]
     else:
         (x, y, z, w), offset = MOUNTS[kind][1], (0, 0, 0)
-    to_gltf = Matrix(((1, 0, 0), (0, 0, 1), (0, -1, 0)))
     return Matrix.Translation(offset) @ (Quaternion((w, x, y, z)).to_matrix() @ to_gltf).to_4x4()
 
 
@@ -646,17 +657,76 @@ def staff(m, v=0):
         gem(m, 3, (-.20, .02, .56), .22)
 
 
+# Drinkable potions (src/core/items.js POTIONS): name: (bottle shape, liquid, glass tint, emblem
+# on the label, size, a band round the shoulder). Bottles are opaque stylised glass. The health
+# potions share the heart and grow from a slim vial to an ornate flask; the others each have a
+# colour and an emblem of their own (a cross cures, a wing quickens the feet, a bolt the
+# hands, a sword hits harder, an arrow jumps higher). Mana and stamina have no use yet.
+POTION_LOOKS = {
+    'health': (0, '#bb5d60', '#dcc4bb', 'heart', 1, None),
+    'mana': (1, '#5b89b4', '#bfd0d2', 'rune', 1, None),
+    'stamina': (2, '#6b9c68', '#cbd3b3', 'leaf', 1, None),
+    'health_minor': (3, '#d27f78', '#ead5cc', 'heart', .95, None),
+    'health_greater': (0, '#a8303d', '#dcb4b0', 'heart', 1.15, GOLD),
+    'health_superior': (4, '#8c1838', '#e2b6c2', 'heart', 1.2, GOLD),
+    'antidote': (1, '#3f9f8f', '#c4e3da', 'cross', 1, None),
+    'swiftness': (2, '#4fa9d6', '#c6e2ee', 'wing', 1, None),
+    'haste': (3, '#e0962a', '#f2dcae', 'bolt', 1, None),
+    'might': (0, '#bf4a2a', '#e9c2ae', 'sword', 1.05, IRON),
+    'leaping': (4, '#93c23a', '#dfeebd', 'arrow', 1, None),
+}
+POTIONS = list(POTION_LOOKS)
+# bottle shapes: lathe profile [(height, radius)], sides, turn, and the label (front y, height z,
+# width, height)
+SHAPES = [
+    ([(0, .065), (.04, .125), (.14, .15), (.23, .115), (.275, .049)], 8, 0, (-.145, .14, .085, .077)),   # round
+    ([(0, .068), (.025, .09), (.235, .09), (.28, .043)], 6, 0, (-.092, .14, .085, .077)),                # tall
+    ([(0, .095), (.025, .13), (.14, .13), (.24, .055)], 4, math.pi / 4, (-.096, .12, .085, .077)),       # square
+    ([(0, .05), (.02, .068), (.27, .066), (.31, .042)], 6, 0, (-.064, .16, .06, .08)),                   # slim vial
+    ([(0, .13), (.03, .16), (.07, .148), (.22, .066), (.3, .046)], 8, math.pi / 8, (-.142, .075, .085, .066)),   # cone
+]
+
+
+def emblem(m, kind, y, z, k, color):
+    """The emblem on a label at (y, z) (the label's front), k: its size against the round
+    bottle's label."""
+    y -= .012 * k
+    if kind == 'heart':   # two lobes and a pointed lower half
+        m.blob((-.015 * k, y, z + .012 * k), (.017 * k, .006, .017 * k), color, n=5, jitter=0)
+        m.blob((.015 * k, y, z + .012 * k), (.017 * k, .006, .017 * k), color, n=5, jitter=0)
+        m.leaf((0, y - .003, z - .028 * k), (0, y - .003, z + .015 * k), .027 * k, color)
+    elif kind == 'rune':
+        m.box((-.012, y, z + .015), (.025, .007, .025), color, tilt=0)
+        m.box((.007, y, z - .014), (.025, .007, .035), color)
+    elif kind == 'leaf':
+        m.leaf((-.018, y - .003, z - .025), (.018, y - .003, z + .025), .015, color)
+    elif kind == 'cross':
+        m.box((0, y, z), (.016 * k, .008, .052 * k), color)
+        m.box((0, y, z), (.052 * k, .008, .016 * k), color)
+    elif kind == 'wing':  # three feathers fanning up and out
+        for tx, tz, w in ((.03, .016, .011), (.026, .03, .012), (.014, .04, .011)):
+            m.leaf((-.022 * k, y, z - .022 * k), (tx * k, y, (z + tz * k)), w * k, color)
+    elif kind == 'bolt':  # a zigzag of lightning
+        pts = [(-.012, .034), (.014, .006), (-.010, .002), (.012, -.032)]
+        for (ax, az), (bx, bz) in zip(pts, pts[1:]):
+            m.leaf((ax * k, y, z + az * k), (bx * k, y, z + bz * k), .009 * k, color)
+    elif kind == 'sword':  # point up, a cross guard and the grip
+        m.leaf((0, y, z - .016 * k), (0, y, z + .038 * k), .009 * k, color)
+        m.box((0, y, z - .018 * k), (.036 * k, .008, .008 * k), color)
+        m.box((0, y, z - .03 * k), (.009 * k, .008, .016 * k), color)
+    elif kind == 'arrow':  # pointing up
+        m.box((0, y, z - .012 * k), (.011 * k, .008, .036 * k), color)
+        m.leaf((0, y - .001, z + .004 * k), (0, y - .001, z + .036 * k), .022 * k, color)
+
+
 def potion(m, v):
-    color = ['#bb5d60', '#5b89b4', '#6b9c68'][v]
-    tint = ['#dcc4bb', '#bfd0d2', '#cbd3b3'][v]
-    profiles = [[(0, .065), (.04, .125), (.14, .15), (.23, .115), (.275, .049)],
-                [(0, .068), (.025, .09), (.235, .09), (.28, .043)],
-                [(0, .095), (.025, .13), (.14, .13), (.24, .055)]]
-    n = [8, 6, 4][v]
-    neck = profiles[v][-1][0]
+    """A drinkable potion (POTION_LOOKS, by its index in POTIONS)."""
+    start = len(m.vertices)
+    shape, color, tint, mark, size, band = POTION_LOOKS[POTIONS[v]]
+    profile, n, phase, (y, z, w, h) = SHAPES[shape]
+    neck = profile[-1][0]
     m.slot = 2
-    m.lathe((0, 0, 0), profiles[v], color, n=n, jitter=0, phase=math.pi / 4 if v == 2 else 0,
-            colors=[color, color, color, tint])
+    m.lathe((0, 0, 0), profile, color, n=n, jitter=0, phase=phase, colors=[color, color, color, tint])
     m.lathe((0, 0, 0), [(neck - .009, .054), (neck + .064, .054),
                          (neck + .067, .067), (neck + .088, .067)], tint, n=8, jitter=0)
     m.slot = 0
@@ -666,21 +736,77 @@ def potion(m, v):
     m.lathe((0, 0, 0), [(neck + .01, .058), (neck + .032, .058)], GOLD, n=8, jitter=0)
     m.slot = 0
     # Cream paper medallion with raised icon; opaque stylised glass, no sorting.
-    y = [-.145, -.092, -.096][v]
-    z = [.14, .14, .12][v]
-    m.box((0, y, z), (.085, .013, .077), CREAM)
-    if v == 0:
-        # Heart silhouette, two lobes plus a pointed lower half.
-        m.blob((-.015, y - .012, z + .012), (.017, .006, .017), color, n=5, jitter=0)
-        m.blob((.015, y - .012, z + .012), (.017, .006, .017), color, n=5, jitter=0)
-        m.leaf((0, y - .015, z - .028), (0, y - .015, z + .015), .027, color)
-    elif v == 1:
-        m.box((-.012, y - .012, z + .015), (.025, .007, .025), color, tilt=0)
-        m.box((.007, y - .012, z - .014), (.025, .007, .035), color)
-    else:
-        m.leaf((-.018, y - .015, z - .025), (.018, y - .015, z + .025), .015, color)
+    m.box((0, y, z), (w, .013, h), CREAM)
+    emblem(m, mark, y, z, w / .085, color)
     # Small chunky highlight strip, not a realistic transparent bottle.
     m.tube([(-.045, y + .015, z + .045), (-.045, y + .023, z + .085)], .006, tint, n=4)
+    if band:   # a metal band round the shoulder, and a cap over the cork
+        m.slot = 1
+        r = max(rr for hh, rr in profile if hh >= neck * .6)
+        m.ring((0, 0, neck * .78), r * .93, .014, band, n=n * 2 if n < 8 else n, section=4)
+        m.lathe((0, 0, 0), [(neck + .115, .056), (neck + .14, .05), (neck + .15, .02)], band, n=8, jitter=0)
+        m.slot = 0
+    if POTIONS[v] == 'health_superior':   # a star over the heart
+        star(m, Vector((0, y - .02, z + h * .36)), Vector((0, -1, .2)).normalized(), .016, GOLD)
+    if size != 1:
+        m.vertices[start:] = [(x * size, yy * size, zz * size) for x, yy, zz in m.vertices[start:]]
+
+
+# Throwing flasks (src/core/items.js POTIONS with `flask`): a round belly and a long neck the fist
+# holds them by (FLASK_GRIP), the same size for all, so one mount fits: name: (glass, tint,
+# label, emblem colour). Blast: smoky glass bound with iron and a lit fuse; fire: a rag stuffed
+# in the neck; toxic: sealed with wax, bubbles in the shoulder and a skull on a dark label.
+FLASK_LOOKS = {
+    'blast': ('#4a4556', '#9f98ad', CREAM, '#e2602a'),
+    'fire': ('#d0532a', '#f0b890', CREAM, '#e8642a'),
+    'toxic': ('#62a62a', '#c8e6a0', '#2c3a22', '#e8e0c8'),
+}
+FLASKS = list(FLASK_LOOKS)
+FLASK_GRIP = .29      # the neck's middle (Blender z), where the fist holds it
+FLASK_SCALE = 1.1     # how big it is in the hand against its size on the floor (rig units: x 0.55)
+
+
+def flask(m, v):
+    """A throwing flask (FLASK_LOOKS, by its index in FLASKS)."""
+    kind = FLASKS[v]
+    glass, tint, label, mark = FLASK_LOOKS[kind]
+    m.slot = 2
+    m.lathe((0, 0, 0), [(0, .045), (.025, .105), (.11, .14), (.19, .11), (.235, .055), (.25, .042)], glass,
+            n=10, jitter=0, colors=[glass, glass, glass, glass, tint])
+    m.lathe((0, 0, 0), [(.245, .04), (.32, .038), (.325, .05), (.345, .05)], tint, n=8, jitter=0)
+    m.slot = 0
+    y, z = -.142, .12
+    m.box((0, y, z), (.08, .013, .075), label)
+    if kind == 'blast':
+        m.slot = 1
+        for hz in (.055, .175):
+            m.ring((0, 0, hz), .128 if hz < .1 else .124, .013, IRON, n=10, section=4)
+        m.slot = 0
+        m.lathe((0, 0, 0), [(.335, .036), (.37, .04), (.375, .03)], CUT, n=7, jitter=0)
+        m.tube([(0, 0, .37), (.012, .004, .41), (.045, .006, .44), (.075, .004, .43)], [.009, .008, .007, .006], '#3a2e22', n=5)
+        m.blob((.08, .004, .432), (.02, .02, .02), '#ffb347', n=5, jitter=.2)
+        star(m, Vector((0, y - .008, z)), Vector((0, -1, 0)), .03, mark, points=8, depth=.008)
+    elif kind == 'fire':
+        # a rag stuffed in the neck, its ends hanging out over the shoulder
+        m.tube([(0, 0, .3), (0, 0, .37), (.01, -.005, .4)], [.036, .042, .03], '#d8c8a0', n=6)
+        m.tube([(.025, -.01, .385), (.06, -.025, .35), (.075, -.035, .29)], [.016, .013, .009], '#c46a3a', n=4)
+        m.tube([(-.02, .01, .38), (-.05, .02, .36), (-.065, .03, .32)], [.014, .011, .008], '#d8c8a0', n=4)
+        m.leaf((0, y - .012, z - .03), (0, y - .012, z + .032), .022, mark)
+        m.leaf((0, y - .016, z - .026), (.004, y - .016, z + .012), .012, '#ffd25a')
+    else:
+        # sealed with wax dripping down the neck, bubbles rising in the glass
+        m.lathe((0, 0, 0), [(.33, .046), (.36, .052), (.375, .03)], '#6b3f7a', n=8, jitter=0)
+        for a, l in ((.3, .03), (2.2, .045), (4.1, .025)):
+            m.tube([(math.cos(a) * .05, math.sin(a) * .05, .34), (math.cos(a) * .046, math.sin(a) * .046, .34 - l)],
+                   [.012, .006], '#6b3f7a', n=4)
+        for bx, bz, r in ((.06, .2, .016), (.085, .165, .012), (.035, .215, .01)):
+            m.blob((bx, -.08, bz), (r, r, r), tint, n=5, jitter=0)
+        # a skull: the head, two dark eyes, the jaw
+        m.blob((0, y - .011, z + .008), (.022, .007, .02), mark, n=6, jitter=0)
+        m.box((0, y - .01, z - .016), (.022, .008, .012), mark)
+        for ex in (-.008, .008):
+            m.box((ex, y - .019, z + .006), (.008, .004, .009), label)
+    m.tube([(-.07, y + .04, .07), (-.075, y + .055, .15)], .007, tint, n=4)
 
 
 def scroll(m, v=0):
@@ -1152,9 +1278,8 @@ SPECS = [(f'item_stick_{s}', stick, i, 'resource', 'ground')
     (f'weapon_staff_{s[0]}', staff, i, 'weapon', 'hand') for i, s in enumerate(STAFFS)] + [
     ('weapon_arrow', arrow, 0, 'ammunition', 'nock'),
     ('weapon_bolt', bolt, 0, 'ammunition', 'nock'),
-    ('item_potion_health', potion, 0, 'consumable', 'ground'),
-    ('item_potion_mana', potion, 1, 'consumable', 'ground'),
-    ('item_potion_stamina', potion, 2, 'consumable', 'ground'),
+    *[(f'item_potion_{p}', potion, i, 'consumable', 'ground') for i, p in enumerate(POTIONS)],
+    *[(f'item_flask_{f}', flask, i, 'consumable', 'ground') for i, f in enumerate(FLASKS)],
     ('treasure_chest', chest, 0, 'container', 'ground'),
     ('item_town_portal', scroll, 0, 'tool', 'ground')] + [
     ('wear_headscarf', headscarf, 0, 'wearable', 'head'),
@@ -1210,7 +1335,13 @@ def build(scene=None):
             if builder == crystal_ball:
                 info['float'] = BALL_FLOAT
         if builder == potion:
-            info['potion_type'] = ['health', 'mana', 'stamina'][v]
+            info['potion_type'] = POTIONS[v]
+        if builder == flask:
+            # in the right fist by the neck, like a staff (character.py HoldThrow, Throw)
+            q, offset = flask_mount()
+            info.update(potion_type=FLASKS[v], weapon='throw', socket='hand.R', attack_clip='Throw', hold='throw',
+                        mount_quat_gltf=[round(c, 6) for c in (q.x, q.y, q.z, q.w)],
+                        mount_offset_gltf=[round(c, 6) + 0.0 for c in offset], mount_scale=FLASK_SCALE)
         if builder == chest:
             # glTF (Y up): the lid's clips, its hinge, and the floor where contents go
             hinge = [CHEST_HINGE[0], CHEST_HINGE[2], -CHEST_HINGE[1]]
@@ -1224,7 +1355,7 @@ def build(scene=None):
 
 
 def validate(objects):
-    assert len(objects) == len(SPECS) == 47
+    assert len(objects) == len(SPECS) == 58
     assert {o.name for o in objects} == {s[0] for s in SPECS}
     report = []
     for obj in objects:
@@ -1282,17 +1413,20 @@ def setup_preview(scene, objects):
         return obj
 
     # Each item has its own plinth; all meshes retain their authoring scale. A row per weapon
-    # family, then the rest.
+    # family, the worn things, the potions (health and the old ones, then the rest and the
+    # flasks), then the rest.
     groups = [[o for o in objects if o.name.startswith(p + '_')]
               for p in ('weapon_sword', 'weapon_bow', 'weapon_crossbow', 'weapon_staff')]
     groups.append([o for o in objects if o.name.startswith(('wear_', 'held_'))])
+    groups.append([o for o in objects if o.name.startswith(('item_potion_health', 'item_potion_mana', 'item_potion_stamina'))])
+    groups.append([o for o in objects if o.name.startswith(('item_potion_', 'item_flask_')) and not any(o in g for g in groups)])
     rest = [o for o in objects if not any(o in g for g in groups)]
-    groups += [rest[:9], rest[9:]]
+    groups += [rest[:8], rest[8:]]
     labels = {'weapon_sword_greatsword': 'GREATSWORD', 'treasure_chest': 'CHEST',
               'item_town_portal': 'TOWN PORTAL'}
     for row, group in enumerate(groups):
         for i, obj in enumerate(group):
-            x, y = (i - (len(group) - 1) / 2) * 1.6, (3 - row) * 3.1
+            x, y = (i - (len(group) - 1) / 2) * 1.6, (4 - row) * 3.1
             low = min(v.co.z for v in obj.data.vertices)
             obj.location = (x, y, .085 - low)
             platform = bpy.data.meshes.new('ItemPlinth')
@@ -1314,7 +1448,7 @@ def setup_preview(scene, objects):
     cam = link('ItemsCamera', bpy.data.cameras.new('ItemsCamera'))
     cam.location = (3, -12, 14)
     town.aim(cam, (0, 0, .35))
-    cam.data.type, cam.data.ortho_scale = 'ORTHO', 23.5
+    cam.data.type, cam.data.ortho_scale = 'ORTHO', 29
     scene.camera = cam
     for name, pos, power, size in [('ItemsKey', (-3, -5, 10), 1500, 7),
                                   ('ItemsFill', (7, -1, 8), 900, 6), ('ItemsRim', (0, 6, 9), 1100, 5)]:

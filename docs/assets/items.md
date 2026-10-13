@@ -1,6 +1,6 @@
 # Loot and player equipment
 
-![47-asset overview](../../blender/previews/items-preview.png)
+![58-asset overview](../../blender/previews/items-preview.png)
 
 Built and inspected through Blender MCP. Matches the existing flat-faceted,
 texture-free clay style: warm timber, leather wraps, muted brass and steel,
@@ -19,13 +19,14 @@ one animated asset.
 | Crossbows | `weapon_crossbow_hand` (small, brass), `weapon_crossbow_light`, `weapon_crossbow_repeating` (bolt magazine and lever), `weapon_crossbow_heavy` (iron prod, stirrup), `weapon_crossbow_arbalest` (steel prod, stirrup, windlass) |
 | Staffs | `weapon_staff_gnarled` (crooked branch, green stone), `weapon_staff_oak` (brass prongs, blue orb), `weapon_staff_ember` (dark wood, ruby flame), `weapon_staff_crystal` (birch and silver, clear shards), `weapon_staff_arcane` (forked wood, brass collars, amethyst head) |
 | Ammunition | `weapon_arrow`, `weapon_bolt` (what bows and crossbows shoot in the game) |
-| Potions | `item_potion_health` (red, round), `item_potion_mana` (blue, tall), `item_potion_stamina` (green, square) |
+| Potions | `item_potion_health` (red, round), `item_potion_mana` (blue, tall), `item_potion_stamina` (green, square), `item_potion_health_minor` (slim vial), `item_potion_health_greater` (deeper red, gold band and cap), `item_potion_health_superior` (crimson cone, gold, a star over the heart), `item_potion_antidote` (teal, a cross), `item_potion_swiftness` (sky blue, a wing), `item_potion_haste` (amber vial, a bolt), `item_potion_might` (rust red, iron band, a sword), `item_potion_leaping` (lime cone, an arrow up) |
+| Flasks | `item_flask_blast` (smoky glass, iron bands, a lit fuse), `item_flask_fire` (orange, a rag in the neck, a flame), `item_flask_toxic` (green, wax seal, bubbles, a skull); held by the neck to throw (extras `weapon: 'throw'`, `mount_*`, see [potions.md](../potions.md)) |
 | Treasure chest | `treasure_chest` (empty, lid on a hinge, `Open` / `Close` clips) |
 | Tools | `item_town_portal` (parchment scroll on two rollers, violet portal sigil, wax seal) |
 | Headwear | `wear_headscarf` (plum kerchief with golden dots, knotted at the nape), `wear_welding_mask` (flat olive shield, dark green window, headband and crown strap), `wear_wizard_hat` (indigo, drooping brim, gold band and stars, bent tip) |
 | Held | `held_towel` (striped, folded over a forearm), `held_crystal_ball` (faceted, three shards circling it), `held_rope` (a coil with a loose, frayed end), `held_hammer`, `held_pliers` (holding a glowing billet), `held_feed_bag` (burlap, grain and a carrot) |
 
-**47 assets / 18,774 triangles total.** Sticks vary in length and branching; gemstones have
+**58 assets / 22,384 triangles total.** Sticks vary in length and branching; gemstones have
 distinct cuts; swords vary in blade length, width, guard and grip, not just scale; bows in
 length, bend and recurve; crossbows in stock, prod and fittings; staffs in their heads.
 

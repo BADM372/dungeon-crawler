@@ -8,6 +8,7 @@ import { createRun, createPlayerStats } from '../../src/core/progression.js';
 import { chestLoot } from '../../src/core/chests.js';
 import { favoredKind } from '../../src/core/combat.js';
 import { HEALTH_POTION } from '../../src/core/items.js';
+import { tickEffects } from '../../src/core/potions.js';
 import { barEntry, copperTotal } from '../../src/core/inventory.js';
 import { enterCube, spawnAt, hurt } from '../../src/game/flow.js';
 import { lootHere, updateLoot } from '../../src/game/loot.js';
@@ -81,9 +82,11 @@ export async function runChestChecks() {
       // a potion from the quick bar
       const potions = () => barEntry(player.inventory, 1)?.count ?? 0, n = potions();
       check(barEntry(player.inventory, 1)?.itemId === HEALTH_POTION.id && n > 0, 'potions on quick bar slot 2');
-      player.hp = 50; player.drankAt = -Infinity;
+      player.hp = 50; player.cooldowns = {};
       dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2', bubbles: true })); dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit2', bubbles: true }));
-      check(player.hp === Math.min(player.maxHp, 50 + HEALTH_POTION.heal * player.maxHp) && potions() === n - 1, 'key 2 drinks a potion');
+      check(player.hp === 50 && potions() === n - 1, 'key 2 drinks a potion');
+      tickEffects(player, 1, state.time + 1);   // it pours in within a second
+      check(player.hp === Math.min(player.maxHp, 50 + HEALTH_POTION.effect.heal * player.maxHp), 'and heals');
       dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2', bubbles: true })); dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit2', bubbles: true }));
       check(potions() === n - 1, 'one drink at a time');
       results.push('quick bar potion / cooldown');

@@ -6,11 +6,11 @@ import { makeLayouts } from '../src/world/layout.js';
 import { RARITY } from '../src/core/gear/rarities.js';
 import { depthLevel, coinRange, SPIDER } from '../src/core/enemies.js';
 import { itemStats } from '../src/core/gear/stats.js';
-import { HEALTH_POTION } from '../src/core/items.js';
+import { ITEMS } from '../src/core/items.js';
 
 const site = (prestige, i = 0) => ({ id: `7:0,-3,1:site:${i}`, prestige });
 const weapons = loot => loot.items.filter(i => i.gen);
-const potions = loot => loot.items.filter(i => i.itemId === HEALTH_POTION.id).reduce((n, i) => n + i.count, 0);
+const potions = loot => loot.items.filter(i => ITEMS[i.itemId].category === 'potion').reduce((n, i) => n + i.count, 0);
 
 test('every site prestige has a chest, and a chest always holds the same', () => {
   assert.deepEqual(Object.keys(CHESTS), PRESTIGE);
@@ -38,6 +38,7 @@ test('grander sites hold more coins, potions and better weapons, a little above 
         }
         const n = potions(loot);
         assert.ok(n >= t.potions[0] && n <= t.potions[1]);
+        for (const i of loot.items.filter(i => !i.gen)) assert.ok(ITEMS[i.itemId].level <= depthLevel(depth) + t.level, `${i.itemId} at depth ${depth}`);
         assert.ok(Number.isSafeInteger(loot.copper) && loot.copper > 0);
       }
       const now = { copper: avg(p, depth, l => l.copper), rank: avg(p, depth, l => Math.max(...weapons(l).map(w => RARITY[w.gen.rarity].rank))) };

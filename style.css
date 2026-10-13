@@ -58,7 +58,10 @@ kbd { display: inline-block; min-width: 1.2em; text-align: center; background: #
 .inventory-body { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 18px; }
 #inventory-panel.with-floor { width: min(1000px, 100%); }
 #inventory-panel.with-floor .inventory-body { grid-template-columns: 230px minmax(0, 1fr) 210px; }
-#inventory-floor { display: flex; flex-direction: column; gap: 4px; max-height: 360px; overflow-y: auto; }
+#inventory-floor, #inventory-shop { display: flex; flex-direction: column; gap: 4px; max-height: 360px; overflow-y: auto; }
+#inventory-shop-title { color: #e6c35a !important; }
+.floor-item .price { margin-left: auto; color: #e6c35a; font-size: 11px; flex: none; }
+.floor-item.poor .price { color: #9a6a5a; }
 #inventory-panel .floor-item { display: flex; align-items: center; gap: 8px; text-align: left; background: #181e28; padding: 3px 8px 3px 3px;
   border-color: var(--rarity, #444e5e); }
 .floor-item img { width: 34px; height: 34px; object-fit: contain; flex: none; }
@@ -120,3 +123,14 @@ kbd { display: inline-block; min-width: 1.2em; text-align: center; background: #
 #quickbar .qb-cast { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: #b98cff59; pointer-events: none; }
 #quickbar .qb-slot.casting { border-color: #b98cff; }
 #quickbar .qb-slot.cooling .qb-cast { background: #10141c99; }
+#quickbar .qb-slot.in-hand { box-shadow: inset 0 0 0 2px #ffcf7a, 0 0 8px #ffcf7a88; }
+
+/* potions at work and poison (game/effects.js): little icons with the time left, over the quick bar */
+#effects { position: fixed; left: 50%; bottom: 78px; transform: translateX(-50%); z-index: 19; display: flex; gap: 5px; pointer-events: none; }
+#effects .fx { position: relative; width: 30px; height: 30px; padding: 2px; background: #0b0d12cc; border: 1px solid #5a6475; border-radius: 4px; overflow: hidden; }
+#effects .fx img { width: 100%; height: 100%; object-fit: contain; display: block; position: relative; }
+#effects .fx .left { position: absolute; left: 0; right: 0; bottom: -1px; text-align: center; color: #fff; font: 10px/1.2 monospace; text-shadow: 0 1px 2px #000; }
+#effects .fx .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: #ffcf7a; }
+#effects .fx.status { border-color: #8fdc3c; width: auto; padding: 2px 6px; color: #b8f080; font: 11px/26px monospace; }
+#effects .fx.ending { animation: fx-blink .5s steps(2) infinite; }
+@keyframes fx-blink { 50% { opacity: .45; } }

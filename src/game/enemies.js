@@ -8,13 +8,15 @@ import { triangles, resetTriangles, updateTriangles, detachTriangles } from './t
 import { fireCats, resetFireCats, updateFireCats, detachFireCats } from './firecats.js';
 import { shraps, resetShraps, updateShraps, detachShraps } from './shraps.js';
 import { spicies, resetSpicies, updateSpicies, detachSpicies } from './spicy.js';
-import { contactEnemies, resetEnemyCombat, updateBurning, updateChill } from './enemycombat.js';
+import { contactEnemies, resetEnemyCombat, updateBurning, updateChill, updateToxic } from './enemycombat.js';
 import { stepEnemies, stepCalls, resetCalls } from './enemyai.js';
 import { removeEnemyViews } from '../render/enemies.js';
 import { updateProjectiles, drawAllProjectiles, clearProjectiles } from './projectiles.js';
 import { updateBeams, drawAllBeams, clearBeams } from './beams.js';
 import { hitWithSword } from './sword.js';
 import { updateShots, drawAllShots, clearShots } from './shots.js';
+import { updateThrows, drawThrows, clearThrows } from './throws.js';
+import { updateEnemyStatuses } from './statuses.js';
 import { animateEnemies } from '../render/enemies.js';
 import { player, state, setStatus } from './state.js';
 import { awardKill } from '../core/progression.js';
@@ -39,7 +41,7 @@ export function addEnemies(list) { spawned.push(...list); }
 
 export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats, ...shraps, ...spicies, ...spawned];
 export function resetEnemies() {
-  resetEnemyCombat(); clearProjectiles(); clearBeams(); clearShots(); resetCalls();
+  resetEnemyCombat(); clearProjectiles(); clearBeams(); clearShots(); clearThrows(); resetCalls();
   removeEnemyViews(spawned); spawned = [];
   state.enemyGrace = ENTRY_GRACE;
   resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats(); resetShraps(); resetSpicies();
@@ -54,6 +56,8 @@ export function updateEnemies(dt) {
   const list = allEnemies();
   hitWithSword(list); // a connecting sword strike can interrupt an enemy's wind-up
   updateShots(dt, list);   // and so can the player's arrows, bolts and spells
+  updateThrows(dt, list);  // and flasks; their fire and poison burn on (game/statuses.js)
+  updateEnemyStatuses(list, dt);
   let xp = 0, levels = 0, killed = 0, unlocked = false;
   for (const e of list) {
     const reward = awardKill(player, state.run, e);
@@ -75,14 +79,14 @@ export function updateEnemies(dt) {
   updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt); updateShraps(dt); updateSpicies(dt);
   stepEnemies(spawned, dt);
   spawned = spawned.filter(e => e.mode !== 'dead' || e.deadT < e.profile.corpseTime || (removeEnemyViews([e]), false));
-  updateProjectiles(dt); updateBeams(dt); updateBurning(dt); updateChill(dt);
+  updateProjectiles(dt); updateBeams(dt); updateBurning(dt); updateChill(dt); updateToxic(dt);
   contactEnemies(allEnemies(), dt);
 }
-export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); drawAllBeams(dt, off); drawAllShots(dt, off); }
+export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); drawAllBeams(dt, off); drawAllShots(dt, off); drawThrows(dt, off); }
 function detachSpawned() { const list = spawned; spawned = []; return list; }
 // projectiles and shots in flight do not travel along
 export function detachEnemies() {
-  clearProjectiles(); clearBeams(); clearShots(); hordeGroups = [];
+  clearProjectiles(); clearBeams(); clearShots(); clearThrows(); hordeGroups = [];
   return [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts(),
     ...detachFireFaces(), ...detachTriangles(), ...detachFireCats(), ...detachShraps(), ...detachSpicies(), ...detachSpawned()];
 }

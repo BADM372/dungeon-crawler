@@ -5,6 +5,8 @@ import { ITEMS, COINS } from './items.js';
 // The quick bar (keys 1-6) holds references into the bag, not items: { itemId } for stackables
 // (any stack of that item; the slot stays when none are left) and { instanceId } for unique
 // items (it clears when that item leaves the bag).
+// `equipped` is the weapon (an instance); `readied` a flask in hand instead of it, by item id
+// (any stack of it), until none is left or the weapon is taken again (game/equipment.js).
 
 export const BAG_SIZE = 24, BAR_SIZE = 6;
 export function whole(n) {
@@ -14,7 +16,7 @@ export function whole(n) {
 // learn: memory.html#bag-code (see learn/README.md)
 export function createInventory() {
   return { slots: Array(BAG_SIZE).fill(null), currency: COINS.map(c => ({ itemId: c.id, count: 0 })),
-    bar: Array(BAR_SIZE).fill(null), equipped: null, nextInstance: 1, version: 0 };
+    bar: Array(BAR_SIZE).fill(null), equipped: null, readied: null, nextInstance: 1, version: 0 };
 }
 export const copperTotal = inv => whole(inv.currency.reduce((n, s) => n + s.count * ITEMS[s.itemId].value, 0));
 // learn: code.html#math (see learn/README.md)
@@ -49,9 +51,23 @@ export const equippedItem = inv => ownedItem(inv, inv.equipped);
 export function equipItem(inv, instanceId) {
   const slot = ownedItem(inv, instanceId);
   if (!slot || !ITEMS[slot.itemId]?.weapon) return false;
-  if (inv.equipped !== instanceId) { inv.equipped = instanceId; inv.version++; }
+  if (inv.equipped !== instanceId || inv.readied) { inv.equipped = instanceId; inv.readied = null; inv.version++; }
   return true;
 }
+// how many of item `itemId` the bag holds, over all its stacks
+export const countOf = (inv, itemId) => inv.slots.reduce((n, s) => n + (s?.itemId === itemId ? s.count : 0), 0);
+// a bag slot holding item `itemId` (the first), or null
+export const slotOf = (inv, itemId) => inv.slots.find(s => s?.itemId === itemId) || null;
+// Take a throwable flask in hand (null: put it away, back to the weapon). false: there is none.
+export function readyItem(inv, itemId) {
+  if (itemId && (ITEMS[itemId]?.use !== 'throw' || !countOf(inv, itemId))) return false;
+  if (inv.readied !== itemId) { inv.readied = itemId; inv.version++; }
+  return true;
+}
+// the flask in hand, while there is one left
+export const readiedItem = inv => inv.readied && countOf(inv, inv.readied) ? ITEMS[inv.readied] : null;
+// the last of a readied flask gone: back to the weapon
+function forgetReadied(inv, itemId) { if (inv.readied === itemId && !countOf(inv, itemId)) inv.readied = null; }
 
 // All-or-nothing: a full bag never consumes a reward or partially inserts an item.
 // learn: memory.html#bag (see learn/README.md)
@@ -99,7 +115,7 @@ export function takeItem(inv, instanceId) {
   const { itemId, count, gen } = inv.slots[i];
   inv.slots[i] = null;
   if (inv.equipped === instanceId) inv.equipped = null;
-  forgetBar(inv, instanceId);
+  forgetBar(inv, instanceId); forgetReadied(inv, itemId);
   inv.version++;
   return gen ? { itemId, count, gen } : { itemId, count };
 }
@@ -110,11 +126,12 @@ export function removeItem(inv, instanceId, count = 1) {
   const i = inv.slots.findIndex(s => s?.instanceId === instanceId);
   if (i < 0 || inv.slots[i].count < count) return false;
   if (!count) return true;
+  const { itemId } = inv.slots[i];
   inv.slots[i].count -= count;
   if (!inv.slots[i].count) {
     inv.slots[i] = null;
     if (inv.equipped === instanceId) inv.equipped = null;
-    forgetBar(inv, instanceId);
+    forgetBar(inv, instanceId); forgetReadied(inv, itemId);
   }
   inv.version++;
   return true;
@@ -142,11 +159,13 @@ export function assignBar(inv, index, instanceId) {
   return true;
 }
 // A usable stackable (a potion) coming into the bag goes on the first free bar slot, unless it is
-// on the bar already. Whether it is on the bar now.
+// on the bar already, or another of its `family` is (one kind of health potion, of buff, of
+// flask, ... goes on by itself; the player can put more on). Whether it is on the bar now.
 export function autoBar(inv, itemId) {
   const def = ITEMS[itemId];
   if (!def?.use || def.stackLimit <= 1) return false;
   if (inv.bar.some(r => r?.itemId === itemId)) return true;
+  if (def.family && inv.bar.some(r => r?.itemId && ITEMS[r.itemId].family === def.family)) return false;
   const i = inv.bar.indexOf(null), slot = inv.slots.find(s => s?.itemId === itemId);
   if (i < 0 || !slot) return false;
   return assignBar(inv, i, slot.instanceId);

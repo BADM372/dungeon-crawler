@@ -8,7 +8,8 @@ import { createInventory, addItem, addInstance, removeItem, takeItem, equipItem,
   assignBar, autoBar, barEntry, barIndexOf, BAR_SIZE } from '../src/core/inventory.js';
 import { fixedWeapon } from '../src/core/gear/generate.js';
 import { createPlayerStats, createRun, xpForLevel, xpToNext, levelFromXP, xpProgress, xpScale, awardXP, awardKill, takeDamage, regenerate,
-  drinkPotion, levelDamage, maxHealth, START_POTIONS } from '../src/core/progression.js';
+  levelDamage, maxHealth, START_POTIONS, DEV_GOLD } from '../src/core/progression.js';
+import { drinkPotion, tickEffects } from '../src/core/potions.js';
 import { SPIDER, STUNDER, enemyProfile, enemyRoll, makeEnemy, coinRange, depthLevel } from '../src/core/enemies.js';
 import { itemStats } from '../src/core/gear/stats.js';
 import { swordState, combatStats, startSwing, advanceSwing, swordHit, cancelSwing, damageEnemy, canChangeWeapon, shotDue, KINDS } from '../src/core/combat.js';
@@ -33,6 +34,8 @@ test('a new player has an equipped Old Sword, the scroll and a few potions on th
   assert.equal(createRun().townPortal, null);
   assert.deepEqual(p.inventory.currency.map(s => s.itemId), COINS.map(c => c.id));
   assert.deepEqual(p.inventory.currency.map(s => s.count), [0, 0, 0]);
+  // with the dev tools: gold to spend
+  assert.equal(copperTotal(createPlayerStats(true).inventory), DEV_GOLD * 1000);
 });
 test('the town portal scroll is bound: it never leaves the bag and never stacks', () => {
   const inv = createPlayerStats().inventory, scroll = inv.slots.find(s => s?.itemId === TOWN_PORTAL.id);
@@ -152,15 +155,18 @@ test('levels add health and a little damage; kills far below the player pay less
   assert.equal(xpScale(10, 7), 0.8); assert.equal(xpScale(10, 5), 0.4); assert.equal(xpScale(30, 1), 0.1);
   for (let d = 0; d < 20; d++) assert.ok(xpScale(10, 10 - d - 1) <= xpScale(10, 10 - d));
 });
-test('a health potion heals part of the maximum at once, one drink at a time', () => {
-  const p = createPlayerStats();
+test('a health potion pours part of the maximum in within a second, one drink a second', () => {
+  const p = createPlayerStats(), pour = (from, to) => { for (let t = from; t < to - 1e-9; t += 0.05) tickEffects(p, 0.05, t + 0.05); };
   assert.equal(drinkPotion(p, HEALTH_POTION, 1), 'full');
   takeDamage(p, 70, 1);
-  assert.equal(drinkPotion(p, HEALTH_POTION, 2), 40); assert.equal(p.hp, 70);
-  assert.equal(drinkPotion(p, HEALTH_POTION, 2.5), 'wait'); assert.equal(p.hp, 70);
-  assert.equal(drinkPotion(p, HEALTH_POTION, 3), 30); assert.equal(p.hp, 100, 'never above the maximum');
+  assert.deepEqual(drinkPotion(p, HEALTH_POTION, 2), { heal: 40 }); assert.equal(p.hp, 30, 'not all at once');
+  pour(2, 2.3); assert.ok(p.hp > 30 && p.hp < 70);
+  pour(2.3, 3); assert.ok(Math.abs(p.hp - 70) < 1e-9);
+  assert.equal(drinkPotion(p, HEALTH_POTION, 2.5), 'wait');
+  assert.deepEqual(drinkPotion(p, HEALTH_POTION, 3), { heal: 30 }); pour(3, 4);
+  assert.equal(p.hp, 100, 'never above the maximum');
   p.hp = 0; assert.equal(drinkPotion(p, HEALTH_POTION, 9), 'dead'); assert.equal(p.hp, 0);
-  assert.equal(HEALTH_POTION.use, 'heal'); assert.ok(HEALTH_POTION.heal > 0 && HEALTH_POTION.heal < 1);
+  assert.equal(HEALTH_POTION.use, 'drink'); assert.ok(HEALTH_POTION.effect.heal > 0 && HEALTH_POTION.effect.time < 1 && HEALTH_POTION.cooldown === 1);
 });
 test('picked-up potions go on the first free quick bar slot unless they are on it already', () => {
   const inv = createPlayerStats().inventory;

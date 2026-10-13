@@ -4,11 +4,14 @@ import { swordState } from '../core/combat.js';
 import { DEFAULT_ZOOM } from '../core/zoom.js';
 import { createPlayerStats, createRun } from '../core/progression.js';
 
+const params = new URLSearchParams(location.search);
+const dev = params.get('dev') === '1';
+
 // learn: architecture.html#notebook (see learn/README.md)
 export const player = {
   x: 0, z: 0, y: 0, vx: 0, vy: 0, vz: 0, visY: 0,
   r: CHAR_R, h: CHAR_H, layer: 0, yaw: 0,
-  ...createPlayerStats(),
+  ...createPlayerStats(dev),   // ?dev=1: with gold to spend (core/progression.js DEV_GOLD)
   sword: swordState(),
   grounded: true, swimming: false, fluid: 0, fluidDeath: 0, support: null,
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
@@ -21,8 +24,6 @@ export const player = {
   safe: { x: 0, y: 0, z: 0 }, safeTimer: 0,
   autoDir: null,   // overrides the movement keys (used by test bots)
 };
-
-const params = new URLSearchParams(location.search);
 
 // learn: architecture.html#notebook (see learn/README.md)
 export const state = {
@@ -38,7 +39,7 @@ export const state = {
   cast: null,        // reading the town portal scroll: { t, duration, ... } (game/townportal.js)
   visit: null,       // this cube as you came in: what a death restores (game/flow.js)
   fallFrom: null,    // falling through cubes: the cube the fall started in (game/fall.js)
-  dev: params.get('dev') === '1',   // debug tools (?dev=1)
+  dev,   // debug tools (?dev=1)
   devPassive: false,   // dev: enemies stand still and never attack (game/devspawn.js)
   baseSeed: params.has('seed') ? (parseInt(params.get('seed'), 10) >>> 0) : (Math.random() * 1e9) >>> 0,
 };

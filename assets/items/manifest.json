@@ -939,6 +939,292 @@
       "glb": "items/item_potion_stamina.glb"
     },
     {
+      "name": "item_potion_health_minor",
+      "triangles": 262,
+      "size": [
+        0.1292,
+        0.1426,
+        0.4152
+      ],
+      "bounds_blender": [
+        [
+          -0.06460000574588776,
+          -0.07893941551446915,
+          0.0
+        ],
+        [
+          0.06460000574588776,
+          0.06365000456571579,
+          0.4151500165462494
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_health_minor.glb"
+    },
+    {
+      "name": "item_potion_health_greater",
+      "triangles": 402,
+      "size": [
+        0.345,
+        0.3689,
+        0.4888
+      ],
+      "bounds_blender": [
+        [
+          -0.17250001430511475,
+          -0.19641999900341034,
+          0.0
+        ],
+        [
+          0.17250001430511475,
+          0.17250001430511475,
+          0.48875001072883606
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_health_greater.glb"
+    },
+    {
+      "name": "item_potion_health_superior",
+      "triangles": 440,
+      "size": [
+        0.3548,
+        0.3916,
+        0.54
+      ],
+      "bounds_blender": [
+        [
+          -0.1773848682641983,
+          -0.2141685038805008,
+          0.0
+        ],
+        [
+          0.1773848682641983,
+          0.1773848682641983,
+          0.5399999618530273
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_health_superior.glb"
+    },
+    {
+      "name": "item_potion_antidote",
+      "triangles": 218,
+      "size": [
+        0.18,
+        0.1859,
+        0.407
+      ],
+      "bounds_blender": [
+        [
+          -0.09000000357627869,
+          -0.1080000028014183,
+          0.0
+        ],
+        [
+          0.09000000357627869,
+          0.07794228941202164,
+          0.40700000524520874
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_antidote.glb"
+    },
+    {
+      "name": "item_potion_swiftness",
+      "triangles": 202,
+      "size": [
+        0.1838,
+        0.2047,
+        0.367
+      ],
+      "bounds_blender": [
+        [
+          -0.09192388504743576,
+          -0.1128000020980835,
+          0.0
+        ],
+        [
+          0.09192388504743576,
+          0.09192388504743576,
+          0.367000013589859
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_swiftness.glb"
+    },
+    {
+      "name": "item_potion_haste",
+      "triangles": 218,
+      "size": [
+        0.136,
+        0.142,
+        0.437
+      ],
+      "bounds_blender": [
+        [
+          -0.06800000369548798,
+          -0.07501176744699478,
+          0.0
+        ],
+        [
+          0.06800000369548798,
+          0.06700000166893005,
+          0.43700000643730164
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_haste.glb"
+    },
+    {
+      "name": "item_potion_might",
+      "triangles": 366,
+      "size": [
+        0.315,
+        0.3265,
+        0.4463
+      ],
+      "bounds_blender": [
+        [
+          -0.1574999988079071,
+          -0.16904999315738678,
+          0.0
+        ],
+        [
+          0.1574999988079071,
+          0.1574999988079071,
+          0.4462500214576721
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_might.glb"
+    },
+    {
+      "name": "item_potion_leaping",
+      "triangles": 246,
+      "size": [
+        0.2956,
+        0.3116,
+        0.427
+      ],
+      "bounds_blender": [
+        [
+          -0.14782072603702545,
+          -0.16380000114440918,
+          0.0
+        ],
+        [
+          0.14782072603702545,
+          0.14782072603702545,
+          0.4269999861717224
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_potion_leaping.glb"
+    },
+    {
+      "name": "item_flask_blast",
+      "triangles": 526,
+      "size": [
+        0.282,
+        0.2953,
+        0.452
+      ],
+      "bounds_blender": [
+        [
+          -0.14100000262260437,
+          -0.16120000183582306,
+          0.0
+        ],
+        [
+          0.14100000262260437,
+          0.13409896194934845,
+          0.4519999921321869
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_flask_blast.glb"
+    },
+    {
+      "name": "item_flask_fire",
+      "triangles": 288,
+      "size": [
+        0.28,
+        0.2959,
+        0.4094
+      ],
+      "bounds_blender": [
+        [
+          -0.14000000059604645,
+          -0.16280001401901245,
+          0.0
+        ],
+        [
+          0.14000000059604645,
+          0.13314791023731232,
+          0.40937042236328125
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_flask_fire.glb"
+    },
+    {
+      "name": "item_flask_toxic",
+      "triangles": 442,
+      "size": [
+        0.28,
+        0.2961,
+        0.375
+      ],
+      "bounds_blender": [
+        [
+          -0.14000000059604645,
+          -0.16300000250339508,
+          0.0
+        ],
+        [
+          0.14000000059604645,
+          0.13314791023731232,
+          0.375
+        ]
+      ],
+      "attach": "ground",
+      "category": "consumable",
+      "units": "cells",
+      "game_scale": 1.0,
+      "glb": "items/item_flask_toxic.glb"
+    },
+    {
       "name": "treasure_chest",
       "triangles": 1092,
       "size": [

@@ -14,7 +14,7 @@ import { updateLootLabels } from '../../src/game/lootlabels.js';
 import { lootView } from '../../src/render/loot.js';
 import { orderPickup, followOrder, order } from '../../src/game/orders.js';
 import { combatStats } from '../../src/core/combat.js';
-import { addItem, addCopper, copperTotal, equippedItem, barEntry } from '../../src/core/inventory.js';
+import { addItem, addCopper, copperTotal, equippedItem } from '../../src/core/inventory.js';
 import { awardXP, xpScale } from '../../src/core/progression.js';
 import { startSwing, cancelSwing, damageEnemy } from '../../src/core/combat.js';
 import { character } from '../../src/render/character.js';
@@ -155,13 +155,14 @@ export async function runWeaponLootChecks() {
       steps(90, i => updateLoot(1 / 60, i / 60));
       check(weapons().length === 2 && weapons().every(p => p.toss === 1), 'A level-20 descent guardian drops two weapons');
       check(weapons().every(p => ['epic', 'legendary', 'mythic', 'ancient'].includes(p.gen.rarity)), 'Descent guardians drop Epic or better from level 20');
-      const potions = () => lootHere().filter(p => p.itemId === 'item_potion_health').reduce((n, p) => n + p.count, 0);
-      check(potions() === 2, 'and two health potions');
-      const w = weapons()[0], had = player.inventory.slots.filter(s => s?.itemId === 'item_potion_health').reduce((n, s) => n + s.count, 0);
+      const isPotion = id => ITEMS[id].category === 'potion', bagged = () => player.inventory.slots.reduce((n, s) => n + (s && isPotion(s.itemId) ? s.count : 0), 0);
+      const potions = () => lootHere().filter(p => isPotion(p.itemId)).reduce((n, p) => n + p.count, 0);
+      check(potions() === 2, 'and two potions');
+      const w = weapons()[0], had = bagged();
       Object.assign(player, { x: w.x, z: w.z, y: w.y, visY: w.y }); requestCollect();
       steps(90, i => updateLoot(1 / 60, 2 + i / 60));
       check(weapons().length === 2, 'Walking over weapons and C leave them on the floor');
-      check(!potions() && barEntry(player.inventory, 1).count === had + 2, 'C collects the potions onto their quick bar slot');
+      check(!potions() && bagged() === had + 2, 'C collects the potions');
       results.push('guardian weapon and potion drops / walk-over and C ignore weapons');
 
       for (let i = 0; i < 100 && !weapons().every(lootView); i++) { await delay(30); updateLoot(0, 4); }   // models load

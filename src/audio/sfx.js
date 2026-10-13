@@ -330,7 +330,7 @@ const SOUNDS = {
   use(t, out, p) {       // using a quick bar slot: a soft pop
     tone('sine', 900 * p, 600 * p, t, 0.05, amp(t, 0.002, 0.2, 0.05, out));
   },
-  drink(t, out, p) {     // a health potion: three gulps, then a warm rising glow
+  drink(t, out, p) {     // a potion: three gulps, then a warm rising glow
     for (let i = 0; i < 3; i++) {
       const at = t + i * 0.13, hz = (260 + i * 30) * p;
       tone('sine', hz, hz * 0.55, at, 0.09, amp(at, 0.004, 0.35, 0.09, out));
@@ -339,6 +339,43 @@ const SOUNDS = {
     for (const [i, hz] of [392, 523, 659].entries()) {
       const at = t + 0.38 + i * 0.05;
       tone('sine', hz * p, hz * p * 1.01, at, 0.45, amp(at, 0.03, 0.07, 0.42, out));
+    }
+  },
+  buff(t, out, p) {      // a potion's power taking hold after the gulps: a quick rising shimmer
+    for (const [i, hz] of [523, 784, 1047, 1568].entries()) {
+      const at = t + 0.3 + i * 0.045;
+      tone('triangle', hz * p, hz * p * 1.02, at, 0.3, amp(at, 0.004, 0.09, 0.3, out));
+    }
+    sweep(t + 0.28, 0.4, 800 * p, 3200 * p, 2000 * p, 2, 0.12, out, 0.08);
+  },
+  poison(t, out, p) {    // a poison tick: a sickly bubbling gurgle
+    for (let i = 0; i < 3; i++) {
+      const at = t + i * 0.06, hz = (180 + Math.random() * 120) * p;
+      tone('sine', hz, hz * 1.8, at, 0.05, amp(at, 0.004, 0.25, 0.05, out));
+    }
+    noise(t, 0.15, filter('bandpass', 600 * p, 3, amp(t, 0.01, 0.15, 0.14, out)));
+  },
+  lob(t, out, p) {       // a flask thrown: a short rising whoosh and the slosh inside
+    sweep(t, 0.24, 400 * p, 1600 * p, 900 * p, 1, 0.5, out, 0.04);
+    tone('sine', 300 * p, 520 * p, t + 0.03, 0.12, amp(t + 0.03, 0.01, 0.12, 0.12, out));
+  },
+  glass(t, out, p) {     // a flask breaking: a sharp crack and tinkling shards
+    noise(t, 0.05, filter('highpass', 4200 * p, 0.8, amp(t, 0.001, 0.7, 0.05, out)));
+    for (let i = 0; i < 6; i++) {
+      const at = t + 0.02 + i * 0.03 * (0.6 + Math.random() * 0.8), hz = (2600 + Math.random() * 3000) * p;
+      tone('triangle', hz, hz * 0.96, at, 0.1, amp(at, 0.002, 0.1, 0.1, out));
+    }
+  },
+  boom(t, out, p) {      // a blast flask: a deep thump, a roar of noise and a long rumble
+    tone('sine', 110 * p, 32 * p, t, 0.5, amp(t, 0.003, 1.2, 0.5, out));
+    noise(t, 0.6, filter('lowpass', 1400 * p, 0.7, amp(t, 0.004, 1.1, 0.6, out)));
+    noise(t + 0.05, 1.1, filter('lowpass', 260 * p, 1, amp(t + 0.05, 0.05, 0.6, 1, out)));
+  },
+  hiss(t, out, p) {      // a toxic flask: gas hissing out and bubbling
+    sweep(t, 0.9, 5000 * p, 3200 * p, 2500 * p, 0.8, 0.35, out, 0.03, 'highpass');
+    for (let i = 0; i < 5; i++) {
+      const at = t + 0.1 + i * 0.09, hz = (220 + Math.random() * 200) * p;
+      tone('sine', hz, hz * 1.7, at, 0.06, amp(at, 0.005, 0.15, 0.06, out));
     }
   },
   chest(t, out, p) {     // a chest lid: a creaking hinge, the lid knocking back, a glint of treasure

@@ -144,3 +144,56 @@ export function beamFx(b, what) {
   sfx('zapburst', { at: { x, y, z } });
   if (Math.hypot(x - player.x, z - player.z) < 3) cameraKick(x - player.x, z - player.z, 0.06, 0.02);
 }
+
+// poison ticking while the player is poisoned (core/status.js)
+export function poisonHurtFx(dmg) {
+  floatText('-' + Math.ceil(dmg), q => q.set(player.x, player.visY + 1.15, player.z), { color: '#9be05a', size: 0.2, life: 0.7, rise: 0.8,
+    drift: rand(-0.3, 0.3), pop: 0.4 });
+  sfx('poison', { at: player, volume: 0.6 });
+}
+// a burn or poison tick on enemy e (game/statuses.js); killed: that was the last of its health
+const STATUS_COLOR = { burning: '#ffa040', toxic: '#9be05a' };
+export function statusHurtFx(e, dmg, status, killed) {
+  const top = { x: e.x, y: e.y + e.profile.bodyHeight + 0.2, z: e.z };
+  floatText(String(dmg), top, { color: STATUS_COLOR[status], size: killed ? 0.26 : 0.19, life: 0.7, rise: 0.8, drift: rand(-0.3, 0.3), pop: 0.4 });
+  if (killed) { sfx('kill', { at: e, pitch: e.profile.pitch ?? 1.1 }); hitstop(0.05); }
+}
+
+// a flask (game/throws.js) leaving the hand ('launch') or bursting ('burst') at (x, y, z):
+// a blast flask explodes, a fire flask bursts into flames, a toxic one into a green cloud
+export function flaskFx(f, what) {
+  const s = f.stats, { x, y, z } = f;
+  if (what === 'launch') { sfx('lob', { at: player }); return; }
+  const r = s.radius, color = s.color;
+  sfx('glass', { at: f, volume: 0.8 });
+  emit(glow, x, y + 0.2, z, { life: 0.2, size: r * 1.4, grow: 1.4, color, alpha: 0.85 });
+  for (let i = 0; i < 14; i++)   // shards of glass
+    emit(glow, x, y + 0.1, z, { v: [rand(-2.5, 2.5), rand(1, 3.5), rand(-2.5, 2.5)], life: rand(0.3, 0.55), size: rand(0.04, 0.07),
+      color: i % 2 ? '#ffffff' : color, gravity: 12, drag: 1 });
+  if (s.blast && !s.burn) {
+    emit(glow, x, y + 0.3, z, { life: 0.14, size: r * 1.1, grow: 0.8, color: '#ffffff', alpha: 0.9 });
+    for (let i = 0; i < 34; i++) {   // the fireball and its sparks fanning out
+      const a = rand(0, Math.PI * 2), v = rand(2, 6) * r;
+      emit(glow, x, y + 0.2, z, { v: [Math.cos(a) * v, rand(0.5, 3), Math.sin(a) * v], life: rand(0.25, 0.55), size: rand(0.07, 0.15),
+        color: ['#fff0a0', '#ffd25a', '#ff8a2a'][i % 3], gravity: 5, drag: 2.5 });
+    }
+    for (let i = 0; i < 8; i++)
+      emit(soft, x + rand(-0.4, 0.4) * r, y + 0.3, z + rand(-0.4, 0.4) * r, { v: [rand(-0.5, 0.5), rand(0.6, 1.4), rand(-0.5, 0.5)],
+        life: rand(0.9, 1.4), size: rand(0.35, 0.55), grow: 1, color: '#3e3834', alpha: 0.45, drag: 0.8 });
+    sfx('boom', { at: f });
+    cameraKick(x - player.x, z - player.z, 0.1, -0.08);
+    hitstop(0.04);
+  } else if (s.burn) {
+    for (let i = 0; i < 26; i++) {
+      const [dx, dz] = [rand(-1, 1) * r, rand(-1, 1) * r];
+      emit(glow, x + dx * 0.5, y + 0.1, z + dz * 0.5, { v: [dx * 1.5, rand(1, 3), dz * 1.5], life: rand(0.3, 0.6), size: rand(0.12, 0.22),
+        grow: -0.4, color: ['#fff0a0', '#ffd25a', '#ff8a2a', '#ff4a17'][i % 4], gravity: -1, drag: 2 });
+    }
+    sfx('whump', { at: f });
+  } else {
+    for (let i = 0; i < 14; i++)
+      emit(soft, x + rand(-0.5, 0.5) * r, y + rand(0.1, 0.5), z + rand(-0.5, 0.5) * r, { v: [rand(-1, 1), rand(0.2, 0.8), rand(-1, 1)],
+        life: rand(0.8, 1.3), size: rand(0.3, 0.5), grow: 1.2, color: i % 2 ? '#8fdc3c' : '#5f9f2a', alpha: 0.45, drag: 1.2 });
+    sfx('hiss', { at: f });
+  }
+}
