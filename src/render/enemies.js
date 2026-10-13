@@ -23,7 +23,7 @@ import { kindColors, recolor, hideParts } from './recolor.js';
 import { attackOf } from '../core/enemies.js';
 import { guardianColor, guardianTitle } from '../core/guardians.js';
 import { player } from '../game/state.js';
-import { makeBar, makeLevelLabel } from './bars.js';
+import { makeBar, makeLevelLabel, makeAlertMark } from './bars.js';
 
 const prefabs = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel,
   fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel, shraps: shrapsModel };
@@ -81,6 +81,7 @@ function makeView(e, prefab) {
   bar.position.y = e.profile.height + 0.12; group.add(bar);
   const label = makeLevelLabel(e.level, e.guardian ? { color, title: guardianTitle(e.guardianRole) } : {});
   label.position.y = e.profile.height + .33; group.add(label);
+  const mark = makeAlertMark(); mark.position.y = e.profile.height + .62; group.add(mark);
   const fx = GLOW[e.profile.fx ?? e.profile.species] ?? (e.guardian ? { light: [color, 2, 3, .5], pulse: .35 } : null), flames = [];
   model.traverse(o => { if (o.isBone && /^flame/.test(o.name)) flames.push(o); });
   let light = null;
@@ -90,7 +91,7 @@ function makeView(e, prefab) {
     trackLight(light, group);
   }
   const embers = typeof fx?.embers?.from === 'string' ? model.getObjectByName(fx.embers.from) : null;
-  return { group, model, mixer, actions, prefab, materials, ghost, bar, hpBar, label, yaw: e.yaw, phase: e.phase,
+  return { group, model, mixer, actions, prefab, materials, ghost, bar, hpBar, label, mark, markT: 0, yaw: e.yaw, phase: e.phase,
     attacks: -1, dead: false, weights, fx, flames, light, embers, size, sparks: e.profile.sparks ?? EMBERS, seed: Math.random() * 100 };
 }
 // the hover clip's beat (matches blender/triangle.py): sharp, twice per loop
@@ -124,7 +125,7 @@ function dying(v, e) {
   const fade = Math.max(0, 1 - Math.max(0, e.deadT - e.profile.deathTime - 0.5) / 0.8);
   for (const { material } of v.materials) material.opacity = fade;
   v.ghost.opacity = GHOST_OPACITY * fade;
-  v.bar.visible = false; v.label.visible = false;
+  v.bar.visible = false; v.label.visible = false; v.mark.visible = false;
   v.group.visible = fade > 0;
   v.mixer.update(0);
   glowFx(v, e, 0, Math.max(0, 1 - e.deadT / e.profile.deathTime) * fade);   // the glow dies with it
@@ -167,6 +168,10 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     inverseYaw.setFromAxisAngle(up, -v.yaw);
     v.bar.quaternion.copy(inverseYaw).multiply(camera.quaternion);
     v.hpBar.set(e.hp / e.profile.hp);
+    // "!" while it reacts to noticing you: pops up, then shrinks away once it gives chase
+    v.markT = e.mode === 'alert' ? Math.min(v.markT + dt * 8, 1) : Math.max(v.markT - dt * 2, 0);
+    v.mark.visible = v.markT > 0;
+    v.mark.scale.setScalar(0.5 * (e.mode === 'alert' ? 1 + 0.35 * Math.sin(Math.PI * v.markT) : v.markT));
     v.mixer.update(0);
     glowFx(v, e, dt, 1);
   }

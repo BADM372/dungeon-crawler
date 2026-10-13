@@ -48,3 +48,19 @@ export function makeLevelLabel(level, { color = '#ffe4ae', onTop = false, title 
   sprite.setLevel(level);
   return sprite;
 }
+
+// the "!" over an enemy that has just noticed the player (one texture for all of them)
+let alertMaterial = null;
+export function makeAlertMark() {
+  if (!alertMaterial) {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.font = 'bold 56px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 10; ctx.strokeStyle = '#171c25'; ctx.strokeText('!', 32, 34);
+    ctx.fillStyle = '#ffcf4a'; ctx.fillText('!', 32, 34);
+    alertMaterial = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthWrite: false });
+  }
+  const sprite = new THREE.Sprite(alertMaterial);
+  sprite.visible = false;
+  return sprite;
+}

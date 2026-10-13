@@ -38,10 +38,10 @@
 <section class="slide" id="brain" data-lv="1">
   <h2 lang="en">Try it: a spider's brain</h2>
   <h2 lang="de">Probier es: das Gehirn einer Spinne</h2>
-  <p lang="en">Drag the hero (the white dot) around. Get close to the spider, but stay behind the wall: it can't see you! Then step out. When it's winding up (red), step away quickly.
-    The dashed circle is how far it can see. Escape further than 6 cells, and it gives up.</p>
-  <p lang="de">Zieh den Helden (den weißen Punkt) herum. Geh nah an die Spinne heran, aber bleib hinter der Wand: Sie kann dich nicht sehen! Dann tritt hervor. Wenn sie ausholt (rot), geh schnell weg.
-    Der gestrichelte Kreis zeigt, wie weit sie sehen kann. Flieh weiter als 6 Zellen, und sie gibt auf. (Die Zustände heißen im Code idle, walk, chase, attack und home.)</p>
+  <p lang="en">Drag the hero (the white dot) around. Get close to the spider, but stay behind the wall: it can't see you! Sneak up from behind, then step in front of it. When it's winding up (red), step away quickly.
+    The dashed line is how far it can see: far ahead, not so far behind. Hide from it, and it hunts for you a little while, then searches where it last saw you (the yellow square), then gives up.</p>
+  <p lang="de">Zieh den Helden (den weißen Punkt) herum. Geh nah an die Spinne heran, aber bleib hinter der Wand: Sie kann dich nicht sehen! Schleich dich von hinten an, dann tritt vor sie. Wenn sie ausholt (rot), geh schnell weg.
+    Die gestrichelte Linie zeigt, wie weit sie sehen kann: weit nach vorne, nicht so weit nach hinten. Versteck dich, und sie jagt dich noch eine Weile, sucht dann dort, wo sie dich zuletzt gesehen hat (das gelbe Quadrat), und gibt dann auf. (Die Zustände heißen im Code idle, walk, alert, chase, attack, search und home.)</p>
   <div class="demo real" data-demo="brain"></div>
 </section>
 
@@ -54,14 +54,16 @@
       <p lang="de">Das Gehirn der Spinne ist immer in genau einem <b>Zustand</b>, wie in einer Laune. Jeder Zustand hat seine eigene Aufgabe und eigene Regeln, wann er in einen anderen wechselt. Das nennt man <a class="w" href="words.html#state-machine">Zustandsautomat</a>.</p>
       <table>
         <tr><th lang="en">STATE</th> <th lang="de">ZUSTAND</th><th lang="en">DOES</th> <th lang="de">MACHT</th><th lang="en">SWITCHES WHEN</th> <th lang="de">WECHSELT, WENN</th></tr>
-        <tr><td lang="en">idle</td> <td lang="de">idle (ruhen)</td><td lang="en">rests, looks at you if close</td> <td lang="de">ruht, schaut dich an, wenn du nah bist</td><td lang="en">timer runs out → walk</td> <td lang="de">Zeit ist um → walk</td></tr>
+        <tr><td lang="en">idle</td> <td lang="de">idle (ruhen)</td><td lang="en">rests and looks around, turns to you if it half sees you</td> <td lang="de">ruht und schaut sich um, dreht sich zu dir, wenn sie dich halb sieht</td><td lang="en">timer runs out → walk</td> <td lang="de">Zeit ist um → walk</td></tr>
         <tr><td lang="en">walk</td> <td lang="de">walk (wandern)</td><td lang="en">wanders near home</td> <td lang="de">läuft nahe dem Zuhause herum</td><td lang="en">arrived → idle</td> <td lang="de">angekommen → idle</td></tr>
-        <tr><td lang="en">chase</td> <td lang="de">chase (jagen)</td><td lang="en">follows its path to you</td> <td lang="de">folgt seinem Weg zu dir</td><td lang="en">close and ready → attack<br>lost you → home</td> <td lang="de">nah und bereit → attack<br>dich verloren → home</td></tr>
+        <tr><td lang="en">alert</td> <td lang="de">alert (bemerken)</td><td lang="en">noticed you: turns to look, a "!" over its head</td> <td lang="de">hat dich bemerkt: dreht sich zu dir, ein "!" über dem Kopf</td><td lang="en">a moment later → chase</td> <td lang="de">einen Moment später → chase</td></tr>
+        <tr><td lang="en">chase</td> <td lang="de">chase (jagen)</td><td lang="en">follows its path to you; between bites it circles you</td> <td lang="de">folgt seinem Weg zu dir; zwischen den Bissen kreist sie um dich</td><td lang="en">close and ready → attack<br>lost you → search</td> <td lang="de">nah und bereit → attack<br>dich verloren → search</td></tr>
         <tr><td lang="en">attack</td> <td lang="de">attack (angreifen)</td><td lang="en">winds up, bites, finishes</td> <td lang="de">holt aus, beißt, macht fertig</td><td lang="en">done → chase</td> <td lang="de">fertig → chase</td></tr>
+        <tr><td lang="en">search</td> <td lang="de">search (suchen)</td><td lang="en">looks around where it last saw you</td> <td lang="de">schaut sich dort um, wo sie dich zuletzt gesehen hat</td><td lang="en">timer runs out → home</td> <td lang="de">Zeit ist um → home</td></tr>
         <tr><td lang="en">home</td> <td lang="de">home (heimgehen)</td><td lang="en">walks back home</td> <td lang="de">läuft nach Hause</td><td lang="en">arrived → idle</td> <td lang="de">angekommen → idle</td></tr>
       </table>
-      <p class="small" lang="en">From idle or walk, seeing you switches to chase. A hit that staggers it switches to chase too.</p>
-      <p class="small" lang="de">Aus idle oder walk wechselt sie zu chase, wenn sie dich sieht. Ein Treffer, der sie taumeln lässt, wechselt auch zu chase.</p>
+      <p class="small" lang="en">From idle, walk, search or home, noticing you switches to alert, and it calls the monsters near it. A hit switches straight to chase.</p>
+      <p class="small" lang="de">Aus idle, walk, search oder home wechselt sie zu alert, wenn sie dich bemerkt, und ruft die Monster in ihrer Nähe. Ein Treffer wechselt sofort zu chase.</p>
     </div>
     <div class="card">
       <h3 lang="en">Why is this a good idea?</h3>
@@ -81,14 +83,14 @@
   <h2 lang="de">Absichtlich langsam denken</h2>
   <div class="cols">
     <div>
-      <p lang="en"><b>Thinking five times a second.</b> Monsters <i>move</i> every frame, but they only <i>decide</i> every 0.2 seconds. Searching for paths is work, and with 20 spiders in a room, it adds up. It also looks more natural: real animals don't react instantly either.</p>
-      <p lang="de"><b>Fünfmal pro Sekunde denken.</b> Monster <i>bewegen</i> sich in jedem Bild, aber sie <i>entscheiden</i> nur alle 0,2 Sekunden. Wege suchen ist Arbeit, und mit 20 Spinnen in einem Raum summiert sich das. Es sieht auch natürlicher aus: Echte Tiere reagieren auch nicht sofort.</p>
+      <p lang="en"><b>Thinking five times a second.</b> Monsters <i>move</i> every frame, but they only <i>decide</i> about every 0.2 seconds (a little more or less, so a pack doesn't all decide at once). Searching for paths is work, and with 20 spiders in a room, it adds up. It also looks more natural: real animals don't react instantly either. When a monster notices you, it even takes a moment (the "!") before it comes for you.</p>
+      <p lang="de"><b>Fünfmal pro Sekunde denken.</b> Monster <i>bewegen</i> sich in jedem Bild, aber sie <i>entscheiden</i> nur ungefähr alle 0,2 Sekunden (mal etwas mehr, mal etwas weniger, damit ein Rudel nicht gleichzeitig entscheidet). Wege suchen ist Arbeit, und mit 20 Spinnen in einem Raum summiert sich das. Es sieht auch natürlicher aus: Echte Tiere reagieren auch nicht sofort. Wenn ein Monster dich bemerkt, braucht es sogar einen Moment (das "!"), bevor es auf dich losgeht.</p>
       <p lang="en"><b>Wind-ups you can see.</b> Every attack starts with a wind-up animation. This is called a <a class="w" href="words.html#telegraph">telegraph</a>: the monster tells you what it's about to do. Once it starts, it is committed and can't change its mind. That's your chance to dodge!</p>
       <p lang="de"><b>Ausholen, das man sieht.</b> Jeder Angriff beginnt mit einer Ausholbewegung. Das nennt man eine <a class="w" href="words.html#telegraph">Ankündigung</a> (englisch: telegraph): Das Monster verrät dir, was es gleich tun wird. Sobald es anfängt, ist es festgelegt und kann es sich nicht anders überlegen. Das ist deine Chance auszuweichen!</p>
     </div>
     <div>
-      <p lang="en"><b>Aiming stops early.</b> A Fire-face turns to aim at you, but stops turning before it spits. So stepping sideways at the right moment makes it miss.</p>
-      <p lang="de"><b>Das Zielen hört früh auf.</b> Ein Fire-face dreht sich, um auf dich zu zielen, hört aber auf zu drehen, bevor es spuckt. Ein Schritt zur Seite im richtigen Moment lässt es also danebenschießen.</p>
+      <p lang="en"><b>Aiming stops early.</b> A Fire-face turns to aim at you, a little ahead of where you are running, but stops turning before it spits. So changing direction at the right moment makes it miss.</p>
+      <p lang="de"><b>Das Zielen hört früh auf.</b> Ein Fire-face dreht sich, um auf dich zu zielen, ein bisschen vor die Stelle, zu der du läufst, hört aber auf zu drehen, bevor es spuckt. Wenn du im richtigen Moment die Richtung wechselst, schießt es also daneben.</p>
       <p lang="en"><b>A moment of peace.</b> When you enter a cube, monsters may chase you, but they don't attack for 1.2 seconds (or until you hit one). No getting bitten the moment you arrive.</p>
       <p lang="de"><b>Ein Moment Ruhe.</b> Wenn du einen Würfel betrittst, dürfen Monster dich jagen, greifen aber 1,2 Sekunden lang nicht an (oder bis du eins triffst). Kein Biss in der Sekunde, in der du ankommst.</p>
       <p lang="en"><b>No contact damage.</b> Just bumping into a monster never hurts. Only real attacks do.</p>
@@ -188,14 +190,14 @@
   <h2 lang="en">The real code: deciding</h2>
   <h2 lang="de">Der echte Code: entscheiden</h2>
   <div class="cols wide-left">
-    <pre data-code="src/game/enemyai.js#decide,stepEnemies"></pre>
+    <pre data-code="src/game/enemyai.js#notices,decide,stepEnemies"></pre>
     <div>
-      <p lang="en">To start chasing, <b>all</b> of these must be true: you're alive, close (<code>aggro</code>), at about the same height (within 1), visible (<code>clearLine</code> from its eyes to your chest), and there's a path of at most 10 steps.</p>
-      <p lang="de">Um mit dem Jagen anzufangen, muss <b>alles</b> davon stimmen: Du lebst, bist nah (<code>aggro</code>), auf etwa derselben Höhe (höchstens 1 Unterschied), sichtbar (<code>clearLine</code> von ihren Augen zu deiner Brust), und es gibt einen Weg mit höchstens 10 Schritten.</p>
-      <p lang="en">While chasing, it plans a new path every think. <code>e.lost</code> counts up while it has no path or you're too far. After 1.4 seconds of that, it goes home.</p>
-      <p lang="de">Beim Jagen plant sie bei jedem Nachdenken einen neuen Weg. <code>e.lost</code> zählt hoch, solange sie keinen Weg hat oder du zu weit weg bist. Nach 1,4 Sekunden davon geht sie nach Hause.</p>
-      <p lang="en"><code>e.think</code> is a countdown. When it reaches zero, think, and start again at 0.2. That's how "five times a second" works.</p>
-      <p lang="de"><code>e.think</code> ist ein Countdown. Wenn er null erreicht: nachdenken und wieder bei 0,2 anfangen. So funktioniert "fünfmal pro Sekunde".</p>
+      <p lang="en"><code>notices</code>: it hears you right next to it (<code>HEAR</code>). Else it must see you: a clear line from its eyes to your chest (<code>clearLine</code>), within <code>aggro</code> if you're in front of it, half that if you're behind it.</p>
+      <p lang="de"><code>notices</code>: Direkt neben ihr hört sie dich (<code>HEAR</code>). Sonst muss sie dich sehen: eine freie Linie von ihren Augen zu deiner Brust (<code>clearLine</code>), höchstens <code>aggro</code> weit, wenn du vor ihr bist, halb so weit, wenn du hinter ihr bist.</p>
+      <p lang="en">While chasing (<code>hunt</code>), it plans a new path every think, to where it last saw you. <code>e.lost</code> counts up while it can't see you. After 3 seconds of that (6 if you hit it), or once it gets there and you're gone, it searches. A monster can't climb or jump, so if you're out of reach, it walks as close as it gets.</p>
+      <p lang="de">Beim Jagen (<code>hunt</code>) plant sie bei jedem Nachdenken einen neuen Weg, dorthin, wo sie dich zuletzt gesehen hat. <code>e.lost</code> zählt hoch, solange sie dich nicht sieht. Nach 3 Sekunden davon (6, wenn du sie getroffen hast), oder wenn sie dort ankommt und du weg bist, sucht sie. Ein Monster kann weder klettern noch springen; wenn du außer Reichweite bist, läuft es so nah heran, wie es geht.</p>
+      <p lang="en"><code>e.think</code> is a countdown. When it reaches zero, think, and start again at about 0.2. That's how "five times a second" works.</p>
+      <p lang="de"><code>e.think</code> ist ein Countdown. Wenn er null erreicht: nachdenken und wieder bei ungefähr 0,2 anfangen. So funktioniert "fünfmal pro Sekunde".</p>
       <p lang="en">The demo uses the same rules on a little grid.</p>
       <p lang="de">Die Demo benutzt dieselben Regeln auf einem kleinen Gitter.</p>
     </div>

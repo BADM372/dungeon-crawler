@@ -10,6 +10,11 @@
 // `poise`: for how long (s) after a hit staggers it a hit cannot stagger it again (0: every hit
 // does), so heavy species and guardians strike back even under a stream of blows. A heavy blow
 // (core/combat.js HEAVY_HIT) staggers anyway.
+// `style`: how it fights between blows (game/enemyai.js). 'skirmish' backs off after a blow and
+// circles at `circle` cells (sidestepping, facing the player, if it `strafe`s; else walking
+// round), then darts in again; 'ranged' backs away inside keep[0] and sidesteps while its throw
+// recovers; 'brute' (the default) holds its ground. `charge`: how much faster it runs the last
+// few cells at a player it sees.
 import { hash32, mulberry32 } from './util.js';
 
 // what every species gains per level, as a share of its level-1 value: health keeps pace with
@@ -36,6 +41,7 @@ export const SPIDER = Object.freeze({
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a spider!', ichor: Object.freeze(['#a6d84e', '#5f8f22']), pitch: 1.1,
   poise: 0, hitStun: 0.18, deathTime: 2, corpseTime: 3.5,
   parts: Object.freeze({ body: ['SpiderBody'], eyes: ['SpiderEyes'] }),
+  style: 'skirmish', circle: 1.5, strafe: true,
   seedSalt: 0x5b1d3a, spacing: 3,
 });
 // learn: checks.html#try-test, combat.html#damage (see learn/README.md)
@@ -48,6 +54,7 @@ export const STUNDER = Object.freeze({
   arc: 0.5, knockDown: true, hop: 4, reason: 'Rammed by a Stunder!', ichor: Object.freeze(['#d0503a', '#7a2418']), pitch: 0.8,
   poise: 1.5, hitStun: 0.25, deathTime: 2.4, corpseTime: 4,
   parts: Object.freeze({ skin: ['StunderBody', 'StunderEarInset', 'StunderLegRidges', 'StunderMouth'], eyes: ['StunderEyes_glow'] }),
+  style: 'brute', charge: 1.8,
   seedSalt: 0x57a4de2, spacing: 5,
 });
 // Slithers in with its head raised and lunges forward and down to bite (clip frame 12).
@@ -61,6 +68,7 @@ export const SNAKE = Object.freeze({
   arc: 0.5, knockDown: false, hop: 3.5, reason: 'Bitten by a snake!', ichor: Object.freeze(['#b4e67e', '#4f8f2a']), pitch: 1.25,
   poise: 0, hitStun: 0.18, deathTime: 2, corpseTime: 3.5,
   parts: Object.freeze({ skin: ['SnakeBody', 'SnakeRibs'], eyes: ['SnakeEyes_glow'] }),
+  style: 'skirmish', circle: 1.6, strafe: false,
   seedSalt: 0x5a4e7c1, spacing: 3,
 });
 // Slaps with both arms (clip frame 13), or spins on five legs and sweeps the sixth
@@ -82,6 +90,7 @@ export const OCTONAUT = Object.freeze({
   attacks: Object.freeze([OCTO_SLAP, OCTO_SPIN]),
   poise: 0.8, hitStun: 0.22, deathTime: 2.2, corpseTime: 4,
   parts: Object.freeze({ skin: ['OctonautBody', 'OctonautHair'], eyes: ['OctonautEyes_glow'] }),
+  style: 'brute',
   seedSalt: 0x0c7a9a5, spacing: 4,
 });
 // The fire species and the Triangle are much stronger than the rest. A ranged attack has a
@@ -101,6 +110,7 @@ export const FIREFACE = Object.freeze({
     muzzle: Object.freeze([-0.03, 0.444, 0.523]), burn: Object.freeze({ time: 0.5, damage: 6, ticks: 2 }) }),
   poise: 0.8, hitStun: 0.2, deathTime: 2, corpseTime: 3.5,
   parts: Object.freeze({ flame: ['FireFaceCore_glow', 'FireFaceBall_glow', 'FireFaceFlame_glow', 'FireFaceTips_glow'], eyes: ['FireFaceEyes_glow'] }),
+  style: 'ranged', keep: Object.freeze([2.2, 4]),
   seedSalt: 0xf12efa, spacing: 4,
 });
 // Shoots its inner triangles out like a punch (clip frame 20); a hit knocks the player over.
@@ -115,6 +125,7 @@ export const TRIANGLE = Object.freeze({
     muzzle: Object.freeze([-0.037, 0.699, 0.87]) }),
   poise: 1.2, hitStun: 0.22, deathTime: 2, corpseTime: 4,
   parts: Object.freeze({ glow: ['TriangleCore_glow', 'TriangleRing_glow', 'TriangleFrame_glow', 'TriangleBrows'], eyes: ['TriangleEyes_glow'] }),
+  style: 'ranged', keep: Object.freeze([2, 3.6]),
   seedSalt: 0x7a1a9e1, spacing: 5,
 });
 // Runs in fast, then pounces from up to `reach` away: between lunge.from and lunge.to of the
@@ -130,6 +141,7 @@ export const FIRECAT = Object.freeze({
   lunge: Object.freeze({ from: 0.3, to: 0.6, max: 1.9, stop: 0.55 }),
   poise: 0.4, hitStun: 0.2, deathTime: 2, corpseTime: 3.5,
   parts: Object.freeze({ fur: ['FireCatBody', 'FireCatStripes', 'FireCatNose'], flame: ['FireCatFlame_glow', 'FireCatFlameCore_glow'], eyes: ['FireCatEyes_glow'] }),
+  style: 'skirmish', circle: 2, strafe: false,
   seedSalt: 0xca7f12e, spacing: 4,
 });
 // Fights near and far: an attack may have its own `reach` (it is picked only from within it) and
@@ -160,7 +172,7 @@ export const SHRAPS = Object.freeze({
   attacks: Object.freeze([SHRAPS_PINCH, SHRAPS_THROW]),
   poise: 0.8, hitStun: 0.2, deathTime: 2, corpseTime: 4,
   parts: Object.freeze({ shell: ['ShrapsShell', 'ShrapsClaw'], ice: [...ICE_HEAD], eyes: ['ShrapsEyes_glow'] }),
-  hide: FIRE_HEAD,
+  hide: FIRE_HEAD, style: 'brute',
   seedSalt: 0x5a7a95, spacing: 4,
 });
 export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS]);
@@ -352,11 +364,12 @@ export function pickAttack(profile, r = Math.random(), allowed = null) {
 export const isRanged = profile => !!(profile.projectile || profile.attacks?.some(a => a.projectile));
 // which attacks (indices; [0] for a species with one) can start against a target d away
 // across the floor and dy above or below: within the attack's reach (else the profile's) and
-// beyond its minReach; a throw allows more height. A clear line for throws is the caller's.
+// beyond its minReach; a throw allows more height, a blow enough for the next step of a stair
+// or a ramp. A clear line for throws is the caller's.
 export function attacksInReach(profile, d, dy) {
   const list = profile.attacks ?? [profile], out = [];
   list.forEach((a, i) => {
-    if (d < (a.reach ?? profile.reach) && d >= (a.minReach ?? 0) && dy < (a.projectile ? 1.5 : 0.5)) out.push(i);
+    if (d < (a.reach ?? profile.reach) && d >= (a.minReach ?? 0) && dy < (a.projectile ? 1.5 : 0.75)) out.push(i);
   });
   return out;
 }

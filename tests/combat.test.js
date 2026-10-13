@@ -206,6 +206,7 @@ test('Shraps pinches up close and throws ice balls from further off', () => {
   assert.deepEqual(attacksInReach(OCTONAUT, OCTONAUT.reach - 0.1, 0), [0, 1]);
   assert.deepEqual(attacksInReach(FIREFACE, 3, 1.2), [0]);
   assert.deepEqual(attacksInReach(SPIDER, SPIDER.reach + 0.1, 0), []);
+  assert.deepEqual(attacksInReach(SPIDER, SPIDER.reach - 0.1, 0.7), [0], 'a bite reaches the next step of a stair');
   // picks only among the allowed attacks
   for (let r = 0; r < 1; r += 0.1) assert.equal(pickAttack(SHRAPS, r, [1]), 1);
   assert.equal(pickAttack(OCTONAUT, 0.9, [0]), 0);

@@ -8,7 +8,7 @@ import { triangles, resetTriangles, updateTriangles, detachTriangles } from './t
 import { fireCats, resetFireCats, updateFireCats, detachFireCats } from './firecats.js';
 import { shraps, resetShraps, updateShraps, detachShraps } from './shraps.js';
 import { contactEnemies, resetEnemyCombat, updateBurning, updateChill } from './enemycombat.js';
-import { stepEnemies } from './enemyai.js';
+import { stepEnemies, stepCalls, resetCalls } from './enemyai.js';
 import { removeEnemyViews } from '../render/enemies.js';
 import { updateProjectiles, drawAllProjectiles, clearProjectiles } from './projectiles.js';
 import { hitWithSword } from './sword.js';
@@ -37,7 +37,7 @@ export function addEnemies(list) { spawned.push(...list); }
 
 export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats, ...shraps, ...spawned];
 export function resetEnemies() {
-  resetEnemyCombat(); clearProjectiles(); clearShots();
+  resetEnemyCombat(); clearProjectiles(); clearShots(); resetCalls();
   removeEnemyViews(spawned); spawned = [];
   state.enemyGrace = ENTRY_GRACE;
   resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats(); resetShraps();
@@ -68,6 +68,7 @@ export function updateEnemies(dt) {
     coordinateDefence(state.map, state.run, list, player);
   }
   if (coordinateHordes(hordeGroups, player, dt)) setStatus('Horde awakened!');
+  stepCalls(dt);
   updateSpiders(dt); updateStunders(dt); updateSnakes(dt); updateOctonauts(dt);
   updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt); updateShraps(dt);
   stepEnemies(spawned, dt);

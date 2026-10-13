@@ -6,7 +6,8 @@ import { flatMap, state } from './fixtures.js';
 import { SPIDER, STUNDER, ENEMY_PROFILES, makeEnemy } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
 import { DEPTH_SPAWNS, population } from '../src/core/spawns.js';
-import { walkable, neighbors, findPath, stepEnemy, clearLine } from '../src/physics/enemynav.js';
+import { walkable, neighbors, findPath, pathToward, stepEnemy, clearLine } from '../src/physics/enemynav.js';
+import { topOf } from '../src/core/surfaces.js';
 import { World } from '../src/world/world.js';
 
 const signature = spots => spots.map(s => [s.f.id, s.x, s.y, s.z, s.yaw]);
@@ -63,6 +64,43 @@ test('navigation respects fences, melee line of sight respects props and slabs',
   assert.ok(clearLine(4.5, 0.4, 5.5, 7.5, 0.4, 5.5));
   map.blockers[5 * N + 6].push({ x: 6.5, z: 5.5, r: 0.3, bottom: 0, top: 2 });
   assert.equal(clearLine(4.5, 0.4, 5.5, 7.5, 0.4, 5.5), false);
+});
+test('enemies walk stairs, bridges and landings: every structure joins its ends', () => {
+  let runs = 0, landings = 0;
+  for (const seed of [1, 2, 3]) {
+    const world = new World(seed);
+    for (const key of [1, 2, 5].flatMap(d => [...world.layout(d).exists].slice(0, 3))) {
+      const map = state.map = world.cube(key).map;
+      const landing = new Map(map.runs.filter(r => r.kind === 'landing').map(r => [r.from, r.pieces[0]]));
+      for (const r of map.runs) {
+        if (r.kind === 'landing') continue;
+        const a = landing.get(r.from) ?? r.from, b = landing.get(r.to) ?? r.to;
+        if (![a, b, ...r.pieces].every(n => walkable(n, SPIDER.height))) continue;
+        const path = findPath(a, b, r.k + 1, SPIDER.height);
+        assert.deepEqual(path, [a, ...r.pieces, b], `${key} ${r.kind}`);
+        if (r.from.landing || r.to.landing) { landings++; continue; }
+        runs++;
+        // a body steered from cell to cell along it gets to the other end, at the surface's height
+        const e = makeEnemy({ f: a, x: a.x + .5, z: a.z + .5, y: topOf(a, .5, .5) }, SPIDER);
+        for (let i = 0; i < 2000 && e.f !== b; i++) {
+          const next = path[path.indexOf(e.f) + 1], dx = next.x + .5 - e.x, dz = next.z + .5 - e.z, d = Math.hypot(dx, dz) || 1;
+          stepEnemy(e, dx / d * 0.03, dz / d * 0.03);
+          assert.ok(Math.abs(e.y - topOf(e.f, e.x - e.f.x, e.z - e.f.z)) < 1e-9);
+        }
+        assert.equal(e.f, b, `${key} ${r.kind}: walked across`);
+      }
+    }
+  }
+  assert.ok(runs > 50 && landings > 0, `${runs} runs, ${landings} with landings`);
+});
+test('a target out of reach: the path goes as close as it gets', () => {
+  const map = flatMap(), f = map.floors[5 * N + 5];
+  for (let x = 0; x < N; x++) map.floors[8 * N + x].fluid = true;   // a river across the cube
+  const far = map.floors[12 * N + 5];
+  assert.equal(findPath(f, far, 20), null);
+  const path = pathToward(f, far.x + .5, 0, far.z + .5, 20);
+  assert.equal(path[0], f);
+  assert.equal(path.at(-1), map.floors[7 * N + 5]);
 });
 test('real generated levels keep the population cap and species clearance', () => {
   for (const seed of [1, 2, 3, 8, 17, 42, 123, 456]) {

@@ -3,8 +3,9 @@
 // go and open it. Holding the button
 // keeps walking towards the cursor / keeps attacking. WASD cancels.
 // Orders steer only; the speed (run, or walk with Ctrl) is up to update.js.
-// Walks follow the floor graph where there is one (to the reachable floor closest to the
-// target), cutting corners where the way is clear, else head straight for the target.
+// Walks follow the floor graph where there is one (floors, stairs, bridges and landings; to
+// the reachable one closest to the target), cutting corners where the way is clear, else head
+// straight for the target.
 import { CHAR_H, CHAR_R, N } from '../core/constants.js';
 import { combatStats, inReachBand } from '../core/combat.js';
 import { lineOfFire } from './shots.js';
@@ -25,7 +26,7 @@ export function clearOrder() { order.kind = null; order.enemy = null; order.pick
 // Teleports/travel invalidate cube-local targets; a held click must not recreate them.
 export function clearMouseInput() { clearOrder(); pointer.down = false; pointer.mode = null; }
 
-const floorOf = s => s && !s.kind ? s : null;
+const floorOf = s => s && s.kind !== 'pillar' ? s : null;
 
 // can the player walk through floor f: headroom, and the body fits in the middle of the cell
 function passable(f) {

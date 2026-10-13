@@ -67,7 +67,8 @@ Four kinds of weapon: swords swing (most of this page), bows, crossbows and staf
   use a small reserved open patch, replacing that cube's scattered roster without
   turning it into an arena. Ordinary packs and guardians keep
   their existing behaviour.
-- All species share navigation / AI / melee (`core/enemies.js` holds the tuning).
+- All species share navigation / AI / melee (`core/enemies.js` holds the tuning; see
+  [Enemy behaviour](#enemy-behaviour)).
   Stunder walks at 0.45 cells/s, pursues at 1.05 cells/s using its fast wiggling
   walk, commits its heading before the ram, and contacts at animation frame 16.
 - Snake (light green, `blender/snake.py`): slithers with a lateral wave that runs
@@ -123,6 +124,44 @@ Four kinds of weapon: swords swing (most of this page), bows, crossbows and staf
 - Actual GLB death clips play once and hold their corpse poses, then fade and
   release their skeletons, mixers and instance materials. Portals detach /
   slide / dispose both species, rather than leaving enemies in the old cube.
+
+## Enemy behaviour
+
+One brain for every species (`game/enemyai.js`), a state machine that thinks about five
+times a second (0.2 s, jittered so a pack does not decide in lockstep) and acts every frame.
+
+- **Navigation** (`physics/enemynav.js`, `physics/floornav.js`): the floor graph's nodes are
+  floors and structure pieces. A stair or bridge piece links to the pieces before and after it
+  along its run, the run's end pieces to its floors or landings, a landing to the landings its
+  walkways open to (`structureLinks`). So enemies follow you up and down stairs, over ramps,
+  bridges and landings, and so does a click-to-move walk. Nobody climbs ladders or jumps. The
+  body probe is kept within 0.42 cells, so broad bodies fit on one-cell structures.
+- **Noticing** (idle, walk, home, search): within `aggro` ahead of it (100° either side of its
+  heading), half that behind it, or within 1.6 cells whatever it faces; with a clear line from
+  its eyes to your chest and within 1.6 height. Within 1.4 × aggro in sight it turns towards
+  you slowly, so sneaking up from behind works only so long. Noticing puts it in `alert` (a
+  "!" over its head) for 0.3–0.6 s, then it gives chase and calls the others: idle enemies
+  within 5 cells react a little later. A hit (any damage, also unstaggered ones) makes it hunt at
+  once, for longer, and calls the others too. Hordes and guardian defenders keep their group
+  logic ([hordes.md](hordes.md), [guardians.md](guardians.md)).
+- **Hunting** (`chase`): a path (up to 24 steps) to the node you stand on; while you are not on
+  one it can walk (jumping, swimming, on a ladder, under a ceiling too low for it), to where
+  it last saw you stand; if that is out of reach, as close as it gets (`pathToward`). It sees
+  you within the larger of `aggro` and `giveUp`, all around and up to 4 above or below. Out of
+  sight it keeps going for 3 s (6 s after a hit); once it reaches the spot where it lost you,
+  stays stuck short of you for 4 s (unless it can shoot from there) or runs out of memory, it
+  `search`es: it looks around near that spot for 4 s, then goes home.
+- **Between blows**, by the profile's `style`:
+  - `skirmish` (spiders, snakes, Fire-cats): backs off after a blow, circles at `circle` cells
+    (spiders scuttle sideways facing you, `strafe`; the others walk round), switching sides
+    when blocked and now and then, and darts in once the cooldown is over.
+  - `ranged` (Fire-face, Triangle): backs away while closer than `keep[0]`, sidesteps while the
+    throw recovers, and moves for a clear shot when it has none.
+  - `brute` (Stunder, Octonaut, Shraps): holds its ground. The Stunder `charge`s: it runs the
+    last 1.5–5 cells at 1.8× its chase speed when it can strike again.
+  Cooldowns vary by ±20% per blow. Throws are aimed ahead of a running player by half the way
+  they would run before the throw arrives; changing direction dodges them.
+- Blows start within 0.75 height (a stair step or a ramp) and land within 0.85.
 
 ## Bows, crossbows and staffs
 

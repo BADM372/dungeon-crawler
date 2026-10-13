@@ -1,16 +1,21 @@
 // Floor-graph navigation for enemies. Clearance is species-specific: a Stunder
-// cannot fit through the low ceilings that a spider can. Neither climbs / jumps.
+// cannot fit through the low ceilings that a spider can. The graph's nodes are floors and
+// structure pieces: enemies walk up and down stairs and ramps, over bridges and landings,
+// but none climbs ladders or jumps.
 import { DIRS } from '../core/constants.js';
-import { floorY } from '../core/surfaces.js';
-import { floorWalkable, floorNeighbor } from './floornav.js';
+import { topOf } from '../core/surfaces.js';
+import { floorWalkable, navNeighbor, structureLinks } from './floornav.js';
 import { state } from '../game/state.js';
 import { cellAt, insideSolid } from './collide.js';
 import { containsXZ } from '../core/blockers.js';
 
-export const walkable = (f, height = .9, player = false) => floorWalkable(state.map, f, height, player);
+export function walkable(f, height = .9, player = false) {
+  if (f?.kind) structureLinks(state.map);   // gives the pieces their cells
+  return floorWalkable(state.map, f, height, player);
+}
 const dirOf = (dx, dz) => DIRS.findIndex(([x, z]) => x === dx && z === dz);
 // ok: which floors may be entered (default: walkable for this height)
-const via = (f, d, height, ok) => floorNeighbor(state.map, f, d, height, ok);
+const via = (f, d, height, ok) => navNeighbor(state.map, f, d, height, ok);
 export const neighbors = (f, height = 0.9, ok) => [0, 1, 2, 3].map(d => via(f, d, height, ok)).filter(Boolean);
 export function floorAt(f, x, z, height = 0.9) {
   const c = cellAt(x, z);
@@ -23,9 +28,12 @@ export function floorAt(f, x, z, height = 0.9) {
   const g1 = a && via(a, dirOf(0, dz), height), g2 = b && via(b, dirOf(dx, 0), height);
   return g1 && g2 === g1 ? g1 : null;
 }
-export const groundY = (f, x, z) => floorY(f, x - f.x, z - f.z);
+export const groundY = (f, x, z) => topOf(f, x - f.x, z - f.z);
 
+// The body must fit on the floors it covers; the probe is kept a little inside a cell's
+// half-width, so that even a broad body fits on a stair or bridge one cell wide.
 export function stepEnemy(s, mx, mz, radius = s.profile.radius, height = s.profile.height) {
+  radius = Math.min(radius, 0.42);
   const go = (x, z) => {
     const g = floorAt(s.f, x, z, height);
     if (!g) return false;
@@ -50,6 +58,26 @@ export function findPath(a, b, maxLen, height = 0.9) {
   if (!prev.has(b)) return null;
   const path = [];
   for (let f = b; f; f = prev.get(f)) path.unshift(f);
+  return path;
+}
+// Breadth-first like findPath, to the node nearest the point (x, y, z) within maxLen steps
+// (height differences count double): as close as it gets to a target it cannot reach.
+export function pathToward(a, x, y, z, maxLen, height = 0.9) {
+  if (!a || !walkable(a, height)) return null;
+  const prev = new Map([[a, null]]), far = f => Math.hypot(f.x + 0.5 - x, f.z + 0.5 - z) + 2 * Math.abs(topOf(f, 0.5, 0.5) - y);
+  let front = [a], best = a, bestD = far(a);
+  for (let d = 0; d < maxLen && front.length; d++) {
+    const next = [];
+    for (const f of front) for (const g of neighbors(f, height)) {
+      if (prev.has(g)) continue;
+      prev.set(g, f); next.push(g);
+      const gd = far(g);
+      if (gd < bestD) { best = g; bestD = gd; }
+    }
+    front = next;
+  }
+  const path = [];
+  for (let f = best; f; f = prev.get(f)) path.unshift(f);
   return path;
 }
 export function around(f, n, height = 0.9) {

@@ -29,7 +29,7 @@ export function hitPlayer(blow, fx, fz, nx, nz) {
 }
 export function strikePlayer(e) {
   const p = player, a = attackOf(e), dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
-  if (p.ragdoll || p.hp <= 0 || d > a.hitReach || Math.abs(p.y - e.y) > 0.65) return;
+  if (p.ragdoll || p.hp <= 0 || d > a.hitReach || Math.abs(p.y - e.y) > 0.85) return;
   if (d > 0.01 && Math.cos(Math.atan2(dx, dz) - e.yaw) < a.arc) return;
   hitPlayer(blowOf(e.profile, a), e.x, e.z, d ? dx / d : Math.sin(e.yaw), d ? dz / d : Math.cos(e.yaw));
 }
