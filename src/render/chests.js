@@ -36,11 +36,11 @@ export function buildChests(p, list, group) {
   }
 }
 
-// clip: 'Open' | 'Close'; instant: jump to its last frame
+// clip: 'Open' | 'Close'; instant: jump to its last frame. The clip's length in seconds.
 function play(chest, clip, instant = false) {
   const { mixer, clips } = chest.userData.chest;
   const c = THREE.AnimationClip.findByName(clips, clip);
-  if (!c) return;
+  if (!c) return 0;
   mixer.stopAllAction();
   const action = mixer.clipAction(c);
   action.setLoop(THREE.LoopOnce, 1);
@@ -48,12 +48,14 @@ function play(chest, clip, instant = false) {
   action.reset().play();
   if (instant) mixer.update(c.duration);
   else playing.add(mixer);
+  return instant ? 0 : c.duration;
 }
 
 export const chestAt = (world, siteId) => world?.group.children.find(o => o.userData.chest?.site === siteId) ?? null;
+// how long until the clip has played out (0: no such chest)
 export function animateChest(world, siteId, clip) {
   const chest = chestAt(world, siteId);
-  if (chest) play(chest, clip);
+  return chest ? play(chest, clip) : 0;
 }
 export const showChestOpen = (world, siteId) => animateChest(world, siteId, 'Open');
 

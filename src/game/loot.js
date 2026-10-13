@@ -57,10 +57,11 @@ function place(item, at, from, extra = {}) {
 // what enemy e leaves behind: its coins and its seeded weapon and potion drops (core/gear/drops.js)
 export function dropLoot(e, copper) { spill(e, copper, enemyDrops(e, state.map?.seed ?? 0)); }
 // coins and items bursting out of a body (or a chest: `from`) and landing around `at`; extra:
-// what every pickup carries
-export function spill(at, copper, items, extra = {}, from = { x: at.x, y: at.y + 0.4, z: at.z }) {
-  coinDrops(copper).forEach((d, i) => place(d, landing(at.x, at.y, at.z), from, { toss: -i * 0.06, ...extra }));   // one after another
-  items.forEach((item, i) => place(item, landing(at.x, at.y, at.z, 0.5, 1.1), from, { toss: -0.15 - i * 0.18, ...extra }));
+// what every pickup carries; delay: seconds before the first one comes out (hidden till then)
+export function spill(at, copper, items, extra = {}, from = { x: at.x, y: at.y + 0.4, z: at.z }, delay = 0) {
+  const wait = delay / TOSS_TIME;
+  coinDrops(copper).forEach((d, i) => place(d, landing(at.x, at.y, at.z), from, { toss: -wait - i * 0.06, ...extra }));   // one after another
+  items.forEach((item, i) => place(item, landing(at.x, at.y, at.z, 0.5, 1.1), from, { toss: -wait - 0.15 - i * 0.18, ...extra }));
 }
 
 // put item ({ itemId, count, gen? }) down at the player's feet; it stays there through a death
@@ -136,7 +137,7 @@ export function updateLoot(dt, time) {
   collectRequested = false;
   if (!state.transitioning && !player.ragdoll && player.hp > 0 && dt > 0) {
     for (const p of list) {
-      if (p.fly || !walkTakes(p)) continue;
+      if (p.fly || p.toss < 0 || !walkTakes(p)) continue;   // not out yet
       const settled = p.toss >= 1;
       // a refused pickup waits until the player has moved out of its reach again
       const near = steppedOn(p, player.x, player.y, player.z) || inMagnetReach(p, player.x, player.y, player.z);

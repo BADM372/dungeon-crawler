@@ -520,8 +520,9 @@ def chest(m, v=0):
     for i in range(6):
         prism(-.468 + i * .156, -.468 + i * .156 + .152, section,
               WOOD if i % 2 else '#967049')
-    # the dark underside shows once it is open
-    lid.box((0, 0, .449), (.86, .52, .008), '#5d4128')
+    # the dark underside shows once it is open; it sits a little below the planks' flat
+    # bottom (z .445) rather than flush with it, which would z-fight
+    lid.box((0, 0, .443), (.86, .52, .006), '#5d4128')
     lid.slot = 1
     for x in (-.33, .33):
         for i in range(8):

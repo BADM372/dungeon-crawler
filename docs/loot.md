@@ -129,8 +129,8 @@ in `core/chests.js` decides what one holds, seeded by the site; `CHESTS` is the 
 | Exceptional | depth + 2 | 180–280 | 2 | at least Epic and at least Rare |
 
 Copper grows like enemy coins. Weapons roll with luck (0.1 to 0.45 by prestige). Opening a chest
-(`game/chests.js`) adds its site to `run.chests`, opens the model and spills the loot in front
-of it. The chest stays open for the run and what it spilled is `kept`: a death takes neither
+(`game/chests.js`) adds its site to `run.chests`, opens the model and, once the lid's `Open` clip has
+played out, spills the loot in front of it (pickups wait hidden until then). The chest stays open for the run and what it spilled is `kept`: a death takes neither
 back.
 
 ## Extending
