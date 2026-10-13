@@ -158,8 +158,8 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     }
     const flash = Math.min(0.6, e.hurtT / 0.22 * 0.6);
     for (const { material, color } of v.materials) material.color.copy(color).lerp(flash > 0.1 || !e.hovered ? white : hover, Math.max(flash, e.hovered ? 0.22 : 0));
-    v.bar.visible = !!e.guardian || e.hp < e.profile.hp || !!e.hovered;
-    v.label.visible = v.bar.visible || Math.hypot(e.x - player.x, e.z - player.z) < e.profile.aggro + 1;
+    v.bar.visible = !!e.guardian || !!e.hovered || !e.hordeId && e.hp < e.profile.hp;
+    v.label.visible = v.bar.visible || !e.hordeId && Math.hypot(e.x - player.x, e.z - player.z) < e.profile.aggro + 1;
     inverseYaw.setFromAxisAngle(up, -v.yaw);
     v.bar.quaternion.copy(inverseYaw).multiply(camera.quaternion);
     v.hpBar.set(e.hp / e.profile.hp);

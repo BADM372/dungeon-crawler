@@ -17,12 +17,13 @@ import { player, state, setStatus } from './state.js';
 import { awardKill } from '../core/progression.js';
 import { dropLoot } from './loot.js';
 import { coordinateDefence } from './defence.js';
+import { createHordeGroups, coordinateHordes } from './hordes.js';
 import { setGuardianGate } from '../render/world.js';
 import { drawMinimap } from './minimap.js';
 import { refreshOpenFaces } from './flow.js';
 import { sfx } from '../audio/sfx.js';
 
-let defenceThink = 0;
+let defenceThink = 0, hordeGroups = [];
 
 // coming into a cube (or back after a death), enemies hold their attacks this long, or until
 // you land a hit: a bad spawn spot is not an instant beating
@@ -40,6 +41,7 @@ export function resetEnemies() {
   state.enemyGrace = ENTRY_GRACE;
   resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats();
   defenceThink = 0;
+  hordeGroups = createHordeGroups(state.map, allEnemies());
   coordinateDefence(state.map, state.run, allEnemies(), player);
 }
 // learn: architecture.html#swing-journey, code.html#loops (see learn/README.md)
@@ -64,6 +66,7 @@ export function updateEnemies(dt) {
     defenceThink = .25;
     coordinateDefence(state.map, state.run, list, player);
   }
+  if (coordinateHordes(hordeGroups, player, dt)) setStatus('Horde awakened!');
   updateSpiders(dt); updateStunders(dt); updateSnakes(dt); updateOctonauts(dt);
   updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt);
   stepEnemies(spawned, dt);
@@ -75,7 +78,7 @@ export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); dr
 function detachSpawned() { const list = spawned; spawned = []; return list; }
 // projectiles and shots in flight do not travel along
 export function detachEnemies() {
-  clearProjectiles(); clearShots();
+  clearProjectiles(); clearShots(); hordeGroups = [];
   return [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts(),
     ...detachFireFaces(), ...detachTriangles(), ...detachFireCats(), ...detachSpawned()];
 }

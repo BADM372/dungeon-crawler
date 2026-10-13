@@ -12,7 +12,7 @@ export function makeMoves(ctx) {
   // can a structure occupy column c between levels lo..hi? floors must be clearly below or above
   const colClear = (c, lo, hi, gapSolid) => {
     for (const g of cols[c]) {
-      if (g.prot || (g.siteBlocked && g.top + 3 > lo && g.bottom < hi + SHEAD)) return false;
+      if (g.prot || ((g.siteBlocked || g.hordeReserved) && g.top + 3 > lo && g.bottom < hi + SHEAD)) return false;
       if (g.bottom >= hi + SHEAD) continue;
       if (g.fluid ? (g.surf <= lo - 1) : (g.top <= lo - gapSolid)) continue;
       return false;
@@ -31,7 +31,7 @@ export function makeMoves(ctx) {
   const landingOK = (c, h) => {
     if (h > MAX_L) return false;
     for (const g of cols[c]) {
-      if (g.prot || g.siteBlocked || g.top === h) return false;
+      if (g.prot || g.siteBlocked || g.hordeReserved || g.top === h) return false;
       if (g.bottom >= h + SHEAD) continue;
       if (g.top <= h - 1 && (!g.fluid || g.surf <= h - 1)) continue;
       return false;

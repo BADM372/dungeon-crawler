@@ -7,6 +7,7 @@ import { playerFloor, strikePlayer } from './enemycombat.js';
 import { stepEnemy, findPath, around, clearLine } from '../physics/enemynav.js';
 import { attackOf, pickAttack, lungeDistance, lungeAt } from '../core/enemies.js';
 import { launchProjectile } from './projectiles.js';
+import { tryHordeAttack } from './hordes.js';
 
 // learn: space.html#angles (see learn/README.md)
 const turn = (e, yaw, dt, rate = 8) => { e.yaw += Math.atan2(Math.sin(yaw - e.yaw), Math.cos(yaw - e.yaw)) * Math.min(1, dt * rate); };
@@ -37,6 +38,20 @@ function decide(e) {
     const engage = alive && target && e.defence.engage;
     e.path = findPath(e.f, engage ? target : e.defence.post, 40, cfg.height);
     e.mode = engage && e.path ? 'chase' : 'defend'; e.lost = 0;
+    return;
+  }
+  if (e.horde) {
+    if (e.mode === 'attack') return;
+    const active = e.horde.group.active && e.horde.wakeIn <= 0 && alive && target;
+    if (active) {
+      // Approach from different neighbouring floors, then close for the actual bite.
+      const flank = dist > 2.5 ? around(target, 1, cfg.height).filter(f => f !== target) : [];
+      const goal = flank.length ? flank[e.hordeSlot % flank.length] : target;
+      e.path = findPath(e.f, goal, 32, cfg.height);
+      e.mode = 'chase'; e.lost = 0;
+    } else if (e.mode === 'chase') {
+      e.mode = 'home'; e.path = findPath(e.f, e.home, 40, cfg.height) || [e.f];
+    }
     return;
   }
   if (e.mode !== 'chase' && e.mode !== 'attack') {
@@ -78,7 +93,7 @@ function act(e, dt) {
     const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7;
     if (d < cfg.reach && Math.abs(p.y - e.y) < (cfg.projectile ? 1.5 : 0.5) && !p.ragdoll && (!cfg.projectile || clearShot(e))) {
       e.speed = 0; turn(e, Math.atan2(dx, dz), dt);
-      if (e.cool <= 0 && facing && state.enemyGrace <= 0) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); e.leap = 0; }
+      if (e.cool <= 0 && facing && state.enemyGrace <= 0 && tryHordeAttack(e)) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); e.leap = 0; }
       return;
     }
     follow(e, cfg.chase, dt, [p.x, p.z]); return;

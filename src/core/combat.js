@@ -188,6 +188,6 @@ export function weaponHit(p, stats, enemy, roll = Math.random(), share = 1) {
   const crit = roll < (stats.crit ?? 0);
   const damage = Math.max(1, Math.round(stats.damage * share * (crit ? stats.critDamage ?? 1.5 : 1)));
   if (!damageEnemy(enemy, damage)) return false;
-  if (stats.leech && p.hp > 0) p.hp = Math.min(p.maxHp ?? Infinity, p.hp + stats.leech);
+  if (stats.leech && p.hp > 0) p.hp = Math.min(p.maxHp ?? Infinity, p.hp + stats.leech * (enemy.profile.leechScale ?? 1));
   return { damage, crit };
 }

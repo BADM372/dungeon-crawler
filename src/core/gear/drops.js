@@ -39,7 +39,7 @@ const stream = (enemy, seed, salt) => mulberry32(hash32(hashString(String(enemy.
 export function weaponDrops(enemy, seed = 0, favor = null) {
   const R = stream(enemy, seed, 0x10075);
   const level = Math.max(1, enemy.level || 1);
-  if (!enemy.guardian) return R() < dropChance(enemy.kind?.xp) ? [rollWeapon(R, level, { favor })] : [];
+  if (!enemy.guardian) return R() < dropChance(enemy.kind?.dropXP ?? enemy.kind?.xp) * (enemy.kind?.dropScale ?? 1) ? [rollWeapon(R, level, { favor })] : [];
   const g = guardianDrops(enemy.guardianRole ?? 'descent', level), out = [];
   for (let i = 0; i < g.count; i++) out.push(rollWeapon(R, level, { ...g, favor }));
   return out;
@@ -47,7 +47,7 @@ export function weaponDrops(enemy, seed = 0, favor = null) {
 // health potions, on a stream of their own (so weapon drops do not depend on them)
 export function potionDrops(enemy, seed = 0) {
   const n = enemy.guardian ? guardianDrops(enemy.guardianRole ?? 'descent', enemy.level || 1).potions
-    : stream(enemy, seed, 0x9071)() < potionChance(enemy.kind?.xp) ? 1 : 0;
+    : stream(enemy, seed, 0x9071)() < potionChance(enemy.kind?.dropXP ?? enemy.kind?.xp) * (enemy.kind?.dropScale ?? 1) ? 1 : 0;
   return n ? [{ itemId: HEALTH_POTION.id, count: n }] : [];
 }
 // everything but the coins

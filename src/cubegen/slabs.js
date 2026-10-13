@@ -12,7 +12,8 @@ export function buildSlabs(ctx) {
     f.fluid = ctx.fluid0[c]; f.surf = ctx.surf0[c]; f.prot = ctx.prot0[c];
     const reserved = ctx.siteSpace?.get(c);
     if (reserved?.layer === 0) Object.assign(f, { site: reserved.site.id,
-      siteAnchor: c === reserved.site.anchorCell, siteAccess: c === reserved.site.accessCell });
+      siteAnchor: c === reserved.site.anchorCell, siteAccess: c === reserved.site.accessCell,
+      hordeReserved: !!reserved.horde, hordeSpawn: !!reserved.spawn });
     cols[c].push(f);
   }
 
@@ -39,7 +40,8 @@ export function buildSlabs(ctx) {
       const top = reserved?.layer === k ? reserved.top : padOf.has(c) ? B[k] : B[k] + (topNoise(x * 0.35 + k * 5, z * 0.35) > 0.6 ? 1 : 0);
       const u = mk(c, top, top - 2, k);
       if (reserved?.layer === k) Object.assign(u, { site: reserved.site.id,
-        siteAnchor: c === reserved.site.anchorCell, siteAccess: c === reserved.site.accessCell });
+        siteAnchor: c === reserved.site.anchorCell, siteAccess: c === reserved.site.accessCell,
+        hordeReserved: !!reserved.horde, hordeSpawn: !!reserved.spawn });
       u.prot = padOf.get(c) || 0;
       const below = topFloor(c);
       if (below && below.top + HEAD > u.bottom) {

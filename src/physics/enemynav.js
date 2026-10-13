@@ -1,42 +1,16 @@
 // Floor-graph navigation for enemies. Clearance is species-specific: a Stunder
 // cannot fit through the low ceilings that a spider can. Neither climbs / jumps.
-import { DIRS, LH } from '../core/constants.js';
-import { edgeKey } from '../core/util.js';
-import { floorY, runY } from '../core/surfaces.js';
+import { DIRS } from '../core/constants.js';
+import { floorY } from '../core/surfaces.js';
+import { floorWalkable, floorNeighbor } from './floornav.js';
 import { state } from '../game/state.js';
 import { cellAt, insideSolid } from './collide.js';
 import { containsXZ } from '../core/blockers.js';
 
-const free = new WeakMap();
-// enemies keep off stair landings and any cell with a prop in it; for the player (click to
-// move, game/orders.js) only the floor and its headroom count, props are checked there
-export function walkable(f, height = 0.9, player = false) {
-  if (!f || f.kind || f.fluid || f.covered || (!player && (f.landing || state.map.blockers?.[f.c]?.length))) return false;
-  let byHeight = free.get(f);
-  if (!byHeight) { byHeight = new Map(); free.set(f, byHeight); }
-  if (!byHeight.has(height)) {
-    const lo = floorY(f, 0.5, 0.5), hi = lo + height;
-    const floors = (state.map.cols[f.c] || []).every(g => g === f
-      || floorY(g, 0.5, 0.5) <= lo + 0.001 || g.bottom * LH >= hi);
-    const pieces = (state.map.pieces[f.c] || []).every(p => {
-      if (p.kind === 'pillar') return p.bottom >= hi || p.top <= lo;
-      const t = runY(p, 0.5, 0.5);
-      return (p.kind === 'bridge' ? t - 0.2 : p.base) >= hi || t <= lo;
-    });
-    byHeight.set(height, floors && pieces);
-  }
-  return byHeight.get(height);
-}
+export const walkable = (f, height = .9, player = false) => floorWalkable(state.map, f, height, player);
 const dirOf = (dx, dz) => DIRS.findIndex(([x, z]) => x === dx && z === dz);
 // ok: which floors may be entered (default: walkable for this height)
-function via(f, d, height, ok) {
-  const g = f.link[d];
-  if (!(ok ? ok(g) : walkable(g, height))) return null;
-  const lo = Math.min(groundY(f, f.x + 0.5, f.z + 0.5), groundY(g, g.x + 0.5, g.z + 0.5));
-  const fence = state.map.fences?.get(edgeKey(f.x, f.z, g.x, g.z));
-  if (fence?.some(e => e.ymax > lo && e.ymin < lo + height)) return null;
-  return g;
-}
+const via = (f, d, height, ok) => floorNeighbor(state.map, f, d, height, ok);
 export const neighbors = (f, height = 0.9, ok) => [0, 1, 2, 3].map(d => via(f, d, height, ok)).filter(Boolean);
 export function floorAt(f, x, z, height = 0.9) {
   const c = cellAt(x, z);

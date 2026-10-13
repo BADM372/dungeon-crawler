@@ -14,6 +14,7 @@
 // Ranged species (Fire-face, Triangle) stay at a few per cube; the melee ones, the spiders
 // above all, come in larger and larger packs further down.
 import { mulberry32, hash32 } from './util.js';
+import { ENEMY_KINDS } from './enemies.js';
 
 export const D = (mix, ...roster) => Object.freeze({ mix, roster: Object.freeze(roster.map(([type, chance, lo, hi, pack = 1, kinds = { [type]: 1 }]) =>
   Object.freeze({ type, chance, lo, hi, pack, kinds: Object.freeze(kinds) }))) });
@@ -63,6 +64,16 @@ const SALT = 0x3e1a5c7;
 // map.spawns (a row like the ones above) replaces the depth's row, for test arenas.
 export function population(map) {
   if (map.enemyFree) return new Map();
+  if (map.horde) {
+    const { kind, count } = map.horde, base = ENEMY_KINDS[kind];
+    const ordinary = population({ ...map, horde: null, populationScale: 1 });
+    const budget = [...ordinary.values()].reduce((sum, p) => {
+      const weights = Object.entries(p.kinds), total = weights.reduce((n, [, w]) => n + w, 0);
+      return sum + p.count * weights.reduce((n, [k, w]) => n + ENEMY_KINDS[k].xp * w, 0) / total;
+    }, 0);
+    return new Map([[base.species, { count, pack: count, lead: true, kinds: { [kind]: 1 },
+      swarm: true, rewardScale: Math.min(1, budget / (count * base.xp)) }]]);
+  }
   const R = mulberry32(hash32(map.seed ^ SALT)), row = map.spawns ?? spawnsAt(map.depth || 0);
   const rolled = [];
   for (const e of row.roster) if (R() < e.chance) rolled.push({ e, key: e.chance >= 1 ? 1 + R() : R() ** (1 / e.chance) });
@@ -72,7 +83,8 @@ export function population(map) {
   for (const e of present) if ((w -= e.chance) < 0) { lead = e; break; }
   return new Map(present.map(e => {
     const mid = (e.lo + e.hi) / 2, lo = e === lead ? Math.ceil(mid) : e.lo, hi = e === lead ? e.hi : Math.floor(mid);
-    const count = lo + Math.floor(R() * (hi - lo + 1));
+    const rolledCount = lo + Math.floor(R() * (hi - lo + 1));
+    const count = Math.max(1, Math.round(rolledCount * (map.populationScale ?? 1)));
     return [e.type, { count: count * (map.guardian ? 2 : 1), pack: e.pack, lead: e === lead, kinds: e.kinds }];
   }));
 }

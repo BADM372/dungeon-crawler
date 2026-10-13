@@ -25,6 +25,7 @@ import { addFences } from './fences.js';
 import { generateClearing } from './town.js';
 import { generateGuardian } from './guardian.js';
 import { reserveSites, prepareSites, routeSites, finishSites } from './sites.js';
+import { reserveHorde, routeHorde, finishHorde } from './hordes.js';
 
 function indexFloors(ctx) {
   const floors = ctx.floors = [];
@@ -68,6 +69,7 @@ function tryGenerate(seed, spec) {
   cascadeGround(ctx);
   spoutGround(ctx);
   reserveSites(ctx);
+  if (!reserveHorde(ctx)) return null;
   buildSlabs(ctx);
   prepareSites(ctx);
   addRamps(ctx);
@@ -81,6 +83,7 @@ function tryGenerate(seed, spec) {
   makeMoves(ctx);
   if (!findRoute(ctx)) return null;
   routeSites(ctx);
+  if (!routeHorde(ctx)) return null;
   addEscapes(ctx);
   finishRoute(ctx);
   if (!placeStructures(ctx)) return null;
@@ -91,13 +94,14 @@ function tryGenerate(seed, spec) {
   const safe = reachTo(ctx, ctx.hub, true);
   if (safe && ctx.portalFloors.some(f => !safe.has(f.id))) return null;
   if (ctx.moves.some(m => isCramped(ctx, m.from) || isCramped(ctx, m.to))) return null;   // a route squeezes under a slab
-  const sites = finishSites(ctx);
+  const sites = finishSites(ctx), horde = finishHorde(ctx, sites.staticBlockers);
+  if (horde === null) return null;
   const { K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves } = ctx;
   const portals = ctx.portals.map(p => ({ id: p.id, kind: p.kind, dir: p.dir, layer: p.layer, cells: p.cells,
     x: p.c % N, z: (p.c / N) | 0, y: p.level * LH, floor: p.floor }));
   return {
-    seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals, ...sites,
-    roomRole: spec.roomRole, biome: spec.biome,
+    seed, K, B, cols, floors, pieces, runs, falls, fences, fenceList, stats, moves, portals, ...sites, horde,
+    roomRole: spec.roomRole, biome: spec.biome, populationScale: spec.populationScale,
     ladders: ctx.ladders.map(ladderInfo), exit: spec.exit,
     routeIndex: spec.routeIndex, route: spec.route, gateKeys: spec.gateKeys,
     safe: Uint8Array.from(floors, f => !safe || safe.has(f.id) ? 1 : 0),   // floors that lead to the exit

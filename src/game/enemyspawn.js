@@ -9,6 +9,7 @@ import { N } from '../core/constants.js';
 import { enemyRoll, coinRange, guardianLevel, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS } from '../core/enemies.js';
 import { guardianId } from '../core/guardians.js';
 import { population } from '../core/spawns.js';
+import { swarmKind, HORDE } from '../core/hordes.js';
 import { mulberry32, hash32 } from '../core/util.js';
 import { walkable, neighbors, groundY, floorAt } from '../physics/enemynav.js';
 
@@ -23,6 +24,7 @@ export function pickKind(kinds, r) {
 
 export function enemySpots(map, profile) {
   if (map.guardian) return guardianSpots(map).filter(s => s.kind.species === profile.species);
+  if (map.horde) return hordeSpots(map).filter(s => s.kind.species === profile.species);
   const spec = population(map).get(profile.type);
   if (!spec?.count) return [];
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt)), { count, pack } = spec;
@@ -58,6 +60,29 @@ export function enemySpots(map, profile) {
     }
   }
   return spots.map((f, i) => ({ ...enemyRoll(map, kinds[i], f.id), kind: kinds[i], f, x: f.x + 0.5, z: f.z + 0.5, y: groundY(f, f.x + 0.5, f.z + 0.5), yaw: R() * Math.PI * 2 }));
+}
+
+// A connected local spawn patch; IDs/rolls use member slots, not terrain floor IDs.
+export function hordeSpots(map) {
+  const spec = [...population(map).values()][0];
+  if (!map.horde || !spec) return [];
+  const kind = swarmKind(ENEMY_KINDS[map.horde.kind], spec.rewardScale);
+  const R = mulberry32(hash32(map.seed ^ 0x40ade)), { anchor } = map.horde;
+  const candidates = (map.horde.spawnFloors ?? []).filter(f => walkable(f, kind.height)
+    && map.portals.every(p => Math.hypot(f.x - p.x, f.z - p.z) >= 4)
+    && [[kind.radius, 0], [-kind.radius, 0], [0, kind.radius], [0, -kind.radius]]
+      .every(([x, z]) => floorAt(f, f.x + .5 + x, f.z + .5 + z, kind.height)))
+    .map(f => ({ f, score: Math.hypot(f.x + .5 - anchor.x, f.z + .5 - anchor.z) + R() * .6 }))
+    .sort((a, b) => a.score - b.score);
+  const floors = [];
+  for (const { f } of candidates) {
+    if (floors.every(g => Math.hypot(g.x - f.x, g.z - f.z) >= kind.radius * 2 + .15)) floors.push(f);
+    if (floors.length === spec.count) break;
+  }
+  if (floors.length !== spec.count) throw new Error(`Horde patch cannot hold ${spec.count} members: ${map.key}`);
+  return floors.map((f, i) => ({ ...enemyRoll(map, kind, i), id: `${map.horde.id}:member:${i}`,
+    kind, hordeId: map.horde.id, hordeSlot: i, hordeReaction: R() * HORDE.reaction,
+    f, x: f.x + .5, z: f.z + .5, y: groundY(f, f.x + .5, f.z + .5), yaw: R() * Math.PI * 2 }));
 }
 
 // All species share one deterministic placement stream in an arena, avoiding overlapping

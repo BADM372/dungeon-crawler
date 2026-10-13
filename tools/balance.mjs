@@ -9,6 +9,7 @@ globalThis.location = { search: '' };
 const { makeLayouts } = await import('../src/world/layout.js');
 const { enemyFreeAt } = await import('../src/world/town.js');
 const { population } = await import('../src/core/spawns.js');
+const { swarmKind } = await import('../src/core/hordes.js');
 const { ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS, enemyProfile, enemyRoll, guardianLevel, threat, attackDamage, depthLevel } =
   await import('../src/core/enemies.js');
 const { enemyDrops } = await import('../src/core/gear/drops.js');
@@ -61,9 +62,10 @@ for (let seed = 1; seed <= SEEDS; seed++) {
       ...[...L.exists].filter(k => !L.route.includes(k)).map(k => ({ k, share: R() < 0.5 ? SHARE : 0 }))];
     for (const { k, share } of cubes) {
       if (enemyFreeAt(k) || !share) continue;
-      const g = L.guardians.get(k), map = { seed: hash32(seed * 31 + serial * 977), depth, key: k, guardian: g ?? null };
+      const g = L.guardians.get(k), map = { seed: hash32(seed * 31 + serial * 977), depth, key: k, guardian: g ?? null, horde: L.hordes.get(k), populationScale: L.populationScale.get(k) ?? 1 };
       for (const [, spec] of population(map)) for (let i = 0; i < spec.count; i++) {
-        const kind = pick(spec.kinds, R()), level = enemyRoll(map, kind, i * 13 + 1).level;
+        const base = pick(spec.kinds, R()), kind = spec.swarm ? swarmKind(base, spec.rewardScale) : base;
+        const level = enemyRoll(map, kind, i * 13 + 1).level;
         const k2 = row.kinds.get(kind.type) ?? { kind, level: 0, n: 0 };
         k2.level += level; k2.n++; row.kinds.set(kind.type, k2);
         if (R() < share) kill(kind, level);

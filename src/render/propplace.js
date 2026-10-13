@@ -26,8 +26,13 @@ export function placeProps(m, theme) {
   const R = mulberry32(hash32(m.seed ^ 0x9a0b5)), pick = picker(theme, R);
   const walkCols = new Set((m.moves || []).flatMap(mv => [mv.from.c, mv.to.c, ...mv.cells]));
   for (const r of m.runs || []) for (const c of [...r.cells, r.from.c, r.to.c]) walkCols.add(c);
-  const reservations = new Set((m.siteReservations || []).map(q => q.c + ':' + q.layer));
+  const reservations = new Set([...(m.siteReservations || []).map(q => q.c + ':' + q.layer),
+    ...m.floors.filter(f => f.hordeReserved).map(f => f.c + ':' + f.layer)]);
   const reserved = f => reservations.has(f.c + ':' + f.layer);
+  // Enemy navigation treats a blocked column conservatively across all layers.
+  const hordeColumns = new Set(m.floors.filter(f => f.hordeReserved).map(f => f.c));
+  const nearHorde = f => [[0, 0], ...DIRS].some(([dx, dz]) => inb(f.x + dx, f.z + dz)
+    && hordeColumns.has(idx(f.x + dx, f.z + dz)));
   const nearSite = f => [[0, 0], ...DIRS].some(([dx, dz]) => inb(f.x + dx, f.z + dz)
     && reservations.has(idx(f.x + dx, f.z + dz) + ':' + f.layer));
   const nearRoute = f => [[0, 0], ...DIRS].some(([dx, dz]) => inb(f.x + dx, f.z + dz) && walkCols.has(idx(f.x + dx, f.z + dz)));
@@ -48,7 +53,7 @@ export function placeProps(m, theme) {
 
     // Ordinary objects retain the sparse one-prop draw. Shore items are never inland.
     if (dry && !f.prot && !focal && R() < (theme.propDensity ?? 0.32)) {
-      const blockOK = !nearRoute(f) && !nearPortal(f) && !nearSite(f) && slope < 0.25;
+      const blockOK = !nearRoute(f) && !nearPortal(f) && !nearSite(f) && !nearHorde(f) && slope < 0.25;
       const p = pick('ground', p => !p.cover && (!p.shore || shoreOf(f)) && (blockOK || !p.blocking));
       if (p) {
         const room = Math.max(0, 0.9 - 2 * p.radius * s), fx = 0.5 + (R() - 0.5) * room, fz = 0.5 + (R() - 0.5) * room;
@@ -61,7 +66,8 @@ export function placeProps(m, theme) {
     }
 
     // Ground cover can dress routes and slopes, but not structure decks or focal footprints.
-    if (dry && !focal && R() < 0.55) for (let n = 1 + Math.floor(R() * 2); n > 0; n--) {
+    if (dry && (!focal || f.hordeReserved) && R() < (f.hordeReserved ? .12 : .55))
+      for (let n = f.hordeReserved ? 1 : 1 + Math.floor(R() * 2); n > 0; n--) {
       const p = pick('ground', p => p.cover && !p.blocking);
       if (!p) break;
       const cs = 0.7 + R() * 0.3, room = Math.max(0, 0.9 - 2 * p.radius * cs);

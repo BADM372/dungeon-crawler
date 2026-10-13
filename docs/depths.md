@@ -35,6 +35,10 @@ in `docs/enemy-kinds.md`.
 
 ## Enemies per depth
 
+Every layer also has one coordinated [wild horde pack](hordes.md), replacing that cube's
+ordinary roster with 6–24 light enemies. The table below is for ordinary rooms; a quieter
+approach room may halve its counts. Guardian arenas still use their doubled roster.
+
 Each depth has its own roster (`DEPTH_SPAWNS` in `src/core/spawns.js`). The town and the
 merchant camp have no enemies (`enemyFreeAt` in `src/world/town.js`: `Y = 0` and
 `max(|X|, |Z|) ≤ 1`). The rest of the depth-0 road uses the row for depth 0.
@@ -134,23 +138,23 @@ kinds keep their bars and drops but guard no gate. From the console:
 ### Measured population
 
 These numbers come from 4 seeds and 32 cubes per depth on real generated cubes, guardian arenas
-(with their doubled defenders and the guardian) included (`node tools/depth-population.mjs`).
+(with their doubled defenders and the guardian), wild packs in ordinary terrain and quieter approaches included (`node tools/depth-population.mjs`).
 They are averages per cube, and "max" is the most enemies in any one cube. XP is at the
 enemies' own levels, before the player's level scales it.
 
 | Depth | Enemies | Max | XP | Depth | Enemies | Max | XP |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 0 | 2.5 | 4 | 164 | 11 | 27.9 | 60 | 2819 |
-| 1 | 4.2 | 8 | 236 | 12 | 28.7 | 54 | 3269 |
-| 2 | 6.8 | 14 | 380 | 13 | 12.4 | 34 | 2815 |
-| 3 | 14.8 | 28 | 758 | 14 | 11.1 | 38 | 3820 |
-| 4 | 12.6 | 26 | 902 | 15 | 15.5 | 34 | 4396 |
-| 5 | 15.0 | 28 | 1053 | 16 | 21.7 | 62 | 5774 |
-| 6 | 18.1 | 34 | 1471 | 17 | 11.7 | 34 | 4583 |
-| 7 | 12.6 | 28 | 1378 | 18 | 11.8 | 25 | 5653 |
-| 8 | 14.6 | 30 | 1763 | 19 | 10.5 | 20 | 5949 |
-| 9 | 17.1 | 36 | 2127 | 20 | 17.6 | 34 | 8002 |
-| 10 | 22.6 | 48 | 3063 |  |  |  |  |
+| 0 | 2.8 | 7 | 163 | 11 | 26.3 | 60 | 2680 |
+| 1 | 4.7 | 12 | 233 | 12 | 27.1 | 54 | 3110 |
+| 2 | 7.2 | 14 | 378 | 13 | 13.2 | 34 | 2736 |
+| 3 | 14.3 | 28 | 725 | 14 | 12.2 | 38 | 3737 |
+| 4 | 12.4 | 26 | 878 | 15 | 15.9 | 34 | 4276 |
+| 5 | 15.4 | 28 | 1032 | 16 | 21.0 | 62 | 5582 |
+| 6 | 18.0 | 34 | 1421 | 17 | 12.7 | 34 | 4502 |
+| 7 | 12.5 | 28 | 1350 | 18 | 12.6 | 25 | 5559 |
+| 8 | 14.7 | 30 | 1733 | 19 | 11.3 | 24 | 5839 |
+| 9 | 16.8 | 36 | 2070 | 20 | 16.9 | 33 | 7303 |
+| 10 | 21.3 | 48 | 2908 |  |  |  |  |
 
 The enemy count drops at a theme change that brings in stronger species (13, 17, 19). The
 XP per cube keeps rising.

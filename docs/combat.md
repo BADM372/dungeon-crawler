@@ -61,6 +61,12 @@ Four kinds of weapon: swords swing (most of this page), bows, crossbows and staf
   Spawn sites must be dry, clear for the species' height, linked to walkable floors,
   at least four cells from portals and spaced apart (a pack gathers closer around its
   first member). If no safe site exists, spawn fewer.
+- Every layer has one [wild horde pack](hordes.md) in ordinary terrain: numerous lighter melee enemies
+  rally together on sight or damage, approaching from different sides. Their
+  attack starts are staggered and capped at three simultaneous attacks. Hordes
+  use a small reserved open patch, replacing that cube's scattered roster without
+  turning it into an arena. Ordinary packs and guardians keep
+  their existing behaviour.
 - All species share navigation / AI / melee (`core/enemies.js` holds the tuning).
   Stunder walks at 0.45 cells/s, pursues at 1.05 cells/s using its fast wiggling
   walk, commits its heading before the ram, and contacts at animation frame 16.

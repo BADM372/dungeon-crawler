@@ -1,5 +1,6 @@
 // Debug tools, only with ?dev in the URL:
 //   click a portal: take it            G: go to the nearest way down on this depth
+//   H: try this depth's wild horde (console: __game.goHorde(depth))
 //   PageDown / PageUp: go down / up a depth right away (finding the well / ring first)
 //   Alt + WASD / arrows: go to the adjacent cube on that side of the screen
 // None of them wait for guardians: locked portals are taken anyway (the gate stays locked).
@@ -64,6 +65,20 @@ async function goTo(kind, take) {
   setStatus(`Next to the way ${kind}`);
 }
 
+// Jump to a real worker-generated encounter for playtesting, without changing the run.
+export async function goHorde(depth = state.map?.depth ?? 0) {
+  if (state.transitioning || state.inventoryOpen) return;
+  if (!Number.isInteger(depth) || depth < 0 || depth > 20) throw new RangeError('Invalid horde depth');
+  const cubes = state.cubes, key = cubes.layout(depth).hordes.keys().next().value;
+  clearMouseInput(); state.transitioning = true;
+  try {
+    const c = await whenReady(cubes.get(key));
+    if (state.cubes !== cubes) return;
+    enterCube(c, c.map.portals[0].dir);
+    setStatus(`Wild horde · depth ${depth} · ${c.map.horde.count} enemies`);
+  } finally { if (state.cubes === cubes) state.transitioning = false; }
+}
+
 // The cube faces sit on the screen diagonals, so the screen direction is turned an eighth
 // clockwise first: W is the upper-right face, D the lower-right, S the lower-left, A the upper-left.
 const SCREEN = { KeyW: [0, 1], ArrowUp: [0, 1], KeyS: [0, -1], ArrowDown: [0, -1], KeyD: [1, 0], ArrowRight: [1, 0], KeyA: [-1, 0], ArrowLeft: [-1, 0] };
@@ -101,6 +116,7 @@ if (state.dev) {
     if (e.repeat || state.inventoryOpen) return;
     if (e.altKey && !e.ctrlKey && !e.metaKey && SCREEN[e.code]) { e.preventDefault(); goAdjacent(screenFace(SCREEN[e.code])); return; }
     if (e.code === 'KeyG') goTo('down', false);
+    if (e.code === 'KeyH') goHorde().catch(err => setStatus(err.message));
     if (e.code === 'PageDown') { e.preventDefault(); goTo('down', true); }
     if (e.code === 'PageUp') { e.preventDefault(); goTo('up', true); }
   });

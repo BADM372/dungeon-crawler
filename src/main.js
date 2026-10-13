@@ -31,7 +31,7 @@ import { tickPortalCloud } from './render/portalcloud.js';
 import { timeScale } from './game/juice.js';
 import { updatePointer } from './game/pointer.js';
 import { depthOf } from './themes/depth.js';
-import './game/dev.js';
+import { goHorde } from './game/dev.js';
 import { spawnEnemies, killEnemies, clearEnemies } from './game/devspawn.js';
 import { updateSpiders, spiders } from './game/spiders.js';
 import { stunders } from './game/stunders.js';
@@ -108,6 +108,6 @@ window.__game = {
   get enemies() { return allEnemies(); }, updateEnemies,
   musicInfo, musicMood: forceMood,   // musicMood('boss') holds a mood to listen to it, musicMood() lets go
   devSwapWeapon: state.dev ? devSwapWeapon : undefined, devDropWeapon: state.dev ? devDropWeapon : undefined,
-  ...(state.dev && { spawnEnemy: spawnEnemies, killEnemies, clearEnemies }),
+  ...(state.dev && { spawnEnemy: spawnEnemies, killEnemies, clearEnemies, goHorde }),
 };
 frame();

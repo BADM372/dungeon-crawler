@@ -5,6 +5,7 @@ import { mulberry32, hash32 } from '../core/util.js';
 import { key, faceKey } from './coords.js';
 import { MAX_DEPTH } from '../themes/depth.js';
 import { planSites } from './sites.js';
+import { planHordes } from './hordes.js';
 
 // learn: world.html#route (see learn/README.md)
 export const MIN_ROUTE_ROOMS = 7, MAX_ROUTE_ROOMS = 14;
@@ -84,6 +85,7 @@ function build(seed, d, above) {
       gateFaces.set(faceKey(k, dir), k);
     }
   }
+  const hordes = planHordes(seed, d, spine.map(K), guardians);
   // One-room branches only, never attached to arenas or the safe surface prefix.
   // No loops: all sideways guardians are articulation points on the required route.
   const used = new Set(cells.map(id)), allowed = new Set(candidates.map(id));
@@ -98,11 +100,16 @@ function build(seed, d, above) {
     routeIndex.set(K(n), routeIndex.get(K(c))); distance.set(K(n), 1);
   }
   const layout = { depth: d, cells, start, end, spine: spine.length, route: spine.map(K), routeIndex,
-    exists: new Set(cells.map(K)), portals, exit, guardians, gateFaces,
+    exists: new Set(cells.map(K)), portals, exit, guardians, gateFaces, hordes,
     up: d ? K(start) : null, down: d < MAX_DEPTH ? K(end) : null, guardian: guardianDepth(seed, d) };
   const sites = planSites(seed, layout, distance);
   layout.sitePlans = sites.plans; layout.roles = sites.roles;
   for (const [k, g] of guardians) layout.roles.set(k, `${g.role}-guardian`);
+  layout.populationScale = new Map();
+  for (const k of hordes.keys()) {
+    const i = layout.route.indexOf(k), before = layout.route[i - 1];
+    if (i > (d === 0 ? 4 : 2) && !guardians.has(before)) layout.populationScale.set(before, .5);
+  }
   return layout;
 }
 
