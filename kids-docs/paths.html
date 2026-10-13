@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Finding the Way · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="roots">
+<main class="deck">
+
+<section class="slide" id="here-to-there" data-lv="1">
+  <h2>From here to there</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">A spider sees you. Between you and the spider is a wall. How does the spider know to walk <i>around</i> it?</p>
+      <p>The spider does not have eyes like you. It cannot look at the room and "just see" the way. It needs a method, a step-by-step recipe. In computer science, such a recipe is called an <a class="w" href="words.html#algorithm">algorithm</a>.</p>
+      <p>Finding a way is needed all over the game:</p>
+      <ul>
+        <li><b>Monsters</b> chase you, walk home, and wander around.</li>
+        <li><b>You</b> click on the floor, and the hero walks there, around obstacles.</li>
+        <li><b>The world builder</b> plans routes between the gates of every cube.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>The floor is a grid</h3>
+      <p>Each cube is 16 by 16 cells. For walking, the game only asks: from this cell, which of my four neighbours (east, west, south, north) can I step to?</p>
+      <p>A neighbour is blocked by walls, cliffs that are too high, fences, water, and ceilings too low for your body. (A big Stunder needs more headroom than a little spider!)</p>
+      <p>A map of "who can step where" is called a <a class="w" href="words.html#graph">graph</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="flood" data-lv="1">
+  <h2>Try it: the flood</h2>
+  <p>Press <b>Flood</b>. The search spreads out like water poured on the floor: first every square 1 step away, then 2 steps, then 3...
+    The first time the water reaches the goal, we have found the shortest way. Draw walls and try to trap it!</p>
+  <div class="demo" data-demo="paths"></div>
+  <p class="small muted">S is the start, G the goal. The colours show how many steps away each square is. Ignore the A* button for now, it comes next.</p>
+</section>
+
+<section class="slide" id="bfs" data-lv="2">
+  <h2>Breadth-first search, and breadcrumbs</h2>
+  <div class="cols">
+    <div>
+      <p>The flood has a real name: <a class="w" href="words.html#bfs">breadth-first search</a>, or BFS. "Breadth first" means it goes wide before it goes far.</p>
+      <p>How does it know the way <i>back</i>? Every time the water reaches a new square, it leaves a <b>breadcrumb</b> there: "I came from that square". At the goal, follow the breadcrumbs back to the start, and turn the list around. That's the path!</p>
+      <p>Monsters use BFS to chase you. Your hero uses it too when you click on the floor. If the spot cannot be reached, the hero walks to the reachable square closest to it.</p>
+    </div>
+    <div class="card">
+      <h3>Monsters give up</h3>
+      <p>Searching a whole cube for every monster, many times a second, would be slow. So each search has a limit:</p>
+      <table>
+        <tr><td>noticing you</td><td><b>10</b> steps</td></tr>
+        <tr><td>chasing you</td><td><b>16</b> steps</td></tr>
+        <tr><td>walking home</td><td><b>40</b> steps</td></tr>
+        <tr><td>wandering about</td><td><b>6</b> steps</td></tr>
+      </table>
+      <p>If you are further away than the limit, the monster cannot find a way to you. Climb a ladder, and they lose you!</p>
+      <a class="portal" href="enemies.html">Monster brains</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="astar" data-lv="2">
+  <h2>A*: searching with a hunch</h2>
+  <div class="cols">
+    <div>
+      <p>The flood is a bit silly: it searches in <b>all</b> directions, even away from the goal. <a class="w" href="words.html#astar">A*</a> (say "A star") is smarter.</p>
+      <p>For every square it could look at next, it adds up two numbers:</p>
+      <ul>
+        <li>how many steps it took to get there, and</li>
+        <li>a <b>guess</b> of how many steps are left: just the distance across and down, as if there were no walls.</li>
+      </ul>
+      <p>It always continues from the square with the smallest total. So it heads towards the goal first, and only spreads out when a wall is in the way.</p>
+      <p>Go back to the demo and compare: A* usually looks at far fewer squares, and still finds a shortest path.</p>
+    </div>
+    <div class="card">
+      <h3>The world builder uses A*</h3>
+      <p>When the builder plans the routes through a cube, a step is not just "walk": it can be a stair, a bridge, a ladder, a jump or a drop. Each <b>costs</b> a different amount, so the builder prefers walking.</p>
+      <p>Two more tricks:</p>
+      <ul>
+        <li>Moves already used by another route cost almost nothing. So routes <b>share</b> stairs and bridges instead of building new ones.</li>
+        <li>Every square gets a small random extra cost. So two cubes with the same shape still get different routes.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="sight" data-lv="2">
+  <h2>Can it see me? Line of sight</h2>
+  <div class="cols wide-right">
+    <div>
+      <p>A monster only starts chasing you if it can <b>see</b> you. The Fire-face only spits fireballs if nothing is in the way.</p>
+      <p>The test is simple: walk along the straight line from the eye to you, in tiny steps of 0.15 cells, and at each step ask "is this inside something solid?". If any step is, the view is blocked.</p>
+      <p>Simple, and fast enough to do for every monster several times a second.</p>
+    </div>
+    <div class="demo" data-demo="paths" data-mode="sight"></div>
+  </div>
+</section>
+
+<section class="slide" id="bfs-code" data-lv="3">
+  <h2>The real code: a monster's path</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/physics/enemynav.js"><code>export function findPath(a, b, maxLen, height = 0.9) {
+  if (!a || !b || !walkable(a, height) || !walkable(b, height)) return null;
+  const prev = new Map([[a, null]]);
+  let front = [a];
+  for (let d = 0; d &lt; maxLen &amp;&amp; front.length &amp;&amp; !prev.has(b); d++) {
+    const next = [];
+    for (const f of front) for (const g of neighbors(f, height))
+      if (!prev.has(g)) { prev.set(g, f); next.push(g); }
+    front = next;
+  }
+  if (!prev.has(b)) return null;
+  const path = [];
+  for (let f = b; f; f = prev.get(f)) path.unshift(f);
+  return path;
+}</code></pre>
+    <div>
+      <p><code>a</code> and <code>b</code> are floors (cells you can stand on). <code>height</code> is how tall the monster is.</p>
+      <p><code>prev</code> is the breadcrumb map: for each floor, where we came from.</p>
+      <p><code>front</code> is the edge of the water. Each round of the loop makes the next ring, <code>next</code>, from all neighbours not seen before.</p>
+      <p>The loop stops after <code>maxLen</code> rounds (the "give up" limit), when the water cannot spread, or when <code>b</code> is reached.</p>
+      <p>The last loop follows the breadcrumbs back from <code>b</code>, and <code>unshift</code> puts each one at the <i>front</i> of the list, so the path comes out in the right order.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="astar-code" data-lv="3">
+  <h2>The real code: A* in the world builder</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/cubegen/route.js (shortened)"><code>export function search(ctx, from, goal, jitter, have) {
+  const gs = new Float64Array(SZ).fill(Infinity), prev = new Array(SZ).fill(null);
+  const hfn = f => Math.abs(f.x - goal.x) + Math.abs(f.z - goal.z);
+  const open = new Heap();
+  gs[from.id] = 0; open.push(hfn(from), from);
+  while (open.size) {
+    const cur = open.pop();
+    if (cur === goal) break;
+    for (const mv of movesFrom(cur)) {
+      const ng = gs[cur.id] + (have.has(moveKey(mv)) ? 0.2 : mv.cost + jitter[mv.to.id]);
+      if (ng &lt; gs[mv.to.id]) {
+        gs[mv.to.id] = ng; prev[mv.to.id] = mv;
+        open.push(ng + hfn(mv.to), mv.to);
+      }
+    }
+  }
+  /* ... follow prev back from the goal, like BFS ... */
+}</code></pre>
+    <div>
+      <p><code>gs</code>: the cheapest cost found so far to reach each floor. <code>hfn</code>: the hunch, the distance across plus the distance down.</p>
+      <p><code>open</code> is a <a class="w" href="words.html#heap">heap</a>: a to-do list that always hands you the item with the smallest number first. The game's heap is in <code>src/core/heap.js</code>, only 30 lines long. The A* in the demo uses it too.</p>
+      <p>See the trick from the last slide? A move already in <code>have</code> costs only <code>0.2</code>. Otherwise it costs its normal <code>cost</code> plus a little random <code>jitter</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Finding the Way</h2>
+  <div class="quests">
+    <div class="prompt" data-title="STUBBORN SPIDERS" data-stars="1"><q>Spiders give up chasing me quite fast. Show me the numbers that decide when a spider notices me and when it gives up, then make spiders chase a bit longer.</q><span class="why">Hint: aggro and giveUp in the SPIDER profile in src/core/enemies.js.</span></div>
+    <div class="prompt" data-title="SEE THE PLAN" data-stars="3"><q>In dev mode (?dev=1), draw a thin line on the floor showing the path each chasing enemy plans to walk. Keep it out of normal play. Follow how the existing route overlay (the P key) is drawn.</q><span class="why">Pointing to something similar that already exists helps the agent match the game's style.</span></div>
+    <div class="prompt" data-title="EXPLAIN A*" data-stars="1"><q>Explain the A* search in src/cubegen/route.js to me like I'm 12. Why do moves that are already used cost only 0.2?</q><span class="why">You can always ask an agent to explain code at your level.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

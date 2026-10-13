@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Run, Jump, Fall · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="frozen">
+<main class="deck">
+
+<section class="slide" id="adding" data-lv="1">
+  <h2>Moving is just adding</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">To the computer, the hero is just a few numbers: where it is, and how fast it is going.</p>
+      <ul>
+        <li><b>Position</b>: where the hero is. <code>x</code> is east-west, <code>z</code> is north-south, <code>y</code> is up-down.</li>
+        <li><b>Velocity</b>: how fast it moves in each direction, in cells per second.</li>
+      </ul>
+      <p>Every frame, the game does a tiny bit of adding:</p>
+      <pre><code>position = position + velocity × dt</code></pre>
+      <p>And <b>gravity</b> is just as simple. Every frame, it pulls the up-down speed down a bit:</p>
+      <pre><code>velocity.y = velocity.y - 22 × dt</code></pre>
+      <p>That is all you need for a jump: set the up-speed to a big number, and gravity bends it back down into a nice curve.</p>
+    </div>
+    <div class="card">
+      <h3>The game's own measurements</h3>
+      <table>
+        <tr><td>one cell</td><td>1 unit wide</td></tr>
+        <tr><td>one terrain level</td><td>0.5 units high</td></tr>
+        <tr><td>the hero</td><td>0.85 units tall</td></tr>
+        <tr><td>running</td><td>2.8 units per second</td></tr>
+        <tr><td>walking (hold <kbd>Ctrl</kbd>)</td><td>1.9 units per second</td></tr>
+        <tr><td>gravity</td><td>22 units per second, every second</td></tr>
+        <tr><td>jump speed</td><td>6.27 units per second up: about 0.9 units high</td></tr>
+      </table>
+      <p class="small muted">All in <code>src/core/constants.js</code>. Change them, and the whole game feels different.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="try-jump" data-lv="1">
+  <h2>Try it: run and jump</h2>
+  <p>Click the picture, then run with <kbd>&larr;</kbd> <kbd>&rarr;</kbd> and jump with <kbd>Space</kbd>. Can you leap over the water?
+    Can you get onto the high block? Then play with gravity and the jump speed: try moon gravity!</p>
+  <div class="demo real" data-demo="jump"></div>
+</section>
+
+<section class="slide" id="feel" data-lv="2">
+  <h2>Tricks that make it feel good</h2>
+  <p>Real physics is not always fun. Game makers cheat a little, on purpose, so the controls feel fair:</p>
+  <div class="cols">
+    <div class="card"><h3>Coyote time</h3><p>Like the cartoon coyote who runs off a cliff and only falls when he looks down: for <b>0.12 seconds</b> after you walk off an edge, you can still jump. Without it, you would often press jump "just too late" and fall, and it would feel unfair.</p>
+      <p class="small">Try it in the demo: switch coyote time off and jump very late at the edge of the water.</p></div>
+    <div class="card"><h3>Jump buffer</h3><p>If you press jump a tiny moment <b>before</b> you land (up to 0.15 seconds), the game remembers it and jumps as soon as your feet touch the ground.</p></div>
+    <div class="card"><h3>Speed ramp</h3><p>You don't reach full speed instantly: it takes 0.25 seconds. But stopping is fast (about 0.1 seconds). Short taps stay precise, and you never slide past where you wanted to stop.</p></div>
+    <div class="card"><h3>The leap</h3><p>Jumping while running gives you a little push forward: just enough to get over a gap of one cell. The world builder knows this number too, and only plans jumps you can really make!</p></div>
+  </div>
+</section>
+
+<section class="slide" id="walls" data-lv="2">
+  <h2>Bumping into things</h2>
+  <div class="cols">
+    <div>
+      <p><b>Sliding along walls.</b> Walk diagonally into a wall: you don't stop dead, you slide along it. The trick: the game moves you east-west first and checks for a wall, then north-south and checks again. If only one direction is blocked, the other one still works.</p>
+      <p><b>Little steps.</b> A ledge up to 0.3 units high is walked up without jumping. Higher than that, you need to jump.</p>
+      <p><b>Walking downhill.</b> Without help, you would fly off every little slope like off a ramp. So when you are on the ground, the game sticks you to the floor if it is less than 0.25 units below you.</p>
+    </div>
+    <div>
+      <p><b>Slopes.</b> Walking uphill is slower. Slopes that are too steep make you slide down.</p>
+      <p><b>Ceilings.</b> Jump under a bridge, and you bump your head: your upward speed is set to zero.</p>
+      <p><b>Fluids.</b> Water, lava and acid are deadly. When you <i>walk</i> towards their edge, the game stops you. But a jump, a knockback or a fall can still carry you in. So be careful!</p>
+      <div class="note think"><b>Think</b> Why does the game stop you at the edge of water when walking, but not when jumping? (Because walking in by accident is annoying, but jumping is a choice!)</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="landing" data-lv="2">
+  <h2>Hard landings</h2>
+  <div class="cols">
+    <div>
+      <p>When you land, the game looks at how fast you were falling:</p>
+      <table>
+        <tr><th>FALLING SPEED</th><th>WHAT HAPPENS</th></tr>
+        <tr><td>up to 10</td><td>a normal landing</td></tr>
+        <tr><td>more than 10</td><td>you land on your bottom and are dizzy for a moment</td></tr>
+        <tr><td>more than 14</td><td>you tumble over as a <b>ragdoll</b>, and it hurts: up to 60 damage</td></tr>
+      </table>
+      <p>Falling speed grows the longer you fall, so this is really about how <i>high</i> you fell. Try the drop buttons in the jump demo!</p>
+    </div>
+    <div class="card">
+      <h3>Falling into the cube below</h3>
+      <p>Some cubes have holes, open to the depth below. Fall in, and you slide down into the cube below... but the landing costs the full 60 damage, and puts you back in the cube you fell from, at the last safe spot. No shortcuts!</p>
+      <p>The holes line up with the world: there is only a hole where the cube below really exists.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="ragdoll" data-lv="1">
+  <h2>Floppy! The ragdoll</h2>
+  <p>When the hero gets knocked over, the animation stops, and a <a class="w" href="words.html#ragdoll">ragdoll</a> takes over: the body flops around by physics, like a puppet with cut strings.
+    It's made of just <b>dots and sticks</b>. Knock it over, kick it, or grab a dot and throw it!</p>
+  <div class="demo" data-demo="ragdoll"></div>
+  <p class="small muted">This is the game's ragdoll, flattened into a side view. The game's version works the same way in 3D.</p>
+</section>
+
+<section class="slide" id="verlet" data-lv="2">
+  <h2>How a ragdoll works</h2>
+  <div class="cols">
+    <div>
+      <p>The ragdoll has 16 dots, one at each joint: pelvis, chest, neck, head, shoulders, elbows, hands, hips, knees and feet.</p>
+      <ol class="steps">
+        <li><b>Move every dot</b> as if it were alone. Its speed? Where it is now, minus where it was one step ago. (This trick is called <a class="w" href="words.html#verlet">Verlet</a>.) Add gravity.</li>
+        <li><b>Fix the sticks.</b> Some sticks are now too long or too short. Push both ends towards the right length.</li>
+        <li>Fixing one stick breaks another a bit... so fix them all <b>6 times</b>. Close enough!</li>
+        <li><b>Floor:</b> a dot below the floor is put back on top, and slowed down (friction).</li>
+      </ol>
+      <p>That runs 120 times a second, more often than the picture, so it stays stable.</p>
+    </div>
+    <div class="card">
+      <h3>Getting up again</h3>
+      <p>When the dots stop moving, the game checks: is the body lying face down or on its back? Then it plays the matching "get up" animation.</p>
+      <p>The tricky part: the animation was made for a body lying in one exact pose, but the ragdoll lies in a random heap. So the game smoothly <b>morphs</b> the ragdoll's pose into the first frames of the get-up animation, and turns the hero to match. The feet stay planted, so nothing slides.</p>
+      <p class="small muted"><code>src/game/ragdoll.js</code> and <code>src/render/animator.js</code></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="move-code" data-lv="3">
+  <h2>The real code: jumping</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/physics/move.js"><code>const LEAP = 3.4;   // horizontal speed of a jump while moving
+
+// jump with a little coyote time (just walked off a ledge) and a short input buffer
+function jumping(dt, jump) {
+  const p = player;
+  p.coyote = p.grounded &amp;&amp; !p.swimming ? 0.12 : p.coyote - dt;
+  p.jumpBuf = jump ? 0.15 : p.jumpBuf - dt;
+  if (p.jumpBuf &lt;= 0 || !(p.coyote > 0 || p.swimming)) return;
+  p.vy = p.swimming ? 4.8 : JUMP_V;
+  // jumping while moving is a leap: enough speed to clear a one-cell gap
+  const s = Math.hypot(p.vx, p.vz);
+  if (!p.swimming &amp;&amp; s > 0.8 &amp;&amp; s &lt; LEAP) { p.vx *= LEAP / s; p.vz *= LEAP / s; }
+  p.grounded = p.swimming = false;
+  p.coyote = p.jumpBuf = 0;
+  p.jumpCount++;
+}</code></pre>
+    <div>
+      <p><code>p.coyote</code> is a timer. On the ground it is always reset to 0.12. In the air it counts down by <code>dt</code> every frame.</p>
+      <p><code>p.jumpBuf</code> is a timer too: pressing jump sets it to 0.15, then it counts down.</p>
+      <p>The jump only happens if <b>both</b> timers are still above zero. That's the whole trick: two countdowns!</p>
+      <p>In water, the same code makes you paddle up out of the water, a bit slower (4.8).</p>
+      <p><code>Math.hypot(vx, vz)</code> is the speed along the ground (Pythagoras!).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="ragdoll-code" data-lv="3">
+  <h2>The real code: one ragdoll step</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/physics/ragdoll.js"><code>substep() {
+  const g = GRAV * SUB * SUB;
+  for (let i = 0; i &lt; this.p.length; i++) {
+    const q = this.p[i], o = this.o[i];
+    const vx = (q[0] - o[0]) * 0.998, vy = (q[1] - o[1]) * 0.998, vz = (q[2] - o[2]) * 0.998;
+    o[0] = q[0]; o[1] = q[1]; o[2] = q[2];
+    q[0] += vx; q[1] += vy - g; q[2] += vz;
+  }
+  for (let it = 0; it &lt; ITERS; it++) {
+    for (const [a, b, len] of this.sticks) this.solve(a, b, len, false);
+    for (const [a, b, len] of this.apart) this.solve(a, b, len, true);
+    for (let i = 0; i &lt; this.p.length; i++) this.collide(i);
+  }
+}
+
+solve(a, b, len, apartOnly) {
+  const A = this.p[a], B = this.p[b];
+  const dx = B[0] - A[0], dy = B[1] - A[1], dz = B[2] - A[2];
+  const d = Math.hypot(dx, dy, dz) || 1e-6;
+  if (apartOnly &amp;&amp; d >= len) return;
+  const k = (d - len) / d * 0.5;
+  A[0] += dx * k; A[1] += dy * k; A[2] += dz * k;
+  B[0] -= dx * k; B[1] -= dy * k; B[2] -= dz * k;
+}</code></pre>
+    <div>
+      <p><code>p</code> is where each dot is, <code>o</code> where it was ("old"). Their difference is the speed. <code>0.998</code> loses a tiny bit each step, like air slowing it down.</p>
+      <p><code>solve</code> measures a stick (<code>d</code>), compares it with its length (<code>len</code>) and moves <b>both</b> ends half of the difference (<code>* 0.5</code>) towards each other or apart.</p>
+      <p>"Apart" sticks only push, never pull: they just stop a knee from folding all the way into the hip.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Run, Jump, Fall</h2>
+  <div class="quests">
+    <div class="prompt" data-title="SUPER JUMP" data-stars="1"><q>Make the hero jump a bit higher, about 1.2 units instead of 0.9. Tell me which number you changed and how you calculated it.</q><span class="why">Height = speed &times; speed / (2 &times; gravity). Ask the agent to show the math!</span></div>
+    <div class="prompt" data-title="DOUBLE JUMP" data-stars="2"><q>Add a double jump: pressing jump once more in the air gives a second, smaller jump. Only one extra jump until I land. Put the logic in src/physics/move.js next to the coyote time.</q><span class="why">Careful: the world builder plans jumps based on how far you can jump. A double jump makes the game easier, but should not break it.</span></div>
+    <div class="prompt" data-title="SLIPPERY ICE" data-stars="3"><q>In the frozen caves (depths 7 and 8), make the floor slippery: speeding up and braking should take much longer there. Add the setting to the theme in src/themes/caves.js instead of checking the depth number in the movement code.</q><span class="why">Saying where a setting should live keeps the code tidy. The agent might not choose that by itself.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

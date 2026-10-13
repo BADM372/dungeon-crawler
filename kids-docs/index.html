@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How Cube Crawler Works: the Kids' Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="meadow">
+<main style="padding-top: 30px">
+  <div class="hero">
+    <div>
+      <p class="mono muted small" style="letter-spacing:2px">THE KIDS' GUIDE TO</p>
+      <h1>How Cube Crawler Works</h1>
+      <p class="lead">Cube Crawler is a game where you dig down through 21 floors of floating cubes, fighting monsters and finding treasure.
+        This guide shows you how it is built on the inside: how the world gets invented, how monsters think, how swords hit and how the
+        picture gets drawn.</p>
+      <p>It was built by a person working together with <a class="w" href="words.html#agent">AI coding agents</a>. At the end you
+        will learn how to do that too: how to <em>ask</em> an agent to change the game, and how to check that it did it right.</p>
+      <p><a class="portal" href="start.html">Start in town</a> <a class="portal" href="../index.html">Play the game</a></p>
+    </div>
+    <figure><img class="shot" src="img/town.jpg" alt="The town at the top of the world: a floating cube with houses, trees and a pond"><figcaption>The town: the first cube of every world.</figcaption></figure>
+  </div>
+
+  <div class="page">
+    <h2>How deep do you want to dive?</h2>
+    <p>Every room has slides with three detail levels. You can switch any time with the buttons at the top right of a room.</p>
+    <div class="cols3" id="levels"></div>
+    <h2 style="margin-top:30px">The map</h2>
+    <p>Each room explains one part of the game. Like in the game, every room is one step deeper. Rooms you have visited glow cyan,
+      like explored portals in the game. You can visit them in any order, but walking down from the top works best.</p>
+  </div>
+  <nav class="map" id="map"></nav>
+
+  <div class="page" style="margin-top:30px">
+    <div class="cols">
+      <div class="card"><h3>The word book</h3><p>Words with a dotted line, like <a class="w" href="words.html#seed">seed</a>, are explained
+        when you point at them. All of them are in the <a href="words.html">word book</a>.</p></div>
+      <div class="card"><h3>For grown-ups</h3><p>The guide runs real game code in its demos, so it needs the game's web server:
+        <code>npm run serve</code>, then open <code>/kids-docs/</code>. The grown-up design notes are in <code>docs/</code>;
+        how this guide is built is in <code>kids-docs/README.md</code>.</p></div>
+    </div>
+  </div>
+</main>
+<script type="module">
+import './deck.js';
+import { DECKS, LEVELS, THEME_NAMES } from './decks.js';
+const seen = new Set(JSON.parse(localStorage.getItem('kids.visited') || '[]'));
+document.getElementById('map').innerHTML = DECKS.map((d, i) => `
+  <a class="room ${seen.has(d.file) ? 'visited' : ''}" data-theme="${d.theme}" href="${d.file}">
+    <span class="seen"></span><img src="${d.icon}" alt="">
+    <span class="d">ROOM ${i + 1} \u00B7 DEPTH ${d.depth} \u00B7 ${THEME_NAMES[d.theme].toUpperCase()}</span>
+    <h3>${d.title}</h3><p>${d.teaser}</p></a>`).join('');
+const blurb = [null,
+  'Just the big ideas, with pictures and things to try. Start here if this is all new to you.',
+  'How the parts really work, step by step, with more demos and numbers from the game.',
+  'The real code from the game, explained. For when you want to change it yourself (or ask an agent to).'];
+const box = document.getElementById('levels');
+const draw = () => {
+  const lv = +(localStorage.getItem('kids.lv') || 3);
+  box.innerHTML = [1, 2, 3].map(l => `<button class="card${l === lv ? ' on' : ''}" data-lv="${l}" style="text-align:left;border-color:${l <= lv ? LEVELS[l].color : ''}">
+    <span style="color:${LEVELS[l].color}">${LEVELS[l].short} \u00B7 ${LEVELS[l].name}</span><br><span style="font-family:var(--read);font-size:15px;color:var(--muted)">${blurb[l]}</span></button>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => { localStorage.setItem('kids.lv', b.dataset.lv); draw(); });
+};
+draw();
+</script>
+</body>
+</html>

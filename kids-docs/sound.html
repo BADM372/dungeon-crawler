@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sounds & Music · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="volcanic">
+<main class="deck">
+
+<section class="slide" id="no-files" data-lv="1">
+  <h2>Not a single sound file</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">Most games record sounds with a microphone and play them back. Cube Crawler has <b>no sound files at all</b>.</p>
+      <p>Every swoosh, thump, coin, footstep, monster growl and splash is <b>calculated</b>, right when you hear it, by your browser's built-in synthesizer.</p>
+      <p>A sound is a wave: air pushed back and forth, very fast. The game describes each sound as a <b>recipe</b>: which waves to mix, how they change, how loud they are at each moment.</p>
+      <p>Press the buttons and watch the wave. Change the pitch: the same recipe can make a small spider's hit or a big Stunder's thud.</p>
+    </div>
+    <div class="demo" data-demo="sound"></div>
+  </div>
+</section>
+
+<section class="slide" id="recipe" data-lv="2">
+  <h2>The ingredients of a sound</h2>
+  <div class="cols">
+    <div>
+      <ul>
+        <li><b>Tones</b>: a smooth wave that repeats. How often it repeats per second is the pitch (in Hertz, Hz). The shape matters too: a <i>sine</i> sounds soft and round, a <i>square</i> buzzy, a <i>sawtooth</i> harsh.</li>
+        <li><b>Slides</b>: a tone that falls from high to low sounds like a thump or a "pew". Rising sounds like magic.</li>
+        <li><b>Noise</b>: random numbers! It sounds like hissing, wind, or rushing water.</li>
+        <li><b>Filters</b> change noise: a <i>low-pass</i> filter keeps the low part (muffled, like through a wall), a <i>high-pass</i> keeps the high part (thin, crackly).</li>
+        <li><b>Envelopes</b>: how the volume changes. Fast up and fast down is a click. Slow down is a ring.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Clever details</h3>
+      <ul>
+        <li><b>Coins climb:</b> pick up coins quickly one after another, and each one plays a little higher. It feels like a jackpot!</li>
+        <li><b>Left and right:</b> a monster on the left side of the screen sounds from your left speaker.</li>
+        <li><b>Footsteps</b> know what you walk on: grass, gravel, snow, ice, mud, stone, wood, rope bridges, iron. They are prepared in a few slightly different versions, so they never sound like a machine.</li>
+        <li><b>Monsters have voices:</b> a sound when they notice you, one when they wind up an attack, and one when they die.</li>
+        <li><b>The background</b>: water, lava bubbling, wind under the open sky, drips in caves, louder the closer you are.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="score" data-lv="1">
+  <h2>Music written as text</h2>
+  <div class="cols">
+    <div>
+      <p>The music is not recorded either. Each of the 13 songs is a <b>text file</b> in the <code>music/</code> folder, written in a format called <i>Scrimshaw</i>. A tiny synthesizer in the browser plays it.</p>
+      <p>Each line belongs to one instrument (a <b>voice</b>). Notes are letters and numbers: <code>G5</code> is the note G, high up. Dashes make a note last longer, a dot is a rest, <code>|</code> separates bars.</p>
+      <p>Every depth has its own song: a waltz for the town, a marimba tune for the meadows, an oboe for the snowy peaks, taiko drums for the volcanic depths, a choir for the abyss.</p>
+      <p>All songs share a little tune, the game's <b>motif</b>: the notes 1 2 3 5 4 of their scale. Listen for it!</p>
+    </div>
+    <pre data-file="music/town.scrim (a few lines)"><code>title    Town
+tempo    100
+beats    3
+
+# mood explore:  lead echo guitar accordion bass tamb glock
+# mood treasure: guitar accordion glock wonder
+
+voice lead      clarinet   vol=0.75 pan=-0.15
+voice guitar    guitar     vol=0.5  pan=0.3
+voice bass      upright    vol=0.75
+
+pattern A
+lead   | G5------- A5--- | B5----- D6----- | C6------- B5--- | A5------- .--- |
+guitar | G3- B3- D4- G4- D4- B3- | C3- G3- C4- E4- C4- G3- | ...
+bass   | G2--- .------- | C3--- .------- | G2--- .------- | D2--- .------- |</code></pre>
+  </div>
+</section>
+
+<section class="slide" id="moods" data-lv="1">
+  <h2>Try it: music that feels the danger</h2>
+  <p>This is the game's real music player. Press Play, then switch the <b>mood</b>. Each mood picks which voices play: when danger comes, the tune drops out and drums take over; in a fight a horn joins in; for a boss, a choir and a gong.</p>
+  <div class="demo real" data-demo="music"></div>
+  <p class="small muted">Orange voices are playing. In the game, you never press these buttons: the game picks the mood by looking at the monsters around you.</p>
+</section>
+
+<section class="slide" id="mood-rules" data-lv="2">
+  <h2>How the game picks a mood</h2>
+  <div class="cols">
+    <div>
+      <table>
+        <tr><th>MOOD</th><th>WHEN</th></tr>
+        <tr><td>explore</td><td>nothing going on</td></tr>
+        <tr><td>treasure</td><td>a closed chest within 6 cells</td></tr>
+        <tr><td>sense</td><td>a monster within 8 cells, not after you</td></tr>
+        <tr><td>rise</td><td>a monster chasing you</td></tr>
+        <tr><td>fight</td><td>a monster after you within 4 cells, or blows in the last 6 seconds</td></tr>
+        <tr><td>boss</td><td>a guardian after you</td></tr>
+      </table>
+    </div>
+    <div>
+      <ol class="steps">
+        <li>Every frame, find the most exciting mood that fits.</li>
+        <li>More exciting than now? Switch <b>at once</b>: danger should be heard right away.</li>
+        <li>Calmer? Only switch after the calm has lasted a moment (1 to 5 seconds). Otherwise the music would jump around in a fight.</li>
+        <li>New voices come in on the next beat-step, and pick up notes that are already playing. Leaving voices fade out gently.</li>
+      </ol>
+      <p class="small">The result: you can often <i>hear</i> a monster before you see it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="coin-code" data-lv="3">
+  <h2>The real code: the coin sound</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/audio/sfx.js"><code>// building blocks: a gain envelope, noise and pitch-swept oscillators
+function amp(t, attack, peak, decay, out) {
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  g.connect(out);
+  return g;
+}
+
+coin(t, out, p) {    // two quick bright notes; rapid pickups climb in pitch
+  tone('triangle', 1568 * p, 1568 * p, t, 0.08, amp(t, 0.002, 0.32, 0.07, out));
+  tone('triangle', 2093 * p, 2093 * p, t + 0.055, 0.2, amp(t + 0.055, 0.002, 0.3, 0.18, out));
+},
+
+// in sfx(): quick coins raise the pitch, up to 10 steps
+if (name === 'coin') {
+  combo = now - comboAt &lt; 0.4 ? combo + 1 : 0; comboAt = now;
+  pitch *= 1 + Math.min(combo, 10) * 0.035;
+}</code></pre>
+    <div>
+      <p><code>amp</code> makes an envelope: start silent, rise to <code>peak</code> in <code>attack</code> seconds, fade away in <code>decay</code> seconds.</p>
+      <p>The coin is two notes: 1568 Hz (a high G), then 55 milliseconds later 2093 Hz (a high C). Each one a triangle wave, each one with its own envelope.</p>
+      <p><code>p</code> is the pitch multiplier. The <code>combo</code> counter adds 3.5% for every coin picked up within 0.4 seconds of the last one.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="mood-code" data-lv="3">
+  <h2>The real code: rising fast, calming slowly</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/game/music.js"><code>const HOLD = { treasure: 1, sense: 2, rise: 3, fight: 4, boss: 5 };   // s the calmer reason must hold
+
+export function updateMusic(dt) {
+  if (!state.map) return;
+  playSong(songFor(state.map));
+  const want = forced ?? wanted();
+  if (forced || RANK[want] >= RANK[mood]) { mood = want; calm = 0; }
+  else if ((calm += dt) > HOLD[mood]) { mood = want; calm = 0; }
+  setMood(mood);
+}
+
+export const songFor = map => map.enemyFree ? 'town'
+  : map.depth >= MAX_DEPTH ? 'core' : themeAt(map.depth).music;</code></pre>
+    <div>
+      <p><code>RANK</code> orders the moods from calm (explore) to fierce (boss).</p>
+      <p>If the wanted mood is at least as fierce, switch now. Otherwise, count up <code>calm</code>; only when it is longer than the current mood's hold time, give in.</p>
+      <p><code>songFor</code>: the town song where there are no enemies (the town and the merchant camp), the core song at the very bottom, and otherwise the song named by the depth's theme.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Sounds & Music</h2>
+  <div class="quests">
+    <div class="prompt" data-title="LEVEL-UP FANFARE" data-stars="1"><q>Make the level-up sound in src/audio/sfx.js longer and happier: a little rising fanfare of five notes. Explain the recipe you used.</q><span class="why">Sounds are small recipes: easy to experiment with.</span></div>
+    <div class="prompt" data-title="MONSTER CHOIR" data-stars="2"><q>Read music/README.md first. Then add a new voice to the spider nests song that only plays in the fight and boss moods: a low, creepy pad. Run the tests to check the score has no errors.</q><span class="why">The music folder has its own guide. Tell the agent to read it, and it will follow the game's style.</span></div>
+    <div class="prompt" data-title="CAMP SONG" data-stars="3"><q>The merchant camp plays the town song. Write a new short song "camp" for it: a cosy campfire tune with guitar and whistle. Follow music/README.md, hook it up in src/game/music.js, and make sure npm test passes.</q><span class="why">A bigger task with three parts: write, connect, check. Saying all three helps.</span></div>
+  </div>
+  <p class="small">Tip: <a href="../tools/player.html">tools/player.html</a> plays every song with mood buttons and a piano roll (with the game's server running).</p>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Word Book · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="meadow">
+<main style="padding-top:30px">
+<div class="page">
+  <p class="mono small"><a href="index.html">&#9666; Map</a></p>
+  <h1>The Word Book</h1>
+  <p>Every dotted word in the guide is explained here, in alphabetical order. The links take you to the room where it matters most.</p>
+  <dl class="words">
+    <div id="affix"><dt>affix</dt><dd>A magic bonus on a sword, like "+5 damage" or "heals you on every hit". Prefixes go before the name, suffixes after it. <a class="more" href="loot.html#affixes">Treasure &amp; Weapons</a></dd></div>
+    <div id="agent"><dt>agent (coding agent)</dt><dd>An AI helper that can read, change and test a program for you, when you tell it what you want in normal words. <a class="more" href="agents.html#agent">Building with AI Helpers</a></dd></div>
+    <div id="algorithm"><dt>algorithm</dt><dd>A step-by-step recipe for solving a problem, exact enough for a computer to follow. Finding a path is an algorithm, so is shuffling a deck of cards. <a class="more" href="paths.html#here-to-there">Finding the Way</a></dd></div>
+    <div id="archetype"><dt>archetype</dt><dd>The big shape of a cube: plain, chasm, spire, sinkhole, archipelago, mesa or crater. <a class="more" href="world.html#archetypes">Building the World</a></dd></div>
+    <div id="astar"><dt>A* (A star)</dt><dd>A path-finding algorithm that always continues from the spot with the smallest "steps so far + guess of steps left". It finds the shortest path, and usually looks at far fewer squares than a flood. <a class="more" href="paths.html#astar">Finding the Way</a></dd></div>
+    <div id="backtracking"><dt>backtracking</dt><dd>Solving a puzzle by trying a step, and if it leads to a dead end, going back and trying a different step. Like solving a maze with a pencil. <a class="more" href="world.html#backtracking">Building the World</a></dd></div>
+    <div id="bfs"><dt>BFS (breadth-first search)</dt><dd>Finding the way by spreading out like water: first everything 1 step away, then 2 steps, then 3. The first time you reach the goal, you have the shortest way. <a class="more" href="paths.html#bfs">Finding the Way</a></dd></div>
+    <div id="cell"><dt>cell</dt><dd>One square of the floor grid. Every cube is 16 by 16 cells, and a cell is 1 unit wide. <a class="more" href="start.html#cubes">Welcome to Town</a></dd></div>
+    <div id="depth"><dt>depth</dt><dd>How far down a floor of the world is: 0 is the surface with the town, 20 is the core at the bottom. Each depth has its own look, monsters and song. <a class="more" href="start.html#welcome">Welcome to Town</a></dd></div>
+    <div id="dither"><dt>dithering</dt><dd>Mixing two things with a fine pattern of dots instead of making them see-through. From a little distance, your eyes blend them. <a class="more" href="drawing.html#dither">Drawing the World</a></dd></div>
+    <div id="dt"><dt>dt (delta time)</dt><dd>The time that passed since the last frame, usually about 1/60 of a second. Moving by "speed &times; dt" makes the game run at the same speed on fast and slow computers. <a class="more" href="loop.html#dt">The Heartbeat</a></dd></div>
+    <div id="face"><dt>face</dt><dd>The wall between two neighbouring cubes. It is decided once, so the ground, rivers and portals line up on both sides. <a class="more" href="world.html#faces">Building the World</a></dd></div>
+    <div id="frame"><dt>frame</dt><dd>One picture of the game. The game draws about 60 frames every second, each a tiny bit different, like the pages of a flipbook. <a class="more" href="loop.html#flipbook">The Heartbeat</a></dd></div>
+    <div id="game-loop"><dt>game loop</dt><dd>The code that runs again and again, every frame: listen to the player, update everything, draw the picture. <a class="more" href="loop.html#flipbook">The Heartbeat</a></dd></div>
+    <div id="git"><dt>git</dt><dd>A tool that saves snapshots ("commits") of all the files of a project, with a message. You can always go back to an earlier snapshot, like a save point. <a class="more" href="agents.html#git">Building with AI Helpers</a></dd></div>
+    <div id="gpu"><dt>graphics card (GPU)</dt><dd>A chip in your computer made just for drawing: it fills in millions of triangles every second, and runs small programs (shaders) for every pixel. <a class="more" href="drawing.html#triangles">Drawing the World</a></dd></div>
+    <div id="graph"><dt>graph</dt><dd>A map of things and their connections: which floor cells you can step between, for example. Path-finding works on graphs. <a class="more" href="paths.html#here-to-there">Finding the Way</a></dd></div>
+    <div id="hash"><dt>hash</dt><dd>A formula that turns anything (like a cube's name) into a number that looks random. The same input always gives the same number, but a tiny change gives a totally different one. <a class="more" href="random.html#streams">Magic Numbers</a></dd></div>
+    <div id="heap"><dt>heap</dt><dd>A to-do list that always hands you the item with the smallest number first, quickly. A* uses one to pick the next square to look at. <a class="more" href="paths.html#astar-code">Finding the Way</a></dd></div>
+    <div id="instancing"><dt>instancing</dt><dd>Drawing many copies of the same model (like a hundred rocks) in one go, each with its own place. Much faster than drawing them one by one. <a class="more" href="drawing.html#fast">Drawing the World</a></dd></div>
+    <div id="javascript"><dt>JavaScript</dt><dd>The programming language that every web browser understands. The whole game is written in it. <a class="more" href="start.html#running">Welcome to Town</a></dd></div>
+    <div id="juice"><dt>juice</dt><dd>The extras that make actions feel good without changing the rules: sparks, sounds, a tiny freeze on a hit, the camera shaking. <a class="more" href="combat.html#juice">Swords &amp; Fighting</a></dd></div>
+    <div id="model"><dt>model</dt><dd>A 3D object made of triangles, with colours, and often bones and animations. The hero, the monsters and the houses are models. <a class="more" href="art.html#by-code">Making Monsters</a></dd></div>
+    <div id="noise"><dt>noise</dt><dd>Random numbers that change smoothly from place to place. Perfect for hills and valleys. Adding a big wavy layer and smaller wiggly layers makes it look natural. <a class="more" href="world.html#noise">Building the World</a></dd></div>
+    <div id="perspective"><dt>perspective</dt><dd>Making far things look smaller than near things, by dividing by the distance. That's what makes a flat picture look 3D. <a class="more" href="drawing.html#camera">Drawing the World</a></dd></div>
+    <div id="procedural"><dt>procedural generation</dt><dd>Letting the computer invent content (worlds, swords, names) by following rules and rolling dice, instead of drawing everything by hand. <a class="more" href="world.html#inventing">Building the World</a></dd></div>
+    <div id="profile"><dt>profile</dt><dd>The list of numbers that describes a kind of monster: its health, damage, speed, how far it sees, how long its attacks take. <a class="more" href="enemies.html#numbers">Monster Brains</a></dd></div>
+    <div id="program"><dt>program</dt><dd>A list of instructions a computer follows, exactly and very fast. A game is a program that runs in a loop and draws pictures. <a class="more" href="start.html#program">Welcome to Town</a></dd></div>
+    <div id="prompt"><dt>prompt</dt><dd>The message you write to an AI helper to tell it what you want. Good prompts say what, where, how to check, and what not to change. <a class="more" href="agents.html#good-prompt">Building with AI Helpers</a></dd></div>
+    <div id="ragdoll"><dt>ragdoll</dt><dd>A floppy body moved by physics instead of an animation: dots at the joints, held together by sticks. Used when the hero gets knocked over. <a class="more" href="physics.html#ragdoll">Run, Jump, Fall</a></dd></div>
+    <div id="recursion"><dt>recursion</dt><dd>When a function calls itself to solve a smaller part of the same problem. The route planner uses it to try one more step. <a class="more" href="world.html#route-code">Building the World</a></dd></div>
+    <div id="sdf"><dt>SDF (signed distance field)</dt><dd>Describing a shape with a formula that tells, for any point, how far it is from the surface (negative inside). Shapes made this way can melt together like clay. <a class="more" href="art.html#sdf">Making Monsters</a></dd></div>
+    <div id="seed"><dt>seed</dt><dd>The starting number for the computer's dice. The same seed always gives the same numbers, and so the same world. <a class="more" href="random.html#dice">Magic Numbers</a></dd></div>
+    <div id="shader"><dt>shader</dt><dd>A small program that runs on the graphics card, for every corner of every triangle or for every pixel. It decides colours, lights, fading and the cutaway. <a class="more" href="drawing.html#shader-code">Drawing the World</a></dd></div>
+    <div id="state-machine"><dt>state machine</dt><dd>A brain that is always in exactly one state (like idle, chase or attack), with rules for when to switch to another one. <a class="more" href="enemies.html#state-machine">Monster Brains</a></dd></div>
+    <div id="telegraph"><dt>telegraph</dt><dd>When a monster shows what it is about to do, like winding up before a bite, so you have a fair chance to dodge. <a class="more" href="enemies.html#fair">Monster Brains</a></dd></div>
+    <div id="test"><dt>test</dt><dd>A small program that checks that one part of the game still works the way it should. "npm test" runs all of them at once. <a class="more" href="agents.html#tests">Building with AI Helpers</a></dd></div>
+    <div id="threejs"><dt>three.js</dt><dd>A free JavaScript library that knows how to draw 3D with the graphics card. The game uses it for all the drawing. <a class="more" href="drawing.html#camera">Drawing the World</a></dd></div>
+    <div id="verlet"><dt>Verlet</dt><dd>A simple way to move things in physics: work out the speed from where a dot is now minus where it was a moment ago. It makes ragdolls easy and stable. <a class="more" href="physics.html#verlet">Run, Jump, Fall</a></dd></div>
+    <div id="wfc"><dt>WFC (wave function collapse)</dt><dd>Filling a grid with puzzle pieces whose edges must match, always placing a piece where the fewest options are left. <a class="more" href="world.html#wfc">Building the World</a></dd></div>
+    <div id="weight"><dt>weight</dt><dd>How likely a choice is, compared with the others. Like a bag with 40 white marbles and 8 blue ones. <a class="more" href="random.html#weighted">Magic Numbers</a></dd></div>
+    <div id="worker"><dt>web worker</dt><dd>A helper that runs code in the background, at the same time as the game, so the game doesn't freeze while it works. The world is invented in one. <a class="more" href="drawing.html#fast">Drawing the World</a></dd></div>
+  </dl>
+</div>
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

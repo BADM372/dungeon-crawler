@@ -27,6 +27,10 @@ Plain ES modules and a vendored three.js; no build step.
   weapon drop tables (`node tools/loot-table.mjs`) and the balance simulation
   (`node tools/balance.mjs`, see `docs/balance.md`).
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
+- `kids-docs/`: an interactive guide for children (about 12) from the big ideas down to the
+  real code and prompting (`/kids-docs/` on the dev server, see `kids-docs/README.md`). Its
+  demos import game modules and its slides state the game's numbers: when you change how
+  something works, update it too (`tests/kids-docs.test.js` checks links and imports).
 - `vendor/three/`: three.js and the addons in use; `vendor/scrimshaw/`: the music score parser and synth.
 
 ## Running

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Treasure & Weapons · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="mines">
+<main class="deck">
+
+<section class="slide" id="machine" data-lv="1">
+  <h2>A machine that makes swords</h2>
+  <div class="cols wide-right">
+    <div>
+      <p class="lead">Nobody designed the swords you find in Cube Crawler one by one. There is a <b>sword machine</b> instead.</p>
+      <p>Every time a monster drops a sword, or you open a chest, the machine rolls dice and builds a brand-new sword, with its own rarity, powers and name. Like "Ashsting, the Pale Queen", a legendary greatsword.</p>
+      <p>Its glow on the floor tells you how rare it is: no glow for common, a ring for uncommon, a pool of light for rare, beams of light for epic and up.</p>
+      <p>Press <kbd>X</kbd> in the game to see the names of everything on the floor.</p>
+    </div>
+    <figure><img class="shot" src="img/loot.jpg" alt="Three swords on the floor with glowing names: a legendary, a rare and an epic"><figcaption>A legendary, a rare and an epic sword. The colour of the name is the rarity.</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" id="roll" data-lv="1">
+  <h2>Try it: roll a sword</h2>
+  <p>This runs the game's real sword machine. Each roll goes through four steps: rarity, then the kind of sword, then its magic powers (<a class="w" href="words.html#affix">affixes</a>), then a name.
+    Move the item level up: swords from deeper down are stronger and rarer.</p>
+  <div class="demo real" data-demo="loot"></div>
+</section>
+
+<section class="slide" id="rarities" data-lv="2">
+  <h2>The rarity ladder</h2>
+  <div class="cols">
+    <div>
+      <table>
+        <tr><th>RARITY</th><th>WEIGHT</th><th>FROM LEVEL</th><th>AFFIXES</th><th>DAMAGE</th></tr>
+        <tr style="color:#81878d"><td>Junk</td><td>24</td><td>1</td><td>0</td><td>&times;0.80</td></tr>
+        <tr style="color:#eeeeee"><td>Common</td><td>40</td><td>1</td><td>0</td><td>&times;1.00</td></tr>
+        <tr style="color:#61dc6b"><td>Uncommon</td><td>22</td><td>1</td><td>1</td><td>&times;1.05</td></tr>
+        <tr style="color:#51a9ff"><td>Rare</td><td>8</td><td>1</td><td>2</td><td>&times;1.10</td></tr>
+        <tr style="color:#b264fb"><td>Epic</td><td>2.5</td><td>4</td><td>3</td><td>&times;1.16</td></tr>
+        <tr style="color:#fd9f07"><td>Legendary</td><td>0.5</td><td>8</td><td>4</td><td>&times;1.24</td></tr>
+        <tr style="color:#f12941"><td>Mythic</td><td>0.08</td><td>13</td><td>4+</td><td>&times;1.32</td></tr>
+        <tr style="color:#f7e59f"><td>Ancient</td><td>0.015</td><td>17</td><td>5+</td><td>&times;1.40</td></tr>
+      </table>
+    </div>
+    <div>
+      <p>It's the <a class="portal" href="random.html#weighted">bag of marbles</a> again! 40 white marbles for Common, but only half a marble for Legendary.</p>
+      <p><b>Item level</b> is the level of the monster that dropped it (about its depth). Better rarities only appear from a certain level: no Epic before level 4.</p>
+      <p>And the deeper you go, the more the bag tips towards the rare end, slowly. At item level 20, about 8% of swords are Epic and 3% Legendary.</p>
+      <p><b>Luck</b> tips it further: guardians and chests roll with luck. Ancient swords only come from guardians.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="odds" data-lv="2">
+  <h2>Try it: how the odds change</h2>
+  <p>These are the exact chances the game uses. Slide the item level up from 1 to 25, then add luck.</p>
+  <div class="demo real" data-demo="loot" data-mode="odds"></div>
+  <p class="small muted">The formula: each rarity's weight is multiplied by <code>exp((0.025 &times; (level &minus; 1) + luck) &times; rank)</code>. "Rank" is 0 for Junk up to 7 for Ancient, so the rarest ones grow fastest.</p>
+</section>
+
+<section class="slide" id="affixes" data-lv="2">
+  <h2>Magic powers: affixes</h2>
+  <div class="cols">
+    <div>
+      <p>An affix is a bonus that changes one number of the sword. <b>Prefixes</b> go in front of a name, <b>suffixes</b> after it ("Sharp sword of Reach"):</p>
+      <table>
+        <tr><th>AFFIX</th><th>DOES</th></tr>
+        <tr><td>Sharp</td><td>+ damage</td></tr>
+        <tr><td>Brutal</td><td>+ % damage</td></tr>
+        <tr><td>Swift</td><td>faster swings</td></tr>
+        <tr><td>Sweeping</td><td>a wider swing</td></tr>
+        <tr><td>Vicious</td><td>more critical hits</td></tr>
+        <tr><td>of Reach</td><td>a longer reach</td></tr>
+        <tr><td>of the Leech</td><td>heals you on every hit</td></tr>
+        <tr><td>of Force</td><td>pushes monsters further</td></tr>
+        <tr><td>of Precision</td><td>stronger critical hits</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Tiers</h3>
+      <p>Each affix has 7 <b>tiers</b>, like sizes. The item level picks the tier: level 1 to 3 is tier 1, level 19 and up is tier 5. Mythic and Ancient swords reach even higher, up to tier 7.</p>
+      <p>Sharp at tier 1 adds 2 to 4 damage. At tier 7, 29 to 38.</p>
+      <h3>Names</h3>
+      <p>The name is made from word lists too. Junk gets a shabby word: "Rusty Long Sword". Uncommon gets two words: "Bright Fang". Legendary gets a made-up word and a title: "Grimfang, the Last Oath".</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="drops" data-lv="2">
+  <h2>Who drops what</h2>
+  <div class="cols3">
+    <div class="card"><h3>Monsters</h3><p>Every monster drops coins. Sometimes a sword (5%) or a health potion (3%). Tougher monsters drop more often: a Stunder 8%.</p>
+      <p class="small">And remember: the same monster always drops the same thing, even if it comes back after you die. <a href="random.html#why">Why?</a></p></div>
+    <div class="card"><h3>Guardians</h3><p>A side guardian always drops a sword (at least Uncommon) and a potion. A descent guardian drops two of each, at least Rare from level 5. Only guardians can drop Ancient swords.</p></div>
+    <div class="card"><h3>Treasure chests</h3><p>Every depth has four treasure sites: two basic, one uncommon, one rare. Their chests hold coins, potions and a sword or two; the grander the site, the better. Click one to open it!</p></div>
+  </div>
+  <p>Coins: 10 copper make 1 silver, 100 silver make 1 gold. <img class="icon s" src="../assets/items/item_coin_copper.png" alt="copper"> <img class="icon s" src="../assets/items/item_coin_silver.png" alt="silver"> <img class="icon s" src="../assets/items/item_coin_gold.png" alt="gold"></p>
+</section>
+
+<section class="slide" id="generate-code" data-lv="3">
+  <h2>The real code: the sword machine</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/core/gear/generate.js"><code>// The weapon generator. A roll goes through fixed steps, each driven by a table:
+//   rarity -> base type -> affixes -> name
+// It is pure and seeded: the same rng gives the same item. The result is plain JSON:
+//   { itemId, count: 1, gen: { v, rarity, ilvl, affixes: [{ id, tier, value }], name } }
+export function rollWeapon(rng, ilvl, opts = {}) {
+  ilvl = level(ilvl);
+  const rarity = opts.rarity ? RARITY[opts.rarity] : rollRarity(rng, ilvl, opts);
+  const itemId = opts.itemId ?? rollBase(rng, ilvl).itemId, def = ITEMS[itemId];
+  const affixes = rollAffixes(rng, rarity.affixes, ilvl, baseTags(itemId), rarity.tierBonus);
+  return { itemId, count: 1, gen: { v: GEN_VERSION, rarity: rarity.id, ilvl, affixes,
+    name: itemName(rarity.id, def.name, rng) } };
+}</code></pre>
+    <div>
+      <p>Four lines, four steps. Each step is a function in its own file: <code>rarities.js</code>, <code>bases.js</code>, <code>affixes.js</code>, <code>names.js</code>.</p>
+      <p><b>Pure</b> means: it only uses what you give it. Same dice (<code>rng</code>), same sword. That makes it easy to test, and to show in this guide!</p>
+      <p>The sword is saved as what it <b>rolled</b>, not how strong it is. Its damage is worked out when needed (<code>itemStats</code> in <code>stats.js</code>). So if the makers re-balance swords later, the ones you already have change with them.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="stats-code" data-lv="3">
+  <h2>The real code: how strong is it?</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/core/gear/stats.js (shortened)"><code>export const ILVL_DAMAGE = 0.05;
+export const ilvlDamage = ilvl => 1 + ILVL_DAMAGE * (Math.max(1, ilvl || 1) - 1);
+
+export function itemStats(item) {
+  const w = ITEMS[item?.itemId]?.weapon;
+  const sum = { damage: 0, damagePct: 0, speed: 0, arc: 0, crit: 0, /* ... */ };
+  for (const a of item.gen?.affixes ?? []) { /* add up each affix's value */ }
+  return {
+    damage: Math.max(1, Math.round((w.damage * ilvlDamage(item.gen?.ilvl)
+      * rarityOf(item).damage + sum.damage) * (1 + sum.damagePct / 100))),
+    interval: Math.round(w.interval * (1 - sum.speed / 100) * 1000) / 1000,
+    crit: CRIT_CHANCE + sum.crit / 100,
+    /* ... reach, arc, critical damage, leech, knockback ... */
+  };
+}</code></pre>
+    <div>
+      <p>The damage, step by step, for a Rare Long Sword, item level 11, with "Sharp +5":</p>
+      <ol class="steps">
+        <li>base: <b>39</b></li>
+        <li>item level: &times; (1 + 0.05 &times; 10) = &times; 1.5 &rarr; 58.5</li>
+        <li>rarity Rare: &times; 1.1 &rarr; 64.35</li>
+        <li>Sharp: + 5 &rarr; 69.35</li>
+        <li>no Brutal: &times; 1 &rarr; rounded: <b>69</b></li>
+      </ol>
+      <p>Then in a fight, your own level adds 2% per level.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Treasure & Weapons</h2>
+  <div class="quests">
+    <div class="prompt" data-title="NEW AFFIX" data-stars="2"><q>Add a new suffix affix "of the Wind" that makes me walk faster while the sword is equipped. Follow how the other affixes work in src/core/gear/affixes.js and stats.js, and run the tests.</q><span class="why">This one is tricky: the affix needs a new stat, and movement must read it. A good agent will find that out. Ask it to explain!</span></div>
+    <div class="prompt" data-title="FUNNY NAMES" data-stars="1"><q>Add some funny words to the sword name lists in src/core/gear/names.js, like "Wobbly" for junk swords and "Pancake" as a noun. Then roll a few swords in the kids-docs loot demo.</q><span class="why">The guide runs the real code, so you can see your change right away!</span></div>
+    <div class="prompt" data-title="LOOT REPORT" data-stars="1"><q>Run node tools/loot-table.mjs and explain the output to me. At which depth am I likely to find my first Legendary sword?</q><span class="why">Tools print numbers. Agents are good at explaining them.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

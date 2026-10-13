@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Making Monsters · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="abyss">
+<main class="deck">
+
+<section class="slide" id="by-code" data-lv="1">
+  <h2>Models made by code</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">The houses, trees, swords and monsters are 3D <a class="w" href="words.html#model">models</a>. Usually, an artist builds them by hand in a 3D program, pulling points around with the mouse.</p>
+      <p>In Cube Crawler, they are built by <b>code</b>. In the <code>blender/</code> folder there is a Python script for each one: <code>snake.py</code>, <code>octonaut.py</code>, <code>town.py</code>... Running a script in <b>Blender</b> (a free 3D program) builds the model, its skeleton and its animations, takes preview pictures, and saves everything into <code>assets/</code> for the game.</p>
+      <p>The snake started as a sketch on a whiteboard. Then it was described in words, turned into code, looked at, and improved, again and again.</p>
+    </div>
+    <figure><img class="shot" src="../blender/previews/town-preview.png" alt="The town's buildings: an inn, a stable, a pet shop, a blacksmith and three market tents"><figcaption>The town's buildings, all made by blender/town.py. These preview pictures are made by the scripts too.</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" id="clay" data-lv="1">
+  <h2>Try it: digital clay</h2>
+  <p>The monsters are made like clay figures: a body, a head, some legs, and they <b>melt together</b> where they meet. Drag the blobs and change how much they melt.</p>
+  <div class="demo" data-demo="sdf"></div>
+  <p class="small muted">The game's monster scripts do this in 3D with dozens of shapes: tubes for legs, balls for eyes, cones for flames.</p>
+</section>
+
+<section class="slide" id="sdf" data-lv="2">
+  <h2>Signed distance fields</h2>
+  <div class="cols">
+    <div>
+      <p>How do you describe a ball with code? Not with points and triangles, but with a question: <i>"how far is this spot from the ball's surface?"</i></p>
+      <pre><code>distance = (distance to the centre) - radius</code></pre>
+      <p>Outside the ball the answer is positive, on the surface zero, inside negative. That's why it's called a <b>signed</b> distance <a class="w" href="words.html#sdf">field</a>. Switch on "show distances" in the demo to see the rings.</p>
+      <p>To join two shapes: take the <b>smaller</b> of the two distances. For melting, use a <i>smooth</i> minimum, which rounds off the crease where they meet.</p>
+    </div>
+    <div class="card">
+      <h3>From field to triangles</h3>
+      <p>The graphics card wants triangles, not questions. So the script asks the question at millions of points on a 3D grid, and a program called OpenVDB builds the triangles along the "zero" surface.</p>
+      <p>Then all parts become <b>one smooth mesh</b> with plain colours: no pictures painted on it. That's what gives the monsters their soft, toy-like look.</p>
+      <figure><img class="shot" src="../blender/previews/fireface-preview.png" alt="The Fire-face monster in six poses"><figcaption>The Fire-face: flame tongues are melted cones.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="bones" data-lv="2">
+  <h2>Bones and animations</h2>
+  <div class="cols">
+    <div>
+      <p>To move, a model needs a <b>skeleton</b>: invisible bones inside it. Every corner of the mesh is glued to one or more bones, a bit like skin. Move the bone, and the skin follows.</p>
+      <p>The scripts compute every pose with math, and save it as <b>keyframes</b>, 30 per second. A few short clips per monster: walk, attack, death.</p>
+      <p>The snake's walk is clever: a wave runs backwards along its body at exactly its walking speed. So its body slides along a path that stays still on the floor, like a real snake!</p>
+    </div>
+    <div class="card">
+      <h3>The game and the art must agree</h3>
+      <p>The snake's attack clip snaps its jaw shut on <b>frame 12</b>. So the game deals the bite damage at 12/30 = 0.4 seconds into the attack. If one changes without the other, the bite would hurt before (or after) the jaw closes.</p>
+      <p>That's why the game has tests that open the exported models and check that the clips, bones and hit frames are what the code expects.</p>
+      <p>In the game, the hero's clips are also <b>blended</b>: idle into walk into run, depending on speed, and the legs swing further when running faster than the clip.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="recolour" data-lv="1">
+  <h2>Try it: same snake, new colours</h2>
+  <p>A Blood viper is the same model as a Grass snake, just recoloured. The game picks one <b>anchor</b> colour (the skin) and moves all related colours along with it, so the darker rib bands stay darker by the same amount. Click the kinds, or mix your own.</p>
+  <div class="demo real" data-demo="recolor"></div>
+  <p class="small muted">The colours use OKLCH: <b>L</b>ightness, <b>C</b>olourfulness (chroma) and <b>H</b>ue. Unlike plain RGB, changing the hue doesn't make a colour suddenly look brighter or darker.</p>
+</section>
+
+<section class="slide" id="checking-art" data-lv="2">
+  <h2>Looking at your work</h2>
+  <div class="cols">
+    <div>
+      <p>An AI helper can't hold the model in its hands. So the scripts make it easy to <b>look</b>:</p>
+      <ul>
+        <li>Every script renders a <b>contact sheet</b>: the model in several poses, side by side, saved as a picture in <code>blender/previews/</code>. A person, or an agent that can see images, can check it.</li>
+        <li>Blender can be controlled from outside: an agent can talk to a running Blender, build a model, and look at it.</li>
+        <li><code>blender/tests/</code> has test scripts that check the libraries of props and items.</li>
+      </ul>
+    </div>
+    <figure><img class="shot" src="../blender/previews/items-preview.png" alt="A sheet of item models: swords, potions, coins, crystals"><figcaption>The items contact sheet: every sword, potion and coin.</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" id="sdf-code" data-lv="3">
+  <h2>The real code: clay in Python</h2>
+  <div class="cols wide-left">
+    <pre data-file="blender/figure.py and blender/creature.py"><code>def _smin(a, b, k):
+    h = np.clip(0.5 + 0.5 * (b - a) / k, 0.0, 1.0)
+    return b * (1 - h) + a * h - k * h * (1 - h)
+
+def ellipsoid(P, center, radii):
+    """IQ ellipsoid distance approximation (well-behaved zero surface)."""
+    q = P - np.asarray(center, np.float32)
+    r = np.asarray(radii, np.float32)
+    k0 = np.linalg.norm(q / r, axis=-1)
+    k1 = np.linalg.norm(q / (r * r), axis=-1)
+    return np.where(k1 > 1e-8, k0 * (k0 - 1) / np.maximum(k1, 1e-8), -min(r))</code></pre>
+    <div>
+      <p>This is <b>Python</b>, the language Blender speaks. <code>np</code> is NumPy, which does math on millions of points at once.</p>
+      <p><code>_smin</code> is the smooth minimum. <code>h</code> says how much each shape wins at this spot; the last part, <code>- k * h * (1 - h)</code>, pulls the surface outwards where both are close: that's the melted fillet. The demo two slides back uses this exact formula.</p>
+      <p><code>ellipsoid</code> is the distance to an egg shape (IQ is Inigo Quilez, who shares lots of these formulas online).</p>
+      <p>A monster is a long list of shapes like this, joined with <code>_smin</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Making Monsters</h2>
+  <div class="quests">
+    <div class="prompt" data-title="NEW EYES" data-stars="1"><q>Change the Octonaut's eye colour from purple to bright yellow in its Blender script, re-export it, and show me the new preview picture.</q><span class="why">Asking for the preview picture means you (and the agent) can see if it worked.</span></div>
+    <div class="prompt" data-title="PET MUSHROOM" data-stars="3"><q>I drew a walking mushroom monster: a red cap with white dots, a fat stem, two stubby legs and big eyes. Make a new Blender script for it, built from SDF shapes like blender/snake.py and creature.py, with a walk, an attack and a death clip. Render a preview contact sheet so I can see it. Don't add it to the game yet.</q><span class="why">You can even give the agent a photo of your drawing! And "don't add it to the game yet" keeps the first step small.</span></div>
+    <div class="prompt" data-title="EXPLAIN A SCRIPT" data-stars="1"><q>Explain how blender/triangle.py builds the Triangle monster, part by part, in simple words.</q><span class="why">Reading a model script with an agent is like having the artist explain their work.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

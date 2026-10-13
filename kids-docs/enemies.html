@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Monster Brains · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="nests">
+<main class="deck">
+
+<section class="slide" id="numbers" data-lv="1">
+  <h2>A monster is a list of numbers</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">To the game, a spider is not scary at all. It is a short list of numbers, called a <a class="w" href="words.html#profile">profile</a>:</p>
+      <table>
+        <tr><td>health</td><td><b>32</b></td><td class="muted">two hits with the Old Sword</td></tr>
+        <tr><td>bite damage</td><td><b>15</b></td><td class="muted">you have 100 health at the start</td></tr>
+        <tr><td>notices you within</td><td><b>3</b> cells</td><td class="muted">"aggro" range</td></tr>
+        <tr><td>gives up beyond</td><td><b>6</b> cells</td><td></td></tr>
+        <tr><td>chase speed</td><td><b>2.6</b> cells/s</td><td class="muted">you run at 2.8!</td></tr>
+        <tr><td>wander speed</td><td><b>0.6</b> cells/s</td><td></td></tr>
+        <tr><td>bite reach</td><td><b>0.85</b> cells</td><td></td></tr>
+        <tr><td>wind-up before the bite</td><td><b>0.42</b> s</td><td class="muted">your chance to step away</td></tr>
+        <tr><td>rest after a bite</td><td><b>1.2</b> s</td><td class="muted">"cooldown"</td></tr>
+      </table>
+      <p class="small">All monsters share the same brain. Only their numbers (and models) are different.</p>
+    </div>
+    <figure><img class="shot" src="img/mines.jpg" alt="A dark crystal mine full of spiders and glowing triangles"><figcaption>Depth 13: spiders and Triangles in the crystal mines.</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" id="brain" data-lv="1">
+  <h2>Try it: a spider's brain</h2>
+  <p>Drag the hero (the white dot) around. Get close to the spider, but stay behind the wall: it can't see you! Then step out. When it's winding up (red), step away quickly.
+    The dashed circle is how far it can see. Escape further than 6 cells, and it gives up.</p>
+  <div class="demo real" data-demo="brain"></div>
+</section>
+
+<section class="slide" id="state-machine" data-lv="2">
+  <h2>One mood at a time: a state machine</h2>
+  <div class="cols">
+    <div>
+      <p>The spider's brain is always in exactly one <b>state</b>, like a mood. Each state has its own job, and its own rules for when to switch to another one. This is called a <a class="w" href="words.html#state-machine">state machine</a>.</p>
+      <table>
+        <tr><th>STATE</th><th>DOES</th><th>SWITCHES WHEN</th></tr>
+        <tr><td>idle</td><td>rests, looks at you if close</td><td>timer runs out &rarr; walk</td></tr>
+        <tr><td>walk</td><td>wanders near home</td><td>arrived &rarr; idle</td></tr>
+        <tr><td>chase</td><td>follows its path to you</td><td>close and ready &rarr; attack<br>lost you &rarr; home</td></tr>
+        <tr><td>attack</td><td>winds up, bites, finishes</td><td>done &rarr; chase</td></tr>
+        <tr><td>home</td><td>walks back home</td><td>arrived &rarr; idle</td></tr>
+      </table>
+      <p class="small">From idle or walk, seeing you switches to chase. A hit that staggers it switches to chase too.</p>
+    </div>
+    <div class="card">
+      <h3>Why is this a good idea?</h3>
+      <p>Each state is small and easy to understand. To add a new behaviour (say, "flee when hurt"), you add one state and a few switches. You don't have to rethink everything.</p>
+      <p>Guardians use one more state, <b>defend</b>: they stay near their post and only charge when you come close to their gate.</p>
+      <p>Most game characters, from Pac-Man's ghosts to big game bosses, use a state machine somewhere inside.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="fair" data-lv="2">
+  <h2>Thinking slowly on purpose</h2>
+  <div class="cols">
+    <div>
+      <p><b>Thinking five times a second.</b> Monsters <i>move</i> every frame, but they only <i>decide</i> every 0.2 seconds. Searching for paths is work, and with 20 spiders in a room, it adds up. It also looks more natural: real animals don't react instantly either.</p>
+      <p><b>Wind-ups you can see.</b> Every attack starts with a wind-up animation. This is called a <a class="w" href="words.html#telegraph">telegraph</a>: the monster tells you what it's about to do. Once it starts, it is committed and can't change its mind. That's your chance to dodge!</p>
+    </div>
+    <div>
+      <p><b>Aiming stops early.</b> A Fire-face turns to aim at you, but stops turning before it spits. So stepping sideways at the right moment makes it miss.</p>
+      <p><b>A moment of peace.</b> When you enter a cube, monsters may chase you, but they don't attack for 1.2 seconds (or until you hit one). No getting bitten the moment you arrive.</p>
+      <p><b>No contact damage.</b> Just bumping into a monster never hurts. Only real attacks do.</p>
+      <div class="note think"><b>Think</b> All of these make the game <i>easier</i>, but also <i>fairer</i>. When you lose, it should feel like your mistake, not the game cheating.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="bestiary" data-lv="1">
+  <h2>Meet the monsters</h2>
+  <p>Seven <b>species</b> live in the depths. They are all made in Blender by code. <a class="portal" href="art.html">How they're made</a></p>
+  <div class="cols3 small">
+    <figure><img class="shot" src="../blender/previews/snake-preview.png" alt="A green snake in six poses"><figcaption>Snake: slithers, coils and bites</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/octonaut-preview.png" alt="A pale blue creature with six legs and two arms"><figcaption>Octonaut: slaps, or spins and knocks you over</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/fireface-preview.png" alt="A floating angry flame"><figcaption>Fire-face: spits fireballs that set you on fire</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/triangle-preview.png" alt="A floating purple triangle"><figcaption>Triangle: shoots its inner triangles at you</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/firecat-preview.png" alt="A dark red cat with flames"><figcaption>Fire-cat: prowls, then pounces</figcaption></figure>
+    <div class="card"><h3>And...</h3><p><b>Spiders</b>, which come in big packs, and the <b>Stunder</b>, a huge, slow beast that rams you with its head and always knocks you over.</p></div>
+  </div>
+</section>
+
+<section class="slide" id="kinds" data-lv="2">
+  <h2>Species, kinds and levels</h2>
+  <div class="cols">
+    <div>
+      <p>A <b>kind</b> is a species with new colours and stronger numbers. No new model is needed! A Blood viper is a snake that is red, with:</p>
+      <table>
+        <tr><td>health</td><td>&times;1.4</td></tr><tr><td>damage</td><td>&times;1.4</td></tr>
+        <tr><td>speed</td><td>&times;1.2</td></tr><tr><td>size</td><td>&times;1.1</td></tr>
+      </table>
+      <p>The snakes get stronger the deeper you go: Grass snake (green), Sand viper (ochre), Blood viper (red), Shadow mamba (almost black). Ice levels have Frost adders, the swamp has Venom adders.</p>
+      <p class="small">Preview them all: <a href="../tools/kinds.html">tools/kinds.html</a> (with the game's server running).</p>
+    </div>
+    <div class="card">
+      <h3>Levels</h3>
+      <p>A monster's level is about the depth it lives at: level 1 near the top, level 20 at the core. Every level adds:</p>
+      <ul>
+        <li><b>+17%</b> health</li>
+        <li><b>+10%</b> damage</li>
+        <li><b>+25%</b> experience and coins</li>
+      </ul>
+      <p>...of its level 1 numbers. So a level 11 spider has 32 &times; (1 + 0.17 &times; 10) = <b>86</b> health.</p>
+      <p>Monster levels never follow <i>your</i> level. Going back up to easy depths is safe, but gives little experience.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="rosters" data-lv="2">
+  <h2>Who lives where</h2>
+  <div class="cols">
+    <div>
+      <p>Each depth has a <b>roster</b>: a list of which monsters can live there, how likely, and how many. For example, at depth 3 (the snowy peaks):</p>
+      <ul>
+        <li><b>spiders</b>, always, 8 to 14, in packs of up to 3, mostly Frost spiders</li>
+        <li><b>Stunders</b>, 50% of the time, 1 or 2, Frost stunders</li>
+        <li><b>Triangles</b>, 12% of the time, just one: a mini-boss!</li>
+      </ul>
+      <p>Every cube rolls its own dice: which species are there, how many, and which one <b>leads</b> (has the most). So two cubes at the same depth can feel very different: a spider den with a lone snake, or a snake pit with a few spiders.</p>
+    </div>
+    <div class="card">
+      <h3>Design rules</h3>
+      <ul>
+        <li>The surface starts easy: depth 1 has only snakes and a rare Stunder.</li>
+        <li>Each theme has its signature monsters: Octonauts in the frozen caves, spiders in the nests, fire monsters in the volcanic depths.</li>
+        <li>Rare guests show up one theme early, as a preview.</li>
+        <li>Shooting monsters stay few (at most 4 per cube): many fireballs at once are hard to dodge.</li>
+        <li>Monsters never spawn near entrances.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="guardians" data-lv="2">
+  <h2>Guardians and balance</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Guardians</h3>
+      <p>Every well down is guarded by a <b style="color:#ffb000">descent guardian</b> (gold), and one or two gates on the way by <b style="color:#ff5ab4">side guardians</b> (pink). They are normal species, promoted: much more health, harder hits, and lots of poise.</p>
+      <p>Their gate stays sealed with a red cross until the guardian dies. Killing the others is not enough. Their arena has twice the usual monsters, and they defend together.</p>
+      <p>Guardians always drop good loot.</p>
+    </div>
+    <div class="card">
+      <h3>Fair and fun: balance</h3>
+      <p>The game is tuned so you stay about <b>two levels above the depth</b> you're at, and fights feel the same all the way down: a spider always takes about 1 hit, a Stunder 3 to 5.</p>
+      <p>How do the makers know? A tool <b>plays the game in fast-forward</b>, using the real tables, and prints where a player would be at each depth:</p>
+      <pre><code>node tools/balance.mjs</code></pre>
+      <p class="small muted">Details for grown-ups: <code>docs/balance.md</code></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="decide-code" data-lv="3">
+  <h2>The real code: deciding</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/game/enemyai.js (shortened)"><code>function decide(e) {
+  const p = player, cfg = e.profile, target = playerFloor(cfg.height);
+  const alive = !p.ragdoll &amp;&amp; p.hp > 0, dist = Math.hypot(p.x - e.x, p.z - e.z);
+  if (e.mode !== 'chase' &amp;&amp; e.mode !== 'attack') {
+    if (!alive || !target || dist > cfg.aggro || Math.abs(p.y - e.y) > 1) return;
+    if (!clearLine(e.x, e.y + 0.4, e.z, p.x, p.y + 0.6, p.z)) return;
+    const path = findPath(e.f, target, 10, cfg.height);
+    if (path) { e.path = path; e.mode = 'chase'; e.lost = 0; }
+    return;
+  }
+  if (e.mode === 'attack') return;
+  e.path = alive &amp;&amp; target ? findPath(e.f, target, 16, cfg.height) : null;
+  e.lost = !e.path || dist > cfg.giveUp ? e.lost + 0.2 : 0;
+  if (e.lost > 1.4) { e.mode = 'home'; e.path = findPath(e.f, e.home, 40, cfg.height) || [e.f]; }
+}
+
+// in stepEnemies, every frame, for every enemy:
+if ((e.think -= dt) &lt;= 0) { e.think = 0.2; decide(e); }
+act(e, dt);</code></pre>
+    <div>
+      <p>To start chasing, <b>all</b> of these must be true: you're alive, close (<code>aggro</code>), at about the same height (within 1), visible (<code>clearLine</code> from its eyes to your chest), and there's a path of at most 10 steps.</p>
+      <p>While chasing, it plans a new path every think. <code>e.lost</code> counts up while it has no path or you're too far. After 1.4 seconds of that, it goes home.</p>
+      <p><code>e.think</code> is a countdown. When it reaches zero, think, and start again at 0.2. That's how "five times a second" works.</p>
+      <p>The demo uses the same rules on a little grid.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="kind-code" data-lv="3">
+  <h2>The real code: making a kind</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/core/enemies.js"><code>export const BLOOD_VIPER = enemyKind(SNAKE, {
+  type: 'bloodviper', label: 'Blood viper', reason: 'Bitten by a Blood viper!',
+  colors: { skin: 'oklch(0.60 0.19 27)', eyes: 'oklch(0.93 0.18 100)' },
+  ichor: Object.freeze(['#e0503a', '#6a1410']),
+  mods: { hp: 1.4, damage: 1.4, speed: 1.2, size: 1.1 },
+});
+
+export const GROWTH = Object.freeze({ hp: 0.17, damage: 0.1, xp: 0.25, coins: 0.25 });</code></pre>
+    <div>
+      <p><code>enemyKind(SNAKE, {...})</code> copies the snake's profile and changes it:</p>
+      <ul>
+        <li><code>label</code>: its name. <code>reason</code>: what the game says if it kills you.</li>
+        <li><code>colors</code>: new colours for its skin and eyes. <code>oklch</code> is a way to write colours by lightness, colourfulness and hue. <a class="portal" href="art.html#recolour">Recolouring</a></li>
+        <li><code>ichor</code>: the colours of its blood droplets when hit.</li>
+        <li><code>mods</code>: multipliers for its numbers.</li>
+      </ul>
+      <p>Then it's added to the list <code>ENEMY_KINDS</code> and to the rosters of the depths where it should live. That's it: a new monster in 10 lines!</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Monster Brains</h2>
+  <div class="quests">
+    <div class="prompt" data-title="NEW KIND" data-stars="2"><q>Add a new spider kind called "Ghost spider": pale and see-through looking (very light colours), 1.2x health, 1.3x speed. Let it spawn sometimes at depths 15 and 16. Follow docs/enemy-kinds.md and run the tests.</q><span class="why">The game has a doc just for this. Pointing the agent at it gives much better results.</span></div>
+    <div class="prompt" data-title="SCAREDY SNAKES" data-stars="3"><q>Give snakes a new behaviour: when their health drops below 25%, they flee away from me for 3 seconds before fighting again. Add it as a new mode in src/game/enemyai.js, only for snakes, and explain the change to me.</q><span class="why">A new state in the state machine! Ask for an explanation so you learn how it was done.</span></div>
+    <div class="prompt" data-title="DEPTH TOUR" data-stars="1"><q>Which monsters live at depth 9, and how many? Read src/core/spawns.js and explain the row for depth 9 in simple words.</q><span class="why">Reading data tables with an agent is a great way to learn how a game is set up.</span></div>
+    <div class="prompt" data-title="SLOWER BITES" data-stars="1"><q>Spiders are too hard for my little brother. Make their wind-up before the bite longer, so it is easier to step away. Keep the animation in sync with the bite.</q><span class="why">"Keep the animation in sync" warns the agent about a trap: the bite should still land on the right animation frame.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

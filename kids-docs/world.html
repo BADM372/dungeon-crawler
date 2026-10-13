@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Building the World · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="badlands">
+<main class="deck">
+
+<section class="slide" id="inventing" data-lv="1">
+  <h2>Inventing a whole world</h2>
+  <p class="lead">Nobody drew the cubes of Cube Crawler. The game invents them while you play. This is called
+    <a class="w" href="words.html#procedural">procedural generation</a>: instead of drawing a level, you write the <i>rules</i> for making levels.</p>
+  <p>The game does it like a team of four workers:</p>
+  <div class="cols">
+    <ol class="steps">
+      <li><b>The planner</b> draws a path of rooms for each depth: where you come in, where the well is, where the guardians wait.</li>
+      <li><b>The puzzle solver</b> decides what kind of land each cube is: meadow, highland, river, lake... Neighbours must fit together like puzzle pieces.</li>
+      <li><b>The builder</b> makes one cube: hills, rivers, upper floors, stairs, bridges, ladders, fences.</li>
+      <li><b>The inspector</b> checks that you can really walk from every entrance to the exit. If not: throw it away and build again!</li>
+    </ol>
+    <figure><img class="shot" src="img/route-overlay.jpg" alt="A cube with a pink line showing the route the generator planned"><figcaption>Press P in the game to see the route the builder planned (the pink line).</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" id="route" data-lv="1">
+  <h2>The planner: a path of rooms</h2>
+  <div class="cols wide-right">
+    <div>
+      <p>Every depth has a <b>route</b> of 7 to 14 rooms. It starts right under the well of the depth above, and ends at the next well down.</p>
+      <p>Before the well there is always a strong <b>descent guardian</b> (gold), and on the way one or two <b>side guardians</b> (pink) block gates. Beat them to open the way.</p>
+      <p>Some rooms get a side room with a treasure chest.</p>
+      <p>Move the depth slider: deeper down, the ring gets smaller, until the core at depth 20.</p>
+    </div>
+    <div class="demo real" data-demo="layout"></div>
+  </div>
+</section>
+
+<section class="slide" id="backtracking" data-lv="2">
+  <h2>How the planner finds a path: try, back up, try again</h2>
+  <div class="cols">
+    <div>
+      <p>The planner has a ring of possible cubes around the middle of the world. It wants a path of, say, 11 rooms that ends on the inner edge of the ring.</p>
+      <ol class="steps">
+        <li>Start at the room under the last well.</li>
+        <li>Step to a neighbour that is not used yet. (Which one first? The dice decide.)</li>
+        <li>Stuck, but not long enough yet? <b>Step back</b> and try a different neighbour.</li>
+        <li>Long enough and at the right spot? Done!</li>
+      </ol>
+      <p>This is called <a class="w" href="words.html#backtracking">backtracking</a>. It is how you solve a maze with a pencil: go until you hit a dead end, then go back to the last fork.</p>
+    </div>
+    <div class="card">
+      <h3>Then the extras</h3>
+      <ul>
+        <li><b>Guardians:</b> the room with the well always gets the descent guardian. One or two rooms along the way get side guardians.</li>
+        <li><b>Side rooms:</b> some rooms get one extra room next to them, never more than 14 rooms per depth in total.</li>
+        <li><b>No shortcuts:</b> side rooms never connect to other rooms, so you cannot sneak around a guardian.</li>
+        <li><b>Treasure:</b> each depth plans four treasure sites, mostly in side rooms.</li>
+      </ul>
+      <a class="deeper" data-lv="3" href="#route-code">See the route code</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="puzzle" data-lv="1">
+  <h2>The puzzle solver: pieces with matching edges</h2>
+  <div class="cols wide-right">
+    <div>
+      <p>Each cube is like a puzzle piece with four edges. Each edge is one of three kinds:</p>
+      <ul>
+        <li><b style="color:#6fae4f">L</b> lowland: the ground is low here</li>
+        <li><b style="color:#a08052">H</b> highland: the ground is high</li>
+        <li><b style="color:#3f8fd8">W</b> water: a river crosses this edge</li>
+      </ul>
+      <p>The rule: <b>touching edges must match</b>. A river that leaves one cube must enter the next one.</p>
+      <p>The edges decide the kind of land: all L is a meadow, all H a highland, two W a river...</p>
+      <p>Press <b>Play</b> and watch the world fill in.</p>
+    </div>
+    <div class="demo real" data-demo="wfc"></div>
+  </div>
+</section>
+
+<section class="slide" id="wfc" data-lv="2">
+  <h2>Wave function collapse</h2>
+  <div class="cols">
+    <div>
+      <p>This puzzle method has a fancy name: <a class="w" href="words.html#wfc">wave function collapse</a> (WFC). The name comes from physics, but the idea is simple:</p>
+      <ol class="steps">
+        <li>At first, every cube could still be <b>any</b> piece. (87 pieces, so the demo shows 87 options.)</li>
+        <li>Pick the cube with the <b>fewest options left</b>. Roll weighted dice to choose one of its pieces. Now it is "collapsed".</li>
+        <li>Its neighbours now have fewer pieces that fit. Repeat!</li>
+      </ol>
+      <p>Picking the cube with the fewest options first is like Sudoku: you fill in the square where only one or two numbers are possible first.</p>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Two clever tricks</h3>
+        <p><b>Never stuck:</b> many WFC puzzles can get stuck, with a hole where no piece fits. Here, there is a piece for <i>every</i> combination of edges (3&times;3&times;3&times;3 = 81 combinations). So it always works.</p>
+        <p><b>Big regions:</b> meadows and highlands have big weights (6 and 5), the mixed pieces tiny ones (slope 0.35, gorge 0.03). So same-kind cubes clump together into big areas, and the mixed pieces appear where two areas meet. The theme of each depth changes the weights: the snowy peaks love highlands.</p>
+      </div>
+      <p class="small">In the game, a cube and its six neighbours collapse the moment you get close. So the world depends on the seed <b>and</b> on the order you explore in!</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="noise" data-lv="1">
+  <h2>Hills from noise</h2>
+  <p>To make hills, the game uses <a class="w" href="words.html#noise">noise</a>: random numbers that change <b>smoothly</b>. Pick random heights at a few points, and blend gently in between.
+    Add a second layer that is twice as wiggly and half as strong, and a third. Big hills with small bumps on top!</p>
+  <div class="demo real" data-demo="noise"></div>
+  <p class="small muted">The noise is the same everywhere in the world, so the ground at the edge of one cube continues smoothly into the next one.</p>
+</section>
+
+<section class="slide" id="faces" data-lv="2">
+  <h2>Walls that two cubes share</h2>
+  <div class="cols">
+    <div>
+      <p>Two cubes next to each other share a wall, called a <a class="w" href="words.html#face">face</a>. Cubes are built one at a time, maybe hours apart. How do their edges line up?</p>
+      <p>The trick: <b>the face is decided first, and only once</b>. Whichever of the two cubes is prepared first decides it, and saves it. Then both cubes build their edge to match it:</p>
+      <ul>
+        <li>the <b>ground height</b> along the edge, 16 numbers from the noise</li>
+        <li>where a <b>river</b> crosses it, and how wide it is</li>
+        <li>where the <b>portal</b> (the gate) stands, and on which floor</li>
+      </ul>
+      <p>Each face even has its own dice (its own seed), so it comes out the same no matter which cube decided it.</p>
+    </div>
+    <div class="card">
+      <h3>Did it work?</h3>
+      <p>The game's makers checked over 400 pairs of neighbouring cubes: on every single one, the ground height and the water match on every edge cell, corners included.</p>
+      <p>Inside the cube, the builder blends from the four edges towards the middle, and adds its own hills there. The middle can be wild, the edges always match.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="archetypes" data-lv="2">
+  <h2>Big shapes: archetypes</h2>
+  <p>On top of the hills, every cube gets one big shape, its <a class="w" href="words.html#archetype">archetype</a>. The shape fades out near the edges, so the edges still match.</p>
+  <table>
+    <tr><th>ARCHETYPE</th><th>WHAT IT LOOKS LIKE</th></tr>
+    <tr><td>plain</td><td>nothing extra</td></tr>
+    <tr><td>chasm</td><td>a winding crack across the cube with raised rims</td></tr>
+    <tr><td>spire</td><td>a tall needle of rock on a raised base</td></tr>
+    <tr><td>sinkhole</td><td>a round pit with a raised rim</td></tr>
+    <tr><td>archipelago</td><td>islands</td></tr>
+    <tr><td>mesa</td><td>one big flat-topped block</td></tr>
+    <tr><td>crater</td><td>a ring wall around a lake (of water, lava or acid)</td></tr>
+  </table>
+  <p>Which one? Weighted dice, of course: the theme of the depth sets the weights, and the kind of land leans them. A lake cube is three times more likely to become islands. <a class="portal" href="random.html#pick-code">The marble bag code</a></p>
+</section>
+
+<section class="slide" id="factory" data-lv="1">
+  <h2>The builder: try the real cube factory</h2>
+  <div class="cols wide-right">
+    <div>
+      <p>This is the <b>real</b> generator of the game, running right here in your browser.</p>
+      <p>Pick a depth and a room on its route, and press <b>Build it!</b> It plans the route, solves the puzzle, decides the faces and builds the cube, usually in a few thousandths of a second.</p>
+      <p class="small"><b style="color:var(--portal)">Gold rings</b>: gates to other cubes, and the well down. <b style="color:var(--cyan)">Cyan</b>: the ring you came up through. <b style="color:#ff6ad5">Pink dashes</b>: the route the builder planned. Grey: stone stairs. Brown: wooden bridges.</p>
+      <p class="small muted">Rooms called "arena" are guardian rooms: flat, so there is space to fight. Try depth 9 or 17 for caves.</p>
+    </div>
+    <div class="demo real" data-demo="cube"></div>
+  </div>
+</section>
+
+<section class="slide" id="assembly" data-lv="2">
+  <h2>The assembly line</h2>
+  <p>The builder works in fixed steps, one after the other, like a factory line. Each step adds something:</p>
+  <div class="cols3 small">
+    <ol class="steps">
+      <li>How many floors stacked up (1 to 4)</li>
+      <li>Ground heights, blended from the four faces</li>
+      <li>The big shape (archetype)</li>
+      <li>Portals on the faces</li>
+      <li>Rivers, from crossing to crossing</li>
+      <li>Waterfalls into the cube below</li>
+    </ol>
+    <ol class="steps" style="counter-reset: s 6">
+      <li>Space for treasure sites</li>
+      <li>Upper floors (slabs)</li>
+      <li>Ramps and supports</li>
+      <li>Pools and streams</li>
+      <li>Every possible move: walk, drop, jump, stairs, bridge, ladder</li>
+      <li>Routes between the portals</li>
+    </ol>
+    <ol class="steps" style="counter-reset: s 12">
+      <li>Escape routes from places you could fall into</li>
+      <li>Place the stairs, bridges and ladders</li>
+      <li>Smooth the ground</li>
+      <li>Bridge styles and pillars</li>
+      <li>Fences on dangerous edges</li>
+      <li><b>The inspection</b></li>
+    </ol>
+  </div>
+  <p>Notice step 11 and 12: the builder first lists every move a hero <i>could</i> make, then searches for the cheapest way between the portals. That search is the same kind used for <a class="portal" href="paths.html">finding the way</a>.</p>
+</section>
+
+<section class="slide" id="inspector" data-lv="2">
+  <h2>The inspector: throw it away and try again</h2>
+  <div class="cols">
+    <div>
+      <p>After building, an inspector plays the cube in its head. Starting from the exit, it works out everything the hero can really do:</p>
+      <ul>
+        <li>walk on flat ground and slopes, jump up one level, drop down cliffs that have no fence</li>
+        <li>swim, and climb out of water up to two levels</li>
+        <li>use the stairs, bridges and ladders</li>
+      </ul>
+      <p>If <b>any</b> portal cannot reach the exit, or a route squeezes under a ceiling that is too low, the cube fails. The builder throws it away and tries again with new dice. Up to 200 tries!</p>
+      <p>Usually the first try works: about 1.07 tries per cube on average.</p>
+    </div>
+    <div class="card">
+      <h3>A true story</h3>
+      <p>An earlier version planned its routes from the first portal outwards. But you can drop down a cliff and not climb back up. So some routes only worked in the wrong direction!</p>
+      <p>When the makers tested it: <b>none of 12 test worlds could be finished</b>, and in four of them you were trapped in the town.</p>
+      <p>After the fix, routes are planned from every portal <i>to</i> the exit, and the inspector checks it. Now <b>64 of 64</b> test worlds can be walked from the town all the way to depth 20.</p>
+      <p class="small muted">Lesson: write a check for the thing that must never break.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="wfc-code" data-lv="3">
+  <h2>The real code: collapsing cubes</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/world/wfc.js"><code>domain(k) {   // the pieces that fit next to the collapsed neighbours
+  const nb = [0, 1, 2, 3].map(d => this.tiles.get(step(k, d)));
+  return TILES.filter(t => nb.every((n, d) => !n || n.sock[OPP6[d]] === t.sock[d]));
+}
+
+collapse(keys) {
+  const todo = new Set(keys.filter(k => !this.tiles.has(k)));
+  while (todo.size) {
+    let best = null, bestE = Infinity, bestDom = null;
+    for (const k of todo) {
+      const dom = this.domain(k), e = this.entropy(dom, weightAt(k)) + (hashKey(k) % 1000) * 1e-6;
+      if (e &lt; bestE) { best = k; bestE = e; bestDom = dom; }
+    }
+    const R = this.rng(best), w = weightAt(best), sum = bestDom.reduce((s, t) => s + w(t), 0);
+    let r = R() * sum, tile = bestDom[bestDom.length - 1];
+    for (const t of bestDom) if ((r -= w(t)) &lt; 0) { tile = t; break; }
+    this.tiles.set(best, { ...tile, K: layersOf(tile.kind, R(), near) });
+    todo.delete(best);
+  }
+}</code></pre>
+    <div>
+      <p><code>domain</code>: keep only the pieces where every collapsed neighbour's touching edge (<code>OPP6[d]</code> is the opposite side) matches ours.</p>
+      <p><code>entropy</code> is a measure of "how many choices, and how evenly weighted". Low entropy = few real choices.</p>
+      <p>The <code>hashKey(k) % 1000 * 1e-6</code> part is a tiny tie-breaker, so two equal cubes are always picked in the same order.</p>
+      <p>Then the marble bag picks a piece, and <code>layersOf</code> decides how many floors it gets (leaning towards what the neighbours have, so tall regions form).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="generate-code" data-lv="3">
+  <h2>The real code: build, inspect, retry</h2>
+  <div class="cols">
+    <pre data-file="src/cubegen/index.js (shortened)"><code>function tryGenerate(seed, spec) {
+  const ctx = createContext(seed);
+  chooseLayers(ctx); groundHeights(ctx); shapeCube(ctx);
+  placePortals(ctx); carveRiver(ctx); /* ... */
+  makeMoves(ctx);
+  if (!findRoute(ctx)) return null;
+  addEscapes(ctx); finishRoute(ctx);
+  if (!placeStructures(ctx)) return null;
+  smooth(ctx); shapeStructures(ctx); addFences(ctx);
+  // every portal must lead to the exit with the final slopes and fences
+  const safe = reachTo(ctx, ctx.hub, true);
+  if (safe &amp;&amp; ctx.portalFloors.some(f => !safe.has(f.id))) return null;
+  return { /* the finished map */ };
+}
+
+export function generate(spec) {
+  for (let a = 0; a &lt; 200; a++) {
+    const m = tryGenerate(hash32(spec.seed + a * 7919), spec);
+    if (m) return m;
+  }
+  throw new Error('generator failed for cube ' + spec.key);
+}</code></pre>
+    <div>
+      <p>Each stage is a function that gets the same <code>ctx</code> (the context: the cube under construction) and adds its part.</p>
+      <p><code>return null</code> means "this attempt failed". The loop in <code>generate</code> then tries the next seed: <code>spec.seed + a * 7919</code>, mixed by <code>hash32</code>. (7919 is just a big prime number, so the seeds of the attempts are far apart.)</p>
+      <p>The <code>spec</code> is what the world decided for this cube: its faces, portals and kind. Retries change the dice, but <b>never</b> the spec, so the edges always keep matching.</p>
+      <p class="small muted">The real function also handles treasure sites, the town and guardian arenas.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="route-code" data-lv="3">
+  <h2>The real code: the backtracking route</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/world/layout.js"><code>function route(candidates, prefix, length, goal, R) {
+  const allowed = new Set(candidates.map(id)), used = new Set(prefix.map(id));
+  const priority = new Map(candidates.map(c => [id(c), R()])), out = [...prefix];
+  function visit() {
+    const c = out.at(-1);
+    if (out.length === length) return goal(c);
+    const next = nb(c).filter(n => allowed.has(id(n)) &amp;&amp; !used.has(id(n)));
+    next.sort((a, b) => priority.get(id(a)) - priority.get(id(b)));
+    for (const n of next) {
+      out.push(n); used.add(id(n));
+      if (visit()) return true;
+      used.delete(id(n)); out.pop();   // back up
+    }
+    return false;
+  }
+  return visit() ? out : null;
+}</code></pre>
+    <div>
+      <p><code>visit</code> calls <b>itself</b> for the next step. That is called <a class="w" href="words.html#recursion">recursion</a>.</p>
+      <p>If the path is long enough, it asks <code>goal(c)</code>: "are we in the right place to end?"</p>
+      <p>Otherwise it tries each free neighbour. <code>out.push</code> walks forward. If the deeper <code>visit()</code> fails, <code>out.pop()</code> walks back, and the loop tries the next neighbour.</p>
+      <p>Each cell gets a random <code>priority</code> once, so the order of trying is shuffled by the seed.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Building the World</h2>
+  <div class="quests">
+    <div class="prompt" data-title="LONGER ADVENTURES" data-stars="1"><q>Each depth has a route of 7 to 14 rooms. Show me where that is decided, and explain what would happen if I made it 10 to 18. Don't change it yet.</q><span class="why">Asking "what would happen" first is smart: bigger changes can break tests.</span></div>
+    <div class="prompt" data-title="CRATER COUNTRY" data-stars="2"><q>Make craters much more common in the badlands theme, then start the game with ?dev=1 and tell me how to jump to depth 4 to see them.</q><span class="why">Hint: arche weights in src/themes/index.js. Dev mode lets you skip ahead.</span></div>
+    <div class="prompt" data-title="NEW ARCHETYPE" data-stars="3"><q>Add a new cube archetype called "twin peaks": two tall rounded hills. Follow how the existing archetypes in src/cubegen/archetypes.js work, add it to some theme weights, and run the tests to make sure every cube can still be finished.</q><span class="why">"Follow how the existing ones work" and "run the tests" make a big change much safer.</span></div>
+    <div class="prompt" data-title="WORLD STATS" data-stars="2"><q>Write a small script in tools/ that generates the first 5 depths for seed 123 and prints how many cubes of each archetype it made.</q><span class="why">Tools that measure things help you see if a change did what you wanted.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

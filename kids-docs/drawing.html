@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drawing the World · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="ruins">
+<main class="deck">
+
+<section class="slide" id="triangles" data-lv="1">
+  <h2>Painting with triangles</h2>
+  <div class="cols wide-right">
+    <div>
+      <p class="lead">Everything you see in the game, the hills, the hero, the swords, the spiders, is made of tiny flat <b>triangles</b>.</p>
+      <p>Why triangles? Three points always lie flat, so a triangle is the simplest shape a computer can fill in. Glue enough of them together and you can make anything.</p>
+      <p>The <a class="w" href="words.html#gpu">graphics card</a> in your computer is a machine made just for painting triangles, millions of them every second.</p>
+      <p>Switch on "show triangles" and switch off "paint": that's what the computer really sees.</p>
+    </div>
+    <div class="demo" data-demo="tri"></div>
+  </div>
+</section>
+
+<section class="slide" id="camera" data-lv="2">
+  <h2>From 3D to your flat screen</h2>
+  <div class="cols">
+    <div>
+      <p>Every corner of every triangle has three numbers: x, y and z. Your screen is flat: it only has x and y. The <b>camera</b> turns one into the other:</p>
+      <ol class="steps">
+        <li>Turn and tilt the world, so it is seen from the camera's point of view.</li>
+        <li>Divide by the distance: things far away get smaller. That's called <a class="w" href="words.html#perspective">perspective</a>.</li>
+        <li>Fill in the triangle's pixels, and colour them.</li>
+      </ol>
+      <p>A helper library called <a class="w" href="words.html#threejs">three.js</a> does the hard math and talks to the graphics card. The game tells it what to draw.</p>
+    </div>
+    <div class="card">
+      <h3>Cube Crawler's camera</h3>
+      <ul>
+        <li>looks down at <b>44&deg;</b>, from far away</li>
+        <li>has a narrow lens (28&deg;), so the cube looks almost like a little model on a table, a <i>diorama</i></li>
+        <li>is just far enough away that the whole cube fits on the screen</li>
+        <li>turns in 90&deg; steps with <kbd>Q</kbd> and <kbd>E</kbd>, and zooms in 5 steps with <kbd>K</kbd> and <kbd>L</kbd> (zoomed in, it follows the hero)</li>
+        <li>gets a tiny shove on every hit, and springs back</li>
+      </ul>
+      <p class="small muted"><code>src/game/camera.js</code>, only 40 lines.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="light" data-lv="2">
+  <h2>Light and shadow</h2>
+  <div class="cols">
+    <div>
+      <p>How bright is a triangle? It depends on how much it <b>faces the light</b>. A slope that faces the sun is bright, one that turns away is darker. Try moving the sun in the triangle demo.</p>
+      <p>The game uses three kinds of light:</p>
+      <ul>
+        <li><b>The sun:</b> light from one direction, the same everywhere. It also casts <b>shadows</b>.</li>
+        <li><b>Sky light:</b> a soft light, a bit bluer from above and browner from below, so nothing is ever pitch black.</li>
+        <li><b>Point lights:</b> glowing things like lava, portals, crystals and fire monsters, shining in all directions around them.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>How shadows work</h3>
+      <p>Before drawing the picture, the game first draws the world <i>from the sun's point of view</i>, but only remembers how far away everything is. That's the <b>shadow map</b>, 2048 by 2048 pixels.</p>
+      <p>Then, for each pixel of the real picture, it asks: "can the sun see this spot, or is something closer to the sun in the way?" If something is in the way: shadow!</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="pool" data-lv="1">
+  <h2>Try it: only 8 lights at a time</h2>
+  <p>A cave can have dozens of glowing things. But the game only ever uses <b>8</b> real lights: the ones closest to you. Move around the cave and watch them follow you.
+    Then switch off the pool and see how the number of lights jumps around.</p>
+  <div class="demo" data-demo="lightpool"></div>
+  <div class="note"><b>Why?</b> The graphics card runs small programs called <a class="w" href="words.html#shader">shaders</a>. When the number of lights changes, three.js has to rebuild every one of them. That took so long that the game stuttered every time you entered a new cube. A fixed pool of 8 lights that just move around fixed it. This was the biggest stutter in the game!</div>
+</section>
+
+<section class="slide" id="cutaway" data-lv="1">
+  <h2>Try it: cutting holes in the roof</h2>
+  <p>When you walk under a bridge or into a cave, the walls and floors above you would hide you. So the game <b>cuts them away</b>, only around you, only in front of you.
+    Drag the hero under the floor and onto the hill.</p>
+  <div class="demo" data-demo="cutaway"></div>
+  <p class="small muted">The white dots are the probe: the game checks the way from your chest to the camera every 0.12 units. The red circle is the first thing in the way.</p>
+</section>
+
+<section class="slide" id="cut-how" data-lv="2">
+  <h2>How the cutaway works</h2>
+  <div class="cols">
+    <div>
+      <ol class="steps">
+        <li><b>Look:</b> send probes from the hero's chest and head towards the camera, and from points around the hero. Find the lowest solid thing in the way.</li>
+        <li><b>Pick a height:</b> just under the floor above you if there is one, otherwise snapped to the terrain levels.</li>
+        <li><b>Cut:</b> while drawing, every pixel that is above that height, closer to the camera than the hero, and inside a shape around the hero is simply not drawn.</li>
+        <li><b>Fill in:</b> the cut edges are painted as a flat lid (like a cake cut open), and the removed parts as very faint glass, so you still see their shape.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Little touches</h3>
+      <ul>
+        <li>The shape is not a circle, but a nine-cornered polygon that slowly turns. It looks more hand-made.</li>
+        <li>The cut opens <b>fast</b> (you should never be hidden), but closes <b>slowly</b>, and only after you were visible for a second. Otherwise it would flicker all the time.</li>
+        <li>In caves, the walls on the camera's side are cut down too, to just above the hero.</li>
+      </ul>
+      <figure><img class="shot" src="img/swamp.jpg" alt="A cave with the walls near the camera cut away"><figcaption>The cave walls in front are cut down so you can look in.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="dither" data-lv="1">
+  <h2>Try it: fading without see-through</h2>
+  <p>When you walk through a portal, the old cube fades out and the new one fades in. But making 3D things see-through is surprisingly hard for a graphics card
+    (it has to sort everything from back to front). So the game uses a trick from old printers: <a class="w" href="words.html#dither">dithering</a>. Each pixel is either fully old cube, or fully new cube.</p>
+  <div class="demo" data-demo="dither"></div>
+  <p class="small muted">Turn the pixel size down to 1: from a little distance, your eyes blend the pattern into a smooth fade. That's how it looks in the game.</p>
+</section>
+
+<section class="slide" id="themes" data-lv="2">
+  <h2>Every depth has its own look</h2>
+  <p>The colours are not painted by hand on every cube. Each <b>theme</b> has a small table of colours by height: low ground, high ground, cliff stripes, the sky.
+    The game mixes between them. Going deeper, the light even fades slowly from one theme to the next. This table is read live from the game's code:</p>
+  <div class="demo real" data-demo="themes"></div>
+</section>
+
+<section class="slide" id="fast" data-lv="2">
+  <h2>Keeping it fast</h2>
+  <div class="cols">
+    <div>
+      <p>The game wants a new picture every 16 milliseconds. Everything that takes longer has to be done cleverly:</p>
+      <ul>
+        <li><b>A helper in the background.</b> A <a class="w" href="words.html#worker">web worker</a> invents the cubes <i>and</i> builds their triangles, then hands them over in one go. The game keeps running smoothly meanwhile.</li>
+        <li><b>Cubes behind portals are prepared early</b>, so travelling usually starts at once.</li>
+        <li><b>Cubes you're not in</b> are drawn as simple copies: no plants, no monsters, no lights, no shadows.</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><b>One draw for many props.</b> A hundred identical rocks are sent to the graphics card in <i>one</i> go, each with its own position (called <a class="w" href="words.html#instancing">instancing</a>).</li>
+        <li><b>Out of sight, out of mind.</b> Cubes behind the camera, or hidden in the fog, are skipped.</li>
+        <li><b>Grass that sways</b> in the wind is moved by the graphics card itself, not by the game.</li>
+        <li><b>The stars</b> twinkle on the graphics card too, one star at a time, not pixel by pixel.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="shader-code" data-lv="3">
+  <h2>The real code: a tiny shader</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/render/fade.js"><code>const DITHER = `
+  if (uFade &lt; 0.999 || uFadeInv > 0.5 || uRangeFade &lt; 0.999) {
+    const float B[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
+    ivec2 q = ivec2(mod(gl_FragCoord.xy, 4.0));
+    float threshold = (B[q.x + q.y * 4] + 0.5) / 16.0;
+    bool keep = threshold &lt; uFade;
+    if (keep == (uFadeInv > 0.5) || threshold >= uRangeFade) discard;
+  }`;</code></pre>
+    <div>
+      <p>This is <b>GLSL</b>, the language of shaders. This little program runs on the graphics card <b>for every single pixel</b> of a fading cube.</p>
+      <ul>
+        <li><code>gl_FragCoord.xy</code> is the pixel's position on screen. <code>mod(..., 4.0)</code> picks its spot in the 4&times;4 table.</li>
+        <li><code>uFade</code> is how far the fade is (0 to 1), set by the game every frame.</li>
+        <li><code>discard</code> means: don't draw this pixel at all.</li>
+        <li><code>uFadeInv</code> flips the test, for the cube you're leaving. That's why the two never overlap.</li>
+      </ul>
+      <p>The game slips this code into three.js's own materials just before they are built (<code>onBeforeCompile</code>).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="cut-code" data-lv="3">
+  <h2>The real code: the probe</h2>
+  <div class="cols wide-left">
+    <pre data-file="src/game/cut.js (shortened)"><code>const STEP = 0.12;
+
+// height of the first solid on the way from (x,y,z) to the camera (Infinity if the view is clear)
+function blockedAt(x, y, z, top) {
+  const cp = camera.position;
+  let dx = cp.x - x, dy = cp.y - y, dz = cp.z - z;
+  const len = Math.hypot(dx, dy, dz);
+  dx /= len; dy /= len; dz /= len;
+  for (let t = STEP; t &lt; len; t += STEP) {
+    const px = x + dx * t, py = y + dy * t, pz = z + dz * t;
+    if (py > top) break;
+    if (insideSolid(px, pz, py) || viewBlockedAt(state.map, px, py, pz)) return py;
+  }
+  return Infinity;
+}</code></pre>
+    <div>
+      <p>The direction to the camera is divided by its length (<code>dx /= len</code>...). Now it's exactly 1 long, so <code>t</code> counts real distance.</p>
+      <p>Then walk: <code>t = 0.12</code>, <code>0.24</code>, <code>0.36</code>... At each spot, ask the world: is this inside something solid? Or inside a tree crown or a roof (<code>viewBlockedAt</code>)?</p>
+      <p>Above the top of the cube nothing can block, so stop there (<code>break</code>).</p>
+      <p>It's the same idea as the monsters' <a class="portal" href="paths.html#sight">line of sight</a>!</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Drawing the World</h2>
+  <div class="quests">
+    <div class="prompt" data-title="WIDER VIEW" data-stars="1"><q>Make the camera look down a bit steeper, like 55 degrees instead of 44. Show me the number, then I'll tell you if I like it.</q><span class="why">"I'll tell you if I like it": for looks, you are the judge. Try, look, adjust.</span></div>
+    <div class="prompt" data-title="PINK SKY" data-stars="1"><q>Make the sky of the meadow islands theme a sunset: pink at the top and orange at the bottom. Only change colours in src/themes/index.js.</q><span class="why">Data changes are the safest changes: no logic, just values.</span></div>
+    <div class="prompt" data-title="BIGGER HOLE" data-stars="2"><q>The cutaway hole around my hero feels too small when I'm zoomed out. Find where its size is set and make it 30% bigger. Take a screenshot before and after if you can.</q><span class="why">Agents that can run a browser can compare screenshots, a great way to check visual changes.</span></div>
+    <div class="prompt" data-title="RAINBOW FADE" data-stars="3"><q>When I travel through a portal, the new cube dissolves in with a dither pattern. Explain how src/render/fade.js does it. Then try a different pattern: a diamond-shaped wipe from the centre of the screen instead.</q><span class="why">Shaders are hard. Asking for an explanation first means you can follow what the agent does next.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

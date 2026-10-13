@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Magic Numbers · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="peaks">
+<main class="deck">
+
+<section class="slide" id="dice" data-lv="1">
+  <h2>Dice inside the computer</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">Games need dice. Where does the spider stand? Which sword does the chest hold? Is this cube a meadow or a lake?</p>
+      <p>But a computer is an exact machine. It does the same thing every time. It cannot really roll a die!</p>
+      <p>So it uses a trick. It takes a number and puts it through a scrambling formula. Out comes a new number that <i>looks</i> random.
+        Put that one through the formula again, and you get the next one. And so on, forever.</p>
+      <p>The very first number is called the <a class="w" href="words.html#seed">seed</a>. Everything grows from the seed, like a plant.</p>
+    </div>
+    <div class="card">
+      <h3>The big secret</h3>
+      <p>The same seed always gives <b>exactly the same</b> numbers, in the same order.</p>
+      <p>So the same seed gives the same world: the same hills, the same rivers, the same monsters in the same places.</p>
+      <p>Try it in the game: <a href="../index.html?seed=123"><code>?seed=123</code></a> and then <a href="../index.html?seed=124"><code>?seed=124</code></a>.
+        Visit them twice. The town is always there, but the cubes behind it change with the seed.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="try-seeds" data-lv="1">
+  <h2>Try it: same seed, same dice</h2>
+  <p>Seed A and seed B start the same. Roll a few times: the seeded rows are the same every time. The bottom row uses the browser's own <code>Math.random()</code>, which picks a new secret seed itself, so it changes.</p>
+  <div class="demo real" data-demo="seeds"></div>
+  <p class="small muted">This uses the game's real dice, the function <code>mulberry32</code> from <code>src/core/util.js</code>.</p>
+</section>
+
+<section class="slide" id="why" data-lv="2">
+  <h2>Why "not really random" is great</h2>
+  <div class="cols3">
+    <div class="card"><h3>Hunting bugs</h3><p>If a bridge is broken in world 123, a developer (or an AI helper) can open world 123 and see the exact same broken bridge. Fixing a bug you cannot see again is almost impossible.</p></div>
+    <div class="card"><h3>Tests</h3><p>The game's tests build hundreds of worlds with fixed seeds and check them. Because the seeds are fixed, a test that passes today passes tomorrow, unless the code changed.</p></div>
+    <div class="card"><h3>No cheating</h3><p>What a monster drops is decided by the world seed and the monster's name. If you die and the monster comes back, it drops <b>the same thing</b> again. Dying on purpose does not give you better loot!</p></div>
+  </div>
+</section>
+
+<section class="slide" id="streams" data-lv="2">
+  <h2>Every cube gets its own dice</h2>
+  <div class="cols wide-right">
+    <div>
+      <p>If the whole world used one row of dice, building cube A first or cube B first would change both of them. Messy!</p>
+      <p>So every cube makes its <b>own</b> seed: it mixes the world seed with its own name, like <code>"2,-1,0"</code> (that is: 2 east, depth 1, 0 south).</p>
+      <p>The mixer is called a <a class="w" href="words.html#hash">hash</a>: a formula that turns anything into a number that looks random. A tiny change in the name gives a totally different number.</p>
+      <p>The walls between cubes, the monsters, the loot and the decorations get their own streams too.</p>
+    </div>
+    <div class="demo real" data-demo="seeds" data-mode="cubes"></div>
+  </div>
+</section>
+
+<section class="slide" id="weighted" data-lv="2">
+  <h2>A bag of marbles</h2>
+  <p>Not everything should be equally likely. A <b>rare</b> sword should be rare! So the game uses <a class="w" href="words.html#weight">weights</a>:
+    imagine a bag with 24 grey marbles (Junk), 40 white (Common), 22 green (Uncommon) and 8 blue (Rare). Grab one without looking.</p>
+  <div class="demo real" data-demo="marbles"></div>
+  <p class="small muted">The game uses this for almost every choice: which kind of cube, which archetype, which monster, which sword, which name.</p>
+</section>
+
+<section class="slide" id="mulberry" data-lv="3">
+  <h2>The real dice: <code>mulberry32</code></h2>
+  <div class="cols wide-left">
+    <pre data-file="src/core/util.js"><code>export function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}</code></pre>
+    <div>
+      <p>Don't worry about every symbol. Here is the idea:</p>
+      <ul>
+        <li><code>mulberry32(seed)</code> gives you a <b>function</b>. Each time you call it, you get the next number between 0 and 1.</li>
+        <li>Inside, <code>a</code> remembers where we are. Each call adds a big odd number to it.</li>
+        <li><code>Math.imul</code>, <code>^</code> and <code>&gt;&gt;&gt;</code> multiply, flip and shift the bits: they shuffle the number like a deck of cards.</li>
+        <li>Dividing by 4294967296 (that is 2<sup>32</sup>) squeezes the result between 0 and 1.</li>
+      </ul>
+      <p>To roll a die: <code>Math.floor(R() * 6) + 1</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="pick-code" data-lv="3">
+  <h2>The real marble bag</h2>
+  <div class="cols">
+    <div>
+      <pre data-file="src/world/world.js"><code>// how a cube picks its archetype (chasm, spire, mesa, ...)
+function archetype(theme, kind, R) {
+  const w = Object.entries(theme.arche)
+    .map(([a, v]) => [a, v * (LEAN[kind]?.[a] ?? 1)]);
+  let r = R() * w.reduce((s, [, v]) => s + v, 0);
+  for (const [a, v] of w) if ((r -= v) < 0) return a;
+  return 'plain';
+}</code></pre>
+    </div>
+    <div>
+      <p>Read it like the marble demo:</p>
+      <ol class="steps">
+        <li><code>w</code> is the list of choices and their weights. The theme sets them, and the kind of cube <i>leans</i> them: a lake cube makes islands three times more likely.</li>
+        <li><code>R() * sum</code> throws the needle onto the line.</li>
+        <li>The loop walks along: subtract each weight. When we go below zero, that's our pick.</li>
+        <li>The last line is a safety net that should never be needed.</li>
+      </ol>
+      <a class="portal" href="world.html#archetypes">Archetypes in the world room</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quests" data-lv="1">
+  <h2>Prompt quests: Magic Numbers</h2>
+  <div class="quests">
+    <div class="prompt" data-title="SEED DETECTIVE" data-stars="1"><q>How does the game pick its world seed when I do not put ?seed= in the address? Explain it simply and show me the code.</q><span class="why">Hint: search for "seed" in src/game/state.js.</span></div>
+    <div class="prompt" data-title="MORE ISLANDS" data-stars="2"><q>In the meadow theme, make archipelago (island) cubes twice as common as now. Show me the weights before and after.</q><span class="why">Hint: the "arche" weights in src/themes/index.js.</span></div>
+    <div class="prompt" data-title="LUCKY DAY" data-stars="2"><q>Explain how the weights in src/core/gear/rarities.js decide how rare swords are. Then make Rare swords a little more common, run the loot table tool, and show me how the odds changed.</q><span class="why">"node tools/loot-table.mjs" prints the odds. Asking for before and after numbers is a good habit.</span></div>
+  </div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

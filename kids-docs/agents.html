@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Building with AI Helpers · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+</head>
+<body data-theme="core">
+<main class="deck">
+
+<section class="slide" id="agent" data-lv="1">
+  <h2>What is a coding agent?</h2>
+  <div class="cols">
+    <div>
+      <p class="lead">A coding <a class="w" href="words.html#agent">agent</a> is an AI helper that can work on a program with you. You tell it what you want, in normal words. It does the typing.</p>
+      <p>Unlike a chatbot that only talks, an agent can:</p>
+      <ul>
+        <li><b>read</b> all the files of the game,</li>
+        <li><b>change</b> them,</li>
+        <li><b>run</b> commands: the tests, the game's tools, Blender,</li>
+        <li>and sometimes <b>look</b> at screenshots and pictures.</li>
+      </ul>
+      <p>Cube Crawler was built this way: a person with ideas and taste, working with agents. About 100 saved steps in three days.</p>
+    </div>
+    <div class="card">
+      <h3>But remember</h3>
+      <p>The agent is fast and has read a lot of code. But it was not there when the game was planned. It only knows:</p>
+      <ul>
+        <li>what is written in the files,</li>
+        <li>what you tell it.</li>
+      </ul>
+      <p>It can misunderstand you. It can make mistakes, and sometimes it is very sure about something wrong. That's why you are still the boss: <b>you</b> decide what the game should be, and <b>you</b> check if it's fun.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="loop" data-lv="1">
+  <h2>The building loop</h2>
+  <p>Working with an agent is a loop, a bit like the game loop:</p>
+  <ol class="steps">
+    <li><b>Ask:</b> say what you want. One thing at a time.</li>
+    <li><b>Understand:</b> the agent reads the code. (Ask it to explain what it found!)</li>
+    <li><b>Change:</b> it edits the files.</li>
+    <li><b>Check:</b> it runs the tests: little programs that check the game still works.</li>
+    <li><b>Play:</b> <i>you</i> play the game and look. Does it feel right? Is it fun?</li>
+    <li><b>Keep or undo:</b> happy? Save it (a "commit"). Not happy? Say what's wrong, or undo it.</li>
+  </ol>
+  <p>Then the next idea. Small loops are better than big ones: if something breaks, you know which step broke it.</p>
+</section>
+
+<section class="slide" id="good-prompt" data-lv="1">
+  <h2>What makes a good prompt</h2>
+  <div class="cols">
+    <div class="card" style="border-color:#8a3c3c">
+      <h3 style="color:#ff9a8a">Not so good</h3>
+      <p class="mono small">"make the game better"</p>
+      <p class="small">Better how? The agent has to guess, and it will guess something you didn't want.</p>
+      <p class="mono small">"spiders are broken"</p>
+      <p class="small">Broken how? Where? When?</p>
+      <p class="mono small">"add multiplayer, a shop, crafting and a dragon"</p>
+      <p class="small">Four huge things at once. If it goes wrong, where do you even start?</p>
+    </div>
+    <div class="card" style="border-color:#3c8a4a">
+      <h3 style="color:#8fe39a">Good</h3>
+      <ul class="small">
+        <li><b>What</b> you want: "Make spiders notice me from further away, about 5 cells instead of 3."</li>
+        <li><b>Where</b>, if you know: "I think it's the aggro number in src/core/enemies.js."</li>
+        <li><b>How to check:</b> "Run the tests."</li>
+        <li><b>Limits:</b> "Only spiders, don't change the other monsters."</li>
+        <li><b>Show me:</b> "Tell me what you changed."</li>
+      </ul>
+      <p class="small">For bugs: say <b>what you did</b>, <b>what happened</b> and <b>what you expected</b>. Give the seed: "seed 123, depth 4, I jumped from the bridge into lava and didn't die."</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="builder" data-lv="1">
+  <h2>Try it: build a prompt</h2>
+  <p>Pick an idea (or type your own), and tick the good habits. Then copy the prompt and try it with an agent!</p>
+  <div class="demo" data-demo="prompt"></div>
+</section>
+
+<section class="slide" id="agent-friendly" data-lv="2">
+  <h2>Why this game is easy for agents</h2>
+  <p>A game can be built so that agents (and people!) find their way around easily. Cube Crawler does a lot of that:</p>
+  <div class="cols3 small">
+    <div class="card"><h3>Small files, one job</h3><p>194 small files, each starting with a comment that says what it does. An agent can find the right file quickly, and read all of it.</p></div>
+    <div class="card"><h3>Notes for later</h3><p><code>README.md</code> and <code>docs/</code> explain how things work and <i>why</i>: the numbers, the rules, the trade-offs. Agents read them before changing things. The music folder even has a style guide!</p></div>
+    <div class="card"><h3>Rules apart from pictures</h3><p>The rules are plain math in <code>src/core/</code>. They can be tested in a split second, without a screen. <a href="start.html#rules-vs-pictures">More</a></p></div>
+    <div class="card"><h3>Lots of tests</h3><p><code>npm test</code> runs over 160 tests, some on hundreds of generated cubes: can every world be walked to depth 20? Does a spider take two hits? Do the town's buildings overlap?</p></div>
+    <div class="card"><h3>Repeatable worlds</h3><p>Seeds make every world repeatable. "Seed 123 has a bug" is something an agent can look at. <a href="random.html#why">More</a></p></div>
+    <div class="card"><h3>Tools to look</h3><p><code>?dev=1</code> to jump around, <kbd>P</kbd> to show routes, preview pictures of models, tools that print loot odds and simulate whole games.</p></div>
+  </div>
+</section>
+
+<section class="slide" id="tests" data-lv="2">
+  <h2>Tests: inspectors that never get tired</h2>
+  <div class="cols">
+    <div>
+      <p>A <a class="w" href="words.html#test">test</a> is a small program that uses the game's code and checks one thing. For example:</p>
+      <pre data-file="tests/movement.test.js"><code>test('running ramps up over RUN_RAMP, passing walking pace early, so taps stay precise', () => {
+  stand();
+  const walk = until(WALK_SPEED, 1, 0, true);
+  assert.ok(walk.t &lt; RUN_RAMP * 0.75, 'walking pace after about 70% of the ramp: ' + walk.t);
+  stand();
+  const run = until(RUN_SPEED, 1, 0, true);
+  assert.ok(Math.abs(run.t - RUN_RAMP) &lt;= DT, 'full run after RUN_RAMP: ' + run.t);
+});</code></pre>
+      <p>Type <code>npm test</code>, and all of them run. Green: all good. Red: something you changed broke something, maybe something you didn't even think about.</p>
+    </div>
+    <div class="card">
+      <h3>A true story</h3>
+      <p>The hero used to run at 4.1 cells per second. It felt too fast, so the run was slowed down to 2.8.</p>
+      <p>And then a test failed! It checked that, when you start running, you reach walking speed after about <i>half</i> of the speed-up time. With the slower run, that now took 70%.</p>
+      <p>Was that bad? No, it was fine, so the test was updated to say 70%, and the notes in <code>docs/combat.md</code> too. Three files, one small saved step.</p>
+      <p class="small muted">Lesson: a failing test is not always a bug. It's a question: "did you mean to change this?"</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="git" data-lv="2">
+  <h2>Save points: git</h2>
+  <div class="cols">
+    <div>
+      <p>Games have save points. Code has <a class="w" href="words.html#git">git</a>. Every time something works, you save a <b>commit</b>: a snapshot of all files, with a message saying what changed.</p>
+      <p>If the agent's next change goes wrong, you can always go back to the last commit. That makes it safe to try wild ideas!</p>
+      <p>Useful things to ask:</p>
+      <ul>
+        <li>"Show me what changed since the last commit." (<code>git diff</code>)</li>
+        <li>"Undo all changes since the last commit."</li>
+        <li>"Commit this with a good message."</li>
+      </ul>
+    </div>
+    <div>
+      <p>Some real commit messages from this game:</p>
+      <pre><code>feat(loot): add generated weapon drops with rarity glows and floor panel
+feat(player): get up from ragdolls with authored clips
+fix(player): keep feet planted while getting up
+feat(audio): give every theme its own song
+fix(player): slow the run and match its cycle and footsteps
+feat(dev): spawn any enemy kind from the dev panel</code></pre>
+      <p class="small">"feat" means a new feature, "fix" a repair. The word in brackets is the part of the game. Short, clear, one thing each.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="stuck" data-lv="2">
+  <h2>When it goes wrong</h2>
+  <div class="cols">
+    <ul>
+      <li><b>Describe what you see, exactly.</b> "The spider walks through the wall on depth 3, seed 55, near the stairs." Screenshots help a lot.</li>
+      <li><b>Ask for the cause first.</b> "Find out why this happens, but don't fix it yet." Then decide together.</li>
+      <li><b>Ask "why?"</b> If you don't understand a change, ask. A good change can be explained simply.</li>
+    </ul>
+    <ul>
+      <li><b>Make it smaller.</b> If a big change keeps failing, undo it and do just the first part.</li>
+      <li><b>Start fresh.</b> If a conversation gets confused, start a new one with a clearer prompt. Mention what you learned.</li>
+      <li><b>Write it down.</b> When you figure something out, ask the agent to add it to the docs. The next agent (or you, next month) will thank you.</li>
+    </ul>
+  </div>
+  <div class="note agent"><b>Remember</b> You don't need to understand every line of code to build a game this way. But the more you understand, the better your prompts get, and the better your game gets. That's what this guide is for!</div>
+</section>
+
+<section class="slide" id="example" data-lv="3">
+  <h2>A real change, from idea to commit</h2>
+  <div class="cols wide-left">
+    <pre data-file="git show 3e16e07 (shortened)"><code>fix(player): slow the run and match its cycle and footsteps
+
+ docs/combat.md         | 4 ++--
+ src/core/constants.js  | 6 +++---
+ tests/movement.test.js | 2 +-
+
+--- a/src/core/constants.js
++++ b/src/core/constants.js
+-export const WALK_SPEED = 1.9, RUN_SPEED = 4.1, SWIM_SPEED = 0.9;
++export const WALK_SPEED = 1.9, RUN_SPEED = 2.8, SWIM_SPEED = 0.9;
+-export const WALK_ANIM = 1.4, RUN_ANIM = 3.2;
++export const WALK_ANIM = 1.4, RUN_ANIM = 2.8;   // the run: its authored stride, no stretch
+
+--- a/tests/movement.test.js
++++ b/tests/movement.test.js
+-  assert.ok(walk.t &lt; RUN_RAMP * 0.55, 'walking pace after about half the ramp: ' + walk.t);
++  assert.ok(walk.t &lt; RUN_RAMP * 0.75, 'walking pace after about 70% of the ramp: ' + walk.t);</code></pre>
+    <div>
+      <p>This is how a change looks to git. Lines with <code>-</code> were removed, lines with <code>+</code> added.</p>
+      <p>The idea: "the run is too fast, and the legs don't match the speed". The change:</p>
+      <ol class="steps">
+        <li>the rule: <code>RUN_SPEED</code> from 4.1 to 2.8,</li>
+        <li>the look: the run animation now plays at the same pace (<code>RUN_ANIM</code>), so the feet don't slide,</li>
+        <li>the check: the test, updated on purpose,</li>
+        <li>the notes: <code>docs/combat.md</code>.</li>
+      </ol>
+      <p>Rule, look, check, notes. A good change usually touches all four.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="quest-board" data-lv="1">
+  <h2>Your quest board</h2>
+  <p>Every room of this guide ends with prompt quests. Here they all are. Start with one-star quests, and work your way up.</p>
+  <div class="cols3">
+    <a class="portal" href="start.html#quests">Town: tours and greetings</a>
+    <a class="portal" href="loop.html#quests">Heartbeat: slow motion</a>
+    <a class="portal" href="random.html#quests">Magic numbers: luck</a>
+    <a class="portal" href="world.html#quests">World: new archetypes</a>
+    <a class="portal" href="paths.html#quests">Paths: stubborn spiders</a>
+    <a class="portal" href="physics.html#quests">Physics: double jump</a>
+    <a class="portal" href="combat.html#quests">Combat: spin attack</a>
+    <a class="portal" href="enemies.html#quests">Monsters: new kinds</a>
+    <a class="portal" href="loot.html#quests">Loot: new affixes</a>
+    <a class="portal" href="drawing.html#quests">Drawing: sunset skies</a>
+    <a class="portal" href="sound.html#quests">Sound: fanfares</a>
+    <a class="portal" href="art.html#quests">Art: your own monster</a>
+  </div>
+  <div class="note agent" style="margin-top:16px"><b>Your own game</b> Everything in this guide works for a new game too: a game loop, seeds, a puzzle world, paths, a state machine, a loot table, juice. Start tiny (one room, one monster, one sword), and grow it one small loop at a time.</div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

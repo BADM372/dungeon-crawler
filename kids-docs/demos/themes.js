@@ -1,0 +1,19 @@
+// Every depth's look, read straight from the game's theme tables (src/themes/index.js and
+// caves.js): the sky, the colours of the ground by height, the river, the song.
+import { THEMES } from '../../src/themes/index.js';
+import { MAX_DEPTH } from '../../src/themes/depth.js';
+import { html } from '../deck.js';
+
+const FLUID = { 1: ['#2e86de', 'water'], 2: ['#ff5a00', 'lava'], 3: ['#7dff3a', 'acid'] };
+
+export default function mount(el) {
+  const rows = THEMES.map((t, i) => {
+    const to = (THEMES[i + 1]?.at ?? MAX_DEPTH + 1) - 1, sky = t.light.sky;
+    const sw = (c, w = 22) => `<i style="display:inline-block;width:${w}px;height:16px;background:${c};vertical-align:middle"></i>`;
+    return `<tr><td class="mono">${t.at === to ? t.at : `${t.at}\u2013${to}`}</td><td><b>${t.name}</b>${t.cave ? ' <span class="muted small">(cave)</span>' : ''}</td>
+      <td><i style="display:inline-block;width:60px;height:16px;vertical-align:middle;background:linear-gradient(${sky[0]},${sky[1]})"></i></td>
+      <td>${t.top.map(([, c]) => sw(c, 14)).join('')}</td><td>${t.side.map(([, c]) => sw(c, 14)).join('')}</td>
+      <td>${sw(FLUID[t.river][0], 14)} <span class="small">${FLUID[t.river][1]}</span></td><td class="mono small">${t.music}</td></tr>`;
+  });
+  html(el, `<div style="overflow:auto"><table><tr><th>DEPTH</th><th>THEME</th><th>SKY</th><th>GROUND (LOW TO HIGH)</th><th>CLIFFS</th><th>RIVERS</th><th>SONG</th></tr>${rows.join('')}</table></div>`);
+}
