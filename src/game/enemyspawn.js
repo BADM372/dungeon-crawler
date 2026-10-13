@@ -6,7 +6,7 @@
 // Each pack draws its kind from the roster's weights (core/spawns.js) on a stream of its own,
 // so the kinds never move a spot. A spot carries its kind's profile as `kind`.
 import { N } from '../core/constants.js';
-import { enemyRoll, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS } from '../core/enemies.js';
+import { enemyRoll, coinRange, guardianLevel, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS } from '../core/enemies.js';
 import { guardianId } from '../core/guardians.js';
 import { population } from '../core/spawns.js';
 import { mulberry32, hash32 } from '../core/util.js';
@@ -69,10 +69,11 @@ export function guardianSpots(map) {
   const role = guard.role ?? 'descent';
   const chosen = species[Math.floor(R() * species.length)];
   const kind = (role === 'descent' ? DESCENT_GUARDIAN_KINDS : GUARDIAN_KINDS)[chosen];
-  const f = guard.floor, roll = enemyRoll(map, kind, f.id);
-  const level = roll.level + 6 + Math.floor(map.depth / 3) + (role === 'descent' ? 3 : 0);
-  const spots = [{ ...roll, id: guardianId(map.key), level,
-    coinDrop: Math.round(roll.coinDrop * (1 + .25 * (level - 1)) / (1 + .25 * (roll.level - 1))),
+  // the guardian's level follows the depth alone (core/enemies.js guardianLevel); its coins
+  // still come from the arena's seeded roll
+  const f = guard.floor, R2 = mulberry32(hash32(map.seed ^ 0x6a7d1b)), level = guardianLevel(map.depth, role);
+  const [lo, hi] = coinRange(kind, level);
+  const spots = [{ id: guardianId(map.key), level, coinDrop: lo + Math.floor(R2() * (hi - lo + 1)),
     guardian: true, guardianRole: role, bossPlaceholder: role === 'descent', guardianGate: map.key, kind, f, x: guard.x, z: guard.z, y: guard.y, yaw: guard.yaw }];
   const used = new Set([f.id]), entrance = map.portals.find(p => p.kind === 'side');
   const requests = [];

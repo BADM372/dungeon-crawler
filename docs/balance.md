@@ -1,0 +1,104 @@
+# Balance
+
+How strong the player, the weapons and the enemies are, and why. The numbers live in code;
+this explains the targets they were tuned to and how to check them. `node tools/balance.mjs
+[seeds] [kill share]` plays runs through the real tables (layouts, rosters, levels, XP, drops,
+chests, combat stats) and prints where the player stands on arrival at every depth.
+
+## Targets
+
+- **The player stays about two levels above the depth.** Enemies are level `depth` (1 at the
+  surface). A player who kills about 60% of what they meet arrives at depth 10 at level 12 and
+  at the core at level 22. Clearing more barely helps: kills more than two levels below the
+  player pay less (`xpScale`), so 90% gives `depth + 3`, 30% gives `depth + 1`.
+- **Fights keep their shape all the way down.** With the best weapon found so far, on arrival:
+
+  | Enemy | Hits to kill | Its blows to kill the player |
+  |---|---:|---:|
+  | Spiders (every kind) | 1 | 5–8 |
+  | Snakes | 1–2 | 4–7 |
+  | Octonauts | 2–3 | 3.5–5 |
+  | Fire-face, Fire-cat | 3 | 4–4.5 |
+  | Stunders | 3–5 | 2.5–4 |
+  | Triangles | 3–5 | 3–4.5 |
+
+  Enemy health grows with the player's damage, and enemy damage with the player's health, so
+  these hold from depth 1 to 20. What gets harder going down is the roster: stronger kinds,
+  more of them, and the heavy and ranged species.
+- **Guardians are set pieces.** At full damage per second a side guardian takes about 6 s and
+  a descent guardian about 12 s at every depth (the first ones on the road a bit less, the last
+  ones a bit more as top-tier gear comes in). Trading blows without dodging costs about half
+  your health against a side guardian and about one and a half times against a descent
+  guardian: dodge its telegraphed attacks, use the poise windows, or drink.
+- **Loot matters, and keeps mattering.** Weapon damage grows with item level, so a drop from
+  further down beats an older one of the same rarity; a Rare catches up with a Legendary about
+  five depths later. Guardians and chests pay out the good stuff, ordinary enemies now and then.
+  Legendary and better stay finds (under 4% of deep weapon drops).
+
+## The model
+
+**Enemies** (`src/core/enemies.js`): every species has level-1 values and the same growth per
+level, `GROWTH`: health +17%, damage +10%, XP and coins +25%. Kinds multiply the level-1 values.
+Levels: `depthLevel(depth)` = depth (1 at the surface), ±1 per cube and species from depth 2.
+
+**Guardians** stand one (side) or two (descent) levels above the depth, from depth 1 on.
+`GUARDIAN_TIERS` give each tier floors at level 1, so the promoted species decides how it
+fights, not how strong it is:
+
+| Tier | Health | Damage per second | XP | Poise |
+|---|---|---|---:|---:|
+| Side | ≥ 550, ≥ 3.5× the species' | ≥ 9, ≥ 1.15× the species' blows | 260 | 1.4 s |
+| Descent | ≥ 1000, ≥ 6.5× the species' | ≥ 11.5, ≥ 1.45× the species' blows | 650 | 2 s |
+
+Damage per second (`threat`) is the blow averaged over a species' attacks (a projectile's burn
+included) over its attack cycle (`attackCycle`: attack time plus cooldown).
+
+**Poise**: a hit staggers an enemy (interrupts its wind-up, stuns it briefly). Then it is
+poised for `profile.poise` seconds, and lighter hits only hurt it. A blow of at least a
+quarter of its health (`HEAVY_HIT`) staggers anyway. Spiders and snakes have no poise, the
+Fire-cat 0.4 s, Octonaut and Fire-face 0.8 s, Triangle 1.2 s, Stunder 1.5 s, guardians at
+least their tier's. Before poise, any weapon chained faster than an enemy's 0.45 s recovery and
+held it in place for good, guardians included.
+
+**The player** (`src/core/progression.js`, `PLAYER`):
+
+- A level costs `500 + 1000 (L − 1) + 60 (L − 1)²` XP: level 2 after a handful of snakes, level
+  3 by the end of the road out of town, then about one level per depth.
+- Health `100 + 10 per level`; weapon damage +2% per level.
+- Regeneration: 4% of the maximum per second after 5 s without damage.
+- Kill XP × `xpScale(player, enemy)`: full up to two levels below the player, then −20% per
+  level (at least 10%); +10% per level above the player (at most +50%).
+- Health potions restore 40% of the maximum, one a second. A run starts with three on quick
+  bar slot 2; picked-up potions go on the bar by themselves.
+
+**Weapons** (`src/core/items.js`, `src/core/gear/`): a base's damage is grown by item level
+(+5% a level, `ILVL_DAMAGE`), scaled by rarity, then changed by affixes. `interval` is the real
+time between chained swings (the attack speed); every swing time scales with it. Every weapon
+crits 5% of the time for ×1.5 before affixes. Damage per second rises a little with weight
+(short 72, medium 81, long 81, broad 85, greatsword 91 at item level 1), while heavier bases
+reach further or sweep wider but plant you longer, and only drop deeper down.
+
+**Drops** (`src/core/gear/drops.js`, `src/core/chests.js`): ordinary enemies drop a weapon 5%
+and a potion 3% of the time, × √(their kind's XP / 30), so tougher kinds drop more. Side
+guardians drop a weapon and a potion, descent guardians two of each, with rarity floors. Four
+chests per depth (two basic, one uncommon, one rare or exceptional) hold coins, potions and
+one or two weapons a level or two above the depth. Per depth that is about 10 potions and
+15 weapons, most of the useful ones from guardians and chests.
+
+## Tuning
+
+Change a number, then run `node tools/balance.mjs` and `npm test`. Useful checks:
+
+- *Player level − depth* on arrival (`plvl` vs `elvl`): about 2. If it drifts, adjust the XP
+  curve (`XP_BASE`, `XP_STEP`, `XP_CURVE`) or enemy XP, not the level formula.
+- *xp%* (the share of XP that counted): about 85–100%. Lower means the falloff is doing the
+  work and the curve is too cheap.
+- *Hits to kill* per kind stays flat with depth: `GROWTH.hp` matches the player's damage growth
+  (item level, level bonus, rarity). If deep enemies melt, raise `GROWTH.hp` or lower
+  `ILVL_DAMAGE`.
+- *Guardian seconds and brawl*: tune `GUARDIAN_TIERS`.
+- The rarity odds per item level: `node tools/loot-table.mjs`.
+
+Items keep what they rolled (rarity, item level, affixes) but their stats are computed when
+read, so retuning bases, rarity factors or item-level growth changes weapons already found;
+retuning affix ranges does not.

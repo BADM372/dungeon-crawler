@@ -3,6 +3,8 @@
 Texture-free, flat-shaded, deterministic geometry; reuses props.Mesh and palette.
 Weapons use character.py rig units and grip-centred pivots (runtime scale .55).
 Loot/chests use game cells and ground pivots. All exported roots are at origin.
+The treasure chest is the one animated asset: its lid is a child object on the
+hinge with the Open and Close actions (glTF clips).
 
 MCP: import items; items.main()
 CLI: Blender -b --python blender/items.py -- [output-directory]
@@ -39,6 +41,26 @@ COPPER = '#b87950'
 CREAM = '#e4dcc0'
 GEMS = [('#b94e61', '#ef9b9f'), ('#b7d9df', '#edf3e8'),
         ('#4d9b76', '#a5d5ac'), ('#537fac', '#a2c3dc'), ('#916aaa', '#c7a3d3')]
+PARCHMENT = '#e3cd9b'
+PARCHMENT_EDGE = '#c3a571'
+INK = '#6b4a33'
+VIOLET = '#5d3f80'
+LILAC = '#c4a2e6'
+RIM = '#9a72c4'
+PORTAL = '#2b1d42'
+GLEAM = '#f0e6f5'
+# Chest lid hinge (Blender, before the ground shift, which is 0 for the chest) and its clips:
+# (frame, lid angle in degrees about +X, handle type); negative opens it backwards.
+CHEST_HINGE = (0, .30, .445)
+CHEST_FPS = 24
+CHEST_CLIPS = {
+    # unlatch with a little rattle, swing up past the rest angle, settle back onto it
+    'Open': [(0, 0, 'AUTO_CLAMPED'), (3, -6, 'AUTO_CLAMPED'), (5, -2, 'AUTO_CLAMPED'),
+             (15, -114, 'AUTO_CLAMPED'), (19, -103, 'AUTO_CLAMPED'), (23, -108, 'AUTO_CLAMPED')],
+    # a small lift off the stop, an accelerating fall, a slam and a short bounce
+    'Close': [(0, -108, 'AUTO_CLAMPED'), (4, -113, 'AUTO_CLAMPED'), (13, 0, 'VECTOR'),
+              (15, -5, 'AUTO_CLAMPED'), (18, 0, 'AUTO_CLAMPED')],
+}
 
 
 class Mesh(props.Mesh):
@@ -46,6 +68,8 @@ class Mesh(props.Mesh):
         super().__init__(random.Random(seed))
         self.slots = []
         self.slot = 0
+        # moving parts: [(name suffix, Mesh, pivot)], child objects pivoting at `pivot`
+        self.parts = []
 
     def face(self, ids, color, glow=False, shade=1):
         super().face(ids, color, False, shade)
@@ -60,10 +84,21 @@ def surface(name, roughness, metallic):
     return mat
 
 
-def finish(m, name, info, collection):
-    if info['attach'] == 'ground':
-        dz = -min(v[2] for v in m.vertices)
-        m.vertices = [(x, y, z + dz) for x, y, z in m.vertices]
+def remove_item(name):
+    old = bpy.data.objects.get(name)
+    if not old:
+        return
+    if not old.get('cube_crawler_item') and not old.get('cube_crawler_part'):
+        raise ValueError(f'Refusing to replace unrelated object: {name}')
+    for child in list(old.children):
+        remove_item(child.name)
+    data = old.data
+    bpy.data.objects.remove(old, do_unlink=True)
+    if data.users == 0:
+        bpy.data.meshes.remove(data)
+
+
+def make_mesh(m, name):
     triangles, colors, slots = [], [], []
     for face, color, slot in zip(m.faces, m.colors, m.slots):
         for i in range(1, len(face) - 1):
@@ -73,14 +108,6 @@ def finish(m, name, info, collection):
                 triangles.append(tri)
                 colors.append(color)
                 slots.append(slot)
-    old = bpy.data.objects.get(name)
-    if old:
-        if not old.get('cube_crawler_item'):
-            raise ValueError(f'Refusing to replace unrelated object: {name}')
-        data = old.data
-        bpy.data.objects.remove(old, do_unlink=True)
-        if data.users == 0:
-            bpy.data.meshes.remove(data)
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(m.vertices, [], triangles)
     mesh.update()
@@ -99,12 +126,71 @@ def finish(m, name, info, collection):
         poly.use_smooth = False
         for loop in poly.loop_indices:
             attr.data[loop].color = color
-    obj = bpy.data.objects.new(name, mesh)
+    return mesh
+
+
+def finish(m, name, info, collection):
+    dz = 0
+    if info['attach'] == 'ground':
+        dz = -min(v[2] for part in [m] + [p[1] for p in m.parts] for v in part.vertices)
+        m.vertices = [(x, y, z + dz) for x, y, z in m.vertices]
+    remove_item(name)
+    obj = bpy.data.objects.new(name, make_mesh(m, name))
     collection.objects.link(obj)
     obj['cube_crawler_item'] = True
     for key, value in info.items():
         obj[key] = value
+    for suffix, part, pivot in m.parts:
+        # vertices relative to the pivot, so the part rotates about it
+        part.vertices = [(x - pivot[0], y - pivot[1], z - pivot[2]) for x, y, z in part.vertices]
+        child = bpy.data.objects.new(f'{name}_{suffix}', make_mesh(part, f'{name}_{suffix}'))
+        collection.objects.link(child)
+        child['cube_crawler_part'] = True
+        child.parent = obj
+        child.location = (pivot[0], pivot[1], pivot[2] + dz)
     return obj
+
+
+def part_vertices(obj):
+    """The asset's vertices in root space at rest, moving parts included."""
+    out = [v.co.copy() for v in obj.data.vertices]
+    for child in obj.children:
+        out += [child.location + v.co for v in child.data.vertices]
+    return out
+
+
+def lid_clips(lid):
+    """The chest's Open and Close actions on the lid, owned by muted NLA tracks for export."""
+    lid.animation_data_create()
+    for track in list(lid.animation_data.nla_tracks):
+        lid.animation_data.nla_tracks.remove(track)
+    for name, keys in CHEST_CLIPS.items():
+        old = bpy.data.actions.get(name)
+        if old:
+            bpy.data.actions.remove(old)
+        act = bpy.data.actions.new(name)
+        lid.animation_data.action = act
+        for frame, angle, _ in keys:
+            lid.rotation_euler = (math.radians(angle), 0, 0)
+            lid.keyframe_insert('rotation_euler', frame=frame)
+        for layer in act.layers:
+            for strip in layer.strips:
+                for bag in strip.channelbags:
+                    for curve in bag.fcurves:
+                        for point, (_, _, handle) in zip(curve.keyframe_points, keys):
+                            point.handle_left_type = point.handle_right_type = handle
+                        curve.update()
+        act.use_frame_range = True
+        act.frame_start, act.frame_end = 0, keys[-1][0]
+        act['fps'] = CHEST_FPS
+        act['duration'] = keys[-1][0] / CHEST_FPS
+        track = lid.animation_data.nla_tracks.new()
+        track.name, track.mute = name, True
+        strip = track.strips.new(name, 0, act)
+        strip.action_slot = act.slots[0]
+        strip.extrapolation = 'NOTHING'
+    lid.animation_data.action = None
+    lid.rotation_euler = (0, 0, 0)
 
 
 def stick(m, v):
@@ -317,9 +403,84 @@ def potion(m, v):
     m.tube([(-.045, y + .015, z + .045), (-.045, y + .023, z + .085)], .006, tint, n=4)
 
 
-def chest(m, v):
-    # Hollow planked box with a barrel lid. Open variant includes visible loot.
+def scroll(m, v=0):
+    """Town portal scroll: a parchment sheet between two rollers, sloping down towards the
+    viewer from the fat back roll, with a violet portal sigil and a dangling wax seal."""
+    back, front = (.09, .08), (-.25, .036)        # roll centres (y, z); radii are the z
+    # Rolls of parchment on wooden rods with brass knobs; the back one holds most of the sheet.
+    for (y, r), half, rod in ((back, .21, .017), (front, .2, .013)):
+        m.lathe((-half, y, r), [(0, r * .9), (.008, r), (2 * half - .008, r), (2 * half, r * .9)],
+                PARCHMENT, n=10, jitter=0, axis=(1, 0, 0), colors=[PARCHMENT_EDGE, PARCHMENT, PARCHMENT_EDGE])
+        for side in (-1, 1):
+            # rolled-up layers showing on the ends
+            m.lathe((side * half, y, r), [(0, r * .66), (.004, r * .66)], PARCHMENT_EDGE,
+                    n=10, jitter=0, axis=(side, 0, 0))
+            m.lathe((side * half, y, r), [(0, r * .3), (.007, r * .3)], '#a88c62',
+                    n=8, jitter=0, axis=(side, 0, 0))
+            m.lathe((side * half, y, r), [(0, rod), (.035, rod)], WOOD, n=6, jitter=0, axis=(side, 0, 0))
+            m.slot = 1
+            m.lathe((side * (half + .035), y, r), [(0, rod * 1.2), (.008, rod * 1.9), (.026, rod * 1.9),
+                    (.036, rod * .9)], GOLD, n=8, jitter=0, axis=(side, 0, 0))
+            m.slot = 0
+    # The sheet leaves the top of the back roll and runs down onto the front one.
+    p0, p1 = Vector((0, back[0], back[1] + back[1] - .006)), Vector((0, front[0] + .012, front[1] * 2 - .004))
+    along = (p1 - p0).normalized()
+    normal = Vector((0, -along.z, along.y))
+    if normal.z < 0:
+        normal = -normal
+    t, half = .009, .2
+    ids = [m.vert(p + Vector((x, 0, 0)) + normal * dz) for p in (p0, p1)
+           for x in (-half, half) for dz in (-t / 2, t / 2)]
+    # ids: p0(-x lo, -x hi, +x lo, +x hi), p1(...)
+    for f, color in [((1, 3, 7, 5), PARCHMENT), ((0, 4, 6, 2), PARCHMENT_EDGE),
+                     ((0, 1, 5, 4), PARCHMENT_EDGE), ((2, 6, 7, 3), PARCHMENT_EDGE),
+                     ((0, 2, 3, 1), PARCHMENT_EDGE), ((4, 5, 7, 6), PARCHMENT_EDGE)]:
+        m.face([ids[i] for i in f], color)
+    length = (p1 - p0).length
+    centre = p0.lerp(p1, .5)
+
+    def on_sheet(start, lift=0):
+        # local (x, y, z) -> the sheet: x across, y down the slope, z out of the paper
+        for i in range(start, len(m.vertices)):
+            x, y, z = m.vertices[i]
+            m.vertices[i] = tuple(centre + Vector((x, 0, 0)) + along * y + normal * (z + t / 2 + lift))
+
+    # Portal sigil: a dark violet pool in a lilac ring, a two-armed swirl and a pale heart.
+    start = len(m.vertices)
+    m.lathe((0, 0, 0), [(0, .08), (.004, .08)], PORTAL, n=14, jitter=0)   # matte: stays deep
+    m.slot = 2
+    m.ring((0, 0, .004), .086, .008, RIM, n=14, section=4)
+    for arm in (0, math.pi):
+        points = [(r * math.cos(arm + a), r * math.sin(arm + a), .006)
+                  for r, a in [(.013, 0), (.028, .9), (.045, 1.8), (.06, 2.7), (.069, 3.4)]]
+        m.tube(points, [.007, .0075, .007, .006, .0045], LILAC, n=4)
+    m.lathe((0, 0, 0), [(0, .016), (.009, .013), (.012, 0)], GLEAM, n=6, jitter=0)
+    m.slot = 0
+    # inked runes around the sigil, and lines of script above and below it
+    for i in range(4):
+        a = math.pi / 4 + i * math.pi / 2
+        m.box((.114 * math.cos(a), .114 * math.sin(a) * .95, .002), (.016, .016, .004), INK, tilt=a)
+    for y, w in [(-length * .375, .2), (-length * .445, .13), (length * .375, .22), (length * .445, .15)]:
+        m.box((-.01 if w < .2 else 0, y, .002), (w, .007, .004), INK)
+    on_sheet(start)
+    # Wax seal on violet ribbon tails, hanging off the front roll onto the ground.
+    seal = (.1, front[0] - .12, 0)
+    for dx in (-.016, .016):
+        tail = [(seal[0] + dx * .5, front[0] - .022, front[1] * .9), (seal[0] + dx, front[0] - .06, .008),
+                (seal[0] + dx * 1.3, seal[1] + .025, .006)]
+        m.tube(tail, [.006, .006, .005], VIOLET, n=4)
+    m.slot = 2
+    m.lathe(seal, [(0, .036), (.012, .04), (.02, .034)], VIOLET, n=9, jitter=.06)
+    m.ring((seal[0], seal[1], .02), .021, .004, LILAC, n=9, section=3)
+    m.lathe((seal[0], seal[1], .018), [(0, .009), (.006, .006)], GLEAM, n=6, jitter=0)
+    m.slot = 0
+
+
+def chest(m, v=0):
+    # Hollow, empty planked box with a barrel lid on a hinge at the back (its own part,
+    # animated by lid_clips). Things can be put on its floor later (`contents` extra).
     m.box((0, 0, .055), (.94, .60, .11), BARK)
+    m.box((0, 0, .114), (.84, .49, .008), '#5d4128')
     for y in (-.276, .276):
         for i in range(6):
             m.box((-.39 + i * .156, y, .275), (.15, .055, .34), WOOD if i % 2 else '#967049')
@@ -339,23 +500,29 @@ def chest(m, v):
     for x in (-.33, .33):
         for z in (.11, .37):
             m.lathe((x, -.325, z), [(0, .014), (.009, .01)], SILVER, n=6, jitter=0, axis=(0, -1, 0))
+    # hinge knuckles on the back edge
+    for x in (-.2, .2):
+        m.lathe((x - .04, .305, .445), [(0, .018), (.08, .018)], IRON, n=6, jitter=0, axis=(1, 0, 0))
     m.slot = 0
-    start = len(m.vertices)
+    lid = Mesh(m.rng.randrange(1 << 30))
+    m.parts.append(('lid', lid, CHEST_HINGE))
     # Lid cross section: lower edge then nine semicircular points, a convex prism.
     section = [(-.30, .445), (.30, .445)] + [(.30 * math.cos(a), .465 + .19 * math.sin(a))
                for a in [i * math.pi / 8 for i in range(9)]]
     def prism(x0, x1, profile, color):
-        a = [m.vert((x0, y, z)) for y, z in profile]
-        b = [m.vert((x1, y, z)) for y, z in profile]
-        m.face(tuple(reversed(a)), color)
-        m.face(b, color)
+        a = [lid.vert((x0, y, z)) for y, z in profile]
+        b = [lid.vert((x1, y, z)) for y, z in profile]
+        lid.face(tuple(reversed(a)), color)
+        lid.face(b, color)
         for i in range(len(a)):
             j = (i + 1) % len(a)
-            m.face((a[i], a[j], b[j], b[i]), color)
+            lid.face((a[i], a[j], b[j], b[i]), color)
     for i in range(6):
         prism(-.468 + i * .156, -.468 + i * .156 + .152, section,
               WOOD if i % 2 else '#967049')
-    m.slot = 1
+    # the dark underside shows once it is open
+    lid.box((0, 0, .449), (.86, .52, .008), '#5d4128')
+    lid.slot = 1
     for x in (-.33, .33):
         for i in range(8):
             a, b = i * math.pi / 8, (i + 1) * math.pi / 8
@@ -364,26 +531,8 @@ def chest(m, v):
                        (.316 * math.cos(b), .465 + .204 * math.sin(b)),
                        (.316 * math.cos(a), .465 + .204 * math.sin(a))]
             prism(x - .033, x + .033, profile, GOLD)
-    m.box((0, -.316, .474), (.075, .025, .083), GOLD)
-    m.slot = 0
-    if v:
-        pivot = Vector((0, .30, .445))
-        angle = -math.radians(108)
-        for i in range(start, len(m.vertices)):
-            p = Vector(m.vertices[i]) - pivot
-            m.vertices[i] = tuple(pivot + Vector((p.x, p.y * math.cos(angle) - p.z * math.sin(angle),
-                                                  p.y * math.sin(angle) + p.z * math.cos(angle))))
-        m.box((0, 0, .315), (.77, .44, .10), '#51422d')
-        for i in range(9):
-            begin = len(m.vertices)
-            coin(m, i % 3, detail=False)
-            x, y = -.24 + (i % 3) * .23, -.13 + (i // 3) * .13
-            for j in range(begin, len(m.vertices)):
-                p = m.vertices[j]
-                m.vertices[j] = (x + p[0] * .56, y + p[1] * .56, .376 + p[2] * .56)
-        gem(m, 0, (-.15, -.09, .395), .50)
-        gem(m, 2, (.19, .09, .395), .52)
-    m.slot = 0
+    lid.box((0, -.316, .474), (.075, .025, .083), GOLD)
+    lid.slot = 0
 
 
 # (name, builder, variant, category, attachment)
@@ -400,8 +549,8 @@ SPECS = [(f'item_stick_{s}', stick, i, 'resource', 'ground')
     ('item_potion_health', potion, 0, 'consumable', 'ground'),
     ('item_potion_mana', potion, 1, 'consumable', 'ground'),
     ('item_potion_stamina', potion, 2, 'consumable', 'ground'),
-    ('treasure_chest_closed', chest, 0, 'container', 'ground'),
-    ('treasure_chest_open', chest, 1, 'container', 'ground')]
+    ('treasure_chest', chest, 0, 'container', 'ground'),
+    ('item_town_portal', scroll, 0, 'tool', 'ground')]
 
 
 def build(scene=None):
@@ -431,8 +580,14 @@ def build(scene=None):
         if builder == potion:
             info['potion_type'] = ['health', 'mana', 'stamina'][v]
         if builder == chest:
-            info['state'] = 'open' if v else 'closed'
-        objects.append(finish(m, name, info, collection))
+            # glTF (Y up): the lid's clips, its hinge, and the floor where contents go
+            hinge = [CHEST_HINGE[0], CHEST_HINGE[2], -CHEST_HINGE[1]]
+            info.update(clips='Open,Close', lid=name + '_lid', hinge_gltf=hinge,
+                        contents_gltf=[0, .118, 0], contents_size_gltf=[.84, .49])
+        obj = finish(m, name, info, collection)
+        if builder == chest:
+            lid_clips(obj.children[0])
+        objects.append(obj)
     return objects
 
 
@@ -441,25 +596,31 @@ def validate(objects):
     assert {o.name for o in objects} == {s[0] for s in SPECS}
     report = []
     for obj in objects:
-        mesh = obj.data
-        mesh.calc_loop_triangles()
-        assert 20 <= len(mesh.loop_triangles) <= 5000, (obj.name, len(mesh.loop_triangles))
-        assert obj.parent is None and not obj.modifiers and not obj.constraints
-        assert tuple(obj.scale) == (1, 1, 1) and tuple(obj.rotation_euler) == (0, 0, 0)
-        assert not mesh.uv_layers and 'Color' in mesh.color_attributes
-        assert not any(p.use_smooth for p in mesh.polygons)
-        assert all(math.isfinite(c) for v in mesh.vertices for c in v.co)
-        for tri in mesh.loop_triangles:
-            a, b, c = (mesh.vertices[i].co for i in tri.vertices)
-            assert (b - a).cross(c - a).length > 1e-10, obj.name
-        lo = [min(v.co[i] for v in mesh.vertices) for i in range(3)]
-        hi = [max(v.co[i] for v in mesh.vertices) for i in range(3)]
+        assert obj.parent is None
+        triangles = 0
+        for part in [obj] + list(obj.children):
+            mesh = part.data
+            mesh.calc_loop_triangles()
+            triangles += len(mesh.loop_triangles)
+            assert not part.modifiers and not part.constraints and (part == obj or not part.children)
+            assert tuple(part.scale) == (1, 1, 1) and tuple(part.rotation_euler) == (0, 0, 0)
+            assert part == obj or part.get('cube_crawler_part')
+            assert not mesh.uv_layers and 'Color' in mesh.color_attributes
+            assert not any(p.use_smooth for p in mesh.polygons)
+            assert all(math.isfinite(c) for v in mesh.vertices for c in v.co)
+            for tri in mesh.loop_triangles:
+                a, b, c = (mesh.vertices[i].co for i in tri.vertices)
+                assert (b - a).cross(c - a).length > 1e-10, part.name
+        assert 20 <= triangles <= 5000, (obj.name, triangles)
+        vertices = part_vertices(obj)
+        lo = [min(v[i] for v in vertices) for i in range(3)]
+        hi = [max(v[i] for v in vertices) for i in range(3)]
         if obj['attach'] in ('ground', 'nock'):
             assert abs(lo[2]) < 1e-6, (obj.name, lo)
         else:
             assert lo[2] < 0 < hi[2], obj.name
-        obj['radius'] = round(max(math.hypot(v.co.x, v.co.y) for v in mesh.vertices), 4)
-        report.append({'name': obj.name, 'triangles': len(mesh.loop_triangles),
+        obj['radius'] = round(max(math.hypot(v.x, v.y) for v in vertices), 4)
+        report.append({'name': obj.name, 'triangles': triangles,
                        'size': [round(b - a, 4) for a, b in zip(lo, hi)],
                        'bounds_blender': [lo, hi], 'attach': obj['attach'],
                        'category': obj['category'], 'units': obj['units'], 'game_scale': obj['game_scale'],
@@ -471,9 +632,9 @@ def export(objects, directory):
     directory = Path(directory).resolve()
     (directory / 'items').mkdir(parents=True, exist_ok=True)
     report = validate(objects)
-    props.export_gltf(objects, directory / 'items.glb')
+    props.export_gltf(objects, directory / 'items.glb', animations=True)
     for obj in objects:
-        props.export_gltf([obj], directory / 'items' / (obj.name + '.glb'))
+        props.export_gltf([obj], directory / 'items' / (obj.name + '.glb'), animations=True)
     (directory / 'items' / 'manifest.json').write_text(json.dumps(
         {'up': 'Y', 'weapon_scale': .55, 'assets': report}, indent=2) + '\n')
     return report
@@ -490,8 +651,8 @@ def setup_preview(scene, objects):
 
     # Each item has its own plinth; all meshes retain their authoring scale.
     groups = [objects[11:19], objects[:3] + objects[19:22] + objects[22:], objects[3:11]]
-    labels = {'weapon_sword_greatsword': 'GREATSWORD', 'treasure_chest_closed': 'CHEST / CLOSED',
-              'treasure_chest_open': 'CHEST / OPEN'}
+    labels = {'weapon_sword_greatsword': 'GREATSWORD', 'treasure_chest': 'CHEST',
+              'item_town_portal': 'TOWN PORTAL'}
     for row, group in enumerate(groups):
         for i, obj in enumerate(group):
             x, y = (i - 3.5) * 1.6, (1 - row) * 2.4
@@ -555,7 +716,15 @@ def render_previews(scene, objects, preview, directory, overview=True, previews=
     if overview:
         overview_path.parent.mkdir(parents=True, exist_ok=True)
         scene.render.filepath = str(overview_path)
-        bpy.ops.render.render(write_still=True)
+        # the overview shows the chest open (and empty); the icons show it closed
+        lids = [c for o in objects for c in o.children if c.animation_data]
+        for lid in lids:
+            lid.rotation_euler.x = math.radians(CHEST_CLIPS['Open'][-1][1])
+        try:
+            bpy.ops.render.render(write_still=True)
+        finally:
+            for lid in lids:
+                lid.rotation_euler.x = 0
     decorations = [o for o in preview.objects if o.type == 'FONT' or o.name.startswith('Plinth_')]
     floor = next(o for o in preview.objects if o.name == 'ItemsFloor_NOT_EXPORTED')
     floor_location = floor.location.copy()
@@ -568,7 +737,8 @@ def render_previews(scene, objects, preview, directory, overview=True, previews=
         scene.render.resolution_x = scene.render.resolution_y = 640
         for obj, item in zip(objects, report):
             for other in objects:
-                other.hide_render = other != obj
+                for part in [other] + list(other.children):
+                    part.hide_render = other != obj
             lo, hi = [Vector(v) for v in item['bounds_blender']]
             target = obj.location + (lo + hi) * .5
             cam.location = target + Vector((2.0, -5, 3.0))
@@ -577,7 +747,7 @@ def render_previews(scene, objects, preview, directory, overview=True, previews=
             scene.render.filepath = str(directory / 'items' / (obj.name + '.png'))
             bpy.ops.render.render(write_still=True)
     finally:
-        for obj in objects + decorations:
+        for obj in objects + decorations + [c for o in objects for c in o.children]:
             obj.hide_render = False
         floor.location = floor_location
         cam.location, cam.rotation_euler, cam.data.ortho_scale = saved

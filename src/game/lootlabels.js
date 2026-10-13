@@ -1,6 +1,8 @@
 // Name labels over the items on the floor, Diablo style, in their rarity's colour. X shows
 // them for everything in the cube but coins; otherwise only the item under the cursor gets
 // one. A label (or the item itself) is clicked to walk there and pick it up (game/orders.js).
+// Closed treasure chests are hovered and labelled the same way (coloured by how grand the site
+// is), and clicked to go and open them (game/chests.js).
 // Labels that would overlap are pushed upwards into a stack. Runs after the camera moved.
 import * as THREE from 'three';
 import { camera, renderer } from '../render/scene.js';
@@ -11,48 +13,57 @@ import { displayName } from '../core/gear/stats.js';
 import { state } from './state.js';
 import { lootHere } from './loot.js';
 import { pointer, hoveredEnemy } from './pointer.js';
-import { orderPickup } from './orders.js';
+import { orderPickup, orderChest } from './orders.js';
+import { closedChests } from './chests.js';
+import { RARITY } from '../core/gear/rarities.js';
 
 const layer = document.getElementById('loot-labels'), canvas = renderer.domElement;
-const labels = new Map();   // pickup id -> { el, p, w, h }
+const labels = new Map();   // pickup id (or 'chest:' + site id) -> { el, p, w, h }
 const PICK = 26;             // px: how close the cursor must be to an item to hover it
+const CHEST_PICK = 40;       // ... and to a chest
+// a chest's label colour: a grander site, a rarer colour
+const CHEST_COLOR = { basic: '#d8d2c4', uncommon: RARITY.uncommon.css, rare: RARITY.rare.css, exceptional: RARITY.epic.css };
 let hovered = null, overLabel = null, cursor = '';
 
-export const hoveredPickup = () => hovered;
+// the pickup under the cursor, and the closed chest (a reward site) under it
+export const hoveredPickup = () => hovered && !hovered.prestige ? hovered : null;
+export const hoveredChest = () => hovered?.prestige ? hovered : null;
+const keyOf = p => p.prestige ? 'chest:' + p.id : p.id;
 export function toggleLabels() { state.showLabels = !state.showLabels; }
 
 function label(p) {
-  let l = labels.get(p.id);
+  let l = labels.get(keyOf(p));
   if (l) return l;
   const el = document.createElement('button');
   el.className = 'loot-label'; el.tabIndex = -1;
-  el.textContent = displayName(p) + (p.count > 1 ? ` (${p.count})` : '');
-  el.style.color = p.gen ? rarityOf(p).css : '#d8d2c4';
+  el.textContent = p.prestige ? 'Treasure chest' : displayName(p) + (p.count > 1 ? ` (${p.count})` : '');
+  el.style.color = p.prestige ? CHEST_COLOR[p.prestige] ?? CHEST_COLOR.basic : p.gen ? rarityOf(p).css : '#d8d2c4';
   if (p.gen) el.dataset.rarity = rarityOf(p).id;
   el.addEventListener('pointerdown', e => {
     if (e.button !== 0 || state.inventoryOpen || state.transitioning) return;
     e.preventDefault(); e.stopPropagation();
-    orderPickup(p);
+    if (p.prestige) orderChest(p); else orderPickup(p);
   });
   el.addEventListener('pointerenter', () => { overLabel = p; });
   el.addEventListener('pointerleave', () => { if (overLabel === p) overLabel = null; });
   layer.append(el);
   l = { el, p, w: 0, h: 0 };
-  labels.set(p.id, l);
+  labels.set(keyOf(p), l);
   return l;
 }
 
 const v = new THREE.Vector3();
 // p on screen (px), over the item; null when behind the camera or off screen
 function screen(p, off) {
-  v.set(p.x + off.x, p.y + off.y + (p.gen ? 0.12 : 0.35), p.z + off.z).project(camera);
+  if (p.prestige) v.set(p.anchor.x + off.x, p.anchor.y + off.y + 0.75, p.anchor.z + off.z).project(camera);
+  else v.set(p.x + off.x, p.y + off.y + (p.gen ? 0.12 : 0.35), p.z + off.z).project(camera);
   if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) return null;
   return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
 }
 
 export function updateLootLabels() {
   const live = !state.inventoryOpen && !state.transitioning && !!state.world;
-  const list = live ? lootHere().filter(p => labelled(p) && p.toss >= 1 && !p.fly && lootView(p)) : [];
+  const list = live ? [...lootHere().filter(p => labelled(p) && p.toss >= 1 && !p.fly && lootView(p)), ...closedChests()] : [];
   const off = state.world?.group.position ?? v.set(0, 0, 0), spots = new Map();
   for (const p of list) { const s = screen(p, off); if (s) spots.set(p, s); }
   // the item under the cursor: a label it points at, else the nearest item on screen
@@ -60,10 +71,10 @@ export function updateLootLabels() {
   if (live && overLabel && spots.has(overLabel)) hovered = overLabel;
   else if (live && pointer.inside && !hoveredEnemy()) {
     const px = (pointer.ndc.x + 1) / 2 * innerWidth, py = (1 - pointer.ndc.y) / 2 * innerHeight;
-    let best = PICK;
+    let best = Infinity;
     for (const [p, s] of spots) {
-      const d = Math.hypot(s.x - px, s.y - py);
-      if (d < best) { best = d; hovered = p; }
+      const d = Math.hypot(s.x - px, s.y - py) / (p.prestige ? CHEST_PICK : PICK);   // items win when close
+      if (d < Math.min(1, best)) { best = d; hovered = p; }
     }
   }
   const show = [...spots.keys()].filter(p => state.showLabels || p === hovered);
@@ -72,7 +83,7 @@ export function updateLootLabels() {
   const placed = [], keep = new Set();
   for (const p of show) {
     const l = label(p), s = spots.get(p);
-    keep.add(p.id);
+    keep.add(keyOf(p));
     if (!l.w) { l.w = l.el.offsetWidth || 80; l.h = l.el.offsetHeight || 18; }
     let x = s.x - l.w / 2, y = s.y - l.h - 6;
     for (let moved = true, n = 0; moved && n < 30; n++) {

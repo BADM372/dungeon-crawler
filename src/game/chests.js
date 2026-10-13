@@ -1,0 +1,28 @@
+// Treasure chests at the cube's reward sites (map.rewardSites, docs/world.md): hover one to see
+// it (game/lootlabels.js), click it to walk up and open it (game/orders.js). It spills its loot
+// (core/chests.js) in front of it and stays open for the run (run.chests). What it spilled is
+// `kept`: a death does not take it away, as the chest does not close again either.
+import { player, state, setStatus } from './state.js';
+import { chestLoot } from '../core/chests.js';
+import { showChestOpen } from '../render/chests.js';
+import { spill } from './loot.js';
+import { sfx } from '../audio/sfx.js';
+
+const OPEN_REACH = 1.2;   // cells from the chest's centre the player opens it from
+
+// the closed chests in this cube
+export const closedChests = () => (state.map?.rewardSites ?? []).filter(s => s.anchor && !state.run.chests.has(s.id));
+export const canReachChest = site => Math.hypot(site.anchor.x - player.x, site.anchor.z - player.z) <= OPEN_REACH
+  && Math.abs(site.anchor.y - player.y) <= 0.8;
+
+export function openChest(site) {
+  if (state.run.chests.has(site.id) || !state.map) return false;
+  state.run.chests.add(site.id);
+  showChestOpen(state.world, site.id);
+  const { copper, items } = chestLoot(site, state.map.depth, state.map.seed);
+  const a = site.anchor, front = site.approach ?? a;
+  spill(front, copper, items, { kept: true }, { x: a.x, y: a.y + 0.6, z: a.z });
+  sfx('chest', { at: a });
+  setStatus('You opened a treasure chest');
+  return true;
+}

@@ -30,6 +30,7 @@ click.
 | `gate`, `wellDown`, `ringUp`, `cloud` | portal travel (`game/travel.js`); the town portal keeps `portal` |
 | `castStart`, `fizzle` | reading the scroll, a broken cast or charge (`game/townportal.js`, `game/ambience.js`) |
 | `equip`, `bagOpen`, `bagClose`, `use` | equipping, the inventory, quick bar slots |
+| `drink`, `chest` | drinking a health potion (`game/quickbar.js`), opening a treasure chest (`game/chests.js`) |
 | `<species>_alert/_windup/_death` | an enemy starts chasing you (at most every 0.3 s), winds up an attack, dies |
 
 ## Continuous sounds

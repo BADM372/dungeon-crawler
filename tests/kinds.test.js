@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { flatMap } from './fixtures.js';
 import { toOklch, fromOklch, parseColor, recolorFn, recolorTable, toHex, toLinear } from '../src/core/oklch.js';
-import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, enemyKind, enemyRoll, makeEnemy } from '../src/core/enemies.js';
+import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, enemyKind, enemyRoll, makeEnemy, GROWTH } from '../src/core/enemies.js';
 import { DEPTH_SPAWNS } from '../src/core/spawns.js';
 import { enemySpots, pickKind } from '../src/game/enemyspawn.js';
 
@@ -80,7 +80,7 @@ test('every kind recolours materials its species model has, and only those', () 
 });
 test('three snakes in rising strength; the red one bites hardest and is a fifth faster', () => {
   const tiers = [SNAKE, SAND_VIPER, BLOOD_VIPER];
-  for (let i = 1; i < tiers.length; i++) for (const key of ['hp', 'damage', 'xp', 'chase', 'hpPerLevel', 'damagePerLevel'])
+  for (let i = 1; i < tiers.length; i++) for (const key of ['hp', 'damage', 'xp', 'chase'])
     assert.ok(tiers[i][key] > tiers[i - 1][key], `${tiers[i].type} ${key}`);
   near(BLOOD_VIPER.chase, SNAKE.chase * 1.2, 1e-9);
   near(BLOOD_VIPER.wander, SNAKE.wander * 1.2, 1e-9);
@@ -103,7 +103,7 @@ test('a kind scales its body, reach and attacks with its size', () => {
   assert.equal(big.size, 1.5); assert.equal(big.hp, OCTONAUT.hp); assert.equal(big.xp, OCTONAUT.xp);
   const e = makeEnemy({ f: null, x: 0, y: 0, z: 0, level: 3 }, BLOOD_VIPER);
   assert.equal(e.type, 'bloodviper'); assert.equal(e.profile.species, 'snake');
-  assert.equal(e.hp, Math.round(BLOOD_VIPER.hp + 2 * BLOOD_VIPER.hpPerLevel));
+  assert.equal(e.hp, Math.round(BLOOD_VIPER.hp * (1 + 2 * GROWTH.hp)), 'a kind grows at the same rate as its species');
   assert.ok(Number.isInteger(e.profile.damage) && Number.isInteger(e.profile.xp));
 });
 

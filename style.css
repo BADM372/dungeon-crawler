@@ -119,3 +119,4 @@ kbd { display: inline-block; min-width: 1.2em; text-align: center; background: #
 #quickbar .qb-count { position: absolute; right: 4px; bottom: 1px; color: #fff; font-size: 11px; text-shadow: 0 1px 3px #000; }
 #quickbar .qb-cast { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: #b98cff59; pointer-events: none; }
 #quickbar .qb-slot.casting { border-color: #b98cff; }
+#quickbar .qb-slot.cooling .qb-cast { background: #10141c99; }

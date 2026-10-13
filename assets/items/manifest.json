@@ -575,11 +575,11 @@
       "glb": "items/item_potion_stamina.glb"
     },
     {
-      "name": "treasure_chest_closed",
-      "triangles": 1028,
+      "name": "treasure_chest",
+      "triangles": 1092,
       "size": [
         0.998,
-        0.668,
+        0.6696,
         0.669
       ],
       "bounds_blender": [
@@ -590,7 +590,7 @@
         ],
         [
           0.49900001287460327,
-          0.3190000057220459,
+          0.32058846950531006,
           0.6690000295639038
         ]
       ],
@@ -598,33 +598,33 @@
       "category": "container",
       "units": "cells",
       "game_scale": 1.0,
-      "glb": "items/treasure_chest_closed.glb"
+      "glb": "items/treasure_chest.glb"
     },
     {
-      "name": "treasure_chest_open",
-      "triangles": 2416,
+      "name": "item_town_portal",
+      "triangles": 1258,
       "size": [
-        0.998,
-        0.9773,
-        1.0466
+        0.562,
+        0.5747,
+        0.16
       ],
       "bounds_blender": [
         [
-          -0.49900001287460327,
-          -0.3490000069141388,
+          -0.281000018119812,
+          -0.40860816836357117,
           0.0
         ],
         [
-          0.49900001287460327,
-          0.6283420324325562,
-          1.0466017723083496
+          0.281000018119812,
+          0.16608452796936035,
+          0.1600000411272049
         ]
       ],
       "attach": "ground",
-      "category": "container",
+      "category": "tool",
       "units": "cells",
       "game_scale": 1.0,
-      "glb": "items/treasure_chest_open.glb"
+      "glb": "items/item_town_portal.glb"
     }
   ]
 }

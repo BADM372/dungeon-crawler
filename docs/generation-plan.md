@@ -20,7 +20,7 @@ and approach should work before reward gameplay is implemented.
 - `assets/props.glb`: 133 existing decoration models, already loaded.
 - `assets/clutter.glb`: 222 additional models (111 types, two variants), now loaded.
 - Clutter covers 11 biomes, neutral `any`, and cave-wide storytelling `relics`.
-- Existing item exports include static open/closed chests, potions and gemstones.
+- Existing item exports include an animated (Open/Close) treasure chest, potions and gemstones.
 
 The new library provides ground cover, shoreline props, cliff-lip drapes and
 fluid-surface props, plus substantial destination dressing. Preserve its

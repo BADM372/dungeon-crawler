@@ -6,12 +6,12 @@ import { RARITIES, RARITY, rarityOdds, rollRarity } from '../src/core/gear/rarit
 import { AFFIXES, AFFIX, MAX_PREFIXES, MAX_SUFFIXES, MAX_TIER, affixTier, describeAffix } from '../src/core/gear/affixes.js';
 import { BASES } from '../src/core/gear/bases.js';
 import { rollWeapon, fixedWeapon, GEN_VERSION } from '../src/core/gear/generate.js';
-import { weaponDrops, dropChance, guardianDrops } from '../src/core/gear/drops.js';
-import { itemStats, displayName, baseLine, affixLines, ARC, CRIT_DAMAGE } from '../src/core/gear/stats.js';
+import { weaponDrops, potionDrops, enemyDrops, dropChance, potionChance, guardianDrops } from '../src/core/gear/drops.js';
+import { itemStats, displayName, baseLine, affixLines, weaponDps, ilvlDamage, ARC, CRIT_CHANCE, CRIT_DAMAGE } from '../src/core/gear/stats.js';
 import { createInventory, addInstance, takeItem, equipItem, equippedItem, hasRoom } from '../src/core/inventory.js';
 import { createPlayerStats } from '../src/core/progression.js';
 import { swordState, combatStats, startSwing, advanceSwing, swordHit } from '../src/core/combat.js';
-import { STUNDER, makeEnemy } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, TRIANGLE, ENEMY_KINDS, makeEnemy } from '../src/core/enemies.js';
 
 const many = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 
@@ -40,6 +40,11 @@ test('rarity odds shift upwards with item level, respect gates, floors and the g
   const low = rarityOdds(1), high = rarityOdds(12);
   assert.ok(high[RARITY.rare.rank] > low[RARITY.rare.rank] && high[RARITY.junk.rank] < low[RARITY.junk.rank]);
   assert.deepEqual(rarityOdds(1).map(p => p > 0), [true, true, true, true, false, false, false, false]);
+  // the top tiers stay finds even deep down
+  const deep = rarityOdds(20);
+  assert.ok(deep[RARITY.legendary.rank] < 0.04 && deep[RARITY.mythic.rank] < 0.01, String(deep));
+  // a floor above what the item level allows comes down to the best it does allow
+  assert.deepEqual(rarityOdds(2, { floor: RARITY.epic.rank }).map(p => p > 0), [false, false, false, true, false, false, false, false]);
   // the rolls follow the odds
   const R = mulberry32(5), n = 40000, seen = new Map();
   for (let i = 0; i < n; i++) { const r = rollRarity(R, 9).id; seen.set(r, (seen.get(r) || 0) + 1); }
@@ -66,7 +71,7 @@ test('generated weapons are deterministic, plain JSON, and valid for every rarit
     }
     assert.ok(item.gen.name.length > 2);
     const s = itemStats(item);
-    assert.ok(s.damage >= 1 && s.cooldown > 0.5 && s.range > 0.5 && s.arc >= ARC && s.crit >= 0 && s.crit < 0.5
+    assert.ok(s.damage >= 1 && s.interval > 0.2 && s.range > 0.5 && s.arc >= ARC && s.crit >= CRIT_CHANCE && s.crit < 0.5
       && s.critDamage >= CRIT_DAMAGE && s.leech >= 0 && s.knockback >= 1);
   }
 });
@@ -96,43 +101,61 @@ test('names: generated for every rarity, the base under it unless the name says 
   assert.ok(names.size > 200, 'plenty of different names');
 });
 
-test('stats: rarity scales base damage, affixes add on top', () => {
+test('stats: item level grows base damage, rarity scales it, affixes add on top', () => {
   const old = fixedWeapon(OLD_SWORD.id);
   assert.deepEqual(old.gen, { v: GEN_VERSION, rarity: 'common', ilvl: 1, affixes: [], name: 'Old Sword' });
-  assert.deepEqual(itemStats(old), { damage: 30, cooldown: 1.12, range: 0.85, arc: ARC, crit: 0, critDamage: CRIT_DAMAGE, leech: 0, knockback: 1 });
+  assert.deepEqual(itemStats(old), { damage: 30, interval: 0.42, range: 0.85, arc: ARC, crit: CRIT_CHANCE, critDamage: CRIT_DAMAGE, leech: 0, knockback: 1 });
   assert.deepEqual(itemStats({ itemId: OLD_SWORD.id }), itemStats(old), 'a weapon without gen is common');
-  const gen = (rarity, affixes) => ({ itemId: 'weapon_sword_long', count: 1, gen: { v: 1, rarity, ilvl: 10, affixes, name: 'x' } });
-  assert.equal(itemStats(gen('junk', [])).damage, 30);
-  assert.equal(itemStats(gen('ancient', [])).damage, 52);
+  const gen = (rarity, affixes, ilvl = 10, itemId = 'weapon_sword_long') => ({ itemId, count: 1, gen: { v: 1, rarity, ilvl, affixes, name: 'x' } });
+  assert.equal(ilvlDamage(1), 1); assert.equal(ilvlDamage(11), 1.5);
+  assert.equal(itemStats(gen('common', [], 1)).damage, 39);
+  assert.equal(itemStats(gen('common', [], 11)).damage, Math.round(39 * 1.5), 'ten item levels: half again');
+  assert.equal(itemStats(gen('junk', [])).damage, Math.round(39 * ilvlDamage(10) * 0.8));
+  assert.equal(itemStats(gen('ancient', [])).damage, Math.round(39 * ilvlDamage(10) * 1.4));
   const s = itemStats(gen('legendary', [{ id: 'sharp', tier: 3, value: 10 }, { id: 'brutal', tier: 3, value: 20 },
     { id: 'swift', tier: 3, value: 10 }, { id: 'reach', tier: 3, value: 0.15 }]));
-  assert.equal(s.damage, Math.round((40 * 1.15 + 10) * 1.2));
-  assert.equal(s.cooldown, 1.098); assert.equal(s.range, 1.2);
+  assert.equal(s.damage, Math.round((39 * ilvlDamage(10) * 1.24 + 10) * 1.2));
+  assert.equal(s.interval, 0.432); assert.equal(s.range, 1.2);
   const t = itemStats(gen('epic', [{ id: 'vicious', tier: 2, value: 6 }, { id: 'precision', tier: 2, value: 25 },
     { id: 'leech', tier: 2, value: 3 }, { id: 'force', tier: 2, value: 40 }, { id: 'sweeping', tier: 2, value: 20 }]));
-  assert.deepEqual([t.crit, t.critDamage, t.leech, t.knockback, t.arc], [0.06, 1.75, 3, 1.4, ARC * 1.2]);
+  assert.deepEqual([t.crit, t.critDamage, t.leech, t.knockback, t.arc], [CRIT_CHANCE + 0.06, 1.75, 3, 1.4, ARC * 1.2]);
+  // the heavy bases sweep wider; their damage per second rises a little with weight
+  assert.equal(itemStats(gen('common', [], 1, 'weapon_sword_broad')).arc, ARC * 1.25);
+  const dps = WEAPONS.slice(1).map(w => weaponDps(itemStats(gen('common', [], 1, w.id))));
+  for (let i = 1; i < dps.length; i++) assert.ok(dps[i] >= dps[i - 1] - 1, `${WEAPONS[i + 1].id}`);
+  assert.ok(dps.at(-1) / dps[0] < 1.3, 'no base outclasses the others');
+  const fast = WEAPONS.find(w => w.id === 'weapon_sword_short').weapon, slow = WEAPONS.find(w => w.id === 'weapon_sword_greatsword').weapon;
+  assert.ok(fast.interval < 0.35 && slow.interval > 0.6 && slow.range > fast.range + 0.4);
   assert.deepEqual(affixLines(gen('rare', [{ id: 'reach', tier: 1, value: 0.06 }])), ['+0.06 reach']);
   assert.equal(itemStats({ itemId: 'item_potion_health', count: 1 }), null);
 });
 
-test('drops: seeded per enemy and world, 8-12% from ordinary enemies, guardians always drop', () => {
-  assert.equal(dropChance(1), 0.08); assert.equal(dropChance(11), 0.12); assert.equal(dropChance(30), 0.12);
-  const e = { id: '0,-4,0:spider:17', level: 3 };
+test('drops: seeded per enemy and world, likelier from tougher kinds, guardians always drop', () => {
+  assert.equal(dropChance(30), 0.05); assert.equal(potionChance(30), 0.03);
+  assert.ok(dropChance(SPIDER.xp) < dropChance(STUNDER.xp) && dropChance(STUNDER.xp) < dropChance(TRIANGLE.xp));
+  assert.ok(Object.values(ENEMY_KINDS).every(k => dropChance(k.xp) <= 0.15 && potionChance(k.xp) <= 0.1));
+  const e = { id: '0,-4,0:spider:17', level: 3, kind: SPIDER };
   assert.deepEqual(weaponDrops(e, 9), weaponDrops(e, 9));
-  for (const level of [1, 6, 11]) {
-    const n = 20000, got = many(n, i => weaponDrops({ id: `k:spider:${i}`, level }, 1).length).reduce((a, b) => a + b, 0);
-    assert.ok(Math.abs(got / n - dropChance(level)) < 0.01, `level ${level}: ${got / n}`);
+  assert.deepEqual(enemyDrops(e, 9), [...weaponDrops(e, 9), ...potionDrops(e, 9)]);
+  for (const kind of [SPIDER, STUNDER, TRIANGLE]) {
+    const n = 20000, ids = many(n, i => ({ id: `k:${kind.type}:${i}`, level: 6, kind }));
+    const weapons = ids.reduce((a, x) => a + weaponDrops(x, 1).length, 0), potions = ids.reduce((a, x) => a + potionDrops(x, 1).length, 0);
+    assert.ok(Math.abs(weapons / n - dropChance(kind.xp)) < 0.01, `${kind.type}: ${weapons / n}`);
+    assert.ok(Math.abs(potions / n - potionChance(kind.xp)) < 0.01, `${kind.type}: ${potions / n}`);
   }
+  for (const d of many(400, i => potionDrops({ id: `p:${i}`, level: 2, kind: TRIANGLE }, 3)).flat())
+    assert.deepEqual(d, { itemId: 'item_potion_health', count: 1 });
   // the world seed matters: same ids in another world drop other things
   const ids = many(400, i => ({ id: `0,-2,0:snake:${i}`, level: 5 }));
   assert.notDeepEqual(ids.map(e => weaponDrops(e, 1)), ids.map(e => weaponDrops(e, 2)));
-  for (const [role, level, count, least] of [['side', 7, 1, 'uncommon'], ['side', 15, 2, 'uncommon'], ['side', 18, 2, 'rare'],
-    ['descent', 10, 2, 'rare'], ['descent', 20, 3, 'epic'], ['descent', 26, 3, 'epic']]) {
+  for (const [role, level, count, least, potions] of [['side', 1, 1, 'uncommon', 1], ['side', 9, 1, 'uncommon', 1], ['side', 10, 1, 'rare', 1],
+    ['descent', 1, 2, 'uncommon', 2], ['descent', 5, 2, 'rare', 2], ['descent', 14, 2, 'epic', 2], ['descent', 22, 2, 'epic', 2]]) {
     assert.equal(guardianDrops(role, level).count, count);
     for (let i = 0; i < 50; i++) {
-      const drops = weaponDrops({ id: `${i},0,0:guardian`, level, guardian: true, guardianRole: role }, 4);
+      const g = { id: `${i},0,0:guardian`, level, guardian: true, guardianRole: role }, drops = weaponDrops(g, 4);
       assert.equal(drops.length, count);
       for (const d of drops) assert.ok(RARITY[d.gen.rarity].rank >= RARITY[least].rank, `${role} L${level}: ${d.gen.rarity}`);
+      assert.deepEqual(potionDrops(g, 4), [{ itemId: 'item_potion_health', count: potions }]);
     }
   }
   // ancient only from guardians
@@ -164,14 +187,14 @@ test('crits multiply damage, life on hit heals up to the maximum', () => {
   const inv = p.inventory;
   equipItem(inv, addInstance(inv, { itemId: 'weapon_sword_long', count: 1, gen: { v: 1, rarity: 'common', ilvl: 5, name: 'x',
     affixes: [{ id: 'vicious', tier: 2, value: 10 }, { id: 'leech', tier: 2, value: 3 }, { id: 'precision', tier: 2, value: 50 }] } }));
-  const stats = combatStats(p);
-  assert.equal(stats.crit, 0.1); assert.equal(stats.critDamage, 2);
+  const stats = combatStats(p), hit = Math.round(39 * ilvlDamage(5));
+  assert.equal(stats.crit, CRIT_CHANCE + 0.1); assert.equal(stats.critDamage, 2); assert.equal(stats.damage, hit);
   const swing = () => { p.sword.cool = 0; startSwing(p); advanceSwing(p, stats.activeStart + .001); };
   p.hp = 50;
   swing(); let e = makeEnemy({ x: 0, y: 0, z: 0.8 }, STUNDER);
-  assert.deepEqual(swordHit(p, e, 0.5), { damage: 40, crit: false }); assert.equal(p.hp, 53);
+  assert.deepEqual(swordHit(p, e, 0.5), { damage: hit, crit: false }); assert.equal(p.hp, 53);
   advanceSwing(p, 5); swing(); e = makeEnemy({ x: 0, y: 0, z: 0.8 }, STUNDER);
-  assert.deepEqual(swordHit(p, e, 0.05), { damage: 80, crit: true }); assert.equal(e.hp, STUNDER.hp - 80);
+  assert.deepEqual(swordHit(p, e, 0.05), { damage: hit * 2, crit: true }); assert.equal(e.hp, STUNDER.hp - hit * 2);
   p.hp = p.maxHp - 1; advanceSwing(p, 5); swing(); swordHit(p, makeEnemy({ x: 0, y: 0, z: 0.8 }, STUNDER), 0.9);
   assert.equal(p.hp, p.maxHp);
 });

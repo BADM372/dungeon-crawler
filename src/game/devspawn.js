@@ -5,7 +5,7 @@
 // Spawns are ordinary enemies with ids of their own (never in the run's defeated set) and
 // vanish when the cube resets. Guardian kinds get their bars and drops but no gate.
 import { N } from '../core/constants.js';
-import { ENEMY_KINDS, ENEMY_PROFILES, enemyRoll, makeEnemy } from '../core/enemies.js';
+import { ENEMY_KINDS, ENEMY_PROFILES, enemyRoll, coinRange, guardianLevel, makeEnemy } from '../core/enemies.js';
 import { damageEnemy } from '../core/combat.js';
 import { walkable, floorAt, groundY } from '../physics/enemynav.js';
 import { removeEnemyViews } from '../render/enemies.js';
@@ -41,8 +41,8 @@ export function spawnEnemies(type, { level = null, n = 1, at = null } = {}) {
   at ??= (pointer.inside && pickFloor()) || { x: player.x + Math.sin(player.yaw) * 2.5, y: player.y, z: player.z + Math.cos(player.yaw) * 2.5 };
   const x = Math.min(N - 0.5, Math.max(0.5, at.x)), z = Math.min(N - 0.5, Math.max(0.5, at.z));
   const list = spotsNear(kind, x, at.y, z, n).map(({ f, y }, i) => {
-    const roll = enemyRoll(state.map, kind, f.id), lv = level ?? roll.level;
-    const factor = 1 + 0.25 * (lv - 1), [lo, hi] = kind.coins.map(c => Math.round(c * factor));
+    const lv = level ?? (kind.guardian ? guardianLevel(state.map.depth, kind.guardianRole) : enemyRoll(state.map, kind, f.id).level);
+    const [lo, hi] = coinRange(kind, lv);
     const ex = f.x + 0.5, ez = f.z + 0.5;
     return makeEnemy({
       id: `dev:${++serial}`, level: lv, coinDrop: lo + Math.floor(Math.random() * (hi - lo + 1)),

@@ -37,9 +37,9 @@ export async function runGenerationChecks() {
             Object.assign(player, { h: 0.85, r: 0.22, y: site.approach.y });
             check(!blockedAt(site.approach.x, site.approach.z, site.approach.y, 0.3), 'interaction approach clears actual colliders');
             check(blockedAt(site.anchor.x, site.anchor.z, site.anchor.y, 0.3), 'chest has an actual collider');
-            check(placed.out.filter(p => p.site === site.id && p.name === 'treasure_chest_closed').length === 1, 'one chest per site');
+            check(placed.out.filter(p => p.site === site.id && p.name === 'treasure_chest').length === 1, 'one chest per site');
           }
-          if (m.rewardSites.length) check(world.group.getObjectByName('treasure_chest_closed'), 'chest mesh is instantiated');
+          if (m.rewardSites.length) check(world.group.getObjectByName('treasure_chest'), 'chest model is instantiated');
           renderer.compile(scene, camera);
           result.push({ key, sites: m.rewardSites.map(s => `${s.prestige}/${s.setting}`), failures: m.siteFailures,
             placed: placed.out.length, newClutter: placed.out.filter(p => props.byName.get(p.name)?.cube_crawler_clutter).length });

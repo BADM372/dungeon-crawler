@@ -96,7 +96,7 @@ export function prepareSites(ctx) {
       f.siteDressing = true;
       site.dressing.push({ name, c, s, yaw, blocking: !!p.blocking });
     };
-    add('treasure_chest_closed', site.anchorCell, 0.8, -site.turn * Math.PI / 2 + Math.PI);
+    add('treasure_chest', site.anchorCell, 0.8, -site.turn * Math.PI / 2 + Math.PI);
     positions.forEach(([u, v], i) => {
       // Basic alcoves get a chest and one non-blocking detail; larger sites get a composition.
       const name = `${site.biome}_${bases[i]}_${R() < 0.5 ? 'a' : 'b'}`, p = propMetadata.get(name);

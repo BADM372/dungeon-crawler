@@ -18,9 +18,10 @@ function terrain(seed) {
     siteReservations: [], sitePlacements: [] };
 }
 
-test('checked-in metadata matches all 356 exported models, including the 222 new clutter roots', () => {
+test('checked-in metadata matches all 356 exported models, including the 222 new clutter roots and the chest', () => {
   assert.deepEqual(PROP_METADATA, assetMetadata(assets));
   assert.equal(new Set(PROP_METADATA.map(p => p.name)).size, 356);
+  assert.ok(PROP_METADATA.some(p => p.name === 'treasure_chest' && p.blocking && p.clips === 'Open,Close'));
   const clutter = PROP_METADATA.filter(p => p.cube_crawler_clutter);
   assert.equal(clutter.length, 222);
   assert.equal(new Set(clutter.map(p => p.set)).size, 13);
@@ -64,7 +65,7 @@ test('cover dresses routes/slopes without blockers; focal sites remain free of a
     m.moves = m.floors.map(f => ({ from: f, to: f, cells: [] }));
     const reserved = m.floors[8 * N + 8];
     m.siteReservations = [{ c: reserved.c, layer: 0 }];
-    m.sitePlacements = [{ name: 'treasure_chest_closed', x: 8.5, y: 4, z: 8.5, yaw: 0, s: 0.8, site: 'test' }];
+    m.sitePlacements = [{ name: 'treasure_chest', x: 8.5, y: 4, z: 8.5, yaw: 0, s: 0.8, site: 'test' }];
     for (const f of m.floors) f.cs = [4, 4.4, 4, 4.4];
     const { out, blockers } = placeProps(m, themeAt(5));
     assert.equal(out.filter(p => Math.floor(p.x) === 8 && Math.floor(p.z) === 8).length, 1);

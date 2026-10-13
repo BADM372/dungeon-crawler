@@ -1,0 +1,32 @@
+// What a treasure chest holds. Every stratum budgets four reward sites (world/sites.js): two
+// basic, one uncommon and one rare (now and then exceptional), each with a chest. Opening one
+// (game/chests.js) spills coins, health potions and weapons a little above the depth's level,
+// better the grander the site. Seeded by the world seed and the site, so a chest always holds
+// the same; an opened chest stays open for the run (run.chests).
+import { mulberry32, hash32 } from './util.js';
+import { hashString } from './gear/drops.js';
+import { rollWeapon } from './gear/generate.js';
+import { RARITY } from './gear/rarities.js';
+import { HEALTH_POTION } from './items.js';
+import { depthLevel, grown, GROWTH } from './enemies.js';
+
+// level: item levels above the depth's; copper: [least, most] at level 1 (grown like enemy
+// coins); potions: [least, most]; weapons: one roll each, `floor` the least rarity it may be
+export const CHESTS = Object.freeze({
+  basic: { level: 0, copper: [25, 45], potions: [0, 1], weapons: [{ floor: 'common', luck: 0.1 }] },
+  uncommon: { level: 1, copper: [50, 90], potions: [1, 1], weapons: [{ floor: 'uncommon', luck: 0.2 }] },
+  rare: { level: 1, copper: [100, 160], potions: [1, 2], weapons: [{ floor: 'rare', luck: 0.3 }, { floor: 'uncommon', luck: 0.3 }] },
+  exceptional: { level: 2, copper: [180, 280], potions: [2, 2], weapons: [{ floor: 'epic', luck: 0.45 }, { floor: 'rare', luck: 0.45 }] },
+});
+
+// site: a reward site ({ id, prestige }); { copper, items: [{ itemId, count, gen? }] }
+export function chestLoot(site, depth, seed = 0) {
+  const t = CHESTS[site.prestige] ?? CHESTS.basic, level = depthLevel(depth) + t.level;
+  const R = mulberry32(hash32(hashString(String(site.id)) ^ Math.imul(seed >>> 0, 0x85ebca6b) ^ 0xc4e57));
+  const range = ([lo, hi]) => lo + Math.floor(R() * (hi - lo + 1));
+  const copper = range(t.copper.map(c => Math.round(grown(c, GROWTH.coins, level))));
+  const items = t.weapons.map(w => rollWeapon(R, level, { floor: RARITY[w.floor].rank, luck: w.luck }));
+  const potions = range(t.potions);
+  if (potions) items.push({ itemId: HEALTH_POTION.id, count: potions });
+  return { copper, items };
+}

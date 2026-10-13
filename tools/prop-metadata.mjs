@@ -4,15 +4,20 @@ import { resolve } from 'node:path';
 
 export function assetMetadata(directory) {
   const out = [];
-  for (const file of ['props.glb', 'clutter.glb', 'items/treasure_chest_closed.glb']) {
+  for (const file of ['props.glb', 'clutter.glb', 'items/treasure_chest.glb']) {
     const b = readFileSync(resolve(directory, file));
     const j = JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)));
     for (const i of j.scenes[j.scene || 0].nodes) {
       const root = j.nodes[i], positions = [];
-      const visit = n => {
-        if (n.matrix || n.rotation || n.translation || n.scale) throw Error('Expected baked prop transforms: ' + n.name);
-        if (n.mesh != null) for (const p of j.meshes[n.mesh].primitives) positions.push(j.accessors[p.attributes.POSITION]);
-        for (const child of n.children || []) visit(j.nodes[child]);
+      // roots have baked transforms; moving parts (the chest's lid) only sit at their pivot
+      const visit = (n, at = [0, 0, 0]) => {
+        if (n.matrix || n.rotation || n.scale || (n === root && n.translation)) throw Error('Expected baked prop transforms: ' + n.name);
+        at = at.map((v, k) => v + (n.translation?.[k] ?? 0));
+        if (n.mesh != null) for (const p of j.meshes[n.mesh].primitives) {
+          const a = j.accessors[p.attributes.POSITION];
+          positions.push({ min: a.min.map((v, k) => v + at[k]), max: a.max.map((v, k) => v + at[k]) });
+        }
+        for (const child of n.children || []) visit(j.nodes[child], at);
       };
       visit(root);
       const [set, ...rest] = root.name.split('_');

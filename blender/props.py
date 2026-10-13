@@ -1137,7 +1137,8 @@ def validate(objects):
     return report
 
 
-def export_gltf(objects, path):
+def export_gltf(objects, path, animations=False):
+    """animations: also export the objects' children and their NLA-owned actions as clips."""
     path = str(Path(path).resolve())
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     active = bpy.context.view_layer.objects.active
@@ -1150,11 +1151,15 @@ def export_gltf(objects, path):
             obj.hide_viewport = False
             obj.hide_set(False)
             obj.select_set(True)
+            if animations:
+                for child in obj.children_recursive:
+                    child.select_set(True)
         bpy.context.view_layer.objects.active = objects[0]
+        anim = dict(export_animation_mode="ACTIONS", export_force_sampling=True, export_frame_step=1) if animations else {}
         bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True, use_active_scene=True,
-                                  export_yup=True, export_extras=True, export_animations=False,
+                                  export_yup=True, export_extras=True, export_animations=animations,
                                   export_normals=True, export_texcoords=False,
-                                  export_materials="EXPORT", export_cameras=False, export_lights=False)
+                                  export_materials="EXPORT", export_cameras=False, export_lights=False, **anim)
     finally:
         bpy.ops.object.select_all(action="DESELECT")
         for obj, location, hidden, viewport in states:

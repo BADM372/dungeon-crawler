@@ -23,8 +23,9 @@ Plain ES modules and a vendored three.js; no build step.
 - `tests/`: `node --test` unit tests; `tests/browser/` holds integration checks
   that run from the game's devtools console.
 - `tools/`: dev server, the prop metadata generator, the enemy kinds preview
-  (`/tools/kinds.html`, see `docs/enemy-kinds.md`), the depth population measurement and the
-  weapon drop tables (`node tools/loot-table.mjs`).
+  (`/tools/kinds.html`, see `docs/enemy-kinds.md`), the depth population measurement, the
+  weapon drop tables (`node tools/loot-table.mjs`) and the balance simulation
+  (`node tools/balance.mjs`, see `docs/balance.md`).
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
 - `vendor/three/`: three.js and the addons in use; `vendor/scrimshaw/`: the music score parser and synth.
 

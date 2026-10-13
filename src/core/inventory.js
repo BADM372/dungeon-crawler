@@ -132,6 +132,16 @@ export function assignBar(inv, index, instanceId) {
   inv.version++;
   return true;
 }
+// A usable stackable (a potion) coming into the bag goes on the first free bar slot, unless it is
+// on the bar already. Whether it is on the bar now.
+export function autoBar(inv, itemId) {
+  const def = ITEMS[itemId];
+  if (!def?.use || def.stackLimit <= 1) return false;
+  if (inv.bar.some(r => r?.itemId === itemId)) return true;
+  const i = inv.bar.indexOf(null), slot = inv.slots.find(s => s?.itemId === itemId);
+  if (i < 0 || !slot) return false;
+  return assignBar(inv, i, slot.instanceId);
+}
 // the bar slot holding this bag item (-1: none)
 export const barIndexOf = (inv, slot) => !slot ? -1 : inv.bar.findIndex(r => sameRef(r, barRef(slot)));
 // What bar slot `index` stands for: { itemId, slot: the bag slot using it takes (null when none

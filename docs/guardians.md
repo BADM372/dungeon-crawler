@@ -31,12 +31,22 @@ Each species has two distinct registered kinds, excluded from ordinary rosters:
 onward marker `userData` expose these identifiers. The descent tier is explicitly
 reserved for later replacement by a custom boss; no boss-specific AI exists yet.
 
-Side kinds have 1.5× base HP and 1.05× damage, with a level bonus of
-`6 + floor(depth / 3)`. Descent kinds have at least 2.4× HP and 1.6× damage, with
-HP/growth floors 1.12× and damage/growth floors 1.4× above the strongest sideways
-species and three extra levels. Descent HP is 20% lower than the initial boss-tier tuning. Thus a weak species selected for a descent cannot be weaker than another
-species' sideways guardian. Movement and attack timing remain species-specific.
-Rewards scale with kind strength and level.
+Each tier sets level-1 floors (`GUARDIAN_TIERS` in `core/enemies.js`), so the promoted
+species decides how a guardian fights, not how strong it is:
+
+| Tier | Level | HP | Damage per second | XP | Poise | Drops |
+|---|---|---|---|---:|---:|---|
+| Side | depth + 1 | ≥ 550, ≥ 3.5× the species' | ≥ 9, ≥ 1.15× its blows | 260 | 1.4 s | a weapon (Uncommon+, Rare+ from level 10), a potion |
+| Descent | depth + 2 | ≥ 1000, ≥ 6.5× the species' | ≥ 11.5, ≥ 1.45× its blows | 650 | 2 s | two weapons (Rare+ from level 5, Epic+ from 14), two potions |
+
+Damage per second (`threat`) averages a species' blows over its attack cycle, so a quick
+spider and a slow Triangle are about as dangerous. Every descent guardian outlasts every side
+guardian at the same level and deals at least 20% more per second than its species' side
+guardian. On the road out of town (depth 0) both stand at the road's level. At full damage per
+second a side guardian takes about 6 s, a descent guardian about 12 s ([balance.md](balance.md)).
+Poise: after a stagger, lighter blows do not stagger a guardian again for that long, so it
+strikes back even under a stream of blows. Movement and attack timing remain species-specific.
+Rewards scale with level.
 
 ## Encounter and persistence
 

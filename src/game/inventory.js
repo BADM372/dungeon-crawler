@@ -8,9 +8,9 @@ import { player, state, setStatus } from './state.js';
 import { sfx } from '../audio/sfx.js';
 import { ITEMS, COINS, WEAPONS } from '../core/items.js';
 import { equippedItem, ownedItem, assignBar, barAllowed, barIndexOf } from '../core/inventory.js';
-import { xpProgress, damageBonus } from '../core/progression.js';
+import { xpProgress, levelDamage } from '../core/progression.js';
 import { RARITIES, rarityOf } from '../core/gear/rarities.js';
-import { itemStats, displayName, baseLine, affixLines } from '../core/gear/stats.js';
+import { itemStats, displayName, baseLine, affixLines, weaponDps } from '../core/gear/stats.js';
 import { equipmentAllowed, equipOwnedWeapon, devSwapWeapon, devDropWeapon, syncEquippedWeapon } from './equipment.js';
 import { floorItems, takeNow, dropFromBag } from './loot.js';
 import { clearInput } from './inputstate.js';
@@ -60,22 +60,29 @@ function selectedItem() {
   return null;
 }
 
-// the weapon's stats, and how they compare with what is equipped
+// the weapon's stats as the player would swing it (the level's damage bonus included), and how
+// they compare with what is equipped
+function swung(item) {
+  const s = itemStats(item);
+  return { ...s, damage: Math.round(s.damage * levelDamage(player.level || 1)), speed: 1 / s.interval };
+}
 function weaponText(item) {
-  const s = itemStats(item), bonus = damageBonus(player.level), r = rarityOf(item);
+  const s = swung(item), r = rarityOf(item);
   const lines = [`${r.name}${item.gen ? ` · item level ${item.gen.ilvl}` : ''}`,
-    `Damage ${s.damage + bonus}`, `Attack time ${s.cooldown.toFixed(2)} s`, `Reach ${s.range.toFixed(2)} cells`];
+    `Damage ${s.damage} · ${s.speed.toFixed(2)} attacks per second`, `Damage per second ${Math.round(weaponDps(s))}`,
+    `Reach ${s.range.toFixed(2)} cells`, `Critical hits ${Math.round(s.crit * 100)}% for ×${s.critDamage.toFixed(2)}`];
   return lines.join('\n');
 }
 function compareText(item) {
   const eq = equippedItem(player.inventory);
   if (!eq) return 'You have no weapon equipped.';
   if (selected?.from === 'bag' && selected.id === eq.instanceId) return '';
-  const a = itemStats(item), b = itemStats(eq);
-  const diff = (label, d, better, fmt) => d ? `<span class="${better ? 'up' : 'down'}">${label} ${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}</span>` : null;
-  const parts = [diff('damage', a.damage - b.damage, a.damage > b.damage, n => n),
-    diff('attack time', a.cooldown - b.cooldown, a.cooldown < b.cooldown, n => n.toFixed(2) + ' s'),
-    diff('reach', a.range - b.range, a.range > b.range, n => n.toFixed(2))].filter(Boolean);
+  const a = swung(item), b = swung(eq);
+  const diff = (label, d, fmt) => d ? `<span class="${d > 0 ? 'up' : 'down'}">${label} ${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}</span>` : null;
+  const parts = [diff('damage per second', Math.round(weaponDps(a)) - Math.round(weaponDps(b)), n => n),
+    diff('damage', a.damage - b.damage, n => n),
+    diff('attacks per second', Math.round(a.speed * 100) - Math.round(b.speed * 100), n => (n / 100).toFixed(2)),
+    diff('reach', Math.round(a.range * 100) - Math.round(b.range * 100), n => (n / 100).toFixed(2))].filter(Boolean);
   return `Compared with ${esc(displayName(eq))}:\n${parts.join('\n') || 'same damage, speed and reach'}`;
 }
 
@@ -92,7 +99,7 @@ export function updateInventory() {
   $('inventory-panel').classList.toggle('with-floor', floorMode);
   $('inventory-floor-col').hidden = !floorMode;
   $('inventory-progress').textContent = `Level ${player.level} · XP ${xp.current}/${xp.required} · HP ${Math.ceil(player.hp)}/${player.maxHp}`;
-  $('inventory-equipped').textContent = `Equipped: ${equipped ? displayName(equipped) : 'None (you cannot attack)'} · damage bonus +${damageBonus(player.level)}`;
+  $('inventory-equipped').textContent = `Equipped: ${equipped ? displayName(equipped) : 'None (you cannot attack)'} · level bonus +${Math.round((levelDamage(player.level || 1) - 1) * 100)}% damage`;
   $('inventory-currency').innerHTML = COINS.map((c, i) => `<div class="coin-slot"><img src="${c.icon}" alt=""><div><small>${c.name}</small><b>${inv.currency[i].count}</b></div></div>`).join('');
   const focus = document.activeElement?.dataset;
   const focusSlot = focus?.slot, focusFloor = focus?.floor;
@@ -119,7 +126,7 @@ export function updateInventory() {
   const barLine = !item || selected?.from !== 'bag' || !barAllowed(item.itemId) ? ''
     : barKey >= 0 ? `\nQuick bar: ${barKey + 1}` : '\nPress 1-6 to put it on the quick bar';
   $('inventory-item-stats').textContent = (def?.weapon ? weaponText(item)
-    : def?.use ? `${def.description}${def.bound ? '\nBound: it cannot be dropped' : ''}`
+    : def?.use ? `${def.stackLimit > 1 ? `Count ${item.count}\n` : ''}${def.description}${def.bound ? '\nBound: it cannot be dropped' : ''}`
     : def ? `Count ${item.count}\nStack limit ${def.stackLimit}\nNo use action yet` : selected ? '' : 'Select a bag slot to inspect it.') + barLine;
   $('inventory-item-affixes').innerHTML = item ? affixLines(item).map(l => `<li>${esc(l)}</li>`).join('') : '';
   $('inventory-item-compare').innerHTML = def?.weapon ? compareText(item) : '';

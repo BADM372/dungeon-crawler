@@ -15,7 +15,8 @@ import { fireFaces } from '../../src/game/firefaces.js';
 import { triangles } from '../../src/game/triangles.js';
 import { fireCats } from '../../src/game/firecats.js';
 import { projectiles, clearProjectiles } from '../../src/game/projectiles.js';
-import { SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy } from '../../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy } from '../../src/core/enemies.js';
+import { rolls } from '../../src/game/sword.js';
 import { D } from '../../src/core/spawns.js';
 import { updatePlayer } from '../../src/game/update.js';
 import { knockDown } from '../../src/game/ragdoll.js';
@@ -38,13 +39,16 @@ import { updatePointer, hoveredEnemy, pointer } from '../../src/game/pointer.js'
 
 const check = (condition, message) => { if (!condition) throw Error(message); };
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+// also: no critical hits while checking, so every blow deals its exact damage
 export async function paused(fn) {
-  const raf = window.requestAnimationFrame, cancel = window.cancelAnimationFrame;
+  const raf = window.requestAnimationFrame, cancel = window.cancelAnimationFrame, crit = rolls.crit;
   const pending = new Map(); let id = 0;
   window.requestAnimationFrame = callback => { pending.set(--id, callback); return id; };
   window.cancelAnimationFrame = token => { if (token < 0) pending.delete(token); else cancel.call(window, token); };
+  rolls.crit = () => 1;
   try { await delay(150); return await fn(); }
   finally {
+    rolls.crit = crit;
     window.requestAnimationFrame = raf; window.cancelAnimationFrame = cancel;
     // Fade/flash callbacks must not overwrite the queued main frame and stop the game.
     for (const callback of pending.values()) raf.call(window, callback);
@@ -138,11 +142,13 @@ export async function runCombatChecks() {
 
       place(spider, 6.5, 6.5); press('Space');
       const maxY = tick(120);
-      check(maxY > 0.5 && spider.hp === 30 && spider.mode !== 'dead', 'A real jump / landing must not stomp-kill');
+      check(maxY > 0.5 && spider.hp === SPIDER.hp && spider.mode !== 'dead', 'A real jump / landing must not stomp-kill');
       results.push('Space jump does not damage enemies');
 
-      hero(); place(spider, 6.5, 7.25); press('ShiftLeft'); tick(75);
-      check(spider.hp === 0 && spider.mode === 'dead', 'A Shift auto-attack must slash-kill a spider');
+      hero(); place(spider, 6.5, 7.25); press('ShiftLeft'); tick(40);
+      check(spider.hp === SPIDER.hp - 30 && spider.mode !== 'dead', 'The Old Sword leaves a spider standing after one slash');
+      press('ShiftLeft'); tick(75);
+      check(spider.hp === 0 && spider.mode === 'dead', 'A second Shift auto-attack must slash-kill a spider');
       check(spider.view.actions.death.getEffectiveWeight() === 1, 'SpiderDeath must play instead of squash / hide');
       for (const time of [0.3, 0.7, 1.2, 1.9]) {
         spider.deadT = time; drawEnemies(1 / 60);
@@ -154,14 +160,14 @@ export async function runCombatChecks() {
       results.push('Shift slash / SpiderDeath floor contact and held corpse');
 
       hero(); place(stunder, 6.5, 7.4);
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         if (i === 0) clickOn(stunder);
         else press('ShiftLeft');
         tick(75);
-        check(stunder.hp === 90 - i * 30, 'Stunder should take exactly one hit per swing');
+        check(stunder.hp === Math.max(0, STUNDER.hp - (i + 1) * 30), 'Stunder should take exactly one hit per swing');
       }
       check(stunder.mode === 'dead' && stunder.view.actions.death.getEffectiveWeight() === 1, 'Stunder must play its real death clip');
-      results.push('click on enemy attacks it / Stunder survives 3 hits, dies on 4');
+      results.push('click on enemy attacks it / Stunder survives 4 hits, dies on 5');
 
       tick(260);
       check(!allEnemies().includes(spider) && !allEnemies().includes(stunder), 'Finished corpses must leave the population');
@@ -185,8 +191,14 @@ export async function runCombatChecks() {
       Object.assign(heavy, { mode: 'attack', t: 0.5, bit: false, attacks: 2, think: 1e6 });
       startSwing(player); player.sword.t = SWORD.activeStart;
       updateEnemies(1 / 60);
-      check(player.hp === 100 && heavy.hp === 90 && heavy.mode !== 'attack', 'Connecting sword must interrupt the wind-up');
+      check(player.hp === 100 && heavy.hp === STUNDER.hp - 30 && heavy.mode !== 'attack', 'Connecting sword must interrupt the wind-up');
       results.push('sword interrupts enemy attack');
+      // poised after that stagger: the next light blow hurts but the ram goes on
+      Object.assign(heavy, { mode: 'attack', t: 0.2, bit: false, stun: 0, think: 1e6 });
+      cancelSwing(player, true); startSwing(player); player.sword.t = SWORD.activeStart;
+      updateEnemies(1 / 60);
+      check(heavy.hp === STUNDER.hp - 60 && heavy.mode === 'attack' && !heavy.staggered, 'A poised Stunder must shrug off a light blow');
+      results.push('a poised Stunder keeps its wind-up');
       return results;
     } finally {
       state.map = originalMap; state.run = savedRun;
@@ -392,7 +404,7 @@ export async function runControlChecks() {
       hero(); place(spider, 6.5, 6.5);
       let serial = player.sword.serial;
       press('Space');
-      check(tick(120) > .5 && spider.hp === 30 && player.sword.serial === serial, 'Space jumps without attacking');
+      check(tick(120) > .5 && spider.hp === SPIDER.hp && player.sword.serial === serial, 'Space jumps without attacking');
       place(spider, 1.5, 1.5);
 
       hero(); place(stunder, 6.5, 9); serial = player.sword.serial;
@@ -400,9 +412,9 @@ export async function runControlChecks() {
       check(player.sword.serial === serial && stunder.hp === stunder.profile.hp && near(player.z, 6.5) && near(player.x, 6.5),
         'Shift does nothing without an enemy in reach (no swing at the air, no walking up)');
       place(stunder, 6.5, 7.4); tick(20);   // one swing connects by 0.27 s, the next chains at 0.42 s
-      check(stunder.hp === 90, 'Held Shift strikes once an enemy comes within reach: ' + stunder.hp);
+      check(stunder.hp === STUNDER.hp - 30, 'Held Shift strikes once an enemy comes within reach: ' + stunder.hp);
       tick(130);
-      check(player.sword.serial - serial >= 3 && stunder.hp <= 30, 'Holding Shift keeps attacking: ' + (player.sword.serial - serial));
+      check(player.sword.serial - serial >= 3 && stunder.hp <= STUNDER.hp - 90, 'Holding Shift keeps attacking: ' + (player.sword.serial - serial));
       key('keyup', 'ShiftLeft'); tick(60);
       serial = player.sword.serial; tick(60);
       check(player.sword.serial === serial, 'Releasing Shift stops attacking');
@@ -411,7 +423,7 @@ export async function runControlChecks() {
       press('KeyF'); tick(60);
       check(stunder.hp === stunder.profile.hp, 'F no longer attacks');
       press('ShiftRight'); tick(75);
-      check(stunder.hp === 90, 'A Shift tap turns to and hits the enemy beside the player');
+      check(stunder.hp === STUNDER.hp - 30, 'A Shift tap turns to and hits the enemy beside the player');
       return ['always runs after a ' + RUN_RAMP + ' s ramp / Ctrl walks, also Ctrl+W / other Ctrl shortcuts untouched',
         'Space jumps without attacking', 'Shift: nothing out of reach, strikes when in reach, holds chain, release stops',
         'F unbound / Shift tap turns to a side enemy'];

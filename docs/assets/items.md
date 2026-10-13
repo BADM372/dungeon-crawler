@@ -4,7 +4,8 @@
 
 Built and inspected through Blender MCP. Matches the existing flat-faceted,
 texture-free clay style: warm timber, leather wraps, muted brass and steel,
-soft gemstone colours and opaque stylised potion glass.
+soft gemstone colours and opaque stylised potion glass. The treasure chest is the
+one animated asset.
 
 ## Assets
 
@@ -17,11 +18,28 @@ soft gemstone colours and opaque stylised potion glass.
 | Ranged equipment | `weapon_bow`, `weapon_arrow` |
 | Staff | `weapon_staff` (forked wood, brass collars, amethyst head) |
 | Potions | `item_potion_health` (red, round), `item_potion_mana` (blue, tall), `item_potion_stamina` (green, square) |
-| Treasure chest | `treasure_chest_closed`, `treasure_chest_open` (with coins and gems) |
+| Treasure chest | `treasure_chest` (empty, lid on a hinge, `Open` / `Close` clips) |
+| Tools | `item_town_portal` (parchment scroll on two rollers, violet portal sigil, wax seal) |
 
-**24 assets / 9,232 triangles total.** The two chest states are separate static meshes,
-not animated. Sticks vary in length and branching; gemstones have distinct cuts;
-swords vary in blade length, width, guard and grip, not just scale.
+**24 assets / 8,138 triangles total.** Sticks vary in length and branching; gemstones have
+distinct cuts; swords vary in blade length, width, guard and grip, not just scale.
+
+## Treasure chest
+
+`treasure_chest` is an empty, hollow chest: the root mesh is the body, its one child
+`treasure_chest_lid` sits on the hinge (`hinge_gltf`, glTF `[0, .445, -.3]`) with its
+vertices relative to it, so rotating it about its local X opens it. Two clips animate only
+the lid's rotation (24 fps, sampled):
+
+- `Open` (~1 s): a small unlatching rattle, a swing back past the stop to -114°, settling at -108°.
+- `Close` (~0.75 s): a lift off the stop, an accelerating fall, a slam and a short bounce.
+
+At rest (no clip) the lid is closed. Its floor is at `contents_gltf` (`[0, .118, 0]`),
+`contents_size_gltf` (`[.84, .49]`, x by z) across, for putting things inside later. The
+game builds each chest as its own object, not an instance, and plays the clips with an
+`AnimationMixer` (`src/render/chests.js`); collision uses the closed bounds.
+
+The town portal scroll only renders its icon; the game never puts tools on the floor.
 
 ## Files
 
@@ -34,8 +52,9 @@ swords vary in blade length, width, guard and grip, not just scale.
 - `blender/previews/items-preview.png`: overview render.
 - `blender/tests/test_items.py`: geometry, repeatability and actual binary GLB validation.
 
-Every asset is one flat-shaded Blender mesh, with vertex colours, baked geometry,
-and no textures, UVs, rigs, animation, modifiers or external dependencies.
+Every asset is one flat-shaded Blender mesh (the chest: two, body and lid), with vertex
+colours, baked geometry, and no textures, UVs, rigs, modifiers or external dependencies.
+Only the chest lid is animated.
 There are up to three material primitives (clay, metal, gemstone/glass); a glTF
 loader may expose a root group with multiple mesh children. Keep that root when
 instancing or attaching equipment. Preview plinths, labels, lights and floor
@@ -63,7 +82,8 @@ Export is **Y up**, with Blender `(x, y, z)` mapped to glTF `(x, z, -y)`.
 
 GLB extras include `cube_crawler_item`, `category`, `attach`, `units`,
 `game_scale`, `blocking`, `radius`; equipment adds `weapon`, `socket`, axis
-and grip hints. Potions add `potion_type`; chests add `state`. These are metadata,
+and grip hints. Potions add `potion_type`; the chest adds `clips`, `lid`, `hinge_gltf`,
+`contents_gltf` and `contents_size_gltf`. These are metadata,
 not implemented inventory effects, collision or combat rules.
 
 All five swords are base types for generated weapons, alongside the Old Sword the run starts
@@ -72,7 +92,8 @@ equipment; on the floor they lie flat, glowing by rarity (see `docs/loot.md`).
 With `?dev=1`, open inventory (`I`) to roll and equip any sword. Coin types and
 stackable potions/sticks/crystals have inventory definitions and preview icons;
 coins normalize automatically. Potions/materials have no use actions yet. Bows,
-staffs, arrows and chests remain visual assets without gameplay behavior.
+staffs and arrows remain visual assets without gameplay behavior; reward sites place the
+chest (`docs/loot.md`).
 See `docs/progression.md` for inventory and balance rules.
 
 ## Rebuild / validate
@@ -96,5 +117,5 @@ Default `main()` also renders the overview and 24 individual previews. Tests
 run in an isolated Blender process and export only into a temporary directory.
 They check deterministic geometry/colours, triangle budgets, flat normals,
 nondegenerate triangles, ground/grip/nock pivots, Y-up bounds, named roots,
-extras, no preview objects/textures/UVs, and selection/visibility/layout
+extras, the chest's lid hinge and clip end poses, no preview objects/textures/UVs, and selection/visibility/layout
 restoration after exporting.

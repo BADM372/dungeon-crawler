@@ -29,7 +29,7 @@ function checkSites(m) {
     assert.ok(Math.max(...access.cs) - Math.min(...access.cs) < 0.2);
     assert.ok(Math.hypot(site.anchor.x - site.approach.x, site.anchor.z - site.approach.z) <= 1.01);
     assert.ok(Math.abs(site.anchor.y - site.approach.y) < 0.1);
-    assert.equal(m.sitePlacements.filter(p => p.site === site.id && p.name === 'treasure_chest_closed').length, 1);
+    assert.equal(m.sitePlacements.filter(p => p.site === site.id && p.name === 'treasure_chest').length, 1);
     for (const b of m.staticBlockers[access.c])
       assert.ok(!containsXZ(b, site.approach.x, site.approach.z, CHAR_R), 'standing/interacting position stays clear');
     for (const c of site.cells) assert.ok(c % N >= 2 && c % N < N - 2 && Math.floor(c / N) >= 2 && Math.floor(c / N) < N - 2);

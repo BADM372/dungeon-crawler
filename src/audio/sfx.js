@@ -252,6 +252,27 @@ const SOUNDS = {
   use(t, out, p) {       // using a quick bar slot: a soft pop
     tone('sine', 900 * p, 600 * p, t, 0.05, amp(t, 0.002, 0.2, 0.05, out));
   },
+  drink(t, out, p) {     // a health potion: three gulps, then a warm rising glow
+    for (let i = 0; i < 3; i++) {
+      const at = t + i * 0.13, hz = (260 + i * 30) * p;
+      tone('sine', hz, hz * 0.55, at, 0.09, amp(at, 0.004, 0.35, 0.09, out));
+      noise(at, 0.05, filter('lowpass', 700 * p, 1, amp(at, 0.003, 0.15, 0.05, out)));
+    }
+    for (const [i, hz] of [392, 523, 659].entries()) {
+      const at = t + 0.38 + i * 0.05;
+      tone('sine', hz * p, hz * p * 1.01, at, 0.45, amp(at, 0.03, 0.07, 0.42, out));
+    }
+  },
+  chest(t, out, p) {     // a chest lid: a creaking hinge, the lid knocking back, a glint of treasure
+    sweep(t, 0.35, 500 * p, 900 * p, 650 * p, 9, 0.25, out, 0.05);
+    tone('sawtooth', 110 * p, 140 * p, t, 0.3, filter('bandpass', 700 * p, 6, amp(t, 0.05, 0.12, 0.28, out)));
+    tone('sine', 150 * p, 70 * p, t + 0.33, 0.12, amp(t + 0.33, 0.003, 0.6, 0.12, out));
+    noise(t + 0.33, 0.08, filter('lowpass', 900 * p, 1, amp(t + 0.33, 0.003, 0.4, 0.08, out)));
+    for (const [i, hz] of [1047, 1319, 1568, 2093].entries()) {
+      const at = t + 0.42 + i * 0.07;
+      tone('sine', hz * p, hz * p, at, 0.3, amp(at, 0.004, 0.08, 0.3, out));
+    }
+  },
 };
 
 // a band of noise sweeping f0 -> f1 -> f2 over dur (q: band width); attack: swell time;

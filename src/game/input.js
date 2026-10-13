@@ -2,7 +2,7 @@
 // The player always runs; holding Ctrl walks. Holding Shift auto-attacks enemies the blade
 // can reach (and does nothing without one). Space jumps.
 // Mouse: click the floor to walk there, click an enemy to attack it (hold for more), click an
-// item on the floor to pick it up. V: the floor panel (game/inventory.js); X: item labels.
+// item on the floor to pick it up, click a treasure chest to open it. V: the floor panel (game/inventory.js); X: item labels.
 // 1-6: the quick bar (game/quickbar.js).
 import { stepZoom } from '../core/zoom.js';
 import { player, state, view, setStatus } from './state.js';
@@ -13,8 +13,8 @@ import { controls, clearInput } from './inputstate.js';
 import { helpOpen, setHelpOpen, toggleHelp } from './help.js';
 import { requestCollect } from './loot.js';
 import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
-import { orderMove, orderAttack, orderPickup } from './orders.js';
-import { hoveredPickup, toggleLabels } from './lootlabels.js';
+import { orderMove, orderAttack, orderPickup, orderChest } from './orders.js';
+import { hoveredPickup, hoveredChest, toggleLabels } from './lootlabels.js';
 import { queueAttack } from './sword.js';
 import { softTarget } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
@@ -91,6 +91,8 @@ addEventListener('pointerdown', e => {
   if (enemy) { pointer.mode = 'attack'; orderAttack(enemy); return; }
   const item = hoveredPickup();
   if (item) { pointer.mode = null; orderPickup(item); return; }
+  const chest = hoveredChest();
+  if (chest) { pointer.mode = null; orderChest(chest); return; }
   pointer.mode = 'move';
   const hit = pickFloor();
   if (hit) orderMove(hit);

@@ -109,7 +109,7 @@ export function stepEnemies(list, dt) {
   for (const e of list) {
     knockback(e, dt);
     if (e.mode === 'dead') { e.deadT += dt; continue; }
-    e.cool = Math.max(0, e.cool - dt); e.hurtT = Math.max(0, e.hurtT - dt);
+    e.cool = Math.max(0, e.cool - dt); e.hurtT = Math.max(0, e.hurtT - dt); e.poised = Math.max(0, (e.poised || 0) - dt);
     if (e.stun > 0) { e.stun -= dt; e.speed = 0; continue; }
     if (state.devPassive) { e.speed = 0; e.path = null; if (e.mode !== 'idle') { e.mode = 'idle'; e.t = 1; } continue; }
     if ((e.think -= dt) <= 0) { e.think = 0.2; decide(e); }

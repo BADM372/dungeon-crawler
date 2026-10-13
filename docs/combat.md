@@ -21,15 +21,22 @@
   the target; a mouse order carries on between swings.
 - A swing is fast and buffered (`core/combat.js`, `game/sword.js`): the blade connects
   0.16–0.27 s after it starts; from 0.3 s moving cuts the recovery short; from 0.42 s
-  a queued click chains into the next swing (clicks are kept for 0.3 s). Heavier
-  swords scale these times. The Slash clip (frames 15–21 are its contact) is retimed
+  a queued click chains into the next swing (clicks are kept for 0.3 s). A weapon's
+  `interval` (its attack speed: 0.32 s for a short sword to 0.66 s for a greatsword) is
+  that chain point; every swing time scales with it. The Slash clip (frames 15–21 are its contact) is retimed
   to fit (`swingClipTime`). During the wind-up the player steps in towards an enemy
   that is just out of reach.
 - Blade hits land in a forward arc, within blade reach and vertical overlap, with
   slab / prop line-of-sight. Each target can be hit once per swing. No contact /
-  landing / stomp damage. Weapon affixes can widen the arc, add critical hits (a bigger,
-  golden number), life on hit and harder knockback ([loot.md](loot.md)). Without a weapon
-  there are no attacks.
+  landing / stomp damage. Every weapon crits 5% of the time (a bigger, golden number);
+  affixes can widen the arc, crit more often and harder, add life on hit and harder
+  knockback ([loot.md](loot.md)). Without a weapon there are no attacks.
+- **Stagger and poise:** a hit staggers an enemy: it interrupts its wind-up, stuns it
+  briefly and holds its next attack for 0.45 s. Then the enemy is *poised* for
+  `profile.poise` seconds (none for spiders and snakes, 0.4 s Fire-cat, 0.8 s Octonaut and
+  Fire-face, 1.2 s Triangle, 1.5 s Stunder, 1.4 s / 2 s side / descent guardians): lighter
+  hits hurt it (it flashes, barely moves) but do not stagger it, so it can strike back. A
+  blow of a quarter of its health or more (`HEAVY_HIT`) staggers it anyway.
 - Hit feedback (`game/juice.js`): a short hit pause, a camera nudge, sparks and
   ichor, a knockback, a damage number and generated sounds (`audio/sfx.js`).
   Spider bites are a short flinch; a Stunder ram or a lethal bite knocks you over.
@@ -40,9 +47,9 @@
   you are nearly upright (the clip's `move_time`); walking or swinging then cuts the
   rest short. `GET_UP_SPEED` sets the pace.
 - Swimming, ladder climbing, stun, knockdown and travel cancel / block slashes.
-- The Old Sword deals 30 base damage. Level-1 spider has 30 HP / 15 damage;
-  Stunder has 120 HP / 30 damage, a heavier collision body and an always-knockdown
-  head-down ram. The enemy under the cursor is highlighted and shows its health. Player/enemy levels and alternative weapons scale these numbers;
+- The Old Sword deals 30 base damage. Level-1 spider has 32 HP / 15 damage (two slashes);
+  Stunder has 140 HP / 30 damage (five slashes), a heavier collision body and an
+  always-knockdown head-down ram. The enemy under the cursor is highlighted and shows its health. Player/enemy levels and alternative weapons scale these numbers;
   see [progression.md](progression.md). Inventory (`I`) pauses simulation and input.
 - Each depth has its own roster (`src/core/spawns.js`, see [depths.md](depths.md)):
   snakes and a rare Stunder near the surface, then spiders, then the stronger species
@@ -66,8 +73,8 @@
   its own clip; the renderer plays the one `attackOf(e)` names.
 - Snake and Octonaut share shining purple eyes (an emissive material; the eyes
   shrink away as they die).
-- Fire-face, Triangle and Fire-cat are much stronger than the rest (110 / 150 / 120 HP,
-  22 / 28 / 26 damage, 90–110 XP). Fire-face and Triangle hover: their idle loop runs
+- Fire-face, Triangle and Fire-cat are much stronger than the rest (120 / 170 / 130 HP,
+  22 / 28 / 26 damage, 90–110 XP at level 1). Fire-face and Triangle hover: their idle loop runs
   on time, not on ground speed.
 - Fire-face (`blender/fireface.py`): a floating, glowing red and orange flame with an
   angry face whose tongues flicker. From up to 4.5 cells away, with a clear line to the

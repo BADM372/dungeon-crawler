@@ -12,6 +12,7 @@ import { adoptLights, releaseLights, trackLight, untrackLight } from './lightpoo
 import { makeFadable, adoptFade } from './fade.js';
 import { makeGlass, setGlassFaces } from './glass.js';
 import { buildProps } from './props.js';
+import { openedChest, tickChests } from './chests.js';
 import { placeProps } from './propplace.js';
 import { themeAt } from '../themes/depth.js';
 
@@ -23,8 +24,9 @@ export function disposeWorld(world) {
 }
 
 // geo: the cube's geometry arrays (from the worker); built here if missing; townPad: the end
-// of the open town portal standing in this cube (core/townportal.js townPadIn)
-export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = [], locked = !!m.guardian, townPad = null) {
+// of the open town portal standing in this cube (core/townportal.js townPadIn); opened: the ids
+// of the reward sites whose chests are open (run.chests)
+export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = [], locked = !!m.guardian, townPad = null, opened = null) {
   const group = new THREE.Group();
   const fluidMeshes = layerMeshes(geo, group);
   const { splashes, lights } = buildFalls(m, group);
@@ -33,7 +35,7 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open =
   // decoration (also sets the colliders of blocking props on the map)
   const placed = placeProps(m, themeAt(m.depth ?? 0));
   m.blockers = placed.blockers.map((list, i) => [...(m.staticBlockers?.[i] || []), ...list]);
-  buildProps(placed.out, group);
+  buildProps(placed.out.map(q => opened?.has(q.site) ? openedChest(q) : q), group);
   addGhosts(group);
   const glass = makeGlass(1, open);
   group.add(glass);
@@ -91,4 +93,5 @@ export function animateWorld(world, dt, time) {
   world.splashes.forEach((s, i) => { const k = 1 + Math.sin(time * 9 + i) * 0.08; s.scale.set(k, 1, k); });
   for (const l of world.lights) l.intensity = 5 + Math.sin(time * 4 + l.position.x) * 1.5;
   for (const p of world.portalFx) p.tick(time);
+  tickChests(dt);
 }

@@ -316,9 +316,9 @@ final slopes, fences and structural blockers. Required portal routes remain inta
 Upper-layer destinations leave shared rivers and cascade shafts undisturbed.
 
 `map.rewardSites` exposes stable spawn IDs, prestige, setting, reward anchors and
-approach/floor records. `sitePlacements` contains deliberate dressing and closed-chest
-previews, with worker-authored `staticBlockers`. Chests are collidable but do not yet
-open or grant loot. Ambient blockers and clutter stay out of these reserved spaces.
+approach/floor records. `sitePlacements` contains deliberate dressing and the sites'
+chests, with worker-authored `staticBlockers`. Chests are collidable; clicking one
+walks up and opens it, and it spills its loot ([loot.md](loot.md#chests)). Ambient blockers and clutter stay out of these reserved spaces.
 Optional placements that cannot fit are reported in `siteFailures`, never downgraded.
 
 See [the generation plan](generation-plan.md) for subsequent biome/district work.

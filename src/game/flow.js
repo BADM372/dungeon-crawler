@@ -143,7 +143,7 @@ export function enterCube(c, from = null, back = null, at = null) {
   if (!back) discover(c);
   state.cubeKey = k; state.map = c.map; state.lookDepth = c.map.depth;
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k), gateLocked(c.map, state.run), townPadIn(c.map, state.run));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(k, c.map), c.geo, openedSides(state.openedFaces, k), gateLocked(c.map, state.run), townPadIn(c.map, state.run), state.run.chests);
   if (back) {
     const { arrival, portalLock, boundaryLock, visit } = back;
     Object.assign(state, { arrival, portalLock, boundaryLock, visit });
@@ -195,7 +195,7 @@ whenPropsReady(() => {
   if (!state.world || state.transitioning) return;
   const c = state.cubes.cubes.get(state.cubeKey);
   disposeWorld(state.world);
-  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey), gateLocked(c.map, state.run), townPadIn(c.map, state.run));
+  state.world = buildWorld(c.map, state.showPath, portalSeen(state.cubeKey, c.map), c.geo, openedSides(state.openedFaces, state.cubeKey), gateLocked(c.map, state.run), townPadIn(c.map, state.run), state.run.chests);
   // Props add blockers after a late load. Re-select safe, seeded spawn sites.
   cancelSword(); resetEnemies();
 });

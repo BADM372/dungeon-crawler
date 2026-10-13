@@ -2,20 +2,24 @@
 // A swing is a quick wind-up, a short contact window and a recovery that a new swing
 // (chaining) or movement can cut short. The Slash clip in character.glb is retimed to fit
 // (swingClipTime): its own frames are SLASH_CLIP.
+// A weapon's `interval` is the time from one swing to the next when chaining (its attack
+// speed); every other swing time scales with it.
 import { OLD_SWORD, ITEMS } from './items.js';
 import { equippedItem } from './inventory.js';
-import { damageBonus } from './progression.js';
+import { levelDamage } from './progression.js';
 import { itemStats } from './gear/stats.js';
 
 export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
-// game time (s) for the basic sword; cooldown is the reference that weapon speeds scale by
+// game time (s) for the basic sword (the Old Sword's timing)
 export const SWORD = Object.freeze({
   damage: 30, range: 0.85, arc: Math.PI * 0.42,
   activeStart: 0.16, activeEnd: 0.27,   // the blade connects ~0.16 s after the click
   moveCancel: 0.3, chain: 0.42,         // walk out of the recovery / swing again from here
-  duration: 0.62, cooldown: 1.12,
+  duration: 0.62,
 });
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
+// a blow taking at least this share of an enemy's health staggers it even while it is poised
+export const HEAVY_HIT = 0.25;
 // how far beyond blade reach the wind-up steps in towards a target (game/update.js)
 export const LUNGE_REACH = 0.6;
 // requested: an attack is queued (buffer: for how much longer); target: what it aims at
@@ -31,8 +35,8 @@ export const canChangeWeapon = p => !p.sword.active && !p.ragdoll && !p.climb &&
 export function combatStats(p) {
   const weapon = itemStats(equippedInstance(p));
   if (!weapon) return null;
-  const speed = weapon.cooldown / SWORD.cooldown;
-  return { ...SWORD, ...weapon, damage: weapon.damage + damageBonus(p.level || 1),
+  const speed = weapon.interval / SWORD.chain;
+  return { ...SWORD, ...weapon, damage: Math.round(weapon.damage * levelDamage(p.level || 1)),
     ...Object.fromEntries(TIMES.map(k => [k, SWORD[k] * speed])) };
 }
 
@@ -100,18 +104,21 @@ export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra 
   }
   return best;
 }
+// A hit staggers: it interrupts a wind-up (each swing can hit an enemy only once). Then the
+// enemy is poised for profile.poise s: lighter hits hurt it but do not stagger it again, so it
+// can strike back (enemy.staggered says which it was).
 export function damageEnemy(enemy, amount) {
   if (enemy.mode === 'dead') return false;
   enemy.hp = Math.max(0, enemy.hp - amount);
   enemy.hurtT = 0.22;
-  enemy.speed = 0;
+  enemy.staggered = !enemy.hp || !(enemy.poised > 0) || amount >= HEAVY_HIT * enemy.profile.hp;
   if (!enemy.hp) {
-    enemy.mode = 'dead'; enemy.deadT = 0; enemy.path = null;
-  } else {
-    // A hit interrupts a wind-up, but each swing can hit this enemy only once.
-    enemy.mode = 'chase'; enemy.stun = enemy.profile.hitStun;
+    enemy.mode = 'dead'; enemy.deadT = 0; enemy.path = null; enemy.speed = 0;
+  } else if (enemy.staggered) {
+    enemy.mode = 'chase'; enemy.stun = enemy.profile.hitStun; enemy.speed = 0;
     enemy.cool = Math.max(enemy.cool, 0.45);
     enemy.think = 0;
+    enemy.poised = enemy.profile.poise ?? 0;
   }
   return true;
 }

@@ -8,7 +8,7 @@ import { makeLayouts, guardianDepth } from '../src/world/layout.js';
 import { faceKey, step } from '../src/world/coords.js';
 import { voidAllowed } from '../src/world/voids.js';
 import { guardianColor, guardianTitle } from '../src/core/guardians.js';
-import { ENEMY_PROFILES, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS, enemyProfile, makeEnemy } from '../src/core/enemies.js';
+import { ENEMY_PROFILES, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS, GUARDIAN_TIERS, enemyProfile, makeEnemy, threat, guardianLevel, depthLevel } from '../src/core/enemies.js';
 import { guardianId, gateLocked, portalLocked, restoreDefeated } from '../src/core/guardians.js';
 import { createRun, createPlayerStats, awardKill } from '../src/core/progression.js';
 import { population } from '../src/core/spawns.js';
@@ -61,8 +61,9 @@ test('each species has a distinct pink guardian kind with unchanged movement and
     assert.notEqual(kind.type, base.type);
     for (const role of Object.keys(base.parts)) assert.ok(kind.colors[role]);
     for (const key of ['chase', 'radius', 'height', 'attackTime', 'hitAt', 'cooldown']) assert.equal(kind[key], base[key]);
-    const normal = enemyProfile(base, 2), guardian = enemyProfile(kind, 8);
-    assert.ok(guardian.hp > normal.hp * 2 && guardian.damage > normal.damage * 1.5, base.type);
+    const normal = enemyProfile(base, 5), guardian = enemyProfile(kind, 6);
+    assert.ok(guardian.hp >= normal.hp * 3 && guardian.damage > normal.damage, base.type);
+    assert.ok(kind.poise >= base.poise && kind.poise >= GUARDIAN_TIERS.side.poise, 'a guardian strikes back through blows');
   }
 });
 
@@ -112,7 +113,8 @@ test('double the full local roster with exactly one promoted guardian, without o
       assert.equal(guard.id, guardianId(map.key)); assert.equal(guard.guardianGate, map.key);
       assert.equal(guard.kind, (g.role === 'descent' ? DESCENT_GUARDIAN_KINDS : GUARDIAN_KINDS)[guard.kind.species]);
       assert.equal(guard.guardianRole, g.role); assert.equal(guard.bossPlaceholder, g.role === 'descent');
-      assert.ok(guard.level >= 7);
+      assert.equal(guard.level, guardianLevel(d, g.role));
+      assert.equal(guard.level, depthLevel(d) + (d ? g.role === 'descent' ? 2 : 1 : 0));
       for (const [type, p] of pop) {
         assert.equal(p.count, ordinary.get(type).count * 2);
         const cfg = ENEMY_PROFILES.find(p => p.species === type);
@@ -137,18 +139,18 @@ test('descent guardians are explicit stronger boss placeholders for every specie
     assert.notEqual(descent.type, side.type); assert.notEqual(descent.colors, side.colors);
     assert.notEqual(guardianColor('side'), guardianColor('descent'));
     assert.notEqual(guardianTitle('side'), guardianTitle('descent'));
-    const previousHpScale = Math.max(3,
-      ...Object.values(GUARDIAN_KINDS).map(k => 1.4 * k.hp / base.hp),
-      ...Object.values(GUARDIAN_KINDS).map(k => 1.4 * k.hpPerLevel / base.hpPerLevel));
+    // each tier meets its floors (damage is rounded to whole points), so the species it promotes
+    // decides how it fights, not how strong it is
+    for (const [kind, t] of [[side, GUARDIAN_TIERS.side], [descent, GUARDIAN_TIERS.descent]]) {
+      assert.ok(kind.hp >= t.hp && kind.hp >= Math.round(base.hp * t.hpMult) - 1, kind.type);
+      assert.ok(threat(kind) >= t.threat * 0.97 && kind.damage >= Math.round(base.damage * t.damageMult) - 1, kind.type);
+      assert.equal(kind.xp, t.xp);
+    }
     for (let level = 1; level <= 30; level++) {
       const a = enemyProfile(side, level), b = enemyProfile(descent, level);
-      const previousHp = Math.round(Math.round(base.hp * previousHpScale) + base.hpPerLevel * previousHpScale * (level - 1));
-      assert.ok(Math.abs(b.hp - previousHp * .8) <= 1, 'descent HP is 20% lower, allowing for rounding');
-      assert.ok(b.hp >= a.hp * 1.55 && b.damage > a.damage * 1.4);
-      for (const other of Object.values(GUARDIAN_KINDS)) {
-        const strongestSide = enemyProfile(other, level);
-        assert.ok(b.hp > strongestSide.hp && b.damage > strongestSide.damage, 'boss tier must beat sideways species too');
-      }
+      assert.ok(b.hp >= a.hp * 1.55 && threat(b) >= threat(a) * 1.2 && b.xp > a.xp * 2);
+      for (const other of Object.values(GUARDIAN_KINDS))
+        assert.ok(b.hp > enemyProfile(other, level).hp, 'the boss tier outlasts every side guardian');
     }
     for (const key of ['chase', 'radius', 'height', 'attackTime', 'hitAt', 'cooldown']) assert.equal(descent[key], base[key]);
   }

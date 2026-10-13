@@ -1,11 +1,14 @@
 // The quick bar: six slots along the bottom of the screen, on keys 1-6 (or a click). A slot
 // points at a bag item (core/inventory.js assignBar): a weapon is equipped, a usable item used
-// (the town portal scroll starts its cast; game/townportal.js). With the inventory open, 1-6 or
-// a click puts the selected bag item on that slot instead (again on the same slot: off).
+// (the town portal scroll starts its cast; game/townportal.js; a health potion is drunk). With the
+// inventory open, 1-6 or a click puts the selected bag item on that slot instead (again on the
+// same slot: off). A potion's slot fills while the next drink is not ready.
 import { player, state, setStatus } from './state.js';
 import { sfx } from '../audio/sfx.js';
 import { ITEMS } from '../core/items.js';
-import { BAR_SIZE, barEntry, ownedItem } from '../core/inventory.js';
+import { BAR_SIZE, barEntry, ownedItem, removeItem } from '../core/inventory.js';
+import { drinkPotion } from '../core/progression.js';
+import { floatText } from '../render/floattext.js';
 import { displayName } from '../core/gear/stats.js';
 import { rarityOf } from '../core/gear/rarities.js';
 import { equipOwnedWeapon } from './equipment.js';
@@ -28,8 +31,23 @@ export function useItem(instanceId) {
     return true;
   }
   if (def.use === 'townPortal') return useTownPortal();
+  if (def.use === 'heal') return drink(slot, def);
   setStatus(`${def.name} cannot be used yet`);
   return false;
+}
+
+function drink(slot, def) {
+  if (player.ragdoll) { setStatus('Not while knocked down'); return false; }
+  const healed = drinkPotion(player, def, state.time);
+  if (typeof healed !== 'number') {
+    setStatus({ full: 'Already at full health', wait: 'Not so fast', dead: '' }[healed]);
+    return false;
+  }
+  removeItem(player.inventory, slot.instanceId, 1);
+  sfx('drink');
+  floatText(`+${Math.round(healed)}`, q => q.set(player.x, player.visY + 1.3, player.z), { color: '#ff6b6b', life: 1 });
+  setStatus(`${def.name}: +${Math.round(healed)} health`);
+  return true;
 }
 
 export function useBarSlot(i) {
@@ -76,8 +94,10 @@ export function updateQuickbar() {
   bar.classList.toggle('assigning', state.inventoryOpen);
   const c = state.cast;
   buttons.forEach((b, i) => {
-    const e = c && barEntry(inv, i), on = !!e && ITEMS[e.itemId].use === c.kind;
+    const e = barEntry(inv, i), def = e && ITEMS[e.itemId], on = !!c && def?.use === c.kind;
+    const wait = def?.use === 'heal' ? (player.drankAt + def.cooldown - state.time) / def.cooldown : 0;
     b.classList.toggle('casting', on);
-    b.querySelector('.qb-cast').style.height = on ? `${Math.min(1, c.t / c.duration) * 100}%` : '0';
+    b.classList.toggle('cooling', wait > 0);
+    b.querySelector('.qb-cast').style.height = on ? `${Math.min(1, c.t / c.duration) * 100}%` : wait > 0 ? `${Math.min(1, wait) * 100}%` : '0';
   });
 }

@@ -8,8 +8,9 @@
   Held/queued input is cleared on opening and closing; keyboard focus stays inside.
 - **V** opens the same paused panel with a Floor column, to move items between the floor and
   the bag (see [loot.md](loot.md)).
-- Select a bag slot to inspect it: a weapon shows its rarity, stats, affixes and how it
-  compares with the equipped one. **Equip** switches to an owned sword, **Drop** puts an item
+- Select a bag slot to inspect it: a weapon shows its rarity, item level, damage, attacks per
+  second, damage per second, reach, crits and affixes, and how it compares with the equipped
+  one (damage per second first). **Equip** switches to an owned sword, **Drop** puts an item
   down at your feet, **Use** uses a usable item (and closes the panel). Bag slots of Uncommon
   and better weapons are framed in their colour.
 - **1**–**6** use the quick bar (see below). With the panel open they put the selected bag
@@ -22,8 +23,8 @@
 
 ## Run state
 
-A new run starts with level 1, 0 XP, 100 HP, one owned/equipped Common Old Sword and the
-Town Portal Scroll on quick bar slot 1.
+A new run starts with level 1, 0 XP, 100 HP, one owned/equipped Common Old Sword, the
+Town Portal Scroll on quick bar slot 1 and three health potions on slot 2.
 Progression, currency, inventory and equipment survive cube travel and death.
 Death (or `R`) restores the current maximum HP; there is no death penalty yet. Death also
 resets the cube to how it was when you came in: enemies killed since come back (and give XP
@@ -31,13 +32,21 @@ again), uncollected coins they dropped vanish; collected rewards are kept.
 `N` / `newWorld()` resets the run, including defeated enemy IDs and equipment.
 State is **in memory only**, not saved across page reloads.
 
-- Next-level cost: `100 + 50 × (level − 1)` XP.
-- Lifetime XP threshold: `25 × (level − 1) × (level + 2)`.
+The numbers are in `PLAYER` (`core/progression.js`); [balance.md](balance.md) explains them.
+
+- Next-level cost: `500 + 1000 × (L − 1) + 60 × (L − 1)²` XP (`xpToNext`); `xpForLevel` sums
+  them. About one level per depth once past the road out of town.
+- A kill's XP is scaled by the level difference (`xpScale`): full up to two levels below the
+  player, then 20% less per level (at least 10%); 10% more per level above the player (at
+  most 50%). Farming shallow depths does not pay.
 - Maximum HP: `100 + 10 × (level − 1)`.
-- Weapon damage bonus: `2 × (level − 1)`.
+- Weapon damage: +2% per level after the first (`levelDamage`).
 - Level-ups add the maximum-HP increase to living players, rather than fully healing.
-- Grounded, non-swimming players regenerate 6 HP/s after five seconds without
-  damage. All damage paths share the same timer; inventory pauses that timer.
+- Grounded, non-swimming players regenerate 4% of their maximum HP per second after five
+  seconds without damage. All damage paths share the same timer; inventory pauses that timer.
+- **Health potions** restore 40% of the maximum HP at once, one a second (`drinkPotion`; the
+  quick bar slot fills while the next drink is not ready). Not while knocked down or at full
+  health. Enemies drop them now and then, guardians always, and chests hold them.
 
 ## Inventory and coins
 
@@ -56,8 +65,8 @@ silver 0–99, and gold is not subject to a normal stack limit. Operations use s
 integer copper values; spending returns change automatically. A full bag never
 blocks coin rewards. There is no second wallet balance to synchronize.
 
-Potions, crystals and sticks are registered stackables but have no use actions,
-crafting, trading or acquisition systems yet.
+Health potions are drunk (`use: 'heal'`). Mana and stamina potions, crystals and sticks are
+registered stackables but have no use actions, crafting, trading or acquisition systems yet.
 
 **Tools** (`category: 'tool'`) are used, not used up. The only one is the **Town Portal
 Scroll** ([world.md](world.md#town-portal-gametownportaljs)). It is **bound**: Drop is disabled
@@ -72,34 +81,38 @@ reference into the bag, not an item (`inventory.bar`, `assignBar` / `barEntry` i
 
 - Unique items (weapons, the scroll) are referenced by instance. Using a weapon equips it;
   if it leaves the bag, its slot clears.
-- Stackables would be referenced by item ID, so the slot uses any stack of it, shows the total
-  and stays (greyed out) when none are left. Only items with a `use` action or a weapon go on
-  the bar, so for now no stackable does.
+- Stackables (health potions) are referenced by item ID, so the slot uses any stack of it,
+  shows the total and stays (greyed out) when none are left. Only items with a `use` action or
+  a weapon go on the bar. A usable stackable that comes into the bag goes on the first free
+  slot by itself unless it is on the bar already (`autoBar`).
 - With the inventory open (the bar stays above its backdrop, framed in gold), **1**–**6** or a
   click puts the selected bag item on that slot, moving it off any other slot. The same key
   again takes it off. Bag slots show their bar key in the corner.
 
 ## Enemy levels and rewards
 
-Base level is `1 + floor(depth / 2)`. Surface/depth-1 enemies are always level 1.
-From depth 2, seeded variation is −1 / 0 / +1 with weights 25% / 50% / 25%, clamped
-at level 1. Difficulty never follows the player's level. Town and its surface
-buffer remain enemy-free. Animation timing, movement, body size and knockback do
-not scale with level.
+Enemies are level `depth`, 1 on the surface (`depthLevel`). From depth 2, seeded variation is
+−1 / 0 / +1 with weights 25% / 50% / 25%, clamped at level 1. Difficulty never follows the
+player's level. Town and its surface buffer remain enemy-free. Animation timing, movement,
+body size and knockback do not scale with level. Guardians stand a level (side) or two
+(descent) above the depth from depth 1 on ([guardians.md](guardians.md)).
+
+Every species grows at the same rate (`GROWTH` in `core/enemies.js`): +17% health, +10% damage,
++25% XP and coins per level, of its level-1 values. For example:
 
 | Stat at enemy level L | Spider | Stunder |
 |---|---|---|
-| HP | `30 + 4 × (L−1)` | `120 + 14 × (L−1)` |
-| Damage | `15 + 2 × (L−1)` | `30 + 3 × (L−1)` |
-| XP | `20 + 5 × (L−1)` | `80 + 20 × (L−1)` |
-| Coin range, copper | 4–8 | 20–35 |
+| HP | `32 × (1 + .17 (L−1))` | `140 × (1 + .17 (L−1))` |
+| Damage | `15 × (1 + .1 (L−1))` | `30 × (1 + .1 (L−1))` |
+| XP | `20 × (1 + .25 (L−1))` | `80 × (1 + .25 (L−1))` |
+| Coin range, copper | 4–8 × the same | 20–35 × the same |
 
-Both coin-range endpoints are multiplied by `1 + .25 × (L−1)`, rounded, then a
-seeded integer roll is taken inclusively. IDs, levels and rewards use the cube,
-species and spawn-floor ID, with a separate stream from terrain/spawn placement.
+Totals are rounded; a seeded integer roll is taken inclusively from the coin range
+(`coinRange`). IDs, levels and rewards use the cube, species and spawn-floor ID, with a
+separate stream from terrain/spawn placement. All species: [depths.md](depths.md).
 
-On death, XP is credited at once; coins and sometimes a weapon drop as loot to pick up
-(weapon drops: [loot.md](loot.md)). The run remembers defeated enemy IDs, so revisiting
+On death, XP is credited at once; coins and sometimes a weapon or a health potion drop as loot
+to pick up ([loot.md](loot.md)). The run remembers defeated enemy IDs, so revisiting
 or rebuilding a cube cannot resurrect them or duplicate rewards. Surviving
 monsters currently reset on re-entry; their levels/drop rolls remain unchanged.
 
@@ -109,17 +122,19 @@ These are the base types. A weapon instance scales the damage by its rarity and 
 stats with its affixes ([loot.md](loot.md)); combat reads only the instance's stats
 (`core/gear/stats.js`).
 
-| Sword | Base damage | Cooldown, seconds | Reach, cells |
-|---|---:|---:|---:|
-| Old Sword | 30 | 1.12 | .85 |
-| Short | 24 | .85 | .70 |
-| Medium | 36 | 1.12 | .85 |
-| Long | 40 | 1.22 | 1.05 |
-| Broad | 48 | 1.35 | .85 |
-| Greatsword | 60 | 1.65 | 1.15 |
+| Sword | Damage | Interval, seconds | Damage per second | Reach, cells | Arc | Drops from item level |
+|---|---:|---:|---:|---:|---:|---:|
+| Old Sword | 30 | .42 | 71 | .85 | ×1 | never |
+| Short | 23 | .32 | 72 | .72 | ×1 | 1 |
+| Medium | 34 | .42 | 81 | .85 | ×1 | 1 |
+| Long | 39 | .48 | 81 | 1.05 | ×1 | 2 |
+| Broad | 46 | .54 | 85 | .88 | ×1.25 | 4 |
+| Greatsword | 60 | .66 | 91 | 1.15 | ×1.3 | 6 |
 
-All use the existing Slash clip, scaled in time with the corresponding wind-up,
-active interval and recovery. Swing stats are captured at attack start, so even
+Damage is at item level 1; it grows 5% per item level. The interval is the real time from one
+swing to the next when chaining (the attack speed). All use the existing Slash clip, scaled in
+time with the corresponding wind-up, active interval and recovery: the heavy swords hit later
+and plant you for longer. Swing stats are captured at attack start, so even
 leveling up during a sweep cannot change its remaining hits. Blade arc, vertical
 overlap, line-of-sight and one-hit-per-target rules still apply. The greatsword
 currently uses the same one-handed prototype animation, not a new moveset.
@@ -134,9 +149,9 @@ allowed and leaves you unable to attack. No shops, durability or armor are imple
 ## Tests
 
 `npm test` covers stacking/capacity/instance identity, the quick bar's references, the bound
-scroll, conversion and
-change, integer validation, XP thresholds and multi-level gains, scaled enemy
-profiles, deterministic rewards, exactly-once deaths, regeneration, every sword's
+scroll, potions on the bar, conversion and
+change, integer validation, XP thresholds, XP scaling and multi-level gains, scaled enemy
+profiles, deterministic rewards, exactly-once deaths, regeneration, potions, every sword's
 assets/stats/timing and swing snapshots.
 
 In the game console:

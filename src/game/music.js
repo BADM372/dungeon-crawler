@@ -2,7 +2,7 @@
 // the town's waltz in the town and the merchant camp, the core's theme at the bottom of the
 // world, and everywhere else the song of the depth's theme (themes/: music).
 //   explore   nothing going on
-//   treasure  a reward site's chest close by, no enemy around
+//   treasure  a reward site's closed chest close by, no enemy around
 //   sense     a live enemy close by, not after you yet
 //   rise      an enemy chasing you from afar
 //   fight     an enemy after you is close, or blows were traded (you hit one, one hit you or
@@ -51,6 +51,7 @@ function wanted() {
   }
   if (around && state.time - lastClash < FIGHT_MEMORY) raise('fight');
   if (want === 'explore') for (const site of state.map.rewardSites ?? []) {
+    if (state.run.chests.has(site.id)) continue;   // an opened chest no longer calls
     const a = site.anchor;
     if (Math.hypot(a.x - player.x, a.z - player.z) < TREASURE && Math.abs(a.y - player.y) < 3) { want = 'treasure'; break; }
   }

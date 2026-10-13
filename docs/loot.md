@@ -1,15 +1,23 @@
-# Weapon loot
+# Loot
 
-Weapons are generated: each one is an instance of a base sword with its own rarity, item level,
-affixes and name. The generator lives in `src/core/gear/` and is pure and seeded; the floor,
-pickup and inventory code in `src/game/loot.js`, `src/game/lootlabels.js`,
-`src/game/inventory.js` and `src/render/loot.js`.
+Enemies drop coins, now and then a weapon or a health potion; guardians always drop weapons and
+potions; treasure chests at reward sites hold all three. Weapons are generated: each one is an
+instance of a base sword with its own rarity, item level, affixes and name. The generator lives
+in `src/core/gear/` and is pure and seeded; the floor, pickup and inventory code in
+`src/game/loot.js`, `src/game/lootlabels.js`, `src/game/inventory.js` and `src/render/loot.js`;
+chests in `src/core/chests.js` and `src/game/chests.js`. How much of it there is and why:
+[balance.md](balance.md).
 
 ## Controls
 
 - Weapons are **not** taken by walking over them, by the coin magnet or by **C**.
 - **Click** a weapon (or its label) to walk there and pick it up. The enemy under the cursor
-  still wins over an item; an item wins over the floor. A full bag says so and leaves it.
+  still wins over an item; an item wins over a chest, a chest over the floor. A full bag says so
+  and leaves it.
+- **Click** a closed treasure chest (or its label, "Treasure chest", coloured by how grand the
+  site is) to walk up and open it. X labels chests too.
+- Health potions are taken by walking over them or with **C**, like coins, and go on the quick
+  bar by themselves.
 - **X** toggles name labels over every item on the floor but coins. Without it only the item
   under the cursor shows its name. Labels are in the rarity's colour and stack instead of
   overlapping; they are clickable.
@@ -46,21 +54,26 @@ then name, each from a table.
 
 | Rarity | Weight | Min. item level | Affixes | Base damage | Floor glow |
 |---|---:|---:|---:|---:|---|
-| Junk | 30 | 1 | 0 | ×0.75 | none |
+| Junk | 24 | 1 | 0 | ×0.80 | none |
 | Common | 40 | 1 | 0 | ×1.00 | none |
-| Uncommon | 18 | 1 | 1 | ×1.03 | ring |
-| Rare | 7 | 1 | 2 | ×1.06 | ring, pool of light |
-| Epic | 2.5 | 3 | 3 | ×1.10 | + short beam |
-| Legendary | 0.6 | 5 | 4 | ×1.15 | + tall beam, sparks |
-| Mythic | 0.12 | 9 | 4 (+1 tier) | ×1.22 | + turning runes, a real light |
-| Ancient | 0.03 | 14 | 5 (+2 tiers) | ×1.30 | + very tall shimmering beam (guardians only) |
+| Uncommon | 22 | 1 | 1 | ×1.05 | ring |
+| Rare | 8 | 1 | 2 | ×1.10 | ring, pool of light |
+| Epic | 2.5 | 4 | 3 | ×1.16 | + short beam |
+| Legendary | 0.5 | 8 | 4 | ×1.24 | + tall beam, sparks |
+| Mythic | 0.08 | 13 | 4 (+1 tier) | ×1.32 | + turning runes, a real light |
+| Ancient | 0.015 | 17 | 5 (+2 tiers) | ×1.40 | + very tall shimmering beam (guardians only) |
 
-Each rarity's weight is multiplied by `exp((0.045 × (ilvl − 1) + luck) × rank)`, so better
-rarities grow more likely with item level. `node tools/loot-table.mjs [n]` prints the odds per
-level and per guardian (and `n` sample weapons per rarity).
+Each rarity's weight is multiplied by `exp((0.025 × (ilvl − 1) + luck) × rank)`, so better
+rarities grow more likely with item level, but slowly: at item level 20 about 8% of weapon
+drops are Epic, 3% Legendary and under 1% Mythic. A rarity floor (guardians, chests) above what
+the item level allows comes down to the best it does allow. `node tools/loot-table.mjs [n]`
+prints the odds per level and per guardian (and `n` sample weapons per rarity).
 
 **Bases** (`core/gear/bases.js`): short and medium swords from item level 1, long from 2,
-broadsword from 4, greatsword from 6. The Old Sword never drops.
+broadsword from 4, greatsword from 6. The Old Sword never drops. Their stats are in
+[progression.md](progression.md#swords): the light ones are quick, the heavy ones hit harder,
+further and wider. A base's damage grows **5% per item level** (`ILVL_DAMAGE`), so a weapon from
+ten depths further down hits half again as hard as the same one from the top.
 
 **Affixes** (`core/gear/affixes.js`), each at most once per item, at most three prefixes and
 three suffixes. The item level picks the tier (1: 1–3, 2: 4–7, 3: 8–12, 4: 13–18, 5: 19+);
@@ -69,7 +82,7 @@ Mythic and Ancient reach one or two tiers above (up to 7).
 | Affix | Kind | Stat | Tier 1 | Tier 7 |
 |---|---|---|---|---|
 | Sharp | prefix | + damage | 2–4 | 29–38 |
-| Brutal | prefix | + % damage | 5–10 | 50–62 |
+| Brutal | prefix | + % damage | 4–8 | 37–45 |
 | Swift | prefix | % faster attacks (all swing times) | 3–6 | 21–25 |
 | Sweeping | prefix | + % swing arc | 8–15 | 55–65 |
 | Vicious | prefix | + % critical chance | 3–5 | 18–22 |
@@ -78,9 +91,11 @@ Mythic and Ancient reach one or two tiers above (up to 7).
 | of Force | suffix | + % knockback | 15–30 | 125–150 |
 | of Precision | suffix | + % critical damage (base ×1.5) | 10–20 | 85–100 |
 
-Damage is `(base × rarity + flat) × (1 + percent)`, rounded, plus the player's level bonus. A
-critical hit multiplies it and shows a bigger golden number. Life on hit never heals past
-the maximum.
+Damage is `(base × item level growth × rarity + flat) × (1 + percent)`, rounded, then × the
+player's level bonus (+2% a level). Every weapon crits 5% of the time for ×1.5 before affixes; a
+critical hit shows a bigger golden number. Life on hit never heals past the maximum. Stats are
+computed when read, so retuning bases, rarities or item-level growth changes weapons already
+found.
 
 **Names** (`core/gear/names.js`) are generated for every rarity: Junk and Common get a word
 and the base ("Rusty Long Sword"), Uncommon two words ("Bright Fang"), Rare and Epic a
@@ -89,16 +104,34 @@ a compound and an epithet. The base type shows under the name where the name doe
 
 ## Drops
 
-`weaponDrops(enemy, worldSeed)` in `core/gear/drops.js`, seeded by the world seed and the
-enemy id: the same enemy always drops the same thing (also after a death brings it back,
-like its coins). The item level is the enemy's level.
+`enemyDrops(enemy, worldSeed)` in `core/gear/drops.js` (`weaponDrops` and `potionDrops`), seeded
+by the world seed and the enemy id: the same enemy always drops the same thing (also after a
+death brings it back, like its coins). The item level is the enemy's level.
 
-- Ordinary enemies: `8% + 0.4% × (level − 1)`, at most 12% (level 11 and up).
-- Side guardians: one weapon, two from level 15; at least Uncommon, Rare from level 18;
-  luck 0.15.
-- Descent guardians: two weapons, three from level 20; at least Rare, Epic from level 20;
-  luck 0.3.
+- Ordinary enemies: a weapon 5% and a health potion 3% of the time, both × √(the kind's
+  level-1 XP / 30): a spider 4% / 2.5%, a Stunder 8% / 5%, a Triangle 10% / 6%.
+- Side guardians: one weapon, at least Uncommon (Rare from level 10), luck 0.1; one potion.
+- Descent guardians: two weapons, at least Uncommon (Rare from level 5, Epic from 14), luck
+  0.2; two potions.
 - Ancient drops only from guardians.
+
+## Chests
+
+Every stratum budgets four reward sites, each with a treasure chest ([world.md](world.md)):
+two basic, one uncommon and one rare (now and then exceptional). `chestLoot(site, depth, seed)`
+in `core/chests.js` decides what one holds, seeded by the site; `CHESTS` is the table:
+
+| Site | Item level | Copper at level 1 | Potions | Weapons |
+|---|---|---|---|---|
+| Basic | depth | 25–45 | 0–1 | one, at least Common |
+| Uncommon | depth + 1 | 50–90 | 1 | one, at least Uncommon |
+| Rare | depth + 1 | 100–160 | 1–2 | at least Rare and at least Uncommon |
+| Exceptional | depth + 2 | 180–280 | 2 | at least Epic and at least Rare |
+
+Copper grows like enemy coins. Weapons roll with luck (0.1 to 0.45 by prestige). Opening a chest
+(`game/chests.js`) adds its site to `run.chests`, opens the model and spills the loot in front
+of it. The chest stays open for the run and what it spilled is `kept`: a death takes neither
+back.
 
 ## Extending
 
@@ -120,10 +153,12 @@ With `?dev=1` the inventory's developer box rolls a weapon of any base, rarity a
 ## Tests
 
 `tests/gear.test.js` covers rarity odds and gates, deterministic JSON items, affix validity
-and tiers, names, stats, drop rates and guardian floors, item instances in the bag, crits and
-life on hit. In the browser console:
+and tiers, names, stats, item-level growth, drop and potion rates and guardian floors, item
+instances in the bag, crits and life on hit; `tests/chests.test.js` the chest table. In the
+browser console:
 
 ```js
 const checks = await import('./tests/browser/inventory.js');
 await checks.runWeaponLootChecks();   // guardian drops, walk-over / C, labels, click pickup, V, drops, deaths
+await (await import('./tests/browser/chests.js')).runChestChecks();   // hover, click, open, spill, deaths, potions
 ```

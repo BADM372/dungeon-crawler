@@ -7,6 +7,8 @@ import { clearLine } from '../physics/enemynav.js';
 import { enemyHitFx, swingFx } from './juice.js';
 
 const BUFFER = 0.3;   // s a queued attack waits for the current swing to allow the next
+// the critical-hit roll of each blade hit, in 0..1 (browser checks pin it to keep numbers exact)
+export const rolls = { crit: () => Math.random() };
 
 export function queueAttack(target = null) {
   const s = player.sword;
@@ -41,12 +43,13 @@ export function hitWithSword(list) {
     if (!inSwordArc(p, e)) continue;
     const y = Math.max(e.y + 0.1, Math.min(p.y + 0.4, e.y + e.profile.bodyHeight - 0.05));
     if (!clearLine(p.x, p.y + 0.4, p.z, e.x, y, e.z)) continue;
-    const before = e.hp, hit = swordHit(p, e);
+    const before = e.hp, hit = swordHit(p, e, rolls.crit());
     if (!hit) continue;
     state.enemyGrace = 0;   // you started it
-    // knocked back along the blow, heavier bodies less (knockback affixes push harder)
+    // knocked back along the blow, heavier bodies less (knockback affixes push harder); a
+    // poised enemy that shrugs the blow off barely moves
     const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1;
-    const push = (e.hp ? 2.6 : 3.6) * (p.sword.stats?.knockback ?? 1) / e.profile.mass;
+    const push = (e.hp ? e.staggered ? 2.6 : 0.6 : 3.6) * (p.sword.stats?.knockback ?? 1) / e.profile.mass;
     e.kbx = dx / l * push; e.kbz = dz / l * push;
     enemyHitFx(e, before - e.hp, !e.hp, dx, dz, hit.crit);
     if (e.hp) setStatus(`Slashed Lv ${e.level} ${e.profile.label} (${e.hp}/${e.profile.hp})`);

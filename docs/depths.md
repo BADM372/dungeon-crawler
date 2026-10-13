@@ -14,24 +14,24 @@ in `docs/enemy-kinds.md`.
 | 0 | Meadow islands | surface | town + road to the first well | water | 1 (always 1) |
 | 1 | Meadow islands | surface, sky islands | arc, r=3 | water | 1 (always 1) |
 | 2 | Meadow islands | surface, sky islands | arc, r=3 | water | 2 (1–3) |
-| 3 | Snowy peaks | surface, sky islands | arc, r=3 | water | 2 (1–3) |
-| 4 | Badlands | surface | arc, r=3 | water (some lava / acid) | 3 (2–4) |
-| 5 | Root caves | cave | arc, r=3 | water | 3 (2–4) |
-| 6 | Root caves | cave | arc, r=2 | water | 4 (3–5) |
-| 7 | Frozen caves | cave | arc, r=2 | water | 4 (3–5) |
-| 8 | Frozen caves | cave | arc, r=2 | water | 5 (4–6) |
-| 9 | Fungal swamp | cave | arc, r=2 | acid river | 5 (4–6) |
-| 10 | Fungal swamp | cave | arc, r=2 | acid river | 6 (5–7) |
-| 11 | Spider nests | cave | arc, r=2 | acid river | 6 (5–7) |
-| 12 | Spider nests | cave | arc, r=2 | acid river | 7 (6–8) |
-| 13 | Crystal mines | cave | arc, r=1 | water (some lava) | 7 (6–8) |
-| 14 | Crystal mines | cave | arc, r=1 | water (some lava) | 8 (7–9) |
-| 15 | Buried ruins | cave | arc, r=1 | acid river, lava | 8 (7–9) |
-| 16 | Buried ruins | cave | arc, r=1 | acid river, lava | 9 (8–10) |
-| 17 | Volcanic depths | cave | arc, r=1 | lava river | 9 (8–10) |
-| 18 | Volcanic depths | cave | arc, r=1 | lava river | 10 (9–11) |
-| 19 | Obsidian abyss | cave, large voids | arc, r=1 | lava only | 10 (9–11) |
-| 20 | Obsidian abyss | cave, the core | 3×3 core around the axis | lava only | 11 (10–12) |
+| 3 | Snowy peaks | surface, sky islands | arc, r=3 | water | 3 (2–4) |
+| 4 | Badlands | surface | arc, r=3 | water (some lava / acid) | 4 (3–5) |
+| 5 | Root caves | cave | arc, r=3 | water | 5 (4–6) |
+| 6 | Root caves | cave | arc, r=2 | water | 6 (5–7) |
+| 7 | Frozen caves | cave | arc, r=2 | water | 7 (6–8) |
+| 8 | Frozen caves | cave | arc, r=2 | water | 8 (7–9) |
+| 9 | Fungal swamp | cave | arc, r=2 | acid river | 9 (8–10) |
+| 10 | Fungal swamp | cave | arc, r=2 | acid river | 10 (9–11) |
+| 11 | Spider nests | cave | arc, r=2 | acid river | 11 (10–12) |
+| 12 | Spider nests | cave | arc, r=2 | acid river | 12 (11–13) |
+| 13 | Crystal mines | cave | arc, r=1 | water (some lava) | 13 (12–14) |
+| 14 | Crystal mines | cave | arc, r=1 | water (some lava) | 14 (13–15) |
+| 15 | Buried ruins | cave | arc, r=1 | acid river, lava | 15 (14–16) |
+| 16 | Buried ruins | cave | arc, r=1 | acid river, lava | 16 (15–17) |
+| 17 | Volcanic depths | cave | arc, r=1 | lava river | 17 (16–18) |
+| 18 | Volcanic depths | cave | arc, r=1 | lava river | 18 (17–19) |
+| 19 | Obsidian abyss | cave, large voids | arc, r=1 | lava only | 19 (18–20) |
+| 20 | Obsidian abyss | cave, the core | 3×3 core around the axis | lava only | 20 (19–21) |
 
 ## Enemies per depth
 
@@ -133,88 +133,59 @@ kinds keep their bars and drops but guard no gate. From the console:
 
 ### Measured population
 
-These numbers come from 4 seeds and 32 cubes per depth on real generated cubes
-(`node tools/depth-population.mjs`). They are averages per cube, and "max" is the most
-enemies in any one cube. The stronger kinds raise the XP per cube by 0–27% over the plain
-species (the most at 15–16, where Blood vipers, Shadow mambas and Coral octonauts lead).
+These numbers come from 4 seeds and 32 cubes per depth on real generated cubes, guardian arenas
+(with their doubled defenders and the guardian) included (`node tools/depth-population.mjs`).
+They are averages per cube, and "max" is the most enemies in any one cube. XP is at the
+enemies' own levels, before the player's level scales it.
 
 | Depth | Enemies | Max | XP | Depth | Enemies | Max | XP |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 0 | 2.0 | 2 | 60 | 11 | 22.7 | 29 | 1317 |
-| 1 | 3.6 | 5 | 119 | 12 | 25.1 | 29 | 1735 |
-| 2 | 6.0 | 9 | 222 | 13 | 9.6 | 17 | 1222 |
-| 3 | 12.7 | 16 | 431 | 14 | 10.6 | 19 | 1817 |
-| 4 | 9.9 | 13 | 489 | 15 | 12.4 | 17 | 1918 |
-| 5 | 12.1 | 15 | 505 | 16 | 17.7 | 32 | 2644 |
-| 6 | 14.9 | 19 | 784 | 17 | 8.7 | 17 | 1843 |
-| 7 | 10.7 | 16 | 671 | 18 | 10.0 | 26 | 2561 |
-| 8 | 12.2 | 17 | 927 | 19 | 8.6 | 10 | 2549 |
-| 9 | 14.1 | 21 | 1032 | 20 | 17.5 | 34 | 4623 |
-| 10 | 19.1 | 25 | 1568 |  |  |  |  |
+| 0 | 2.5 | 4 | 164 | 11 | 27.9 | 60 | 2819 |
+| 1 | 4.2 | 8 | 236 | 12 | 28.7 | 54 | 3269 |
+| 2 | 6.8 | 14 | 380 | 13 | 12.4 | 34 | 2815 |
+| 3 | 14.8 | 28 | 758 | 14 | 11.1 | 38 | 3820 |
+| 4 | 12.6 | 26 | 902 | 15 | 15.5 | 34 | 4396 |
+| 5 | 15.0 | 28 | 1053 | 16 | 21.7 | 62 | 5774 |
+| 6 | 18.1 | 34 | 1471 | 17 | 11.7 | 34 | 4583 |
+| 7 | 12.6 | 28 | 1378 | 18 | 11.8 | 25 | 5653 |
+| 8 | 14.6 | 30 | 1763 | 19 | 10.5 | 20 | 5949 |
+| 9 | 17.1 | 36 | 2127 | 20 | 17.6 | 34 | 8002 |
+| 10 | 22.6 | 48 | 3063 |  |  |  |  |
 
 The enemy count drops at a theme change that brings in stronger species (13, 17, 19). The
 XP per cube keeps rising.
 
 ## Enemy levels
 
-- Base level: `1 + floor(depth / 2)`.
+- Base level: the depth (`depthLevel`), 1 on the surface, 20 at the core.
 - Depths 0 and 1: always level 1.
 - From depth 2: a seeded −1 / 0 / +1 roll, weighted 25% / 50% / 25%, clamped to at least 1.
   The roll is per cube, species and spawn floor, so it is stable when you come back.
+- Guardians: a level above the depth (side), two above (descent), from depth 1 on.
 - Levels never follow the player's level. Only HP, damage, XP and coins scale. Size, speed,
   timing and knockback stay the same. Kinds change those (`docs/enemy-kinds.md`).
-- Coins: both ends of the species' coin range are multiplied by `1 + 0.25 × (L − 1)` and
-  rounded.
+- Every species grows at the same rate per level (`GROWTH`): HP +17%, damage +10%, XP and
+  coins +25% of its level-1 values. Why these: [balance.md](balance.md).
 
-## Species stats by level
+## Species stats
 
-At enemy level `L`:
+At level 1; at level `L` multiply HP by `1 + 0.17 (L − 1)`, damage by `1 + 0.1 (L − 1)`, XP
+and coins by `1 + 0.25 (L − 1)`, and round.
 
-| Species | Tier | HP | Damage | XP | Coins at L1 (copper) |
-|---|---|---|---|---|---|
-| Spider | weak | `30 + 4(L−1)` | `15 + 2(L−1)` | `20 + 5(L−1)` | 4–8 |
-| Snake | weak | `40 + 5(L−1)` | `16 + 2(L−1)` | `30 + 7(L−1)` | 6–12 |
-| Octonaut | medium | `80 + 9(L−1)` | `20 + 3(L−1)` | `55 + 13(L−1)` | 12–22 |
-| Stunder | heavy | `120 + 14(L−1)` | `30 + 3(L−1)` | `80 + 20(L−1)` | 20–35 |
-| Fire-face | strong, ranged | `110 + 12(L−1)` | `22 + 3(L−1)` (+6 burn) | `90 + 20(L−1)` | 24–40 |
-| Fire-cat | strong | `120 + 13(L−1)` | `26 + 3(L−1)` | `95 + 22(L−1)` | 22–38 |
-| Triangle | strong, ranged | `150 + 16(L−1)` | `28 + 4(L−1)` | `110 + 25(L−1)` | 28–46 |
+| Species | Tier | HP | Damage | XP | Coins (copper) | Poise |
+|---|---|---:|---:|---:|---|---:|
+| Spider | weak, swarms | 32 | 15 | 20 | 4–8 | – |
+| Snake | weak | 48 | 16 | 30 | 6–12 | – |
+| Octonaut | medium | 90 | 20 (spin 28) | 55 | 12–22 | 0.8 s |
+| Stunder | heavy | 140 | 30 | 80 | 20–35 | 1.5 s |
+| Fire-face | strong, ranged | 120 | 22 (+6 burn) | 90 | 24–40 | 0.8 s |
+| Fire-cat | strong | 130 | 26 | 95 | 22–38 | 0.4 s |
+| Triangle | strong, ranged | 170 | 28 | 110 | 28–46 | 1.2 s |
 
 These are the base kinds. The other kinds multiply them (`docs/enemy-kinds.md`). For example, a
-level 5 Blood viper has `round(56 + 7(L−1))` = 84 HP. Per-level growth is not rounded on its
-own, only the total.
+level 5 Blood viper has `round(67 × 1.68)` = 113 HP. Poise: for how long after a stagger lighter
+hits do not stagger it again ([combat.md](combat.md)).
 
-For example, at depth 20 (base level 11): spider 70 HP / 35 damage, Stunder 260 HP /
-60 damage, Triangle 310 HP / 68 damage.
-
-## Proposal: levels and XP (not implemented)
-
-The populations above are implemented. The level curve and XP are unchanged. A rough
-simulation suggests they need rebalancing next. It assumes the player kills half the
-enemies on the spine cubes (the cubes from the entry ring to the well, 3–16 per depth).
-
-| Model | Depth 3 | Depth 8 | Depth 12 | Depth 20 |
-|---|---|---|---|---|
-| Now: `1 + floor(d/2)`, no falloff | player 14 / enemy 2 | 28 / 5 | 41 / 7 | 57 / 11 |
-| `max(1, d)` levels, XP falloff 15% per level | 9 / 3 | 14 / 8 | 19 / 12 | 26 / 20 |
-| `max(1, d)` levels, XP falloff 20% per level | 8 / 3 | 13 / 8 | 18 / 12 | 25 / 20 |
-
-The old population already gave about this much XP, so the problem is not new. The player
-outlevels everything quickly. They gain +2 damage and +10 HP per level, and by depth 8 they
-kill every species in one or two swings.
-
-Proposed changes:
-
-1. **Faster enemy levels:** base level `max(1, depth)`, with the same ±1 roll from depth 2.
-   That gives L20 at the core.
-2. **XP falloff:** scale XP by `max(0.1, 1 − 0.15 × (playerLevel − enemyLevel))` when the
-   player's level is higher. Players cannot farm shallow depths. From the middle depths on,
-   the player stays about 6 levels above the depth's enemies, instead of 4–5 times their
-   level. The first few levels still come quickly, as they should.
-3. **Elite guests:** a rare species that shows up a theme early (the Triangle at 3) keeps the
-   depth's level. The roster could get an optional level offset (`+1` for "elite") if it
-   needs to be scarier.
-4. **Possibly later: a threat budget.** Give each cube a budget that rises with depth and
-   each species a cost (spider 1, snake 1.5, Octonaut 3, Stunder, Fire-face and Fire-cat 5,
-   Triangle 6). Counts would fill the budget, so a cube with a Triangle would have fewer
-   spiders. Today the lead and the bottom-half rule do a rough version of this.
+For example, at depth 20 (level 20): spider 135 HP / 44 damage, Stunder 592 HP / 87 damage,
+Triangle 719 HP / 81 damage, a Magma stunder 799 HP / 122 damage. The player arrives there at
+about level 22 with 310 HP and a weapon dealing about 190 a hit.

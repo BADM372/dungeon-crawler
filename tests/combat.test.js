@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy, attackOf, pickAttack,
   blowOf, lungeDistance, lungeAt } from '../src/core/enemies.js';
 import { launch, touches, stepProjectile, ignite, burnStep, burntOut } from '../src/core/projectiles.js';
-import { SWORD, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, softTarget } from '../src/core/combat.js';
+import { SWORD, HEAVY_HIT, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, softTarget, damageEnemy } from '../src/core/combat.js';
 
 const hero = () => ({ x: 0, y: 0, z: 0, yaw: 0, hp: 100, stun: 0, sword: swordState() });
 const enemy = (profile = SPIDER) => makeEnemy({ x: 0, y: 0, z: 0.8, yaw: Math.PI }, profile);
@@ -13,9 +13,9 @@ test('sword is a timed, one-press attack with wind-up and recovery', () => {
   const p = hero(), e = enemy();
   assert.ok(startSwing(p));
   assert.equal(startSwing(p), false);
-  assert.equal(swordHit(p, e), false);
+  assert.equal(swordHit(p, e, 1), false);
   advanceSwing(p, SWORD.activeStart + 0.01);
-  assert.ok(swordHit(p, e));
+  assert.ok(swordHit(p, e, 1));
   advanceSwing(p, SWORD.duration);
   assert.equal(p.sword.active, false);
   assert.equal(p.sword.cool, 0);
@@ -48,46 +48,67 @@ test('soft-targeting picks the closest reachable living enemy, preferring those 
 test('one enemy is hit at most once per swing', () => {
   const p = hero(), e = enemy(STUNDER);
   swing(p);
-  for (let i = 0; i < 30; i++) swordHit(p, e);
-  assert.equal(e.hp, 90);
+  for (let i = 0; i < 30; i++) swordHit(p, e, 1);
+  assert.equal(e.hp, STUNDER.hp - 30);
   assert.equal(e.mode, 'chase');
   assert.ok(e.stun > 0);
 });
-test('spider dies in one slash; Stunder takes four and does more damage', () => {
+test('the Old Sword takes two slashes for a spider and five for a Stunder, which hits harder', () => {
   const p = hero(), spider = enemy(), stunder = enemy(STUNDER);
   assert.ok(STUNDER.damage > SPIDER.damage);
-  swing(p); swordHit(p, spider); swordHit(p, stunder);
+  swing(p); swordHit(p, spider, 1); swordHit(p, stunder, 1);
+  assert.equal(spider.hp, SPIDER.hp - 30); assert.equal(stunder.hp, STUNDER.hp - 30);
+  advanceSwing(p, 2); swing(p); swordHit(p, spider, 1);
   assert.equal(spider.mode, 'dead'); assert.equal(spider.hp, 0);
-  assert.equal(stunder.hp, 90);
-  for (let i = 0; i < 3; i++) {
-    advanceSwing(p, 2); swing(p); swordHit(p, stunder);
-    assert.equal(stunder.hp, 60 - 30 * i);
+  for (let i = 2; i <= 4; i++) {
+    advanceSwing(p, 2); swing(p); swordHit(p, stunder, 1);
+    assert.equal(stunder.hp, STUNDER.hp - 30 * i);
   }
+  advanceSwing(p, 2); swing(p); swordHit(p, stunder, 1);
   assert.equal(stunder.mode, 'dead');
   assert.equal(stunder.deadT, 0);
-  assert.equal(swordHit(p, stunder), false);
+  assert.equal(swordHit(p, stunder, 1), false);
+});
+test('a stagger interrupts a wind-up; a poised enemy shrugs light blows off until its poise wears off', () => {
+  const spider = enemy(), stunder = enemy(STUNDER);
+  assert.equal(SPIDER.poise, 0); assert.ok(STUNDER.poise > 1);
+  for (const e of [spider, stunder]) { e.mode = 'attack'; e.t = 0.2; }
+  damageEnemy(spider, 1); damageEnemy(stunder, 1);
+  for (const e of [spider, stunder]) assert.ok(e.staggered && e.mode === 'chase' && e.stun > 0 && e.cool >= 0.45, e.type);
+  assert.equal(stunder.poised, STUNDER.poise);
+  // poised: a light hit hurts but the wind-up goes on
+  stunder.mode = 'attack'; stunder.stun = 0; stunder.cool = 0;
+  damageEnemy(stunder, 1);
+  assert.equal(stunder.staggered, false); assert.equal(stunder.mode, 'attack'); assert.equal(stunder.stun, 0);
+  assert.equal(stunder.hp, STUNDER.hp - 2); assert.ok(stunder.hurtT > 0, 'it still flashes');
+  // a heavy blow staggers anyway
+  damageEnemy(stunder, Math.ceil(HEAVY_HIT * STUNDER.hp));
+  assert.ok(stunder.staggered && stunder.mode === 'chase');
+  // a spider (no poise) is staggered by every hit
+  spider.mode = 'attack'; damageEnemy(spider, 1);
+  assert.ok(spider.staggered && spider.mode === 'chase');
 });
 test('blade cannot hit behind, too far away, or through another floor', () => {
   const p = hero(); swing(p);
   for (const extra of [{ z: -0.8 }, { z: 3 }, { y: -2 }, { y: 2 }, { x: 1, z: -0.2 }]) {
     const e = Object.assign(enemy(), extra);
     assert.equal(inSwordArc(p, e), false, JSON.stringify(extra));
-    assert.equal(e.hp, 30);
+    assert.equal(e.hp, SPIDER.hp);
   }
 });
 test('one slash can sweep multiple enemies, but only during the active interval', () => {
   const p = hero(), left = enemy(), right = enemy();
   left.x = -0.3; right.x = 0.3;
-  swing(p); assert.ok(swordHit(p, left)); assert.ok(swordHit(p, right));
+  swing(p); assert.ok(swordHit(p, left, 1)); assert.ok(swordHit(p, right, 1));
   const late = enemy();
   advanceSwing(p, SWORD.activeEnd);
-  assert.equal(swordHit(p, late), false);
+  assert.equal(swordHit(p, late, 1), false);
 });
 test('jumping without a sword press never starts an attack or kills an enemy', () => {
   const p = hero(), e = enemy();
   for (const y of [0, 0.2, 0.6, 1, 0.6, 0.2, 0]) {
     p.y = y; p.vy = -4; advanceSwing(p, 1 / 60);
-    assert.equal(swordHit(p, e), false);
+    assert.equal(swordHit(p, e, 1), false);
   }
   assert.equal(e.hp, SPIDER.hp); assert.notEqual(e.mode, 'dead');
 });
@@ -100,7 +121,7 @@ test('swimming, ladders, knockdown, death and stun block / cancel sword attacks'
   }
 });
 test('travel cancellation clears queued input and previous targets', () => {
-  const p = hero(); swing(p); swordHit(p, enemy(STUNDER)); p.sword.requested = true;
+  const p = hero(); swing(p); swordHit(p, enemy(STUNDER), 1); p.sword.requested = true;
   cancelSwing(p, true);
   assert.equal(p.sword.active, false); assert.equal(p.sword.requested, false);
   assert.equal(p.sword.hits.size, 0); assert.equal(p.sword.cool, 0);

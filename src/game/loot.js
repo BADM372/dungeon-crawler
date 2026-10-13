@@ -8,10 +8,10 @@
 // gen: a generated weapon's own data; kept: put down by the player (a death leaves it).
 import { player, state, setStatus } from './state.js';
 import { coinDrops, inCollectReach, inMagnetReach, inFloorReach, steppedOn, walkTakes } from '../core/loot.js';
-import { addItem, addInstance, takeItem, isBound, formatCoins } from '../core/inventory.js';
+import { addItem, addInstance, takeItem, isBound, formatCoins, autoBar } from '../core/inventory.js';
 import { ITEMS } from '../core/items.js';
 import { RARITY, rarityOf } from '../core/gear/rarities.js';
-import { weaponDrops } from '../core/gear/drops.js';
+import { enemyDrops } from '../core/gear/drops.js';
 import { displayName } from '../core/gear/stats.js';
 import { groundAt } from '../physics/collide.js';
 import { inFluid } from '../physics/fluid.js';
@@ -54,11 +54,13 @@ function place(item, at, from, extra = {}) {
   return p;
 }
 
-// what enemy e leaves behind: its coins and its seeded weapon drops (core/gear/drops.js)
-export function dropLoot(e, copper) {
-  const from = { x: e.x, y: e.y + 0.4, z: e.z };
-  coinDrops(copper).forEach((d, i) => place(d, landing(e.x, e.y, e.z), from, { toss: -i * 0.06 }));   // they burst out one after another
-  weaponDrops(e, state.map?.seed ?? 0).forEach((item, i) => place(item, landing(e.x, e.y, e.z, 0.5, 1.1), from, { toss: -0.15 - i * 0.18 }));
+// what enemy e leaves behind: its coins and its seeded weapon and potion drops (core/gear/drops.js)
+export function dropLoot(e, copper) { spill(e, copper, enemyDrops(e, state.map?.seed ?? 0)); }
+// coins and items bursting out of a body (or a chest: `from`) and landing around `at`; extra:
+// what every pickup carries
+export function spill(at, copper, items, extra = {}, from = { x: at.x, y: at.y + 0.4, z: at.z }) {
+  coinDrops(copper).forEach((d, i) => place(d, landing(at.x, at.y, at.z), from, { toss: -i * 0.06, ...extra }));   // one after another
+  items.forEach((item, i) => place(item, landing(at.x, at.y, at.z, 0.5, 1.1), from, { toss: -0.15 - i * 0.18, ...extra }));
 }
 
 // put item ({ itemId, count, gen? }) down at the player's feet; it stays there through a death
@@ -82,6 +84,7 @@ function pull(p, delay, dur) { p.fly = { t: -delay, dur }; }
 
 function credit(p) {
   if (p.gen ? !addInstance(player.inventory, p) : !addItem(player.inventory, p.itemId, p.count)) return false;
+  autoBar(player.inventory, p.itemId);   // a potion goes on the quick bar
   gained ||= { copper: 0, items: new Map(), color: null };
   const def = ITEMS[p.itemId];
   if (def.category === 'currency') { gained.copper += def.value * p.count; sfx('coin', { pitch: def.value >= 1000 ? 0.8 : def.value >= 10 ? 0.9 : 1 }); }

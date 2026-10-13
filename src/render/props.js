@@ -4,17 +4,19 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { cutMaterial } from './section.js';
+import { buildChests } from './chests.js';
 
 import { props, catalogProp, propMetadata } from '../core/propcatalog.js';
 export { props } from '../core/propcatalog.js';
 
-const URLS = ['assets/props.glb', 'assets/clutter.glb', 'assets/items/treasure_chest_closed.glb'];
+const URLS = ['assets/props.glb', 'assets/clutter.glb', 'assets/items/treasure_chest.glb'];
 const wind = { value: 0 };
 const onReady = [];
 export const whenPropsReady = fn => props.ready ? fn() : onReady.push(fn);
 export const tickProps = t => { wind.value = t; };
 
 export function registerProps(gltf) {
+  gltf.scene.updateMatrixWorld(true);
   for (const o of gltf.scene.children) {
     // a prop is one mesh, or a group of meshes when it has a glowing material as well
     const parts = (o.isMesh ? [o] : o.children.filter(c => c.isMesh)).map(c => ({ geometry: c.geometry, material: c.material }));
@@ -24,10 +26,13 @@ export function registerProps(gltf) {
     const base = rest.slice(0, -1).join('_');
     const box = new THREE.Box3();
     for (const q of parts) { q.geometry.computeBoundingBox(); box.union(q.geometry.boundingBox); }
+    // an animated prop (the treasure chest) keeps its whole node tree and clips (render/chests.js)
+    const animated = ex.clips ? { template: o, clips: gltf.animations } : {};
+    if (ex.clips) box.setFromObject(o);
     const p = { name, set, base, attach: ex.attach || 'ground', radius: ex.radius ?? 0.3, blocking: !!ex.blocking,
       light: ex.light, intensity: ex.intensity ?? 1, sway: ex.sway ?? 0, priority: ex.priority ?? 1,
       cover: !!ex.cover, shore: !!ex.shore, fluid: ex.fluid, drop: ex.drop ?? 0,
-      ...propMetadata.get(name), parts, height: box.max.y, minY: box.min.y, maxY: box.max.y };
+      ...propMetadata.get(name), parts, ...animated, height: box.max.y, minY: box.min.y, maxY: box.max.y };
     catalogProp(p);
   }
 }
@@ -59,6 +64,7 @@ export function buildProps(placed, group) {
   let lights = 0;
   for (const [name, list] of byName) {
     const p = props.byName.get(name);
+    if (p?.template) { buildChests(p, list, group); continue; }
     if (!p?.parts) continue;
     for (const part of p.parts) {
       const c = cutMaterial(part.material.clone(), false, true);

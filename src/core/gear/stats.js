@@ -1,16 +1,23 @@
-// A weapon instance's stats: its base type's, scaled by rarity, then changed by its affixes.
-// Combat (core/combat.js) only ever reads these, never the base type directly.
-//   damage: (base × rarity + flat) × (1 + percent), rounded
-//   cooldown: shortened by `speed` percent (and every swing time with it)
-//   range: + reach in cells; arc: × (1 + percent)
-//   crit / critDamage: chance (0..1) and multiplier; leech: life on hit; knockback: multiplier
+// A weapon instance's stats: its base type's, grown by its item level and scaled by rarity, then
+// changed by its affixes. Combat (core/combat.js) only ever reads these, never the base type.
+//   damage: (base × item level growth × rarity + flat) × (1 + percent), rounded
+//   interval: the time between swings, shortened by `speed` percent (every swing time with it)
+//   range: + reach in cells; arc: the base's × (1 + percent)
+//   crit / critDamage: chance (0..1, CRIT_CHANCE without affixes) and multiplier; leech: life on
+//   hit; knockback: multiplier
 import { ITEMS } from '../items.js';
 import { AFFIX, describeAffix } from './affixes.js';
 import { rarityOf } from './rarities.js';
 import { namesBase } from './names.js';
 
 export const ARC = Math.PI * 0.42;   // the basic swing arc (core/combat.js SWORD.arc)
+export const CRIT_CHANCE = 0.05;     // every weapon crits this often without affixes
 export const CRIT_DAMAGE = 1.5;      // a critical hit without affixes
+// base damage grows by this share per item level: a weapon found ten depths further down hits
+// half again as hard as the same one from the top (enemy health grows 12% a level; the
+// player's level adds the rest, core/progression.js)
+export const ILVL_DAMAGE = 0.05;
+export const ilvlDamage = ilvl => 1 + ILVL_DAMAGE * (Math.max(1, ilvl || 1) - 1);
 
 export function itemStats(item) {
   const def = ITEMS[item?.itemId], w = def?.weapon;
@@ -21,11 +28,11 @@ export function itemStats(item) {
     sum[stat === 'damage' && op === 'pct' ? 'damagePct' : stat] += a.value;
   }
   return {
-    damage: Math.max(1, Math.round((w.damage * rarityOf(item).damage + sum.damage) * (1 + sum.damagePct / 100))),
-    cooldown: Math.round(w.cooldown * (1 - sum.speed / 100) * 1000) / 1000,
+    damage: Math.max(1, Math.round((w.damage * ilvlDamage(item.gen?.ilvl) * rarityOf(item).damage + sum.damage) * (1 + sum.damagePct / 100))),
+    interval: Math.round(w.interval * (1 - sum.speed / 100) * 1000) / 1000,
     range: Math.round((w.range + sum.range) * 100) / 100,
-    arc: ARC * (1 + sum.arc / 100),
-    crit: sum.crit / 100,
+    arc: ARC * w.arc * (1 + sum.arc / 100),
+    crit: CRIT_CHANCE + sum.crit / 100,
     critDamage: CRIT_DAMAGE + sum.critDamage / 100,
     leech: sum.leech,
     knockback: 1 + sum.knockback / 100,
@@ -36,3 +43,5 @@ export function itemStats(item) {
 export const displayName = item => item?.gen?.name ?? ITEMS[item?.itemId]?.name ?? '';
 export const baseLine = item => item?.gen && !namesBase(item.gen.rarity) ? ITEMS[item.itemId].name : null;
 export const affixLines = item => (item?.gen?.affixes ?? []).map(describeAffix);
+// damage per second, counting crits: what to compare weapons by
+export const weaponDps = s => s.damage * (1 + s.crit * (s.critDamage - 1)) / s.interval;

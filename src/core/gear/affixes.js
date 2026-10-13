@@ -17,7 +17,7 @@ export const AFFIXES = Object.freeze([
   affix('sharp', 'prefix', 'Sharp', 'damage', 'add',
     [[2, 4], [4, 7], [7, 11], [11, 16], [16, 22], [22, 29], [29, 38]], v => `+${v} damage`),
   affix('brutal', 'prefix', 'Brutal', 'damage', 'pct',
-    [[5, 10], [10, 16], [16, 23], [23, 31], [31, 40], [40, 50], [50, 62]], v => `+${v}% damage`),
+    [[4, 8], [8, 13], [13, 18], [18, 24], [24, 30], [30, 37], [37, 45]], v => `+${v}% damage`),
   affix('swift', 'prefix', 'Swift', 'speed', 'pct',
     [[3, 6], [6, 9], [9, 12], [12, 15], [15, 18], [18, 21], [21, 25]], v => `${v}% faster attacks`),
   affix('sweeping', 'prefix', 'Sweeping', 'arc', 'pct',

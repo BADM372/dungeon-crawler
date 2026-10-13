@@ -94,7 +94,7 @@ function slide(p, c, cloud) {
   state.portalLock = fall || p.kind === 'side' ? 0 : arr.id;
   state.boundaryLock = p.kind === 'side' ? OPP6[p.dir] : -1;
   tr.A0 = A;
-  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k), gateLocked(m, state.run), townPadIn(m, state.run));
+  state.world = buildWorld(m, state.showPath, portalSeen(k, m), c.geo, openedSides(state.openedFaces, k), gateLocked(m, state.run), townPadIn(m, state.run), state.run.chests);
   // Live crossings retain their height/motion; the death entry must be supported and dry.
   state.arrival = respawnPoint(state.arrival);
   state.world.group.position.copy(D);
