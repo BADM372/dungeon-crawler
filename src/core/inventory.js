@@ -16,10 +16,12 @@ export function createInventory() {
     bar: Array(BAR_SIZE).fill(null), equipped: null, nextInstance: 1, version: 0 };
 }
 export const copperTotal = inv => whole(inv.currency.reduce((n, s) => n + s.count * ITEMS[s.itemId].value, 0));
+// kids-docs: code.html#math (see kids-docs/README.md)
 export function coinCounts(copper) {
   whole(copper);
   return [Math.floor(copper / 1000), Math.floor(copper % 1000 / 10), copper % 10];
 }
+// kids-docs: code.html#functions (see kids-docs/README.md)
 export function formatCoins(copper) {
   return coinCounts(copper).map((n, i) => n ? `${n}${COINS[i].suffix}` : '').filter(Boolean).join(' ') || '0c';
 }
@@ -33,6 +35,7 @@ export function addCopper(inv, amount) {
   if (amount) setCopper(inv, total);
   return true;
 }
+// kids-docs: code.html#decisions (see kids-docs/README.md)
 export function spendCopper(inv, amount) {
   whole(amount);
   const total = copperTotal(inv);

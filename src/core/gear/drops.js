@@ -34,6 +34,7 @@ export function hashString(s) {
 const stream = (enemy, seed, salt) => mulberry32(hash32(hashString(String(enemy.id)) ^ Math.imul(seed >>> 0, 0x9e3779b1) ^ salt));
 
 // enemy: { id, level, kind? (its level-1 profile), guardian?, guardianRole? }; seed: the world's
+// kids-docs: code.html#loops (see kids-docs/README.md)
 export function weaponDrops(enemy, seed = 0) {
   const R = stream(enemy, seed, 0x10075);
   const level = Math.max(1, enemy.level || 1);

@@ -204,6 +204,24 @@ ol.journey > li.on { background: #ffffff12; color: #fff; }
 ol.journey > li.on::before { background: var(--accent); color: #0b0d12; border-color: var(--accent); }
 .demo .things button { font-family: var(--mono); }
 
+/* function machines (machine demo) and stepping through code (stepper demo) */
+.machine { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; margin: 10px 0 4px; }
+.machine .in, .machine .outv { display: flex; flex-direction: column; gap: 4px; background: #181e28; border: 1px solid #2f3846; border-radius: 6px; padding: 8px 10px; }
+.machine .in { position: relative; } .machine .in::after, .machine .outv::before { content: "\25B6"; position: absolute; color: var(--accent); }
+.machine .in::after { right: -14px; top: 40%; } .machine .outv { position: relative; } .machine .outv::before { left: -14px; top: 40%; }
+.machine .in input { width: 100%; font-size: 18px; }
+.machine .body { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 18px; border: 2px solid var(--accent); border-radius: 10px;
+  background: linear-gradient(#232b38, #161b24); font-family: var(--mono); }
+.machine .body .name { color: var(--title); font-weight: normal; }
+.machine .gear { font-size: 26px; color: var(--accent); transition: transform .35s ease-out; display: inline-block; }
+.machine .res { font: 20px var(--mono); color: var(--gold); word-break: break-all; }
+pre.mcode { margin-top: 10px; }
+/* code that wraps instead of scrolling sideways (narrow columns) */
+pre.wrap, pre.mcode { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre.stepper .ln { display: block; padding: 0 6px; margin: 0 -6px; border-radius: 3px; }
+pre.stepper .ln.ran { background: #ffffff08; }
+pre.stepper .ln.on { background: color-mix(in srgb, var(--accent) 28%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+
 /* weapon card (loot demo), like the inventory's detail panel */
 .weapon { display: grid; grid-template-columns: 110px 1fr; gap: 12px; background: #181e28; border: 1px solid var(--rarity, var(--line)); border-radius: 6px; padding: 10px;
   background-image: radial-gradient(circle at 55px 55px, color-mix(in srgb, var(--rarity) 25%, transparent), transparent 70px); }

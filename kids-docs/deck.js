@@ -10,6 +10,7 @@
 // shows one of them (attributes: data-de-alt, data-de-title ... replace alt, title ... in German).
 //   - <pre data-code="src/x.js#name"> shows that definition, read live from the game's code
 //   - <b data-val="src/x.js#NAME.field"> shows that value, read live from the game's code
+//     (demos can show live code too: set data-code on a <pre> and call liveCode)
 //   - slides that stamps.json lists as outdated get a note (tools/kids-docs.mjs, README.md)
 import { DECKS, LEVELS, THEME_NAMES, THEME_NAMES_DE, local } from './decks.js';
 import { parseRefs, extract, readValue, formatValue } from './refs.js';
@@ -77,7 +78,7 @@ function stars() {
 // ---- small helpers ---------------------------------------------------------------------
 const esc = s => s.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
 // a tiny highlighter: comments, strings, keywords and numbers (good enough for short excerpts)
-function highlight(pre) {
+export function highlight(pre) {
   const code = pre.querySelector('code') || pre;
   const src = code.textContent.replace(/^\n/, '').replace(/\s+$/, '');
   const re = /(\/\/[^\n]*|#[^\n{]*$)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`[^`]*`)|\b(const|let|var|function|return|if|else|for|while|new|export|import|from|of|in|class|this|true|false|null|continue|break|def|await|async)\b|(\b\d+(?:\.\d+)?\b)/gm;
@@ -115,7 +116,7 @@ const dedent = s => {
   const ls = s.split('\n'), n = Math.min(...ls.filter(l => l.trim()).map(l => l.match(/^\s*/)[0].length));
   return ls.map(l => l.slice(n)).join('\n');
 };
-async function liveCode(pre) {
+export async function liveCode(pre) {
   try {
     const parts = await Promise.all(parseRefs(pre.dataset.code).map(async r => {
       const e = extract(await source(r.path), r.path, r.name);

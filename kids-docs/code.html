@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title data-de="Code lesen · Kinderführer zu Cube Crawler">Reading Code · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
+</head>
+<body data-theme="meadow">
+<main class="deck">
+
+<section class="slide" id="text" data-lv="1" data-src="src/core/townportal.js#CAST_TIME,TOWN_PORTAL_CHARGE">
+  <h2 lang="en">Code is just text</h2>
+  <h2 lang="de">Code ist einfach Text</h2>
+  <div class="cols">
+    <div>
+      <p class="lead" lang="en">Every file of the game is plain text, the same letters you type in a message. It's written in a language the computer understands, called <a class="w" href="words.html#javascript">JavaScript</a>.</p>
+      <p class="lead" lang="de">Jede Datei des Spiels ist einfacher Text, dieselben Buchstaben, die du in einer Nachricht tippst. Er ist in einer Sprache geschrieben, die der Computer versteht: <a class="w" href="words.html#javascript">JavaScript</a>.</p>
+      <p lang="en">The computer reads it from top to bottom, and does exactly what it says. Here is the start of a real file of the game. The colours help you read it:</p>
+      <p lang="de">Der Computer liest ihn von oben nach unten und macht genau, was dasteht. Hier ist der Anfang einer echten Datei des Spiels. Die Farben helfen dir beim Lesen:</p>
+      <ul>
+        <li lang="en"><span style="color:#6f7f95;font-style:italic">grey</span>: <a class="w" href="words.html#comment">comments</a>. Everything after <code>//</code> is a note for people. The computer skips it.</li>
+        <li lang="de"><span style="color:#6f7f95;font-style:italic">grau</span>: <a class="w" href="words.html#comment">Kommentare</a>. Alles nach <code>//</code> ist eine Notiz für Menschen. Der Computer überspringt sie.</li>
+        <li lang="en"><span style="color:#ffb86b">orange</span>: words of the language itself, like <code>const</code>, <code>function</code>, <code>if</code>, <code>return</code>. There are only a few dozen.</li>
+        <li lang="de"><span style="color:#ffb86b">orange</span>: Wörter der Sprache selbst, wie <code>const</code>, <code>function</code>, <code>if</code>, <code>return</code>. Davon gibt es nur ein paar Dutzend.</li>
+        <li lang="en"><span style="color:#8fd8ff">blue</span>: numbers. <span style="color:#a5d6a7">green</span>: text in quotes.</li>
+        <li lang="de"><span style="color:#8fd8ff">blau</span>: Zahlen. <span style="color:#a5d6a7">grün</span>: Text in Anführungszeichen.</li>
+        <li lang="en">white: names that the game's makers made up, like <code>CAST_TIME</code>.</li>
+        <li lang="de">weiß: Namen, die sich die Macher des Spiels ausgedacht haben, wie <code>CAST_TIME</code>.</li>
+      </ul>
+    </div>
+    <div>
+      <pre data-code="src/core/townportal.js#CAST_TIME,TOWN_PORTAL_CHARGE"></pre>
+      <p class="small muted" lang="en">That is the town portal scroll: you stand still for <b data-val="src/core/townportal.js#CAST_TIME">5</b> seconds to open it, then stand in it for <b data-val="src/core/townportal.js#TOWN_PORTAL_CHARGE">1</b> second to go through.</p>
+      <p class="small muted" lang="de">Das ist die Stadtportal-Schriftrolle: Du stehst <b data-val="src/core/townportal.js#CAST_TIME">5</b> Sekunden still, um es zu öffnen, und dann <b data-val="src/core/townportal.js#TOWN_PORTAL_CHARGE">1</b> Sekunde darin, um hindurchzugehen.</p>
+      <div class="note" lang="en"><b>English</b> Code and its comments are written in English, almost everywhere in the world, even by people who speak other languages.</div>
+      <div class="note" lang="de"><b>Englisch</b> Code und Kommentare sind auf Englisch, fast überall auf der Welt. Beim Code-Lesen lernst du also nebenbei auch ein paar englische Wörter.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="names" data-lv="1" data-src="src/core/constants.js#N,WALK_SPEED src/game/music.js#mood">
+  <h2 lang="en">Names for values</h2>
+  <h2 lang="de">Namen für Werte</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Most lines of code give a <b>name</b> to a <b>value</b>, so the rest of the game can use the name. Such a name is called a <a class="w" href="words.html#variable">variable</a>.</p>
+      <p lang="de">Die meisten Codezeilen geben einem <b>Wert</b> einen <b>Namen</b>, damit der Rest des Spiels den Namen benutzen kann. So ein Name heißt <a class="w" href="words.html#variable">Variable</a>.</p>
+      <pre data-code="src/core/constants.js#N,WALK_SPEED"></pre>
+      <ul>
+        <li lang="en"><code>const</code> means: this name is fixed. <code>N</code> is 16, forever. A cube is 16 cells wide.</li>
+        <li lang="de"><code>const</code> heißt: Dieser Name steht fest. <code>N</code> ist 16, für immer. Ein Würfel ist 16 Zellen breit.</li>
+        <li lang="en"><code>=</code> does not mean "is equal", like in maths. It means "<b>put</b> this value into this name".</li>
+        <li lang="de"><code>=</code> heißt nicht "ist gleich" wie in Mathe. Es heißt: "<b>Leg</b> diesen Wert in diesen Namen."</li>
+        <li lang="en"><code>export</code> means: other files may borrow it.</li>
+        <li lang="de"><code>export</code> heißt: Andere Dateien dürfen ihn sich leihen.</li>
+        <li lang="en">Numbers use a dot: <code>2.8</code>, not <code>2,8</code>.</li>
+        <li lang="de">Zahlen haben einen Punkt statt eines Kommas: <code>2.8</code>, nicht <code>2,8</code>.</li>
+      </ul>
+    </div>
+    <div>
+      <p lang="en">Some values change while you play. Those are made with <code>let</code>. The music remembers its mood like this:</p>
+      <p lang="de">Manche Werte ändern sich beim Spielen. Die macht man mit <code>let</code>. Die Musik merkt sich ihre Stimmung so:</p>
+      <pre data-code="src/game/music.js#mood"></pre>
+      <p lang="en">Later, when a fight starts, another line puts new text into <code>mood</code>, like <code>'fight'</code>. Text is always in quotes, so the computer knows it isn't a name.</p>
+      <p lang="de">Später, wenn ein Kampf anfängt, legt eine andere Zeile neuen Text in <code>mood</code>, zum Beispiel <code>'fight'</code>. Text steht immer in Anführungszeichen, damit der Computer weiß, dass es kein Name ist.</p>
+      <div class="note think" lang="en"><b>Why names?</b> If the run speed were written as <code>2.8</code> in twenty places, changing it would mean finding all twenty. With a name, you change one line.</div>
+      <div class="note think" lang="de"><b>Warum Namen?</b> Wenn das Renntempo an zwanzig Stellen als <code>2.8</code> stünde, müsste man zum Ändern alle zwanzig finden. Mit einem Namen änderst du eine Zeile.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="objects" data-lv="1" data-src="src/core/enemies.js#SPIDER">
+  <h2 lang="en">Things with parts: objects</h2>
+  <h2 lang="de">Dinge mit Teilen: Objekte</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">A spider has many numbers: health, damage, speed, size... Instead of fifty loose names, they are packed into one <a class="w" href="words.html#object">object</a>: a value with named parts, written between curly brackets <code>{ }</code>.</p>
+      <p lang="de">Eine Spinne hat viele Zahlen: Gesundheit, Schaden, Tempo, Größe... Statt fünfzig einzelner Namen werden sie in ein <a class="w" href="words.html#object">Objekt</a> gepackt: einen Wert mit benannten Teilen, zwischen geschweiften Klammern <code>{ }</code>.</p>
+      <p lang="en">Each part is <code>name: value</code>, with commas in between. To read one part, write the object, a dot, and the part's name:</p>
+      <p lang="de">Jeder Teil ist <code>Name: Wert</code>, mit Kommas dazwischen. Um einen Teil zu lesen, schreibst du das Objekt, einen Punkt und den Namen des Teils:</p>
+      <ul>
+        <li lang="en"><code>SPIDER.hp</code> is <b data-val="src/core/enemies.js#SPIDER.hp">32</b>: its health.</li>
+        <li lang="de"><code>SPIDER.hp</code> ist <b data-val="src/core/enemies.js#SPIDER.hp">32</b>: ihre Gesundheit.</li>
+        <li lang="en"><code>SPIDER.aggro</code> is <b data-val="src/core/enemies.js#SPIDER.aggro">3</b>: how close you can come before it notices you.</li>
+        <li lang="de"><code>SPIDER.aggro</code> ist <b data-val="src/core/enemies.js#SPIDER.aggro">3</b>: wie nah du kommen kannst, bevor sie dich bemerkt.</li>
+        <li lang="en"><code>SPIDER.label</code> is <code>'<span data-val="src/core/enemies.js#SPIDER.label">Spider</span>'</code>: the name you see in the game.</li>
+        <li lang="de"><code>SPIDER.label</code> ist <code>'<span data-val="src/core/enemies.js#SPIDER.label">Spider</span>'</code>: der Name, den du im Spiel siehst.</li>
+      </ul>
+      <p lang="en"><code>Object.freeze(...)</code> locks the object, so nothing can change a spider's numbers by mistake while the game runs.</p>
+      <p lang="de"><code>Object.freeze(...)</code> sperrt das Objekt ab, damit nichts aus Versehen die Zahlen einer Spinne ändert, während das Spiel läuft.</p>
+      <a class="portal" href="enemies.html#numbers" lang="en">A monster is a list of numbers</a>
+      <a class="portal" href="enemies.html#numbers" lang="de">Ein Monster ist eine Liste von Zahlen</a>
+    </div>
+    <pre data-code="src/core/enemies.js#SPIDER"></pre>
+  </div>
+</section>
+
+<section class="slide" id="functions" data-lv="1" data-src="src/core/progression.js#maxHealth,levelDamage,xpToNext src/core/inventory.js#formatCoins src/core/enemies.js#depthLevel">
+  <h2 lang="en">Try it: functions are little machines</h2>
+  <h2 lang="de">Probier es: Funktionen sind kleine Maschinen</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">A <a class="w" href="words.html#function">function</a> is a machine with a name. You put something in, it does its work, and something comes out.</p>
+      <p lang="de">Eine <a class="w" href="words.html#function">Funktion</a> ist eine Maschine mit einem Namen. Du steckst etwas hinein, sie macht ihre Arbeit, und etwas kommt heraus.</p>
+      <pre class="wrap" data-code="src/core/progression.js#maxHealth"></pre>
+      <p lang="en">Read it like this: "<code>maxHealth</code> is a machine. Give it a <code>level</code>, and <code>=&gt;</code> out comes 100, plus 10 for every level above 1." (The numbers come from the object <code>PLAYER</code>.)</p>
+      <p lang="de">Lies es so: "<code>maxHealth</code> ist eine Maschine. Gib ihr ein <code>level</code>, und <code>=&gt;</code> heraus kommt 100, plus 10 für jede Stufe über 1." (Die Zahlen kommen aus dem Objekt <code>PLAYER</code>.)</p>
+      <p lang="en">To use a machine, write its name and put the input in round brackets: <code>maxHealth(5)</code>. That's called <b>calling</b> the function.</p>
+      <p lang="de">Um eine Maschine zu benutzen, schreibst du ihren Namen und die Eingabe in runde Klammern: <code>maxHealth(5)</code>. Das nennt man die Funktion <b>aufrufen</b>.</p>
+      <p lang="en">Bigger machines are written with <code>function name(input) { ... }</code>, and say what comes out with <code>return</code>. Same idea.</p>
+      <p lang="de">Größere Maschinen schreibt man mit <code>function name(eingabe) { ... }</code>, und sie sagen mit <code>return</code>, was herauskommt. Dieselbe Idee.</p>
+    </div>
+    <div class="demo real" data-demo="machine"></div>
+  </div>
+</section>
+
+<section class="slide" id="lists" data-lv="2" data-src="src/core/constants.js#FLUIDS,DIRS src/core/items.js#COINS">
+  <h2 lang="en">Lists</h2>
+  <h2 lang="de">Listen</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">A <a class="w" href="words.html#list">list</a> holds several values in a row, between square brackets <code>[ ]</code>:</p>
+      <p lang="de">Eine <a class="w" href="words.html#list">Liste</a> hält mehrere Werte hintereinander, zwischen eckigen Klammern <code>[ ]</code>:</p>
+      <pre data-code="src/core/constants.js#FLUIDS,DIRS"></pre>
+      <ul>
+        <li lang="en">To get one thing out, write its position in square brackets. But careful: <b>counting starts at 0</b>. <code>FLUIDS[0]</code> is <code>WATER</code>, <code>FLUIDS[2]</code> is <code>ACID</code>.</li>
+        <li lang="de">Um ein Ding herauszuholen, schreibst du seine Position in eckige Klammern. Aber Vorsicht: <b>Gezählt wird ab 0</b>. <code>FLUIDS[0]</code> ist <code>WATER</code>, <code>FLUIDS[2]</code> ist <code>ACID</code>.</li>
+        <li lang="en">A list can hold lists. <code>DIRS</code> holds the four steps to a neighbouring cell: <code>[1, 0]</code> is one step along x.</li>
+        <li lang="de">Eine Liste kann Listen enthalten. <code>DIRS</code> enthält die vier Schritte zu einer Nachbarzelle: <code>[1, 0]</code> ist ein Schritt entlang x.</li>
+        <li lang="en"><code>FLUIDS.length</code> says how many things are in it: 3.</li>
+        <li lang="de"><code>FLUIDS.length</code> sagt, wie viele Dinge darin sind: 3.</li>
+      </ul>
+    </div>
+    <div>
+      <p lang="en">And a list can hold objects. Here are the game's three coins:</p>
+      <p lang="de">Und eine Liste kann Objekte enthalten. Hier sind die drei Münzen des Spiels:</p>
+      <pre data-code="src/core/items.js#COINS"></pre>
+      <p lang="en"><code>COINS[1].name</code> is <code>'Silver'</code>: the thing at position 1, then its part called <code>name</code>.</p>
+      <p lang="de"><code>COINS[1].name</code> ist <code>'Silver'</code>: das Ding an Position 1, und davon der Teil namens <code>name</code>.</p>
+      <p class="small muted" lang="en">The last line runs a little machine (<code>.map</code>) on every coin to add a few more parts. You'll meet machines that work through lists on the loops slide.</p>
+      <p class="small muted" lang="de">Die letzte Zeile lässt eine kleine Maschine (<code>.map</code>) über jede Münze laufen, um ein paar Teile hinzuzufügen. Maschinen, die Listen abarbeiten, triffst du auf der Folie über Schleifen.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="math" data-lv="2" data-src="src/core/inventory.js#coinCounts">
+  <h2 lang="en">Doing maths</h2>
+  <h2 lang="de">Rechnen</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Computers are very good at maths. Code writes it almost like you do:</p>
+      <p lang="de">Computer können sehr gut rechnen. Code schreibt es fast so wie du:</p>
+      <table>
+        <tr><td><code>a + b</code>, <code>a - b</code></td><td lang="en">plus, minus</td> <td lang="de">plus, minus</td></tr>
+        <tr><td><code>a * b</code></td><td lang="en">times (there is no × key)</td> <td lang="de">mal (es gibt keine ×-Taste)</td></tr>
+        <tr><td><code>a / b</code></td><td lang="en">divided by</td> <td lang="de">geteilt durch</td></tr>
+        <tr><td><code>a ** 2</code></td><td lang="en">a squared</td> <td lang="de">a hoch 2</td></tr>
+        <tr><td><code>a % b</code></td><td lang="en">the <b>remainder</b>: what is left over after dividing. <code>7 % 3</code> is 1.</td> <td lang="de">der <b>Rest</b>: was beim Teilen übrig bleibt. <code>7 % 3</code> ist 1.</td></tr>
+        <tr><td><code>Math.floor(x)</code></td><td lang="en">round down: <code>Math.floor(2.9)</code> is 2</td> <td lang="de">abrunden: <code>Math.floor(2.9)</code> ist 2</td></tr>
+        <tr><td><code>Math.min(a, b)</code></td><td lang="en">the smaller one (<code>Math.max</code>: the bigger one)</td> <td lang="de">die kleinere (<code>Math.max</code>: die größere)</td></tr>
+      </table>
+    </div>
+    <div>
+      <p lang="en">Your bag keeps all money as copper. To show it as gold, silver and copper, this machine splits it up:</p>
+      <p lang="de">Deine Tasche hebt alles Geld als Kupfer auf. Um es als Gold, Silber und Kupfer zu zeigen, teilt diese Maschine es auf:</p>
+      <pre data-code="src/core/inventory.js#coinCounts"></pre>
+      <p lang="en">With 1234 copper:</p>
+      <p lang="de">Mit 1234 Kupfer:</p>
+      <ul>
+        <li lang="en">gold: <code>Math.floor(1234 / 1000)</code> = 1</li>
+        <li lang="de">Gold: <code>Math.floor(1234 / 1000)</code> = 1</li>
+        <li lang="en">silver: <code>1234 % 1000</code> is 234, <code>/ 10</code> rounded down = 23</li>
+        <li lang="de">Silber: <code>1234 % 1000</code> ist 234, <code>/ 10</code> abgerundet = 23</li>
+        <li lang="en">copper: <code>1234 % 10</code> = 4</li>
+        <li lang="de">Kupfer: <code>1234 % 10</code> = 4</li>
+      </ul>
+      <p lang="en">So the bag shows <b>1g 23s 4c</b>. Check it with the <code>formatCoins</code> machine on the slide before!</p>
+      <p lang="de">Also zeigt die Tasche <b>1g 23s 4c</b>. Prüf es mit der <code>formatCoins</code>-Maschine auf der Folie davor!</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="decisions" data-lv="2" data-src="src/core/inventory.js#spendCopper">
+  <h2 lang="en">Try it: making decisions with <code>if</code></h2>
+  <h2 lang="de">Probier es: Entscheidungen mit <code>if</code></h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">Games are full of decisions: did the sword hit? Is the spider close enough? Can you pay for that? Code decides with <code>if</code>:</p>
+      <p lang="de">Spiele sind voller Entscheidungen: Hat das Schwert getroffen? Ist die Spinne nah genug? Kannst du das bezahlen? Code entscheidet mit <code>if</code> (falls):</p>
+      <p class="mono" style="color:#fff" lang="en">if (<i style="color:var(--gold)">question</i>) <i style="color:var(--cyan)">do this</i>;</p>
+      <p class="mono" style="color:#fff" lang="de">if (<i style="color:var(--gold)">Frage</i>) <i style="color:var(--cyan)">mach das</i>;</p>
+      <p lang="en">The question goes in round brackets. If the answer is yes (<code>true</code>), the rest runs. If not (<code>false</code>), it is skipped. <code>else</code> can say what to do otherwise.</p>
+      <p lang="de">Die Frage steht in runden Klammern. Wenn die Antwort ja ist (<code>true</code>), läuft der Rest. Wenn nicht (<code>false</code>), wird er übersprungen. Mit <code>else</code> kann man sagen, was sonst passieren soll.</p>
+      <table class="small">
+        <tr><td><code>a &lt; b</code>, <code>a &gt; b</code></td><td lang="en">less than, more than</td> <td lang="de">kleiner als, größer als</td></tr>
+        <tr><td><code>a &lt;= b</code></td><td lang="en">less than or the same</td> <td lang="de">kleiner oder gleich</td></tr>
+        <tr><td><code>a === b</code></td><td lang="en">the same? (three = signs, because one = means "put")</td> <td lang="de">gleich? (drei =-Zeichen, weil ein = "leg hinein" heißt)</td></tr>
+        <tr><td><code>!a</code></td><td lang="en">not</td> <td lang="de">nicht</td></tr>
+        <tr><td><code>a &amp;&amp; b</code>, <code>a || b</code></td><td lang="en">and, or</td> <td lang="de">und, oder</td></tr>
+      </table>
+      <p lang="en"><code>return</code> leaves the function at once, with an answer. Nothing after it runs.</p>
+      <p lang="de"><code>return</code> verlässt die Funktion sofort, mit einer Antwort. Nichts danach läuft noch.</p>
+    </div>
+    <div class="demo real" data-demo="stepper"></div>
+  </div>
+</section>
+
+<section class="slide" id="loops" data-lv="2" data-src="src/game/enemies.js#updateEnemies src/core/gear/drops.js#weaponDrops">
+  <h2 lang="en">Doing it again: loops</h2>
+  <h2 lang="de">Noch mal und noch mal: Schleifen</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Every frame, the game has to look at <i>every</i> monster: is it dead? Then you get its experience and its loot. Nobody would write that out for each monster. A <a class="w" href="words.html#loop">loop</a> does it:</p>
+      <p lang="de">In jedem Bild muss das Spiel sich <i>jedes</i> Monster anschauen: Ist es tot? Dann bekommst du seine Erfahrung und seine Beute. Niemand würde das für jedes Monster einzeln hinschreiben. Eine <a class="w" href="words.html#loop">Schleife</a> macht das:</p>
+      <pre data-src="src/game/enemies.js#updateEnemies"><code>for (const e of list) {
+  const reward = awardKill(player, state.run, e);
+  if (reward) {
+    xp += reward.xp; levels += reward.levels; killed++; dropLoot(e, reward.coins);
+    if (e.guardianGate) unlocked = true;
+  }
+}</code></pre>
+      <p lang="en">Read it as: "<b>for</b> each monster <code>e</code> <b>of</b> the <code>list</code>, do what's in the curly brackets". The first time round, <code>e</code> is the first monster, then the second, and so on, until the list is done.</p>
+      <p lang="de">Lies es so: "<b>Für</b> (for) jedes Monster <code>e</code> <b>aus</b> (of) der <code>list</code>e, mach, was in den geschweiften Klammern steht." Beim ersten Durchlauf ist <code>e</code> das erste Monster, dann das zweite, und so weiter, bis die Liste fertig ist.</p>
+      <p class="small muted" lang="en"><code>xp += reward.xp</code> is short for <code>xp = xp + reward.xp</code>: add to what's there. <code>killed++</code> adds one.</p>
+      <p class="small muted" lang="de"><code>xp += reward.xp</code> ist kurz für <code>xp = xp + reward.xp</code>: zu dem dazuzählen, was schon da ist. <code>killed++</code> zählt eins dazu.</p>
+    </div>
+    <div>
+      <p lang="en">Sometimes you just want to count. A guardian drops several swords:</p>
+      <p lang="de">Manchmal willst du einfach zählen. Ein Wächter lässt mehrere Schwerter fallen:</p>
+      <pre data-src="src/core/gear/drops.js#weaponDrops"><code>for (let i = 0; i &lt; g.count; i++) out.push(rollWeapon(R, level, g));</code></pre>
+      <p lang="en">This one has three parts, separated by <code>;</code>:</p>
+      <p lang="de">Diese hat drei Teile, getrennt durch <code>;</code>:</p>
+      <ol class="steps">
+        <li lang="en"><code>let i = 0</code>: start counting at 0,</li>
+        <li lang="de"><code>let i = 0</code>: bei 0 anfangen zu zählen,</li>
+        <li lang="en"><code>i &lt; g.count</code>: keep going while <code>i</code> is less than the number of swords,</li>
+        <li lang="de"><code>i &lt; g.count</code>: weitermachen, solange <code>i</code> kleiner ist als die Zahl der Schwerter,</li>
+        <li lang="en"><code>i++</code>: after each round, add one.</li>
+        <li lang="de"><code>i++</code>: nach jeder Runde eins dazuzählen.</li>
+      </ol>
+      <p lang="en">Each round, <code>out.push(...)</code> rolls a new sword and adds it to the end of the list <code>out</code>.</p>
+      <p lang="de">In jeder Runde würfelt <code>out.push(...)</code> ein neues Schwert und hängt es hinten an die Liste <code>out</code> an.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="borrowing" data-lv="2">
+  <h2 lang="en">Borrowing from other files</h2>
+  <h2 lang="de">Von anderen Dateien leihen</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">A file can only use what it made itself, or what it <b>borrowed</b>. The first lines of a file usually say what it borrows:</p>
+      <p lang="de">Eine Datei kann nur benutzen, was sie selbst gemacht hat, oder was sie sich <b>geliehen</b> hat. Die ersten Zeilen einer Datei sagen meistens, was sie sich leiht:</p>
+      <pre data-label="src/core/progression.js, the first lines (as of commit 3281229)"><code>import { createInventory, addInstance, addItem, equipItem, assignBar, whole } from './inventory.js';
+import { OLD_SWORD, TOWN_PORTAL, HEALTH_POTION } from './items.js';
+import { fixedWeapon } from './gear/generate.js';</code></pre>
+      <p lang="en">"From the file <code>inventory.js</code> next to me, borrow <code>createInventory</code>, <code>addItem</code>..." The other file must have put <code>export</code> in front of them, or they can't be borrowed.</p>
+      <p lang="de">"Aus der Datei <code>inventory.js</code> neben mir leih dir <code>createInventory</code>, <code>addItem</code>..." Die andere Datei muss <code>export</code> davorgeschrieben haben, sonst kann man sie nicht ausleihen.</p>
+    </div>
+    <div>
+      <p lang="en">That's how 200 small files become one game. Every arrow in the picture of the parts is made of lines like these.</p>
+      <p lang="de">So werden aus 200 kleinen Dateien ein Spiel. Jeder Pfeil im Bild der Teile besteht aus solchen Zeilen.</p>
+      <p lang="en">It also helps you find your way: if you wonder where <code>OLD_SWORD</code> comes from, the import line tells you: <code>items.js</code>.</p>
+      <p lang="de">Es hilft dir auch beim Zurechtfinden: Wenn du dich fragst, wo <code>OLD_SWORD</code> herkommt, sagt dir die Import-Zeile: <code>items.js</code>.</p>
+      <a class="portal" href="architecture.html#team" lang="en">The picture of the parts</a>
+      <a class="portal" href="architecture.html#team" lang="de">Das Bild der Teile</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="new-file" data-lv="3" data-src="src/core/townportal.js">
+  <h2 lang="en">The real code: a file you've never seen</h2>
+  <h2 lang="de">Der echte Code: eine Datei, die du noch nie gesehen hast</h2>
+  <div class="cols wide-left">
+    <pre data-code="src/core/townportal.js"></pre>
+    <div>
+      <p lang="en">This is a whole file of the game: the rules of the town portal. Here's how to read a file you don't know:</p>
+      <p lang="de">Das ist eine ganze Datei des Spiels: die Regeln des Stadtportals. So liest du eine Datei, die du nicht kennst:</p>
+      <ol class="steps">
+        <li lang="en"><b>Read the comment at the top.</b> It says what the file is for, and what it doesn't do: "no rendering, no game state".</li>
+        <li lang="de"><b>Lies den Kommentar oben.</b> Er sagt, wofür die Datei da ist, und was sie nicht macht: "kein Malen, kein Spielzustand".</li>
+        <li lang="en"><b>Look at what it borrows.</b> Nothing! No <code>import</code> lines: it's a rule file that needs no other part.</li>
+        <li lang="de"><b>Schau, was sie sich leiht.</b> Nichts! Keine <code>import</code>-Zeilen: eine Regeldatei, die keinen anderen Teil braucht.</li>
+        <li lang="en"><b>Look at what it offers:</b> everything with <code>export</code>. <code>TRIGGER_RADIUS</code> has none, so it's only for this file.</li>
+        <li lang="de"><b>Schau, was sie anbietet:</b> alles mit <code>export</code>. <code>TRIGGER_RADIUS</code> hat keins, also ist es nur für diese Datei.</li>
+        <li lang="en"><b>Pick one function</b>, read the comment above it, then its lines. <code>townPadIn</code>: "where is the open portal in this cube? <code>null</code> if there is none."</li>
+        <li lang="de"><b>Such dir eine Funktion aus</b>, lies den Kommentar darüber, dann ihre Zeilen. <code>townPadIn</code>: "Wo ist das offene Portal in diesem Würfel? <code>null</code>, wenn es keins gibt."</li>
+      </ol>
+      <p class="small" lang="en">New signs: <code>?.</code> means "if there is one": <code>run?.townPortal</code> doesn't break when there is no <code>run</code>. <code>null</code> means "nothing".</p>
+      <p class="small" lang="de">Neue Zeichen: <code>?.</code> heißt "falls es eins gibt": <code>run?.townPortal</code> geht nicht kaputt, wenn es kein <code>run</code> gibt. <code>null</code> heißt "nichts".</p>
+      <p class="small muted" lang="en">You don't need to understand every line. Programmers skip a lot, too, until they need it.</p>
+      <p class="small muted" lang="de">Du musst nicht jede Zeile verstehen. Programmierer überspringen auch viel, bis sie es brauchen.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="whole" data-lv="3" data-src="src/core/combat.js#swordHit">
+  <h2 lang="en">The real code: one sword hit, line by line</h2>
+  <h2 lang="de">Der echte Code: ein Schwerttreffer, Zeile für Zeile</h2>
+  <div class="cols wide-left">
+    <pre data-code="src/core/combat.js#swordHit"></pre>
+    <div>
+      <p lang="en">This is the rule from the sword journey. You can read all of it now:</p>
+      <p lang="de">Das ist die Regel aus der Reise des Schwerthiebs. Du kannst sie jetzt ganz lesen:</p>
+      <ul class="small">
+        <li lang="en"><code>roll = Math.random()</code>: if nobody gives a <code>roll</code>, use a random number between 0 and 1.</li>
+        <li lang="de"><code>roll = Math.random()</code>: Wenn niemand ein <code>roll</code> mitgibt, nimm eine Zufallszahl zwischen 0 und 1.</li>
+        <li lang="en"><code>if (!inSwordArc(p, enemy)) return false;</code>: not in front of the blade? Then no hit. Stop.</li>
+        <li lang="de"><code>if (!inSwordArc(p, enemy)) return false;</code>: Nicht vor der Klinge? Dann kein Treffer. Stopp.</li>
+        <li lang="en"><code>p.sword.hits.add(enemy)</code>: remember this monster, so one swing can't hit it twice.</li>
+        <li lang="de"><code>p.sword.hits.add(enemy)</code>: Merk dir dieses Monster, damit ein Hieb es nicht zweimal trifft.</li>
+        <li lang="en"><code>stats.crit ?? 0</code>: the sword's chance of a critical hit, or 0 if it has none (<code>??</code> means "if that's missing, use this").</li>
+        <li lang="de"><code>stats.crit ?? 0</code>: die Chance des Schwerts auf einen kritischen Treffer, oder 0, wenn es keine hat (<code>??</code> heißt "wenn das fehlt, nimm das").</li>
+        <li lang="en"><code>crit ? A : B</code>: a short <code>if</code>. If <code>crit</code> is true, use A (bigger damage), otherwise B.</li>
+        <li lang="de"><code>crit ? A : B</code>: ein kurzes <code>if</code>. Wenn <code>crit</code> wahr ist, nimm A (mehr Schaden), sonst B.</li>
+        <li lang="en"><code>damageEnemy(...)</code>: another machine takes the health off.</li>
+        <li lang="de"><code>damageEnemy(...)</code>: eine andere Maschine zieht die Gesundheit ab.</li>
+        <li lang="en"><code>return { damage, crit }</code>: the answer is a small object, so the game knows what number to show, and if it should be golden.</li>
+        <li lang="de"><code>return { damage, crit }</code>: Die Antwort ist ein kleines Objekt, damit das Spiel weiß, welche Zahl es zeigen soll und ob sie golden sein soll.</li>
+      </ul>
+      <a class="portal" href="architecture.html#swing-journey" lang="en">The whole journey of a sword hit</a>
+      <a class="portal" href="architecture.html#swing-journey" lang="de">Die ganze Reise eines Schwerthiebs</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="seven-words" data-lv="1">
+  <h2 lang="en">A few signs that unlock all code</h2>
+  <h2 lang="de">Ein paar Zeichen, die jeden Code aufschließen</h2>
+  <p lang="en">Almost every line of the game is made of these. Once you know them, you can read the code in every room of this guide:</p>
+  <p lang="de">Fast jede Zeile des Spiels besteht daraus. Wenn du sie kennst, kannst du den Code in jedem Raum dieses Führers lesen:</p>
+  <table>
+    <tr><th lang="en">YOU SEE</th> <th lang="de">DU SIEHST</th><th lang="en">IT MEANS</th> <th lang="de">ES HEISST</th></tr>
+    <tr><td><code>// ...</code></td><td lang="en">a note for people</td> <td lang="de">eine Notiz für Menschen</td></tr>
+    <tr><td><code>const name = value</code></td><td lang="en">a name for a value (<code>let</code>: one that can change)</td> <td lang="de">ein Name für einen Wert (<code>let</code>: einer, der sich ändern kann)</td></tr>
+    <tr><td><code>{ hp: 32, damage: 15 }</code></td><td lang="en">an object: a thing with named parts; read one with a dot: <code>SPIDER.hp</code></td> <td lang="de">ein Objekt: ein Ding mit benannten Teilen; lies einen mit einem Punkt: <code>SPIDER.hp</code></td></tr>
+    <tr><td><code>[1, 2, 3]</code></td><td lang="en">a list; <code>list[0]</code> is the first thing</td> <td lang="de">eine Liste; <code>list[0]</code> ist das erste Ding</td></tr>
+    <tr><td><code>x =&gt; ...</code>, <code>function f(x) { }</code></td><td lang="en">a machine; use it with <code>f(5)</code></td> <td lang="de">eine Maschine; benutze sie mit <code>f(5)</code></td></tr>
+    <tr><td><code>if (...) ... else ...</code></td><td lang="en">a decision</td> <td lang="de">eine Entscheidung</td></tr>
+    <tr><td><code>for (const e of list)</code></td><td lang="en">do it for every thing in a list</td> <td lang="de">mach es für jedes Ding in einer Liste</td></tr>
+    <tr><td><code>import</code>, <code>export</code></td><td lang="en">borrow from another file, lend to other files</td> <td lang="de">aus einer anderen Datei leihen, an andere Dateien verleihen</td></tr>
+  </table>
+  <p lang="en">Whenever a slide shows <b>real code</b>, try to read it before you read the explanation. You'll be surprised how much you understand.</p>
+  <p lang="de">Wenn eine Folie <b>echten Code</b> zeigt, versuch ihn zu lesen, bevor du die Erklärung liest. Du wirst staunen, wie viel du verstehst.</p>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

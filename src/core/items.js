@@ -23,6 +23,7 @@ export const WEAPONS = Object.freeze([
   weapon('weapon_sword_broad', 'Broadsword', 46, .54, .88, 1.25),    //  85, a wide sweep
   weapon('weapon_sword_greatsword', 'Greatsword', 60, .66, 1.15, 1.3), // 91, wide and long
 ]);
+// kids-docs: code.html#lists (see kids-docs/README.md)
 export const COINS = Object.freeze([
   { id: 'item_coin_gold', name: 'Gold', value: 1000, suffix: 'g' },
   { id: 'item_coin_silver', name: 'Silver', value: 10, suffix: 's' },

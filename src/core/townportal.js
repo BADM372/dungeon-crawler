@@ -2,7 +2,9 @@
 //   run.townPortal = { key, depth, pad: {x, y, z}, back: {x, y, z} }
 // `pad` is the dungeon end (cube-local), `back` where you stood when you cast it. The town end
 // stands on the spot the town plan reserves for it (map.town.portal, world/town.js).
+// kids-docs: code.html#text (see kids-docs/README.md)
 export const CAST_TIME = 5;              // s standing still to open it
+// kids-docs: code.html#text (see kids-docs/README.md)
 export const TOWN_PORTAL_CHARGE = 1;     // s standing in it to go through
 export const PAD_RADIUS = 0.62;          // drawn size; you step in within TRIGGER_RADIUS
 const TRIGGER_RADIUS = 0.42;

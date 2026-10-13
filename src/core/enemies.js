@@ -19,13 +19,14 @@ import { hash32, mulberry32 } from './util.js';
 export const GROWTH = Object.freeze({ hp: 0.17, damage: 0.1, xp: 0.25, coins: 0.25 });
 // the level enemies have at a depth: one per depth (1 at the surface), and ±1 for a cube's
 // species from depth 2 on
+// kids-docs: code.html#functions (see kids-docs/README.md)
 export const depthLevel = depth => Math.max(1, Math.floor(depth || 0));
 // guardians stand above their depth: side guardians one level, descent guardians two (on the
 // road out of town, the very first ones, at the road's own level)
 export const GUARDIAN_LEVELS = Object.freeze({ side: 1, descent: 2 });
 export const guardianLevel = (depth, role) => depthLevel(depth) + (depth >= 1 ? GUARDIAN_LEVELS[role] : 0);
 
-// kids-docs: checks.html#try-test, combat.html#damage, enemies.html#numbers (see kids-docs/README.md)
+// kids-docs: checks.html#try-test, code.html#objects, combat.html#damage, enemies.html#numbers (see kids-docs/README.md)
 export const SPIDER = Object.freeze({
   type: 'spider', species: 'spider', label: 'Spider', hp: 32, damage: 15, knock: 4.5,
   xp: 20, coins: Object.freeze([4, 8]),

@@ -1,6 +1,6 @@
 // Shared dimensions, fluid ids, grid directions and physics tuning.
 
-// kids-docs: start.html#cubes (see kids-docs/README.md)
+// kids-docs: code.html#names, start.html#cubes (see kids-docs/README.md)
 export const N = 16;            // cube footprint in cells
 // kids-docs: physics.html#adding (see kids-docs/README.md)
 export const LH = 0.5;          // height of one terrain level
@@ -11,10 +11,12 @@ export const HEAD = 3;          // min free levels between two stacked floors
 export const SHEAD = 3;         // clearance (levels) kept around stairs and bridges
 
 export const WATER = 1, LAVA = 2, ACID = 3;
+// kids-docs: code.html#lists (see kids-docs/README.md)
 export const FLUIDS = [WATER, LAVA, ACID];
 export const FLUID_NAME = { 1: 'water', 2: 'lava', 3: 'acid' };
 
 // grid directions: +x, -x, +z, -z
+// kids-docs: code.html#lists (see kids-docs/README.md)
 export const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 export const OPP = [1, 0, 3, 2];
 export const DIRV = DIRS.map(([x, z]) => [x, 0, z]);
@@ -38,7 +40,7 @@ export const CHAR_SCALE = 0.55; // the rig is ~2 m tall -> ~1.1 units
 export const CHAR_R = 0.22;     // collision radius
 // kids-docs: physics.html#adding (see kids-docs/README.md)
 export const CHAR_H = 0.85;     // collision height
-// kids-docs: physics.html#adding (see kids-docs/README.md)
+// kids-docs: code.html#names, physics.html#adding (see kids-docs/README.md)
 export const WALK_SPEED = 1.9, RUN_SPEED = 2.8, SWIM_SPEED = 0.9;
 // on the ground speed builds up linearly: standing to a full run in RUN_RAMP s (walking pace
 // after about 70% of it, so short taps stay precise); stopping brakes at BRAKE units/s²

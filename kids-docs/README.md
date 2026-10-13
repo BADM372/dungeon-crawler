@@ -101,7 +101,7 @@ prompting. Specific numbers come live from the code (`data-val`, `data-code`), n
 - Real code: `<pre data-code="src/core/combat.js#inSwordArc"></pre>` shows the definition, read
   from the game when the page opens, so it is never out of date. Prefer it over copying code.
   A shortened excerpt is `<pre data-src="path#name"><code>...</code></pre>` (escape `<` and `&`);
-  other code is `<pre data-label="...">`.
+  other code is `<pre data-label="...">`. In a narrow column, `class="wrap"` wraps long lines.
 - Numbers: `<b data-val="src/core/constants.js#RUN_SPEED">2.8</b>` shows the game's value,
   formatted for the language (`data-fmt="pct"`: 0.17 as 17%). The written text is the fallback;
   `--stamp` keeps it right. Use it for values the code exports.

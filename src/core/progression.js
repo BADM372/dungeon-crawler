@@ -9,15 +9,17 @@ import { fixedWeapon } from './gear/generate.js';
 //   regeneration: REGEN of the maximum per second, after REGEN_DELAY s without damage
 export const PLAYER = Object.freeze({ HP: 100, HP_PER_LEVEL: 10, DAMAGE_PER_LEVEL: 0.02,
   XP_BASE: 500, XP_STEP: 1000, XP_CURVE: 60, REGEN: 0.04, REGEN_DELAY: 5 });
+// kids-docs: code.html#functions (see kids-docs/README.md)
 export const xpToNext = level => PLAYER.XP_BASE + PLAYER.XP_STEP * (level - 1) + PLAYER.XP_CURVE * (level - 1) ** 2;
 // the XP that reaching `level` takes in all: the sum of xpToNext below it
 export const xpForLevel = level => {
   const n = level - 1;
   return PLAYER.XP_BASE * n + PLAYER.XP_STEP * n * (n - 1) / 2 + PLAYER.XP_CURVE * (n - 1) * n * (2 * n - 1) / 6;
 };
+// kids-docs: code.html#functions (see kids-docs/README.md)
 export const maxHealth = level => PLAYER.HP + PLAYER.HP_PER_LEVEL * (level - 1);
 // what the player's level multiplies weapon damage by
-// kids-docs: combat.html#damage (see kids-docs/README.md)
+// kids-docs: code.html#functions, combat.html#damage (see kids-docs/README.md)
 export const levelDamage = level => 1 + PLAYER.DAMAGE_PER_LEVEL * (level - 1);
 export function levelFromXP(xp) {
   whole(xp);

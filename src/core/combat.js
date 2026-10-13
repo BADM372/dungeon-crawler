@@ -128,7 +128,7 @@ export function damageEnemy(enemy, amount) {
 }
 // a blade hit: { damage, crit } (false for none). roll: the crit roll in 0..1. A crit
 // multiplies the damage; life on hit (leech) heals, never above the maximum
-// kids-docs: architecture.html#swing-journey, checks.html#try-test (see kids-docs/README.md)
+// kids-docs: architecture.html#swing-journey, checks.html#try-test, code.html#whole (see kids-docs/README.md)
 export function swordHit(p, enemy, roll = Math.random()) {
   if (!inSwordArc(p, enemy)) return false;
   p.sword.hits.add(enemy);

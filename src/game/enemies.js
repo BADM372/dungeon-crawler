@@ -41,7 +41,7 @@ export function resetEnemies() {
   defenceThink = 0;
   coordinateDefence(state.map, state.run, allEnemies(), player);
 }
-// kids-docs: architecture.html#swing-journey (see kids-docs/README.md)
+// kids-docs: architecture.html#swing-journey, code.html#loops (see kids-docs/README.md)
 export function updateEnemies(dt) {
   if (state.inventoryOpen || state.transitioning) return;
   state.enemyGrace = Math.max(0, state.enemyGrace - dt);

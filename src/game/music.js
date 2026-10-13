@@ -27,6 +27,7 @@ const FIGHT_MEMORY = 6;  // s: a blow keeps the fight going this long while an e
 const HOLD = { treasure: 1, sense: 2, rise: 3, fight: 4, boss: 5 };   // s the calmer reason must hold
 const RANK = Object.fromEntries(MOODS.map((m, i) => [m, i]));      // MOODS runs calm to fierce
 
+// kids-docs: code.html#names (see kids-docs/README.md)
 let mood = 'explore', calm = 0, lastClash = -Infinity;
 let playerHp = 0;
 const enemyHp = new WeakMap();   // enemy -> hp last frame: a drop means you hit it
