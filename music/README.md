@@ -32,8 +32,8 @@ drops out and only the bass, the pad and a pulse remain.
 | `treasure` | a chest within 6 cells, no enemy around | wonder: no drums, no bass, sparkle on top | marimba echo harp strings wonder |
 | `sense` | a live enemy within 8 cells, not after you | suspense: the tune mostly drops out and the drums lead | marimba strings bass timpani toms shaker |
 | `rise` | an enemy chasing you from afar | the tune comes back over the drums and a light kit | sense + lead echo harp kick snare |
-| `fight` | an enemy after you within 4 cells, or blows traded in the last 6 s | full band: horn, brass, crash | rise - harp - shaker + horn crash |
-| `boss` | a guardian after you (or hurt and close) | the flute leaves, horn carries the tune, choir and gong | fight - lead - echo + choir gong |
+| `fight` | an enemy after you within 4 cells, or blows traded in the last 6 s | driving low ostinato, battle drums, accented horn and crash | rise - harp - shaker - marimba - echo + horn drive war crash |
+| `boss` | a guardian after you (or hurt and close) | the flute leaves, horn carries the tune, choir and gong | fight - lead + choir gong |
 
 The mood rises at once and falls back once the calmer reason has held for 1 to 5 seconds.
 Joining voices come in on the next sixteenth, and pick up notes already under way, so a
@@ -70,7 +70,7 @@ Guidelines:
 
 ## Keep it simple
 
-- Up to about 16 voices in a score, but at most about 12 in any one mood. One drum sound
+- Up to about 20 voices in a score, but at most about 12 in any one mood. One drum sound
   per drum voice.
 - Keep registers apart: tuba/bass in octaves 1 to 2, pads around octaves 3 to 4 (set
   `center=`), lead in 5 to 6, glock and bells in 6.
@@ -101,8 +101,17 @@ What the songs in `music/` use, learned from listening closely to Golden Sun:
   dotted eighth later, at a third of the volume, panned to the other side. It gives space
   for nothing. Shift the lead's lines by hand: start with a rest of the delay, and continue
   a note across a bar line with `-` at the start of the next bar.
-- **The lead for the fight.** `voice horn horn oct=-1` with the lead's lines copied plays the
-  tune an octave down, so `boss` can drop the lead and still have the tune.
+- **The lead for the fight.** `voice horn horn oct=-1` carries the tune an octave down, so
+  `boss` can drop the lead and still have the tune. Re-articulate long notes and accent the
+  start of each bar for a more urgent call; keep the exploration lead unchanged.
+- **Combat-only motion.** Every dungeon score has a `drive` ostinato and `war` drum voice
+  reserved for `fight` and `boss`. Keep the tempo, but use accented eighths, galloping
+  sixteenths and short gates to make combat feel faster. Replace the gentle arpeggio or
+  light percussion rather than stacking everything: at most 12 voices play at once.
+  Use the place's own sound (guitar and frame-drum gallops in the badlands, swung mallets
+  in the swamp, clipped strings in the abyss and core); keep 6/8 and 3/4 where written.
+  Battle drums fill every fourth bar, brass stabs start on the downbeat, and both new
+  voices attack throughout every bar so a mid-phrase mood change is heard quickly.
 - **Colour in the arpeggio.** Add the 2nd or 6th to a broken chord (`E3- B3- E4- F#4- G4- B4-`),
   and lean on one mode's own chord: Dorian's major IV, Lydian's raised 4th, Phrygian's flat 2nd.
 - **An ostinato against the bar.** Accents every 3 eighths in a bar of 8 (`D3!- A3- D4- F3!-

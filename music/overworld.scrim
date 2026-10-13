@@ -12,11 +12,11 @@ reverb   0.4
 # mood treasure: marimba echo harp strings wonder
 # mood sense:    marimba strings bass timpani toms shaker
 # mood rise:     sense lead echo harp kick snare
-# mood fight:    rise -harp -shaker horn crash
+# mood fight:    rise -harp -shaker -marimba -echo horn drive war crash
 # mood boss:     fight -lead -echo choir gong
 
 voice lead     flute     vol=0.72 pan=-0.1 rev=0.45
-voice horn     horn      vol=0.75 pan=0.2  oct=-1
+voice horn     horn      vol=0.80 pan=0.2  oct=-1 att=0.025 rel=0.12 rev=0.3
 voice bassoon  bassoon   vol=0.45 pan=0.2
 voice marimba  marimba   vol=0.6  pan=-0.45
 voice echo     musicbox  vol=0.28 pan=0.5  rev=0.55
@@ -30,15 +30,19 @@ voice toms     tomlo     vol=0.45 pan=-0.2
 voice shaker   shaker    vol=0.4  pan=0.3
 voice kick     kick      vol=0.55
 voice snare    snare     vol=0.42 pan=0.1
-voice crash    crash     vol=0.22 pan=0.2
+voice crash    crash     vol=0.28 pan=0.2
 voice gong     gong      vol=0.3  pan=-0.3
+
+# Combat-only motion: tight low ostinato and accented battle drums, at the same tempo.
+voice drive    pizz      vol=0.55 pan=-0.35 gate=0.6 rev=0.25
+voice war      tommid    vol=0.5  pan=0.15 rev=0.2
 
 # Em C Em D | Em C G A: the mallets turn a six-note cycle against the bar, the A chord brings the Dorian C#
 pattern A
 lead    | E5----------- F#5--- | G5------- B5------- | A5----------- G5- F#5- | F#5------- D5--- .--- |
 lead    | E5----------- F#5--- | G5--- B5--- E6------- | D6------- B5--- G5--- | C#6------- A5--- .--- |
-horn    | E5----------- F#5--- | G5------- B5------- | A5----------- G5- F#5- | F#5------- D5--- .--- |
-horn    | E5----------- F#5--- | G5--- B5--- E6------- | D6------- B5--- G5--- | C#6------- A5--- .--- |
+horn    | E5!--- E5--- E5--- F#5--- | G5!--- G5--- B5--- B5--- | A5!--- A5--- A5--- G5- F#5- | F#5!--- F#5--- D5--- .--- |
+horn    | E5!--- E5--- E5--- F#5--- | G5!--- B5--- E6--- E6--- | D6!--- D6--- B5--- G5--- | C#6!--- C#6--- A5--- .--- |
 bassoon | G4------- F#4------- | E4--------------- | G4------- A4------- | F#4------- .------- |
 bassoon | B4------- G4------- | E4------- G4------- | D4------- B3------- | C#4------- E4------- |
 marimba | E5!- B5- A5- E5- F#5- D5- E5!- B5- | A5- E5- F#5- D5- E5!- B5- A5- E5- | F#5- D5- E5!- B5- A5- E5- F#5- D5- | E5!- B5- A5- E5- F#5- D5- E5!- B5- |
@@ -49,6 +53,10 @@ harp    | E3--- B3--- G4--- F#4--- | C3--- G3--- E4--- D4--- | E3--- B3--- G4---
 harp    | E3--- B3--- G4--- F#4--- | C3--- G3--- E4--- D4--- | G2--- D3--- B3--- A3--- | A2--- E3--- C#4--- B3--- |
 strings | [Em]?--------------- | [C]?--------------- | [Em]?--------------- | [D]?--------------- |
 strings | [Em]?--------------- | [C]?--------------- | [G]?--------------- | [A]?--------------- |
+drive   | E3!- E3- B3- E3!- E3- G3- B3!- E3- | C3!- C3- G3- C3!- C3- E3- G3!- C3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | D3!- D3- A3- D3!- D3- F#3- A3! F#3 D3 A3 |
+drive   | E3!- E3- B3- E3!- E3- G3- B3!- E3- | C3!- C3- G3- C3!- C3- E3- G3!- C3- | G3!- G3- D4- G3!- G3- B3- D4!- G3- | A3!- A3- E4- A3!- A3- C#4- E4! C#4 A3 E4 |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
 bass    | E2----- E2- B1------- | C2----- C2- G1------- | E2----- E2- B1------- | D2----- D2- A1------- |
 bass    | E2----- E2- B1------- | C2----- C2- G1------- | G1----- G1- D2------- | A1----- A1- E2------- |
 wonder  | B6------- F#6------- | G6------- E6------- | B6------- F#6------- | A6------- F#6------- |
@@ -74,8 +82,8 @@ gong    | x... .... .... .... | .... .... .... .... | % | % |
 pattern B
 lead    | G5----------- B5--- | A5------- F#5------- | D6----------- B5--- | E6----------- .--- |
 lead    | E6------- D6--- B5--- | A5------- D6------- | B5--- A5--- G5--- D6--- | C#6----------- .--- |
-horn    | G5----------- B5--- | A5------- F#5------- | D6----------- B5--- | E6----------- .--- |
-horn    | E6------- D6--- B5--- | A5------- D6------- | B5--- A5--- G5--- D6--- | C#6----------- .--- |
+horn    | G5!--- G5--- G5--- B5--- | A5!--- A5--- F#5--- F#5--- | D6!--- D6--- D6--- B5--- | E6!--- E6--- E6--- .--- |
+horn    | E6!--- E6--- D6--- B5--- | A5!--- A5--- D6--- D6--- | B5!--- A5--- G5--- D6--- | C#6!--- C#6--- C#6--- .--- |
 bassoon | E4------- G4------- | F#4------- A4------- | F#4--------------- | G4------- B4------- |
 bassoon | G4------- E4------- | F#4------- D4------- | B3------- D4------- | C#4------- E4------- |
 marimba | D5!- A5- F#5- B5- E5- D5!- A5- F#5- | B5- E5- D5!- A5- F#5- B5- E5- D5!- | A5- F#5- B5- E5- D5!- A5- F#5- B5- | E5- D5!- A5- F#5- B5- E5- D5!- A5- |
@@ -86,6 +94,10 @@ harp    | C3--- G3--- E4--- D4--- | D3--- A3--- F#4--- E4--- | B2--- F#3--- D4--
 harp    | C3--- G3--- E4--- D4--- | D3--- A3--- F#4--- E4--- | G2--- D3--- B3--- A3--- | A2--- E3--- C#4--- B3--- |
 strings | [C]?--------------- | [D]?--------------- | [Bm]?--------------- | [Em]?--------------- |
 strings | [C]?--------------- | [D]?--------------- | [G]?--------------- | [A]?--------------- |
+drive   | C3!- C3- G3- C3!- C3- E3- G3!- C3- | D3!- D3- A3- D3!- D3- F#3- A3!- D3- | B3!- B3- F#4- B3!- B3- D4- F#4!- B3- | E3!- E3- B3- E3!- E3- G3- B3! G3 E3 B3 |
+drive   | C3!- C3- G3- C3!- C3- E3- G3!- C3- | D3!- D3- A3- D3!- D3- F#3- A3!- D3- | G3!- G3- D4- G3!- G3- B3- D4!- G3- | A3!- A3- E4- A3!- A3- C#4- E4! C#4 A3 E4 |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
 bass    | C2----- C2- G1------- | D2----- D2- A1------- | B1----- B1- F#1------- | E2----- E2- B1------- |
 bass    | C2----- C2- G1------- | D2----- D2- A1------- | G1----- G1- D2------- | A1----- A1- E2------- |
 wonder  | G6------- E6------- | A6------- F#6------- | D7------- F#6------- | B6------- F#6------- |
@@ -111,8 +123,8 @@ gong    | x... .... .... .... | .... .... .... .... | % | % |
 pattern A2
 lead    | E5----------- F#5--- | G5------- B5------- | A5----------- G5- F#5- | F#5------- D5--- .--- |
 lead    | E5----------- F#5--- | G5--- B5--- E6--- G6--- | F#6------- E6--- C#6--- | B5----------- .--- |
-horn    | E5----------- F#5--- | G5------- B5------- | A5----------- G5- F#5- | F#5------- D5--- .--- |
-horn    | E5----------- F#5--- | G5--- B5--- E6--- G6--- | F#6------- E6--- C#6--- | B5----------- .--- |
+horn    | E5!--- E5--- E5--- F#5--- | G5!--- G5--- B5--- B5--- | A5!--- A5--- A5--- G5- F#5- | F#5!--- F#5--- D5--- .--- |
+horn    | E5!--- E5--- E5--- F#5--- | G5!--- B5--- E6--- G6--- | F#6!--- F#6--- E6--- C#6--- | B5!--- B5--- B5--- .--- |
 bassoon | G4------- F#4------- | E4--------------- | G4------- A4------- | F#4------- .------- |
 bassoon | B4------- G4------- | E4------- G4------- | E4------- C#4------- | B3--------------- |
 marimba | E5!- B5- A5- E5- F#5- D5- E5!- B5- | A5- E5- F#5- D5- E5!- B5- A5- E5- | F#5- D5- E5!- B5- A5- E5- F#5- D5- | E5!- B5- A5- E5- F#5- D5- E5!- B5- |
@@ -123,6 +135,10 @@ harp    | E3--- B3--- G4--- F#4--- | C3--- G3--- E4--- D4--- | E3--- B3--- G4---
 harp    | E3--- B3--- G4--- F#4--- | C3--- G3--- E4--- D4--- | A2--- E3--- C#4--- B3--- | E3--- B3--- G4--- F#4--- |
 strings | [Em]?--------------- | [C]?--------------- | [Em]?--------------- | [D]?--------------- |
 strings | [Em]?--------------- | [C]?--------------- | [A]?--------------- | [Em]?--------------- |
+drive   | E3!- E3- B3- E3!- E3- G3- B3!- E3- | C3!- C3- G3- C3!- C3- E3- G3!- C3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | D3!- D3- A3- D3!- D3- F#3- A3! F#3 D3 A3 |
+drive   | E3!- E3- B3- E3!- E3- G3- B3!- E3- | C3!- C3- G3- C3!- C3- E3- G3!- C3- | A3!- A3- E4- A3!- A3- C#4- E4!- A3- | E3!- E3- B3- E3!- E3- G3- B3! G3 E3 B3 |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
 bass    | E2----- E2- B1------- | C2----- C2- G1------- | E2----- E2- B1------- | D2----- D2- A1------- |
 bass    | E2----- E2- B1------- | C2----- C2- G1------- | A1----- A1- E2------- | E2----- E2- B1------- |
 wonder  | B6------- F#6------- | G6------- E6------- | B6------- F#6------- | A6------- F#6------- |
@@ -148,8 +164,8 @@ gong    | x... .... .... .... | .... .... .... .... | % | % |
 pattern C
 lead    | E5--- A5--- B5--- C6--- | B5----------- .--- | E5--- A5--- B5--- E6--- | D6----------- .--- |
 lead    | E6------- D6--- B5--- | D6------- G5------- | A5--- C6--- B5--- G5--- | A5------- F#5------- |
-horn    | E5--- A5--- B5--- C6--- | B5----------- .--- | E5--- A5--- B5--- E6--- | D6----------- .--- |
-horn    | E6------- D6--- B5--- | D6------- G5------- | A5--- C6--- B5--- G5--- | A5------- F#5------- |
+horn    | E5!--- A5--- B5--- C6--- | B5!--- B5--- B5--- .--- | E5!--- A5--- B5--- E6--- | D6!--- D6--- D6--- .--- |
+horn    | E6!--- E6--- D6--- B5--- | D6!--- D6--- G5--- G5--- | A5!--- C6--- B5--- G5--- | A5!--- A5--- F#5--- F#5--- |
 bassoon | C4------- E4------- | B3------- G4------- | C4------- A3------- | D4------- F#4------- |
 bassoon | E4------- G4------- | D4------- B3------- | C4------- E4------- | G4------- F#4------- |
 marimba | A5!- E5- B5- D5- E5- F#5- A5!- E5- | B5- D5- E5- F#5- A5!- E5- B5- D5- | E5- F#5- A5!- E5- B5- D5- E5- F#5- | A5!- E5- B5- D5- E5- F#5- A5!- E5- |
@@ -160,6 +176,10 @@ harp    | A2--- E3--- C4--- B3--- | E3--- B3--- G4--- F#4--- | A2--- E3--- C4---
 harp    | C3--- G3--- E4--- D4--- | G2--- D3--- B3--- A3--- | A2--- E3--- C4--- B3--- | D3--- A3--- G4--- F#4--- |
 strings | [Am]?--------------- | [Em]?--------------- | [Am]?--------------- | [Bm]?--------------- |
 strings | [C]?--------------- | [G]?--------------- | [Am]?--------------- | [Dsus4]?------- [D]?------- |
+drive   | A3!- A3- E4- A3!- A3- C4- E4!- A3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | A3!- A3- E4- A3!- A3- C4- E4!- A3- | B3!- B3- F#4- B3!- B3- D4- F#4! D4 B3 F#4 |
+drive   | C3!- C3- G3- C3!- C3- E3- G3!- C3- | G3!- G3- D4- G3!- G3- B3- D4!- G3- | A3!- A3- E4- A3!- A3- C4- E4!- A3- | D3!- D3- A3- G3- D3!- D3- A3- F#3- |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
+war     | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. xxX. X.x. xxXx | X.x. X.xx xxxx XXXX |
 bass    | A1----- A1- E2------- | E2----- E2- B1------- | A1----- A1- E2------- | B1----- B1- F#1------- |
 bass    | C2----- C2- G1------- | G1----- G1- D2------- | A1----- A1- E2------- | D2----- D2- A1------- |
 wonder  | C7------- E6------- | B6------- F#6------- | C7------- E6------- | D7------- F#6------- |

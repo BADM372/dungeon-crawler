@@ -38,6 +38,41 @@ for (const file of files) {
   });
 }
 
+test('combat layers stay out of calmer moods and drive every bar', () => {
+  for (const name of SONGS.filter(name => name !== 'town')) {
+    const { song, moods, given } = loadScore(readFileSync(resolve(dir, `${name}.scrim`), 'utf8'));
+    for (const mood of ['fight', 'boss']) {
+      assert.ok(given.includes(mood), `${name}: explicit ${mood} arrangement`);
+      assert.ok(moods[mood].size <= 12, `${name}: ${mood} leaves room in the mix`);
+    }
+    for (const voice of ['drive', 'war']) {
+      const i = song.voices.findIndex(v => v.name === voice);
+      assert.ok(i >= 0, `${name}: has ${voice}`);
+      assert.equal(song.voices[i].drum, voice === 'war');
+      for (const mood of MOODS) {
+        assert.equal(moods[mood].has(i), mood === 'fight' || mood === 'boss', `${name}: ${voice} in ${mood}`);
+      }
+      for (const timeline of [song.intro, song.loop]) {
+        for (const [s, section] of timeline.sections.entries()) {
+          const events = timeline.events.filter(e => e.v === i && e.s === s);
+          for (let bar = 0; bar < section.bars; bar++) {
+            const start = section.start + bar * section.barDur;
+            const hits = events.filter(e => e.t >= start - 1e-6 && e.t < start + section.barDur - 1e-6);
+            assert.ok(hits.length >= section.beats * 2, `${name}: ${voice} drives ${section.name} bar ${bar + 1}`);
+            assert.ok(hits.some(e => e.vel >= 1), `${name}: ${voice} accents each bar`);
+            // Joining combat mid-bar must not wait through a long rest for either layer.
+            const onsets = [...hits.map(e => e.t), hits[0].t + section.barDur];
+            for (let h = 1; h < onsets.length; h++) {
+              assert.ok(onsets[h] - onsets[h - 1] <= 60 / section.tempo + 1e-6, `${name}: ${voice} responds within a beat`);
+            }
+            if (voice === 'drive') assert.ok(hits.every(e => e.m.length === 1), `${name}: a clear single-note ostinato`);
+          }
+        }
+      }
+    }
+  }
+});
+
 test('moods build on earlier moods and fall back', () => {
   const text = 'beats 1\nvoice a sine\nvoice b kick\nvoice c sine\n'
     + '# mood explore: a c\n# mood sense: explore b -a\n# mood boss: d\n'

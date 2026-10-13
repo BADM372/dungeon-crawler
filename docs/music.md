@@ -77,5 +77,12 @@ test also checks that every score in `music/` is one of them.
 | `abyss` | 19 obsidian abyss | minor chords a tritone apart over an E pedal, 60 | choir, bell tolls, a broken music box | heartbeat, thunder, timpani, toms |
 | `core` | 20 the core | E harmonic minor, 70 | the overworld's tune in minor, harp, organ, tuba, bell | timpani, toms |
 
-Every song but the town has all six moods. The tunes share the game's motif, scale degrees
-1 2 3 5 4 (the overworld's E F# G B A), in each song's own mode.
+Every song but the town has all six moods. Combat keeps the exploration tempo and meter,
+but replaces gentle motion with two combat-only voices: `drive` (an accented, short-gated
+ostinato) and `war` (denser battle drums with four-bar fills). Horns re-articulate the tune,
+brass attacks on the downbeat, and crashes have more weight. These layers also stay in
+`boss`, under its choir, organ or gong; no combat arrangement exceeds 12 active voices.
+The exploration, treasure, sense and rise arrangements are unchanged, and town stays peaceful.
+
+The tunes share the game's motif, scale degrees 1 2 3 5 4 (the overworld's E F# G B A), in
+each song's own mode.

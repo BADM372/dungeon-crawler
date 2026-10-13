@@ -12,7 +12,7 @@ reverb   0.45
 # mood treasure: harpsi strings voices wonder
 # mood sense:    hat toms timpani strings bass voices
 # mood rise:     sense lead harpsi kick snare
-# mood fight:    rise -voices brass crash
+# mood fight:    rise -voices -harpsi -hat -snare brass drive war crash
 # mood boss:     fight -lead choir gong
 
 voice lead     fiddle      vol=0.5  pan=-0.15 rev=0.45
@@ -26,10 +26,14 @@ voice toms     tomlo       vol=0.55 pan=-0.2
 voice timpani  timpani     vol=0.5  pan=-0.1
 voice kick     kick        vol=0.55
 voice snare    snare       vol=0.38 pan=0.1
-voice brass    brass       vol=0.38 pan=-0.25 gate=0.8 center=G3
-voice crash    crash       vol=0.22 pan=0.2
+voice brass    brass       vol=0.45 pan=-0.25 gate=0.65 center=G3 att=0.018 rel=0.09 rev=0.22
+voice crash    crash       vol=0.28 pan=0.2
 voice choir    choir       vol=0.32 center=C4 att=0.4 rel=0.8
 voice gong     gong        vol=0.3  pan=-0.3
+
+# Combat-only motion: tight low ostinato and accented battle drums, at the same tempo.
+voice drive    pizz      vol=0.5  pan=0.3 gate=0.5 rev=0.2
+voice war      snare     vol=0.44 pan=0.15 rev=0.2
 
 # Cm Ab Fm G | Cm Db Bdim G: the motif (C D Eb G F)
 pattern A
@@ -39,6 +43,10 @@ harpsi  | C4- G4- Eb4- G4- C4- G4- D4- G4- | Ab3- Eb4- C4- Eb4- Ab3- Eb4- Bb3- E
 harpsi  | C4- G4- Eb4- G4- C4- G4- D4- G4- | Db4- Ab4- F4- Ab4- Db4- Ab4- C4- Ab4- | B3- F4- D4- F4- B3- F4- Ab3- F4- | G3- D4- B3- D4- G3- D4- Ab3- D4- |
 strings | [Cm]?--------------- | [Ab]?--------------- | [Fm]?--------------- | [G]?--------------- |
 strings | [Cm]?--------------- | [Db]?--------------- | [Bdim]?--------------- | [G]?--------------- |
+drive   | C3!- C3 C3 G3!- G3 G3 C3!- C3 C3 Eb3!- G3 C3 | Ab3!- Ab3 Ab3 Eb4!- Eb4 Eb4 Ab3!- Ab3 Ab3 C4!- Eb4 Ab3 | F3!- F3 F3 C4!- C4 C4 F3!- F3 F3 Ab3!- C4 F3 | G3!- G3 G3 D4!- D4 D4 G3!- G3 G3 B3!- D4 G3 |
+drive   | C3!- C3 C3 G3!- G3 G3 C3!- C3 C3 Eb3!- G3 C3 | Db3!- Db3 Db3 Ab3!- Ab3 Ab3 Db3!- Db3 Db3 F3!- Ab3 Db3 | B3!- B3 B3 F4!- F4 F4 B3!- B3 B3 D4!- F4 B3 | G3!- G3 G3 D4!- D4 D4 G3!- G3 G3 B3!- D4 G3 |
+war     | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xxxx XXXX |
+war     | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xxxx XXXX |
 bass    | C2--- C2--- C2--- G1--- | Ab1--- Ab1--- Ab1--- Eb2--- | F1--- F1--- F1--- C2--- | G1--- G1--- G1--- D2--- |
 bass    | C2--- C2--- C2--- G1--- | Db2--- Db2--- Db2--- Ab1--- | B1--- B1--- B1--- F2--- | G1--- G1--- G1--- D2--- |
 voices  | C3+G3--------------- | Ab2+Eb3--------------- | F2+C3--------------- | G2+D3--------------- |
@@ -55,8 +63,8 @@ kick    | X... .... X... .... | % | % | % |
 kick    | % | % | % | X... ..X. X... X.X. |
 snare   | .... x... .... x.xo | % | % | % |
 snare   | % | % | % | x.o. x.oo xxxx XxXx |
-brass   | .--- [Cm]- .- .--- [Cm]- .- | .--- [Ab]- .- .--- [Ab]- .- | .--- [Fm]- .- .--- [Fm]- .- | .--- [G]- .- .--- [G]- .- |
-brass   | .--- [Cm]- .- .--- [Cm]- .- | .--- [Db]- .- .--- [Db]- .- | .--- [Bdim]- .- .--- [Bdim]- .- | .--- [G]- .- .--- [G]- .- |
+brass   | [Cm]!--- .- [Cm]--- .- [Cm]!--- | [Ab]!--- .- [Ab]--- .- [Ab]!--- | [Fm]!--- .- [Fm]--- .- [Fm]!--- | [G]!--- .- [G]--- .- [G]!--- |
+brass   | [Cm]!--- .- [Cm]--- .- [Cm]!--- | [Db]!--- .- [Db]--- .- [Db]!--- | [Bdim]!--- .- [Bdim]--- .- [Bdim]!--- | [G]!--- .- [G]--- .- [G]!--- |
 crash   | X... .... .... .... | .... .... .... .... | % | % |
 crash   | x... .... .... .... | .... .... .... .... | % | % |
 choir   | [Cm]--------------- | [Ab]--------------- | [Fm]--------------- | [G]--------------- |
@@ -72,6 +80,10 @@ harpsi  | F3- C4- Ab3- C4- F3- C4- G3- C4- | C4- G4- Eb4- G4- C4- G4- D4- G4- | 
 harpsi  | F3- C4- Ab3- C4- F3- C4- G3- C4- | Db4- Ab4- F4- Ab4- Db4- Ab4- C4- Ab4- | G3- D4- B3- D4- G3- D4- Ab3- D4- | G3- D4- B3- D4- G3- D4- F4- D4- |
 strings | [Fm]?--------------- | [Cm]?--------------- | [Ab]?--------------- | [Eb]?--------------- |
 strings | [Fm]?--------------- | [Db]?--------------- | [G]?--------------- | [G]?--------------- |
+drive   | F3!- F3 F3 C4!- C4 C4 F3!- F3 F3 Ab3!- C4 F3 | C3!- C3 C3 G3!- G3 G3 C3!- C3 C3 Eb3!- G3 C3 | Ab3!- Ab3 Ab3 Eb4!- Eb4 Eb4 Ab3!- Ab3 Ab3 C4!- Eb4 Ab3 | Eb3!- Eb3 Eb3 Bb3!- Bb3 Bb3 Eb3!- Eb3 Eb3 G3!- Bb3 Eb3 |
+drive   | F3!- F3 F3 C4!- C4 C4 F3!- F3 F3 Ab3!- C4 F3 | Db3!- Db3 Db3 Ab3!- Ab3 Ab3 Db3!- Db3 Db3 F3!- Ab3 Db3 | G3!- G3 G3 D4!- D4 D4 G3!- G3 G3 B3!- D4 G3 | G3!- G3 G3 D4!- D4 D4 G3!- G3 G3 B3!- D4 G3 |
+war     | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xxxx XXXX |
+war     | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xoxo X.xx | xoxo X.oo xxxx XXXX |
 bass    | F1--- F1--- F1--- C2--- | C2--- C2--- C2--- G1--- | Ab1--- Ab1--- Ab1--- Eb2--- | Eb2--- Eb2--- Eb2--- Bb1--- |
 bass    | F1--- F1--- F1--- C2--- | Db2--- Db2--- Db2--- Ab1--- | G1--- G1--- G1--- D2--- | G1--- G1--- G1--- B1--- |
 voices  | F2+C3--------------- | C3+G3--------------- | Ab2+Eb3--------------- | Eb3+Bb3--------------- |
@@ -88,8 +100,8 @@ kick    | X... .... X... .... | % | % | % |
 kick    | % | % | % | X... ..X. X... X.X. |
 snare   | .... x... .... x.xo | % | % | % |
 snare   | % | % | % | x.o. x.oo xxxx XxXx |
-brass   | .--- [Fm]- .- .--- [Fm]- .- | .--- [Cm]- .- .--- [Cm]- .- | .--- [Ab]- .- .--- [Ab]- .- | .--- [Eb]- .- .--- [Eb]- .- |
-brass   | .--- [Fm]- .- .--- [Fm]- .- | .--- [Db]- .- .--- [Db]- .- | .--- [G]- .- .--- [G]- .- | .--- [G]- .- .--- [G]- .- |
+brass   | [Fm]!--- .- [Fm]--- .- [Fm]!--- | [Cm]!--- .- [Cm]--- .- [Cm]!--- | [Ab]!--- .- [Ab]--- .- [Ab]!--- | [Eb]!--- .- [Eb]--- .- [Eb]!--- |
+brass   | [Fm]!--- .- [Fm]--- .- [Fm]!--- | [Db]!--- .- [Db]--- .- [Db]!--- | [G]!--- .- [G]--- .- [G]!--- | [G]!--- .- [G]--- .- [G]!--- |
 crash   | X... .... .... .... | .... .... .... .... | % | % |
 crash   | x... .... .... .... | .... .... .... .... | % | % |
 choir   | [Fm]--------------- | [Cm]--------------- | [Ab]--------------- | [Eb]--------------- |

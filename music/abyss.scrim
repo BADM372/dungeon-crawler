@@ -12,7 +12,7 @@ reverb   0.7
 # mood treasure: pad musicbox wonder
 # mood sense:    heart thunder timpani toms drone pad
 # mood rise:     sense lead toll snare
-# mood fight:    rise brass crash
+# mood fight:    rise -toms -snare brass drive war crash
 # mood boss:     fight -lead gong organ
 
 voice lead     choir     vol=0.32 pan=-0.1 att=0.3 rel=0.8
@@ -26,10 +26,14 @@ voice thunder  thunder   vol=0.2  pan=-0.2
 voice timpani  timpani   vol=0.5  pan=-0.1
 voice toms     tomlo     vol=0.4  pan=0.25
 voice snare    snare     vol=0.3  pan=0.1
-voice brass    brass     vol=0.36 pan=-0.25 gate=0.8 center=G3
-voice crash    crash     vol=0.2  pan=0.2
+voice brass    brass     vol=0.43 pan=-0.25 gate=0.65 center=G3 att=0.018 rel=0.09 rev=0.22
+voice crash    crash     vol=0.26  pan=0.2
 voice gong     gong      vol=0.35 pan=-0.3
 voice organ    pipe      vol=0.3  att=0.5 rel=1
+
+# Combat-only motion: tight low ostinato and accented battle drums, at the same tempo.
+voice drive    strings   vol=0.38 pan=0.3 gate=0.5 att=0.015 rel=0.08 rev=0.25
+voice war      tommid    vol=0.52 pan=0.15 rev=0.25
 
 # Em Bbm Em Bbm | Cm F#m Em B: the motif (E F# G B A) falls apart over the tritones
 pattern A
@@ -39,6 +43,10 @@ drone    | E2+B2--------------- | = | = | = |
 drone    | = | = | = | = |
 pad      | [Em]?--------------- | [Bbm]?--------------- | [Em]?--------------- | [Bbm]?--------------- |
 pad      | [Cm]?--------------- | [F#m]?--------------- | [Em]?--------------- | [B]?--------------- |
+drive   | E3!- E3- B3- E3!- E3- G3- B3!- E3- | Bb3!- Bb3- F4- Bb3!- Bb3- Db4- F4!- Bb3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | Bb3!- Bb3- F4- Bb3!- Bb3- Db4- F4! Db4 Bb3 F4 |
+drive   | C3!- C3- G3- C3!- C3- Eb3- G3!- C3- | Gb3!- Gb3- Db4- Gb3!- Gb3- A3- Db4!- Gb3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | B3!- B3- Gb4- B3!- B3- Eb4- Gb4! Eb4 B3 Gb4 |
+war     | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx X.xx x.x. XXXX |
+war     | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx X.xx x.x. XXXX |
 toll     | E4--------------- | Bb3--------------- | E4--------------- | Bb3--------------- |
 toll     | C4--------------- | F#3--------------- | E4--------------- | B3--------------- |
 musicbox | .------- B6--- G6--- | .------- F6--- C#6--- | .------- E6--- B6--- | .------- C#7--- F6--- |
@@ -55,8 +63,8 @@ toms     | ..x. .... ..x. .x.. | % | % | % |
 toms     | % | % | % | ..x. .x.. x.x. xxxx |
 snare    | .... .... x... .... | % | % | % |
 snare    | % | % | % | .... x... x.x. xxxx |
-brass    | [Em]--- .------- [Em]--- | [Bbm]--- .------- [Bbm]--- | [Em]--- .------- [Em]--- | [Bbm]--- .------- [Bbm]--- |
-brass    | [Cm]--- .------- [Cm]--- | [F#m]--- .------- [F#m]--- | [Em]--- .------- [Em]--- | [B]--- .------- [B]--- |
+brass    | [Em]!--- .- [Em]--- .- [Em]!--- | [Bbm]!--- .- [Bbm]--- .- [Bbm]!--- | [Em]!--- .- [Em]--- .- [Em]!--- | [Bbm]!--- .- [Bbm]--- .- [Bbm]!--- |
+brass    | [Cm]!--- .- [Cm]--- .- [Cm]!--- | [F#m]!--- .- [F#m]--- .- [F#m]!--- | [Em]!--- .- [Em]--- .- [Em]!--- | [B]!--- .- [B]--- .- [B]!--- |
 crash    | X... .... .... .... | .... .... .... .... | % | % |
 crash    | x... .... .... .... | .... .... .... .... | % | % |
 gong     | X... .... .... .... | .... .... .... .... | % | % |
@@ -72,6 +80,10 @@ drone    | E2+B2--------------- | = | = | = |
 drone    | = | = | = | = |
 pad      | [Gm]?--------------- | [C#m]?--------------- | [Em]?--------------- | [Bbm]?--------------- |
 pad      | [Cm]?--------------- | [F#m]?--------------- | [Gm]?--------------- | [B]?--------------- |
+drive   | G3!- G3- D4- G3!- G3- Bb3- D4!- G3- | Db3!- Db3- Ab3- Db3!- Db3- E3- Ab3!- Db3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | Bb3!- Bb3- F4- Bb3!- Bb3- Db4- F4! Db4 Bb3 F4 |
+drive   | C3!- C3- G3- C3!- C3- Eb3- G3!- C3- | Gb3!- Gb3- Db4- Gb3!- Gb3- A3- Db4!- Gb3- | G3!- G3- D4- G3!- G3- Bb3- D4!- G3- | B3!- B3- Gb4- B3!- B3- Eb4- Gb4! Eb4 B3 Gb4 |
+war     | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx X.xx x.x. XXXX |
+war     | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx ..X. X.xx .xX. | X.xx X.xx x.x. XXXX |
 toll     | G3--------------- | C#4--------------- | E4--------------- | Bb3--------------- |
 toll     | C4--------------- | F#3--------------- | G3--------------- | B3--------------- |
 musicbox | .------- D6--- Bb6--- | .------- G#6--- E6--- | .------- B6--- G6--- | .------- F6--- C#7--- |
@@ -88,8 +100,8 @@ toms     | ..x. .... ..x. .x.. | % | % | % |
 toms     | % | % | % | ..x. .x.. x.x. xxxx |
 snare    | .... .... x... .... | % | % | % |
 snare    | % | % | % | .... x... x.x. xxxx |
-brass    | [Gm]--- .------- [Gm]--- | [C#m]--- .------- [C#m]--- | [Em]--- .------- [Em]--- | [Bbm]--- .------- [Bbm]--- |
-brass    | [Cm]--- .------- [Cm]--- | [F#m]--- .------- [F#m]--- | [Gm]--- .------- [Gm]--- | [B]--- .------- [B]--- |
+brass    | [Gm]!--- .- [Gm]--- .- [Gm]!--- | [C#m]!--- .- [C#m]--- .- [C#m]!--- | [Em]!--- .- [Em]--- .- [Em]!--- | [Bbm]!--- .- [Bbm]--- .- [Bbm]!--- |
+brass    | [Cm]!--- .- [Cm]--- .- [Cm]!--- | [F#m]!--- .- [F#m]--- .- [F#m]!--- | [Gm]!--- .- [Gm]--- .- [Gm]!--- | [B]!--- .- [B]--- .- [B]!--- |
 crash    | X... .... .... .... | .... .... .... .... | % | % |
 crash    | x... .... .... .... | .... .... .... .... | % | % |
 gong     | X... .... .... .... | .... .... .... .... | % | % |

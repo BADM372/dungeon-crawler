@@ -12,7 +12,7 @@ reverb   0.55
 # mood treasure: arp spark pad wonder
 # mood sense:    block tri toms spark pad bass
 # mood rise:     sense -spark lead echo arp kick snare
-# mood fight:    rise -echo -tri brass crash
+# mood fight:    rise -echo -tri -arp brass drive war crash
 # mood boss:     fight -lead organ choir
 
 voice lead     flute     vol=0.6  pan=-0.1 rev=0.5
@@ -27,10 +27,14 @@ voice tri      tri       vol=0.25 pan=-0.4
 voice toms     tomlo     vol=0.5  pan=-0.2
 voice kick     kick      vol=0.55
 voice snare    snare     vol=0.36 pan=0.1
-voice brass    brass     vol=0.36 pan=-0.25 gate=0.8 center=E4
-voice crash    crash     vol=0.22 pan=0.2
+voice brass    brass     vol=0.43 pan=-0.25 gate=0.65 center=E4 att=0.018 rel=0.09 rev=0.22
+voice crash    crash     vol=0.28 pan=0.2
 voice organ    pipe      vol=0.3  pan=0.1  att=0.3 rel=0.8
 voice choir    choir     vol=0.28 center=E4 att=0.5 rel=0.8
+
+# Combat-only motion: tight low ostinato and accented battle drums, at the same tempo.
+voice drive    pizz      vol=0.52 pan=0.3 gate=0.55 rev=0.25
+voice war      tommid    vol=0.5  pan=-0.15 rev=0.2
 
 # Cmaj7 D/C Cmaj7 D/C | Am7 Bm7 Cmaj7 Bsus4: the motif with the Lydian fourth (C D E G F#)
 pattern A
@@ -44,6 +48,10 @@ spark   | .------- B6--- .--- | .------- F#6--- .--- | .------- B6--- .--- | .--
 spark   | .------- G6--- .--- | .------- A6--- .--- | .------- B6--- .--- | .------- E6--- .--- |
 pad     | [Cmaj7]?--------------- | [D/C]?--------------- | [Cmaj7]?--------------- | [D/C]?--------------- |
 pad     | [Am7]?--------------- | [Bm7]?--------------- | [Cmaj7]?--------------- | [Bsus4]?--------------- |
+drive   | C3!- C3- G3- C3!- C3- E3- G3!- C3- | C3!- C3- A3- C3!- C3- F#3- A3!- C3- | C3!- C3- G3- C3!- C3- E3- G3!- C3- | C3!- C3- A3- C3!- C3- F#3- A3! F#3 C3 A3 |
+drive   | A3!- A3- E4- A3!- A3- C4- E4!- A3- | B3!- B3- F#4- B3!- B3- D4- F#4!- B3- | C3!- C3- G3- C3!- C3- E3- G3!- C3- | B3!- B3- F#4- B3!- B3- E4- F#4! E4 B3 F#4 |
+war     | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. X.x. xxxx XXXX |
+war     | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. X.x. xxxx XXXX |
 bass    | C2!--- C2- C2- .- C2- G1--- | C2!--- C2- C2- .- C2- A1--- | C2!--- C2- C2- .- C2- G1--- | C2!--- C2- C2- .- C2- A1--- |
 bass    | A1!--- A1- A1- .- A1- E2--- | B1!--- B1- B1- .- B1- F#2--- | C2!--- C2- C2- .- C2- G1--- | B1!--- B1- B1- .- B1- F#1--- |
 wonder  | C7--- G6--- E6--- B6--- | D7--- A6--- F#6--- A6--- | C7--- G6--- E6--- B6--- | D7--- A6--- F#6--- E6--- |
@@ -58,8 +66,8 @@ kick    | X... .... x... .... | % | % | % |
 kick    | % | % | % | X... .... X... X... |
 snare   | .... x... .... x... | % | % | % |
 snare   | % | % | % | x.o. x.oo xxxx XxXx |
-brass   | .--- [Cmaj7]- .- .--- [Cmaj7]- .- | .--- [D/C]- .- .--- [D/C]- .- | .--- [Cmaj7]- .- .--- [Cmaj7]- .- | .--- [D/C]- .- .--- [D/C]- .- |
-brass   | .--- [Am7]- .- .--- [Am7]- .- | .--- [Bm7]- .- .--- [Bm7]- .- | .--- [Cmaj7]- .- .--- [Cmaj7]- .- | .--- [Bsus4]- .- .--- [Bsus4]- .- |
+brass   | [Cmaj7]!--- .- [Cmaj7]--- .- [Cmaj7]!--- | [D/C]!--- .- [D/C]--- .- [D/C]!--- | [Cmaj7]!--- .- [Cmaj7]--- .- [Cmaj7]!--- | [D/C]!--- .- [D/C]--- .- [D/C]!--- |
+brass   | [Am7]!--- .- [Am7]--- .- [Am7]!--- | [Bm7]!--- .- [Bm7]--- .- [Bm7]!--- | [Cmaj7]!--- .- [Cmaj7]--- .- [Cmaj7]!--- | [Bsus4]!--- .- [Bsus4]--- .- [Bsus4]!--- |
 crash   | X... .... .... .... | .... .... .... .... | % | % |
 crash   | x... .... .... .... | .... .... .... .... | % | % |
 organ   | C3+G3--------------- | D3+A3--------------- | C3+G3--------------- | D3+A3--------------- |
@@ -79,6 +87,10 @@ spark   | .------- C7--- .--- | .------- B6--- .--- | .------- A6--- .--- | .---
 spark   | .------- C7--- .--- | .------- B6--- .--- | .------- F6--- .--- | .------- G#6--- .--- |
 pad     | [Am]?--------------- | [Em]?--------------- | [F]?--------------- | [G]?--------------- |
 pad     | [Am]?--------------- | [Em]?--------------- | [Dm]?--------------- | [E]?--------------- |
+drive   | A3!- A3- E4- A3!- A3- C4- E4!- A3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | F3!- F3- C4- F3!- F3- A3- C4!- F3- | G3!- G3- D4- G3!- G3- B3- D4! B3 G3 D4 |
+drive   | A3!- A3- E4- A3!- A3- C4- E4!- A3- | E3!- E3- B3- E3!- E3- G3- B3!- E3- | D3!- D3- A3- D3!- D3- F3- A3!- D3- | E3!- E3- B3- E3!- E3- G#3- B3! G#3 E3 B3 |
+war     | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. X.x. xxxx XXXX |
+war     | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. .xX. X.x. .xXx | X.x. X.x. xxxx XXXX |
 bass    | A1!--- A1- A1- .- A1- E2--- | E2!--- E2- E2- .- E2- B1--- | F1!--- F1- F1- .- F1- C2--- | G1!--- G1- G1- .- G1- D2--- |
 bass    | A1!--- A1- A1- .- A1- E2--- | E2!--- E2- E2- .- E2- B1--- | D2!--- D2- D2- .- D2- A1--- | E2!--- E2- E2- .- E2- B1--- |
 wonder  | A6--- E6--- C7--- E7--- | E6--- B6--- G6--- B6--- | F6--- C7--- A6--- C7--- | G6--- D7--- B6--- D7--- |
@@ -93,8 +105,8 @@ kick    | X... .... x... .... | % | % | % |
 kick    | % | % | % | X... .... X... X... |
 snare   | .... x... .... x... | % | % | % |
 snare   | % | % | % | x.o. x.oo xxxx XxXx |
-brass   | .--- [Am]- .- .--- [Am]- .- | .--- [Em]- .- .--- [Em]- .- | .--- [F]- .- .--- [F]- .- | .--- [G]- .- .--- [G]- .- |
-brass   | .--- [Am]- .- .--- [Am]- .- | .--- [Em]- .- .--- [Em]- .- | .--- [Dm]- .- .--- [Dm]- .- | .--- [E]- .- .--- [E]- .- |
+brass   | [Am]!--- .- [Am]--- .- [Am]!--- | [Em]!--- .- [Em]--- .- [Em]!--- | [F]!--- .- [F]--- .- [F]!--- | [G]!--- .- [G]--- .- [G]!--- |
+brass   | [Am]!--- .- [Am]--- .- [Am]!--- | [Em]!--- .- [Em]--- .- [Em]!--- | [Dm]!--- .- [Dm]--- .- [Dm]!--- | [E]!--- .- [E]--- .- [E]!--- |
 crash   | X... .... .... .... | .... .... .... .... | % | % |
 crash   | x... .... .... .... | .... .... .... .... | % | % |
 organ   | A2+E3--------------- | E2+B2--------------- | F2+C3--------------- | G2+D3--------------- |
