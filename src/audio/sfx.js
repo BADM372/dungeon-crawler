@@ -1,6 +1,6 @@
 // Generated sound effects (Web Audio, no sample files): a sword whoosh, a bow's draw and twang,
 // a crossbow's shot and reload, a spell's cast and burst, shots striking walls, hits, kills,
-// getting hurt, pickups, thrown fireballs / punches and burning, the player's body (jumps,
+// getting hurt, pickups, thrown fireballs / punches / ice balls and burning, the player's body (jumps,
 // falls, knock-downs, fluid deaths), travel, items and the bag, and the enemies' voices
 // (voices.js). Footsteps are footsteps.js, the continuous sounds loops.js. The audio context
 // lives in context.js.
@@ -147,6 +147,23 @@ const SOUNDS = {
     tone('triangle', 1760 * p, 1320 * p, t, 0.25, amp(t, 0.002, 0.25, 0.25, out));
     tone('sine', 160 * p, 60 * p, t, 0.15, amp(t, 0.002, 0.7, 0.15, out));
     noise(t, 0.08, filter('highpass', 2500, 0.7, amp(t, 0.001, 0.35, 0.07, out)));
+  },
+  frost(t, out, p) {      // an ice ball thrown: an airy whoosh with a cold, glassy shimmer on top
+    const f = filter('bandpass', 900 * p, 1.2, amp(t, 0.04, 0.7, 0.3, out));
+    f.frequency.setValueAtTime(700 * p, t); f.frequency.exponentialRampToValueAtTime(3200 * p, t + 0.25);
+    noise(t, 0.34, f);
+    for (const [i, hz] of [2637, 3520, 3136].entries()) {
+      const at = t + 0.03 + i * 0.04;
+      tone('sine', hz * p, hz * p * 0.98, at, 0.25, amp(at, 0.003, 0.08, 0.25, out));
+    }
+  },
+  icecrack(t, out, p) {   // an ice ball bursting: a sharp crack, a thump and tinkling shards
+    noise(t, 0.06, filter('highpass', 3500 * p, 0.8, amp(t, 0.001, 0.6, 0.06, out)));
+    tone('sine', 180 * p, 70 * p, t, 0.12, amp(t, 0.002, 0.55, 0.12, out));
+    for (let i = 0; i < 5; i++) {
+      const at = t + 0.03 + i * 0.035 * (0.7 + Math.random() * 0.6), hz = (2200 + Math.random() * 2600) * p;
+      tone('triangle', hz, hz * 0.97, at, 0.12, amp(at, 0.002, 0.12, 0.12, out));
+    }
   },
   portal(t, out, p) {     // the town portal opening or taking you: a rising shimmer over a soft rush
     const f = filter('bandpass', 300 * p, 1.2, amp(t, 0.15, 0.6, 0.6, out));

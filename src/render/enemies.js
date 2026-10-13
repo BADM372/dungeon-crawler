@@ -4,7 +4,8 @@
 // too (GLOW): a light that follows the body, flames (bones named flame*) that keep
 // flickering over whatever clip plays, an emissive pulse and drifting embers.
 // An enemy kind (core/enemies.js) is drawn with its species' model, recoloured
-// (recolor.js) and scaled by its size; its `light` and `sparks` replace the glow's colours.
+// (recolor.js), stripped of the parts it hides and scaled by its size; its `light` and `sparks`
+// replace the glow's colours, and its `fx` names a glow of its own.
 import * as THREE from 'three';
 import { scene, camera } from './scene.js';
 import { spiderModel } from './spidermodel.js';
@@ -14,17 +15,18 @@ import { octonautModel } from './octonautmodel.js';
 import { fireFaceModel } from './firefacemodel.js';
 import { triangleModel } from './trianglemodel.js';
 import { fireCatModel } from './firecatmodel.js';
+import { shrapsModel } from './shrapsmodel.js';
 import { trackLight, untrackLight } from './lightpool.js';
 import { glow, emit, rand } from './particles.js';
 import { cloneEnemy } from './enemymodel.js';
-import { kindColors, recolor } from './recolor.js';
+import { kindColors, recolor, hideParts } from './recolor.js';
 import { attackOf } from '../core/enemies.js';
 import { guardianColor, guardianTitle } from '../core/guardians.js';
 import { player } from '../game/state.js';
 import { makeBar, makeLevelLabel } from './bars.js';
 
 const prefabs = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel,
-  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel };
+  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel, shraps: shrapsModel };
 // light: [color, intensity, distance, height]; pulse: emissive / light swing with the
 // clip's beat (twice per hover loop); embers: per second, rising from `from` (a bone, or
 // a height above the body); flicker: extra flame motion
@@ -32,6 +34,7 @@ const GLOW = {
   fireface: { light: [0xff6a20, 4, 4.5, 0.75], flicker: 1, embers: { rate: 7, from: 0.95, spread: 0.25 } },
   triangle: { light: [0xa45cff, 2.6, 3.5, 0.85], pulse: 0.7 },
   firecat: { light: [0xff7a2a, 1.6, 2.6, 0.75], flicker: 1, embers: { rate: 5, from: 'flame_tail', spread: 0.06 } },
+  fireshraps: { light: [0xff6a20, 2.4, 3.5, 1.35], flicker: 1, embers: { rate: 6, from: 'flame0_a', spread: 0.15 } },
 };
 const EMBERS = ['#ffd25a', '#ff8a2a', '#ff5a14'];
 const GHOST = 0xff6a5a, GHOST_OPACITY = 0.4;
@@ -44,6 +47,7 @@ const angleTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * 
 function makeView(e, prefab) {
   const group = new THREE.Group(), model = cloneEnemy(prefab), size = e.profile.size ?? 1;
   model.scale.multiplyScalar(size);
+  hideParts(model, e.profile);
   group.add(model); scene.add(group);
   const materials = [], colors = kindColors(e.profile, prefab);
   model.traverse(o => {
@@ -77,7 +81,7 @@ function makeView(e, prefab) {
   bar.position.y = e.profile.height + 0.12; group.add(bar);
   const label = makeLevelLabel(e.level, e.guardian ? { color, title: guardianTitle(e.guardianRole) } : {});
   label.position.y = e.profile.height + .33; group.add(label);
-  const fx = GLOW[e.profile.species] ?? (e.guardian ? { light: [color, 2, 3, .5], pulse: .35 } : null), flames = [];
+  const fx = GLOW[e.profile.fx ?? e.profile.species] ?? (e.guardian ? { light: [color, 2, 3, .5], pulse: .35 } : null), flames = [];
   model.traverse(o => { if (o.isBone && /^flame/.test(o.name)) flames.push(o); });
   let light = null;
   if (fx?.light) {

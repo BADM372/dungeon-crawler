@@ -20,7 +20,7 @@ click.
 | Sound | Event |
 |---|---|
 | `swing`, `hit`, `kill`, `hurt`, `sizzle` | combat and burning (`game/juice.js`) |
-| `fireball`, `zap`, `whump`, `shatter` | projectiles (`game/juice.js`) |
+| `fireball`, `zap`, `frost`, `whump`, `shatter`, `icecrack` | projectiles (`game/juice.js`) |
 | `draw`, `twang`, `crossbow`, `reload`, `spell`, `thunk`, `burst` | the player's bow, crossbow and staff: drawing, loosing, a crossbow's shot and reload, a spell leaving, a shot striking a wall, a spell bursting (`game/juice.js`) |
 | `coin`, `pickup`, `drop`, `clink`, `toss` | loot: coins, items, a rare+ weapon landing, any other landing, dropping from the bag |
 | `unlock`, `levelUp` | a guardian falls, a kill gains a level (`game/enemies.js`) |

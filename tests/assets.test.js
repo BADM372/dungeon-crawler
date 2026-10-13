@@ -6,7 +6,7 @@ import { assets } from './paths.js';
 import { SLASH_CLIP, SHOOT_CLIP, CROSSBOW_CLIP, CAST_CLIP, KINDS } from '../src/core/combat.js';
 import { MUZZLES } from '../src/core/shots.js';
 import { WEAPONS } from '../src/core/items.js';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
 function glb(name) {
@@ -202,6 +202,31 @@ test('Fire-cat prowls and gallops at its speeds, pounces over the profile window
   assert.ok(body[0] > 4 * body[1] && body[0] < 0.4, 'dark red');
   assert.ok(!j.materials.find(m => m.name === 'FireCatBody').emissiveFactor);
   for (const [name, [r, g, b]] of glowing(j).filter(([n]) => /Flame/.test(n))) assert.ok(r === 1 && g < 0.5 && b < 0.05, name);
+});
+test('Shraps pinches and throws on the profile timings, from the profile muzzle, and carries both heads', () => {
+  const { json: j, duration } = glb('shraps');
+  assert.deepEqual(j.animations.map(a => a.name).sort(), ['ShrapsDeath', 'ShrapsPinch', 'ShrapsThrow', 'ShrapsWalk']);
+  const a = Object.fromEntries(j.animations.map(a => [a.name, a]));
+  assert.equal(a.ShrapsWalk.extras.speed, SHRAPS.wander); assert.equal(a.ShrapsWalk.extras.loop, true);
+  const [pinch, toss] = SHRAPS.attacks;
+  for (const [clip, attack, style] of [[a.ShrapsPinch, pinch, 'pinch'], [a.ShrapsThrow, toss, 'throw']]) {
+    assert.equal(clip.extras.attack_style, style);
+    assert.equal(clip.extras.hit_frame / 30, attack.hitAt);
+    assert.ok(Math.abs(duration(clip) - attack.attackTime) < 1e-5);
+  }
+  assert.deepEqual(a.ShrapsThrow.extras.muzzle, [...toss.projectile.muzzle]);
+  assert.ok(Math.abs(duration(a.ShrapsDeath) - SHRAPS.deathTime) < 1e-5);
+  assert.equal(a.ShrapsDeath.extras.hold_last_frame, true);
+  projectileProp(j, 'ShrapsIceBall', 'iceball');
+  for (const bone of ['head', 'claw.L', 'pincer.R', 'thigh.L', 'foot.R', 'charge']) assert.ok(j.nodes.some(n => n.name === bone), bone);
+  assert.ok(j.nodes.filter(n => /^flame\d_[ab]$/.test(n.name)).length >= 10, 'flickering flame tongues on the fire head');
+  // every material a kind hides or recolours is in the model, and each head is hidden by exactly one kind
+  const names = new Set(j.materials.map(m => m.name));
+  for (const k of [SHRAPS, FIRE_SHRAPS]) for (const m of [...k.hide, ...Object.values(k.parts).flat()]) assert.ok(names.has(m), m);
+  assert.deepEqual([...SHRAPS.hide, ...FIRE_SHRAPS.hide].sort(), [...names].filter(n => /Ice|Fire|Flame/.test(n)).sort());
+  const shell = j.materials.find(m => m.name === 'ShrapsShell').pbrMetallicRoughness.baseColorFactor;
+  assert.ok(shell[2] > shell[1] && shell[1] > shell[0], 'light blue');
+  for (const [name, [r, g, b]] of glowing(j).filter(([n]) => /Fire|Flame/.test(n))) assert.ok(r === 1 && g < 0.5 && b < 0.05, name);
 });
 test('standalone sword is a small untextured, unskinned prop', () => {
   const { json: j } = glb('sword');

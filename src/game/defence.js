@@ -2,6 +2,7 @@
 // wind-ups and damage. Posts are actual reachable floors, not points across gaps.
 import { gateLocked } from '../core/guardians.js';
 import { walkable, clearLine } from '../physics/enemynav.js';
+import { isRanged } from '../core/enemies.js';
 
 export function coordinateDefence(map, run, list, player) {
   const guardian = list.find(e => e.guardianGate && e.mode !== 'dead');   // not a dev-spawned one
@@ -32,7 +33,7 @@ export function coordinateDefence(map, run, list, player) {
     let tx = e.home.x + .5, tz = e.home.z + .5;
     if (advancing || alarm) {
       const vx = player.x - g.x, vz = player.z - g.z, d = Math.hypot(vx, vz) || 1;
-      const front = cfg.projectile ? .5 : Math.min(4.5, d * .6);
+      const front = isRanged(cfg) ? .5 : Math.min(4.5, d * .6);
       const flank = ((nearest.indexOf(e) % 5) - 2) * 1.3;
       tx = g.x + vx / d * front - vz / d * flank;
       tz = g.z + vz / d * front + vx / d * flank;
@@ -43,7 +44,7 @@ export function coordinateDefence(map, run, list, player) {
     const post = floors[0] || e.home;
     claimed.push({ x: post.x + .5, z: post.z + .5, radius: cfg.radius });
     // Ranged defenders hold covering posts while they already have a clear shot.
-    const shooting = cfg.projectile && dist < cfg.reach && clearLine(e.x, e.y + .4, e.z, player.x, player.y + .6, player.z);
+    const shooting = isRanged(cfg) && dist < cfg.reach && clearLine(e.x, e.y + .4, e.z, player.x, player.y + .6, player.z);
     e.defence = { post, engage: engage || !!shooting && advancing };
   }
 }

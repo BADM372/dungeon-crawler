@@ -20,7 +20,7 @@
 import * as THREE from 'three';
 import { ENEMY_KINDS, ENEMY_PROFILES } from './src/core/enemies.js';
 import { cloneEnemy } from './src/render/enemymodel.js';
-import { kindColors, recolor } from './src/render/recolor.js';
+import { kindColors, recolor, hideParts } from './src/render/recolor.js';
 import { spiderModel } from './src/render/spidermodel.js';
 import { stunderModel } from './src/render/stundermodel.js';
 import { snakeModel } from './src/render/snakemodel.js';
@@ -28,10 +28,11 @@ import { octonautModel } from './src/render/octonautmodel.js';
 import { fireFaceModel } from './src/render/firefacemodel.js';
 import { triangleModel } from './src/render/trianglemodel.js';
 import { fireCatModel } from './src/render/firecatmodel.js';
+import { shrapsModel } from './src/render/shrapsmodel.js';
 
 const q = new URLSearchParams(location.search);
 const MODELS = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel,
-  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel };
+  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel, shraps: shrapsModel };
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(devicePixelRatio); renderer.setSize(innerWidth, innerHeight);
 document.body.append(renderer.domElement);
@@ -58,6 +59,7 @@ rows.forEach((row, r) => row.forEach((k, c) => {
   if (!prefab.ready) return;
   const model = cloneEnemy(prefab), colors = kindColors(k, prefab);
   model.scale.multiplyScalar((k.size ?? 1) * 1.5 / ENEMY_KINDS[k.species].height);   // rows share a height, kinds keep their size
+  hideParts(model, k);
   model.traverse(o => { if (o.isMesh) o.material = [].concat(o.material).map(m => recolor(m.clone(), colors)).at(-1); });
   const clip = q.get('pose') === 'attack' ? Object.values(prefab.attacks)[0] : prefab.walk;
   const mixer = new THREE.AnimationMixer(model), action = mixer.clipAction(clip);

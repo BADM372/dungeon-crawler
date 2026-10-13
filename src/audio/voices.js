@@ -73,6 +73,15 @@ export function voices({ amp, noise, filter, tone, sweep }) {
       windup: (t, out, p) => noise(t, 0.3, filter('bandpass', 3500 * p, 1.5, amp(t, 0.01, 0.4, 0.28, out))),
       death: (t, out, p) => bend(t, 0.7, 600 * p, 450 * p, 150 * p, 1000 * p, 0.3, out),
     },
+    shraps: {   // clacking claws over an icy creak: a click-clack and a crackle, a snap, cracking apart
+      alert: (t, out, p) => { clicks(t, 4, 0.07, 1800 * p, 0.6, out); tone('triangle', 1400 * p, 1900 * p, t + 0.05, 0.25, amp(t + 0.05, 0.02, 0.08, 0.22, out)); },
+      windup: (t, out, p) => { clicks(t, 2, 0.09, 1500 * p, 0.7, out); noise(t + 0.05, 0.25, filter('bandpass', 2500 * p, 3, amp(t + 0.05, 0.05, 0.18, 0.2, out))); },
+      death: (t, out, p) => {
+        noise(t, 0.5, filter('bandpass', 1800 * p, 1.5, amp(t, 0.005, 0.35, 0.45, out)));
+        clicks(t + 0.05, 9, 0.06, 2200 * p, 0.4, out);
+        tone('triangle', 1200 * p, 500 * p, t + 0.1, 0.6, amp(t + 0.1, 0.02, 0.1, 0.55, out));
+      },
+    },
   };
   const out = {};
   for (const [species, kinds] of Object.entries(V)) for (const k of VOICE_KINDS) out[`${species}_${k}`] = kinds[k];

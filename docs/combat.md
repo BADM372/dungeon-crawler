@@ -36,8 +36,8 @@ Four kinds of weapon: swords swing (most of this page), bows, crossbows and staf
   knockback ([loot.md](loot.md)). Without a weapon there are no attacks.
 - **Stagger and poise:** a hit staggers an enemy: it interrupts its wind-up, stuns it
   briefly and holds its next attack for 0.45 s. Then the enemy is *poised* for
-  `profile.poise` seconds (none for spiders and snakes, 0.4 s Fire-cat, 0.8 s Octonaut and
-  Fire-face, 1.2 s Triangle, 1.5 s Stunder, 1.4 s / 2 s side / descent guardians): lighter
+  `profile.poise` seconds (none for spiders and snakes, 0.4 s Fire-cat, 0.8 s Octonaut,
+  Shraps and Fire-face, 1.2 s Triangle, 1.5 s Stunder, 1.4 s / 2 s side / descent guardians): lighter
   hits hurt it (it flashes, barely moves) but do not stagger it, so it can strike back. A
   blow of a quarter of its health or more (`HEAVY_HIT`) staggers it anyway.
 - Hit feedback (`game/juice.js`): a short hit pause, a camera nudge, sparks and
@@ -104,7 +104,19 @@ Four kinds of weapon: swords swing (most of this page), bows, crossbows and staf
   blended in by speed) and pounces from up to 2.2 cells: the AI carries it forward
   between 0.3 s and 0.6 s of the attack until it is 0.55 cells short of the player, and
   it bites on landing (frame 20). The bite does not burn.
-- The glow lives in `render/enemies.js`: each of the three carries a light from the
+- Shraps (`blender/shraps.py`): a light blue crab-armed creature on bent, frog-like legs
+  with wavy shins, and a block of ice for a head. It fights near and far: each of its two
+  attacks has its own `reach` (and `minReach`), and it picks among those the player is in
+  (`attacksInReach`). Within 1.05 cells it raises both claws, lunges and pinches them shut
+  (frame 13). From 1.8 to 5 cells, with a clear line, it cocks its right claw back over its
+  head while an ice ball grows in it and throws it (frame 21). The ice ball chills the
+  player: it moves at half speed for 1.6 s, thawing back over the last 0.4 s (frost on the
+  body, `render/chilled.js`). While a throw recovers it keeps closing in, so it ends up at
+  the claws. Fire puts a chill out and ice puts out a fire.
+- Fire shraps: a kind of the Shraps (`docs/enemy-kinds.md`), red, with a head of flames in
+  place of the ice block, that throws the Fire-face's burning fireball. The one model carries
+  both heads (and both balls in the claw); each kind hides the other's materials (`hide`).
+- The glow lives in `render/enemies.js`: each of the three (and the Fire shraps) carries a light from the
   shared light pool (`trackLight`), bones named `flame*` keep flickering over any clip,
   the Triangle's emissive materials pulse with its hover beat, fire sheds embers, and
   all of it dies down with the death clip.
@@ -217,7 +229,7 @@ these do not change inventory or combat stats. Swimming / climbing hides the pro
 vertical speed advances its phase, descent reverses it, and stopping holds
 the grip. Regenerate via the Blender commands in
 `character.py`, `spider.py`, `stunder.py`, `snake.py`, `octonaut.py`, `fireface.py`,
-`triangle.py`, `firecat.py` and `sword.py` (the SDF creatures share `blender/creature.py`
+`triangle.py`, `firecat.py`, `shraps.py` and `sword.py` (the SDF creatures share `blender/creature.py`
 and can also be rebuilt from a Blender MCP session; previews land in `blender/previews/`). Tests check balance, hit timing,
 direction / reach / height, cancellations, deterministic spawns, clearance,
 navigation and the exported asset/clip contract.

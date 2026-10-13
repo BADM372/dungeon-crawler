@@ -6,7 +6,7 @@
 // Each pack draws its kind from the roster's weights (core/spawns.js) on a stream of its own,
 // so the kinds never move a spot. A spot carries its kind's profile as `kind`.
 import { N } from '../core/constants.js';
-import { enemyRoll, coinRange, guardianLevel, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS } from '../core/enemies.js';
+import { enemyRoll, coinRange, guardianLevel, ENEMY_KINDS, GUARDIAN_KINDS, DESCENT_GUARDIAN_KINDS, isRanged } from '../core/enemies.js';
 import { guardianId } from '../core/guardians.js';
 import { population } from '../core/spawns.js';
 import { swarmKind, HORDE } from '../core/hordes.js';
@@ -108,7 +108,7 @@ export function guardianSpots(map) {
   requests.sort((a, b) => b.radius - a.radius);
   const [dx, dz] = guard.approach;
   for (const kind of requests) {
-    const ahead = kind.projectile ? -1 + R() * 3 : 2 + R() * 5, side = (R() - .5) * 8;
+    const ahead = isRanged(kind) ? -1 + R() * 3 : 2 + R() * 5, side = (R() - .5) * 8;
     const tx = guard.x + dx * ahead - dz * side, tz = guard.z + dz * ahead + dx * side;
     const candidates = map.floors.filter(f => f.encounter && !used.has(f.id) && walkable(f, kind.height)
       && Math.hypot(f.x - entrance.x, f.z - entrance.z) >= 4

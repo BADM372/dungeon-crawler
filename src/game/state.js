@@ -13,6 +13,7 @@ export const player = {
   grounded: true, swimming: false, fluid: 0, fluidDeath: 0, support: null,
   airTime: 0, coyote: 0, jumpBuf: 0, stun: 0,
   burning: null,   // on fire (core/projectiles.js ignite)
+  chilled: null,   // slowed by an ice ball (core/projectiles.js chillFrom)
   // event counters the animator watches
   jumpCount: 0, landCount: 0, landImpact: 0,
   ragdoll: null, getUp: null,   // getting up after a ragdoll (game/ragdoll.js)

@@ -1,11 +1,12 @@
 // Shared floor-bound behaviour. Species tuning controls health, speed, clearance,
 // wind-up / strike / recovery, and what a hit does; a species with several attacks
-// picks one each time it strikes. A ranged species throws from `reach` away when it has a
-// clear shot; a pouncing one is carried forward through its leap.
+// picks one each time it strikes, among those its target is in reach of. A ranged attack is
+// thrown from its reach away when it has a clear shot; a species that also fights up close
+// keeps closing in while its throw recovers. A pouncing one is carried forward through its leap.
 import { player, state } from './state.js';
 import { playerFloor, strikePlayer } from './enemycombat.js';
 import { stepEnemy, findPath, around, clearLine } from '../physics/enemynav.js';
-import { attackOf, pickAttack, lungeDistance, lungeAt } from '../core/enemies.js';
+import { attackOf, pickAttack, attacksInReach, lungeDistance, lungeAt } from '../core/enemies.js';
 import { launchProjectile } from './projectiles.js';
 import { tryHordeAttack } from './hordes.js';
 
@@ -67,7 +68,13 @@ function decide(e) {
   if (e.lost > 1.4) { e.mode = 'home'; e.path = findPath(e.f, e.home, 40, cfg.height) || [e.f]; }
 }
 // a thrown attack needs a free line from its muzzle height to the player's chest
-const clearShot = e => clearLine(e.x, e.y + e.profile.projectile.muzzle[1], e.z, player.x, player.y + player.h * 0.55, player.z);
+const clearShot = (e, a) => clearLine(e.x, e.y + a.projectile.muzzle[1], e.z, player.x, player.y + player.h * 0.55, player.z);
+// the attacks e could start now (indices into profile.attacks; [0] for a single attack)
+function ready(e, d) {
+  const p = player, list = e.profile.attacks ?? [e.profile];
+  if (p.ragdoll) return [];
+  return attacksInReach(e.profile, d, Math.abs(p.y - e.y)).filter(i => !list[i].projectile || clearShot(e, list[i]));
+}
 // The leap of a pounce: once it takes off it commits to a distance (along its heading, up to
 // lunge.stop short of the player) and covers it between lunge.from and lunge.to.
 function leap(e, lunge, t0, dx, dz) {
@@ -90,10 +97,12 @@ function act(e, dt) {
   }
   if (e.mode === 'chase') {
     if (!e.path) { e.speed = 0; return; }
-    const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7;
-    if (d < cfg.reach && Math.abs(p.y - e.y) < (cfg.projectile ? 1.5 : 0.5) && !p.ragdoll && (!cfg.projectile || clearShot(e))) {
+    const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7, can = ready(e, d), list = cfg.attacks ?? [cfg];
+    // only throws in reach while they recover: one that also bites keeps coming
+    const closing = e.cool > 0 && can.every(i => list[i].projectile) && list.some(a => !a.projectile);
+    if (can.length && !closing) {
       e.speed = 0; turn(e, Math.atan2(dx, dz), dt);
-      if (e.cool <= 0 && facing && state.enemyGrace <= 0 && tryHordeAttack(e)) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg); e.leap = 0; }
+      if (e.cool <= 0 && facing && state.enemyGrace <= 0 && tryHordeAttack(e)) { e.mode = 'attack'; e.t = 0; e.bit = false; e.attacks++; e.attack = pickAttack(cfg, Math.random(), can); e.leap = 0; }
       return;
     }
     follow(e, cfg.chase, dt, [p.x, p.z]); return;

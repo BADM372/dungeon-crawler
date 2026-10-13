@@ -3,11 +3,13 @@ import { STEP, SWIM_STEP, GRAV, SNAP, ACID, WALK_SPEED, RUN_SPEED, SWIM_SPEED, J
 import { player } from '../game/state.js';
 import { groundAt, ceilingAt, slopeAt } from './collide.js';
 import { canMove } from './canmove.js';
+import { chillFactor } from '../core/projectiles.js';
 
 // learn: physics.html#feel #walls (see learn/README.md)
 function horizontal(dt, dx, dz, run) {
   const p = player;
-  const speed = p.swimming ? (p.fluid === ACID ? 0.6 : SWIM_SPEED) : run ? RUN_SPEED : WALK_SPEED;
+  // an ice ball's chill slows every way of moving (core/projectiles.js)
+  const speed = (p.swimming ? (p.fluid === ACID ? 0.6 : SWIM_SPEED) : run ? RUN_SPEED : WALK_SPEED) * chillFactor(p.chilled);
   let tx = dx * speed, tz = dz * speed;
   if (p.grounded && !p.swimming && p.support) {
     const [gx, gz] = slopeAt(p.support, p.x, p.z), g = Math.hypot(gx, gz);

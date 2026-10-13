@@ -1,4 +1,4 @@
-// Bites, rams, slaps, kicks and thrown blows, burning, and solid bodies. Contact never
+// Bites, rams, slaps, pinches and kicks, thrown blows, burning and chill, and solid bodies. Contact never
 // damages an enemy.
 import { player, state, setStatus } from './state.js';
 import { takeDamage } from '../core/progression.js';
@@ -8,16 +8,18 @@ import { knockDown } from './ragdoll.js';
 import { canMove } from '../physics/canmove.js';
 import { walkable, stepEnemy } from '../physics/enemynav.js';
 import { attackOf, blowOf } from '../core/enemies.js';
-import { ignite, burnStep, burntOut } from '../core/projectiles.js';
+import { ignite, burnStep, burntOut, chillFrom, chillStep } from '../core/projectiles.js';
 
-export const resetEnemyCombat = () => { player.burning = null; };
+export const resetEnemyCombat = () => { player.burning = null; player.chilled = null; };
 export const playerFloor = height => player.grounded && !player.swimming && walkable(player.support, height) ? player.support : null;
 // a blow (core/enemies.js blowOf) from (fx, fz) that shoves the player along (nx, nz)
 export function hitPlayer(blow, fx, fz, nx, nz) {
   const p = player;
   p.vx = nx * blow.knock; p.vz = nz * blow.knock;
   playerHurtFx(Math.min(blow.damage, p.hp), fx, fz);
-  if (blow.burn && p.hp > blow.damage) p.burning = ignite(blow.burn, blow.reason);
+  // fire thaws a chill and ice puts a fire out
+  if (blow.burn && p.hp > blow.damage) { p.burning = ignite(blow.burn, blow.reason); p.chilled = null; }
+  if (blow.chill && p.hp > blow.damage) { p.chilled = chillFrom(blow.chill); p.burning = null; }
   // only a heavy blow or a deadly one knocks you over; the rest are a short flinch and a shove
   if (blow.knockDown || p.hp <= blow.damage) {
     knockDown({ damage: blow.damage, hop: blow.hop, reason: blow.reason }); return;
@@ -44,6 +46,11 @@ export function updateBurning(dt) {
     else takeDamage(p, Math.min(damage, p.hp), state.time);
   }
   if (burntOut(b)) p.burning = null;
+}
+// Chilled: slowed (physics/move.js) until it wears off; dying or water ends it too.
+export function updateChill(dt) {
+  const p = player;
+  if (p.chilled && (p.hp <= 0 || p.fluidDeath || !chillStep(p.chilled, dt))) p.chilled = null;
 }
 function pushPlayer(dx, dz) {
   const p = player;

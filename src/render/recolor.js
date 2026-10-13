@@ -24,6 +24,13 @@ export function kindColors(profile, prefab) {
   }
   return table;
 }
+// A kind's `hide`: the model's meshes drawn only with these materials are not shown (a species
+// whose model carries parts for several kinds, like the Shraps' two heads).
+export function hideParts(model, profile) {
+  if (!profile?.hide?.length) return;
+  const names = new Set(profile.hide);
+  model.traverse(o => { if (o.isMesh && [].concat(o.material).every(m => names.has(m.name))) o.visible = false; });
+}
 // recolour a material this instance owns
 export function recolor(material, table) {
   const to = table?.get(material.name);

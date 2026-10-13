@@ -98,9 +98,9 @@ export function burnHurtFx(dmg) {
 
 // a projectile was thrown ('launch'), or ended: 'hit' (the player), 'blocked' (the level), 'spent'
 export function projectileFx(pr, what) {
-  const fire = pr.kind === 'fireball', { x, y, z } = pr;
-  if (what === 'launch') { sfx(fire ? 'fireball' : 'zap', { at: pr }); return; }
-  const colors = fire ? ['#ffd25a', '#ff8a2a', '#ff4a17'] : ['#f0d0ff', '#b57aff', '#7a3cff'];
+  const fire = pr.kind === 'fireball', ice = pr.kind === 'iceball', { x, y, z } = pr;
+  if (what === 'launch') { sfx(fire ? 'fireball' : ice ? 'frost' : 'zap', { at: pr }); return; }
+  const colors = fire ? ['#ffd25a', '#ff8a2a', '#ff4a17'] : ice ? ['#ffffff', '#c4ecff', '#7fc8ff'] : ['#f0d0ff', '#b57aff', '#7a3cff'];
   const n = what === 'spent' ? 6 : 18, s = what === 'spent' ? 1 : 2.6;
   emit(glow, x, y, z, { life: 0.18, size: what === 'spent' ? 0.35 : 0.7, grow: 1, color: colors[1], alpha: 0.9 });
   for (let i = 0; i < n; i++)
@@ -109,5 +109,8 @@ export function projectileFx(pr, what) {
   if (fire) for (let i = 0; i < 3; i++)
     emit(soft, x, y + 0.1, z, { v: [rand(-0.3, 0.3), rand(0.4, 0.8), rand(-0.3, 0.3)], life: rand(0.8, 1.2), size: rand(0.2, 0.3),
       grow: 0.8, color: '#4a403a', alpha: 0.4, drag: 0.6 });
-  if (what !== 'spent') sfx(fire ? 'whump' : 'shatter', { at: pr, volume: 0.8 });
+  if (ice) for (let i = 0; i < 3; i++)   // a puff of cold mist
+    emit(soft, x, y, z, { v: [rand(-0.4, 0.4), rand(-0.1, 0.3), rand(-0.4, 0.4)], life: rand(0.6, 0.9), size: rand(0.2, 0.3),
+      grow: 0.9, color: '#d8f2ff', alpha: 0.35, drag: 0.8 });
+  if (what !== 'spent') sfx(fire ? 'whump' : ice ? 'icecrack' : 'shatter', { at: pr, volume: 0.8 });
 }

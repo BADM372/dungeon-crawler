@@ -58,12 +58,12 @@ A roster entry is `species chance count (packs) [kinds]`:
 | 0 | 1 | snakes 1–2 |
 | 1 | 2 | snakes 2–4, Stunders 20% 1 |
 | 2 | 3 | snakes 2–5 [80% Grass snake, 20% Sand viper], spiders 60% 2–4 (packs ≤2), Stunders 25% 1 |
-| 3 | 3 | spiders 8–14 (packs ≤3) [75% Frost spider, 25% Spider], Stunders 50% 1–2 [Frost stunder], Triangles 12% 1 |
+| 3 | 3 | spiders 8–14 (packs ≤3) [75% Frost spider, 25% Spider], Stunders 50% 1–2 [Frost stunder], Shraps 20% 1, Triangles 12% 1 |
 | 4 | 3 | snakes 3–6 (packs ≤2) [67% Sand viper, 22% Grass snake, 11% Blood viper], spiders 80% 4–8 (packs ≤3) [80% Spider, 20% Redback], Stunders 60% 1–2 [50% Stone stunder, 50% Stunder] |
 | 5 | 3 | spiders 6–10 (packs ≤3) [75% Spider, 25% Bog spider], snakes 80% 3–6 (packs ≤2) [67% Grass snake, 33% Sand viper], Stunders 60% 1–2 [67% Stunder, 33% Stone stunder] |
 | 6 | 3 | spiders 7–12 (packs ≤3) [67% Spider, 22% Bog spider, 11% Redback], snakes 80% 4–7 (packs ≤2) [29% Grass snake, 57% Sand viper, 14% Blood viper], Stunders 60% 1–3 [67% Stunder, 33% Stone stunder], Octonauts 20% 1 |
-| 7 | 3 | Octonauts 2–4, spiders 80% 6–10 (packs ≤3) [75% Frost spider, 25% Spider], Stunders 50% 1–2 [Frost stunder], snakes 30% 3–5 (packs ≤2) [75% Frost adder, 25% Grass snake] |
-| 8 | 3 | Octonauts 3–5 (packs ≤2), spiders 80% 7–12 (packs ≤4) [75% Frost spider, 25% Spider], Stunders 60% 1–2 [67% Frost stunder, 33% Stone stunder], Triangles 15% 1 |
+| 7 | 3 | Octonauts 2–4, Shraps 80% 1–3, spiders 80% 6–10 (packs ≤3) [75% Frost spider, 25% Spider], Stunders 50% 1–2 [Frost stunder], snakes 30% 3–5 (packs ≤2) [75% Frost adder, 25% Grass snake] |
+| 8 | 3 | Octonauts 3–5 (packs ≤2), Shraps 90% 2–3, spiders 80% 7–12 (packs ≤4) [75% Frost spider, 25% Spider], Stunders 60% 1–2 [67% Frost stunder, 33% Stone stunder], Triangles 15% 1 |
 | 9 | 3 | snakes 6–10 (packs ≤3) [40% Venom adder, 40% Grass snake, 20% Blood viper], Octonauts 80% 2–4 (packs ≤2) [75% Bog octonaut, 25% Octonaut], spiders 60% 6–10 (packs ≤4) [75% Bog spider, 25% Spider], Stunders 25% 1–2 |
 | 10 | 3 | snakes 7–12 (packs ≤3) [50% Venom adder, 25% Grass snake, 25% Blood viper], Octonauts 80% 3–5 (packs ≤2) [75% Bog octonaut, 25% Octonaut], spiders 60% 8–12 (packs ≤4) [75% Bog spider, 25% Spider], Fire-faces 10% 1 |
 | 11 | 3 | spiders 16–24 (packs ≤6) [60% Spider, 20% Bog spider, 20% Redback], Stunders 50% 1–2 [50% Stunder, 50% Stone stunder], Octonauts 30% 1–2 [50% Octonaut, 50% Bog octonaut], snakes 30% 4–6 (packs ≤3) [50% Venom adder, 50% Blood viper] |
@@ -72,9 +72,9 @@ A roster entry is `species chance count (packs) [kinds]`:
 | 14 | 3 | Triangles 2–3 [67% Emerald triangle, 33% Triangle], Stunders 70% 1–3 [Stone stunder], Octonauts 70% 2–5 (packs ≤2) [50% Octonaut, 50% Coral octonaut], spiders 50% 10–14 (packs ≤4) [50% Spider, 25% Frost spider, 25% Redback] |
 | 15 | 3 | Triangles 80% 1–2 [33% Triangle, 33% Emerald triangle, 33% Crimson triangle], Octonauts 80% 3–5 (packs ≤2) [67% Coral octonaut, 33% Bog octonaut], snakes 80% 8–12 (packs ≤4) [25% Sand viper, 50% Blood viper, 25% Shadow mamba], Fire-cats 30% 1–2 |
 | 16 | 4 | Triangles 80% 1–3 [33% Triangle, 33% Emerald triangle, 33% Crimson triangle], Octonauts 80% 3–6 (packs ≤2) [67% Coral octonaut, 33% Bog octonaut], snakes 60% 10–14 (packs ≤4) [57% Blood viper, 43% Shadow mamba], Fire-cats 50% 2–3 (packs ≤2), spiders 40% 10–16 (packs ≤5) [50% Redback, 50% Spider] |
-| 17 | 3 | Fire-faces 1–2, Fire-cats 2–4 (packs ≤2), Stunders 60% 1–2 [Magma stunder], snakes 50% 10–14 (packs ≤4) [67% Shadow mamba, 33% Blood viper] |
-| 18 | 3 | Fire-faces 2–3, Fire-cats 3–6 (packs ≤3), Stunders 60% 2–3 [Magma stunder], spiders 30% 14–20 (packs ≤6) [Redback] |
-| 19 | 3 | Fire-faces 2–3, Fire-cats 4–7 (packs ≤3), Triangles 60% 1–2 [67% Crimson triangle, 33% Triangle], Stunders 40% 1–2 [67% Magma stunder, 33% Stone stunder] |
+| 17 | 4 | Fire-faces 1–2, Fire-cats 2–4 (packs ≤2), Shraps 60% 1–2 [Fire shraps], Stunders 60% 1–2 [Magma stunder], snakes 50% 10–14 (packs ≤4) [67% Shadow mamba, 33% Blood viper] |
+| 18 | 3 | Fire-faces 2–3, Fire-cats 3–6 (packs ≤3), Shraps 70% 1–3 [Fire shraps], Stunders 60% 2–3 [Magma stunder], spiders 30% 14–20 (packs ≤6) [Redback] |
+| 19 | 3 | Fire-faces 2–3, Fire-cats 4–7 (packs ≤3), Shraps 40% 1–2 [Fire shraps], Triangles 60% 1–2 [67% Crimson triangle, 33% Triangle], Stunders 40% 1–2 [67% Magma stunder, 33% Stone stunder] |
 | 20 | 4 | Fire-cats 5–9 (packs ≤3), Fire-faces 2–4, Triangles 80% 2–3 [67% Crimson triangle, 33% Triangle], Stunders 50% 2–3 [67% Magma stunder, 33% Stone stunder], spiders 30% 18–26 (packs ≤8) [67% Redback, 33% Spider] |
 
 The design rules behind the table:
@@ -82,9 +82,9 @@ The design rules behind the table:
 - **The surface ramps up slowly.** Depth 1 has only snakes and a rare Stunder. Depth 2 adds
   a few spiders. Depth 3 is the first spider-heavy depth, with more Stunders and a rare
   Triangle as a mini-boss. Depth 4 mixes snakes, spiders and Stunders.
-- **Each theme has one or two signature species:** Octonauts in the frozen caves, snakes in
-  the swamp, spiders in the nests, Triangles in the mines and ruins, Fire-faces and Fire-cats
-  in the volcanic depths and the abyss.
+- **Each theme has one or two signature species:** Octonauts and Shraps in the frozen caves,
+  snakes in the swamp, spiders in the nests, Triangles in the mines and ruins, Fire-faces,
+  Fire-cats and Fire shraps in the volcanic depths and the abyss.
 - **Kinds follow the theme and get stronger with depth.** Frost spiders and Frost stunders
   live in the snow and ice, as do Frost adders. Bog spiders, Bog octonauts and Venom adders
   live in the swamp. Stone stunders live in the badlands, mines and ruins, and Magma
@@ -92,9 +92,10 @@ The design rules behind the table:
   down. The snakes go from Grass snakes to Sand vipers (badlands), then Blood vipers, then
   Shadow mambas (ruins and volcanic depths). Spiders go from plain spiders to Redbacks.
 - **Rare guests preview the next theme.** A 10–20% roll lets a species show up a theme
-  early: an Octonaut at 6, a Triangle at 8 and 12, a Fire-face at 10, Fire-cats at 15.
-- **Ranged species stay few.** Fire-faces and Triangles never go above 4 per cube, because
-  several shooters at once are hard to read and to dodge.
+  early: an Octonaut at 6, a Shraps at 3, a Triangle at 8 and 12, a Fire-face at 10, Fire-cats at 15.
+- **Ranged species stay few.** Fire-faces, Triangles and Shraps never go above 4 per cube,
+  because several shooters at once are hard to read and to dodge. The Shraps throws and pinches,
+  so it stays at 1–3.
 - **Melee species get more numerous.** Spiders go from 2–4 at depth 2 to 8–14 at 3, 20–28 in
   the nests, and up to 26 in the core. They spawn in packs, and the packs get bigger the
   deeper you go. Snakes grow the same way, but more slowly.
@@ -144,17 +145,17 @@ enemies' own levels, before the player's level scales it.
 
 | Depth | Enemies | Max | XP | Depth | Enemies | Max | XP |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 0 | 2.8 | 7 | 163 | 11 | 26.3 | 60 | 2680 |
-| 1 | 4.7 | 12 | 233 | 12 | 27.1 | 54 | 3110 |
-| 2 | 7.2 | 14 | 378 | 13 | 13.2 | 34 | 2736 |
-| 3 | 14.3 | 28 | 725 | 14 | 12.2 | 38 | 3737 |
-| 4 | 12.4 | 26 | 878 | 15 | 15.9 | 34 | 4276 |
-| 5 | 15.4 | 28 | 1032 | 16 | 21.0 | 62 | 5582 |
-| 6 | 18.0 | 34 | 1421 | 17 | 12.7 | 34 | 4502 |
-| 7 | 12.5 | 28 | 1350 | 18 | 12.6 | 25 | 5559 |
-| 8 | 14.7 | 30 | 1733 | 19 | 11.3 | 24 | 5839 |
-| 9 | 16.8 | 36 | 2070 | 20 | 16.9 | 33 | 7303 |
-| 10 | 21.3 | 48 | 2908 |  |  |  |  |
+| 0 | 2.8 | 7 | 163 | 11 | 26.6 | 60 | 2697 |
+| 1 | 4.7 | 12 | 233 | 12 | 27.8 | 54 | 3209 |
+| 2 | 7.2 | 14 | 380 | 13 | 13.1 | 34 | 2732 |
+| 3 | 15.0 | 32 | 763 | 14 | 12.2 | 38 | 3736 |
+| 4 | 12.4 | 26 | 875 | 15 | 15.9 | 34 | 4285 |
+| 5 | 15.4 | 28 | 1034 | 16 | 21.0 | 62 | 5575 |
+| 6 | 18.0 | 34 | 1416 | 17 | 14.3 | 36 | 5141 |
+| 7 | 12.9 | 26 | 1504 | 18 | 12.7 | 40 | 5439 |
+| 8 | 14.9 | 32 | 1920 | 19 | 11.3 | 24 | 5868 |
+| 9 | 16.8 | 36 | 2076 | 20 | 16.9 | 33 | 7313 |
+| 10 | 21.3 | 48 | 2904 |  |  |  |  |
 
 The enemy count drops at a theme change that brings in stronger species (13, 17, 19). The
 XP per cube keeps rising.
@@ -181,6 +182,7 @@ and coins by `1 + 0.25 (L − 1)`, and round.
 | Spider | weak, swarms | 32 | 15 | 20 | 4–8 | – |
 | Snake | weak | 48 | 16 | 30 | 6–12 | – |
 | Octonaut | medium | 90 | 20 (spin 28) | 55 | 12–22 | 0.8 s |
+| Shraps | medium, throws | 110 | 22 (ice ball 20, chills) | 70 | 16–28 | 0.8 s |
 | Stunder | heavy | 140 | 30 | 80 | 20–35 | 1.5 s |
 | Fire-face | strong, ranged | 120 | 22 (+6 burn) | 90 | 24–40 | 0.8 s |
 | Fire-cat | strong | 130 | 26 | 95 | 22–38 | 0.4 s |

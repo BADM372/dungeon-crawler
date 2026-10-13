@@ -1,4 +1,4 @@
-// Thrown attacks (fireballs, Triangle punches) and burning, as pure rules; game/projectiles.js
+// Thrown attacks (fireballs, Triangle punches, ice balls), burning and chill, as pure rules; game/projectiles.js
 // runs them against the live level and the player, render/projectiles.js draws them.
 
 // A projectile leaves the muzzle (model space: x, up, forward) of enemy e and flies straight
@@ -46,3 +46,16 @@ export function burnStep(b, dt) {
   return n * b.damage / b.ticks;
 }
 export const burntOut = b => b.done >= b.ticks;
+
+// Chill: `chill` ({ time, slow }) scales the player's speed by `slow` for `time` seconds, the
+// last part of it thawing back to full speed. Being hit again restarts it.
+export const chillFrom = chill => ({ time: chill.time, slow: chill.slow, t: 0 });
+export const THAW = 0.4;   // s
+// the speed factor a chill c gives now (1: none)
+export function chillFactor(c) {
+  if (!c) return 1;
+  const left = c.time - c.t;
+  return left >= THAW ? c.slow : c.slow + (1 - c.slow) * (1 - Math.max(0, left) / THAW);
+}
+// advance a chill by dt; returns false once it has worn off
+export function chillStep(c, dt) { c.t += dt; return c.t < c.time; }

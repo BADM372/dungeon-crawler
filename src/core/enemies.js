@@ -132,7 +132,38 @@ export const FIRECAT = Object.freeze({
   parts: Object.freeze({ fur: ['FireCatBody', 'FireCatStripes', 'FireCatNose'], flame: ['FireCatFlame_glow', 'FireCatFlameCore_glow'], eyes: ['FireCatEyes_glow'] }),
   seedSalt: 0xca7f12e, spacing: 4,
 });
-export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT]);
+// Fights near and far: an attack may have its own `reach` (it is picked only from within it) and
+// `minReach` (only from beyond it), and its own `projectile`. Pinches with both claws (clip
+// frame 13) up close; from further off it throws an ice ball (clip frame 21) that chills the
+// player: `chill.slow` scales the player's speed for `chill.time` seconds. The profile's
+// `reach` is the longest of its attacks'. Between throws it keeps closing in for the claws.
+// One model carries both heads (blender/shraps.py); `hide` names the materials a kind does not
+// show: the plain Shraps has the ice head, the Fire shraps the fire one.
+const SHRAPS_PINCH = Object.freeze({
+  name: 'pinch', clip: 'pinch', weight: 1, reach: 1.05, hitAt: 13 / 30, trackUntil: 0.3, attackTime: 1, hitReach: 1.4,
+  arc: 0.5, power: 1, knock: 4.5, knockDown: false, hop: 3.5, reason: 'Pinched by a Shraps!',
+});
+const SHRAPS_THROW = Object.freeze({
+  name: 'throw', clip: 'throw', weight: 1, reach: 5, minReach: 1.8, hitAt: 21 / 30, trackUntil: 0.6, attackTime: 1.3, hitReach: 0,
+  arc: 0.5, power: 0.9, knock: 3, knockDown: false, hop: 3, reason: 'Hit by an ice ball!',
+  projectile: Object.freeze({ kind: 'iceball', speed: 7, radius: 0.16, range: 7, spin: 9,
+    muzzle: Object.freeze([0.056, 0.795, 0.937]), chill: Object.freeze({ time: 1.6, slow: 0.5 }) }),
+});
+const ICE_HEAD = Object.freeze(['ShrapsIce', 'ShrapsIceSpikes', 'ShrapsIceBall_glow']);
+const FIRE_HEAD = Object.freeze(['ShrapsFireCore_glow', 'ShrapsFlame_glow', 'ShrapsFlameTips_glow', 'ShrapsFireBall_glow']);
+export const SHRAPS = Object.freeze({
+  type: 'shraps', species: 'shraps', label: 'Shraps', hp: 110, damage: 22, knock: 4.5,
+  xp: 70, coins: Object.freeze([16, 28]),
+  radius: 0.4, height: 1.6, bodyHeight: 1.35, mass: 2.2,
+  aggro: 5, giveUp: 8, chase: 1.6, wander: 0.5, homeSpeed: 0.8,
+  ...SHRAPS_PINCH, reach: SHRAPS_THROW.reach, cooldown: 1.5, ichor: Object.freeze(['#c4ecff', '#4f8fbf']), pitch: 1.05,
+  attacks: Object.freeze([SHRAPS_PINCH, SHRAPS_THROW]),
+  poise: 0.8, hitStun: 0.2, deathTime: 2, corpseTime: 4,
+  parts: Object.freeze({ shell: ['ShrapsShell', 'ShrapsClaw'], ice: [...ICE_HEAD], eyes: ['ShrapsEyes_glow'] }),
+  hide: FIRE_HEAD,
+  seedSalt: 0x5a7a95, spacing: 4,
+});
+export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS]);
 
 // Enemy kinds: a species' base profile with its own name, colours and strength, drawn with
 // the species' model.
@@ -144,19 +175,27 @@ export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, F
 // Anything else replaces the base value. A kind keeps its species' seedSalt, so where an
 // enemy stands, its level and its id do not depend on which kind it drew.
 const times = (v, k) => Math.round(v * k);
+// `attacks` (a list like the base's) replaces the species' attacks before they are sized: a kind
+// that throws something else, say.
 // learn: enemies.html#kinds (see learn/README.md)
-export function enemyKind(base, { mods = {}, ...spec }) {
+export function enemyKind(base, { mods = {}, attacks = base.attacks, ...spec }) {
   const { hp = 1, damage = 1, speed = 1, size = 1 } = mods, xp = mods.xp ?? Math.sqrt(hp * damage);
   const reach = a => a.hitReach * size;
+  const thrown = p => Object.freeze({ ...p, muzzle: Object.freeze(p.muzzle.map(v => v * size)) });
+  // a melee attack's own reach grows with the body; a throw's stays
+  const sized = a => Object.freeze({ ...a, hitReach: reach(a), ...(a.reach !== undefined && !a.projectile && { reach: a.reach * size }),
+    ...(a.projectile && { projectile: thrown(a.projectile) }) });
+  const list = attacks && Object.freeze(attacks.map(sized));
+  const own = list?.some(a => a.reach !== undefined);
   return Object.freeze({
     ...base,
     hp: times(base.hp, hp), damage: times(base.damage, damage),
     xp: times(base.xp, xp), coins: Object.freeze(base.coins.map(c => times(c, xp))),
     chase: base.chase * speed, wander: base.wander * speed, homeSpeed: base.homeSpeed * speed,
     size: (base.size ?? 1) * size, radius: base.radius * size, height: base.height * size, bodyHeight: base.bodyHeight * size,
-    reach: base.projectile ? base.reach : base.reach * size, hitReach: reach(base),
-    ...(base.attacks && { attacks: Object.freeze(base.attacks.map(a => Object.freeze({ ...a, hitReach: reach(a) }))) }),
-    ...(base.projectile && { projectile: Object.freeze({ ...base.projectile, muzzle: Object.freeze(base.projectile.muzzle.map(v => v * size)) }) }),
+    reach: own ? Math.max(...list.map(a => a.reach ?? 0)) : base.projectile ? base.reach : base.reach * size, hitReach: reach(base),
+    ...(list && { attacks: list }),
+    ...(base.projectile && { projectile: thrown(base.projectile) }),
     ...spec,
   });
 }
@@ -239,6 +278,16 @@ export const CRIMSON_TRIANGLE = enemyKind(TRIANGLE, {
   colors: { glow: 'oklch(0.64 0.22 25)', eyes: 'oklch(0.95 0.05 60)' }, light: '#ff4836', sparks: Object.freeze(['#ffc0b0', '#ff4836']),
   ichor: Object.freeze(['#ffa08a', '#a01a10']), mods: { hp: 1.35, damage: 1.35 }, cooldown: TRIANGLE.cooldown * 0.8,
 });
+// The Shraps of the volcanic depths: red, with a head of fire instead of ice, and it throws
+// fireballs (the Fire-face's, burn included) instead of ice balls. `fx` picks its glow in
+// render/enemies.js: a light, flickering flame tongues and embers.
+export const FIRE_SHRAPS = enemyKind(SHRAPS, {
+  type: 'fireshraps', label: 'Fire shraps', reason: 'Pinched by a Fire shraps!',
+  colors: { shell: 'oklch(0.56 0.17 32)', eyes: 'oklch(0.95 0.12 95)' }, hide: ICE_HEAD, fx: 'fireshraps',
+  attacks: [{ ...SHRAPS_PINCH, reason: 'Pinched by a Fire shraps!' }, { ...SHRAPS_THROW, reason: 'Scorched by a Fire shraps!',
+    projectile: Object.freeze({ ...FIREFACE.projectile, speed: 6.5, range: 7, muzzle: SHRAPS_THROW.projectile.muzzle }) }],
+  ichor: Object.freeze(['#ffb030', '#a02a10']), pitch: 0.9, mods: { hp: 1.45, damage: 1.4, speed: 1.1 },
+});
 // One full attack and recovery, averaged over a species' attacks (s), and what it deals per
 // second at level 1 (a projectile's burn included): how dangerous it is to stand next to.
 export function attackCycle(profile) {
@@ -247,8 +296,7 @@ export function attackCycle(profile) {
 }
 export function attackDamage(profile) {
   const list = profile.attacks ?? [profile], w = list.reduce((n, a) => n + (a.weight ?? 1), 0);
-  return list.reduce((n, a) => n + Math.round(profile.damage * (a.power ?? 1)) * (a.weight ?? 1), 0) / w
-    + (profile.projectile?.burn?.damage ?? 0);
+  return list.reduce((n, a) => n + (Math.round(profile.damage * (a.power ?? 1)) + (a.projectile?.burn?.damage ?? 0)) * (a.weight ?? 1), 0) / w;
 }
 export const threat = profile => attackDamage(profile) / attackCycle(profile);
 
@@ -287,16 +335,30 @@ export const DESCENT_GUARDIAN_KINDS = Object.freeze(Object.fromEntries(ENEMY_PRO
   poise: Math.max(base.poise, GUARDIAN_TIERS.descent.poise), mods: guardianMods(base, GUARDIAN_TIERS.descent),
 })])));
 export const ENEMY_KINDS = Object.freeze(Object.fromEntries([...ENEMY_PROFILES, ...Object.values(GUARDIAN_KINDS), ...Object.values(DESCENT_GUARDIAN_KINDS), SAND_VIPER, BLOOD_VIPER, FROST_ADDER, VENOM_ADDER, SHADOW_MAMBA, FROST_SPIDER, BOG_SPIDER,
-  REDBACK, FROST_STUNDER, STONE_STUNDER, MAGMA_STUNDER, BOG_OCTONAUT, CORAL_OCTONAUT, EMERALD_TRIANGLE, CRIMSON_TRIANGLE].map(k => [k.type, k])));
+  REDBACK, FROST_STUNDER, STONE_STUNDER, MAGMA_STUNDER, BOG_OCTONAUT, CORAL_OCTONAUT, EMERALD_TRIANGLE, CRIMSON_TRIANGLE, FIRE_SHRAPS].map(k => [k.type, k])));
 
 // the attack e is performing (or about to perform): one of profile.attacks, else the profile
 export const attackOf = e => e.profile.attacks?.[e.attack] ?? e.profile;
-export function pickAttack(profile, r = Math.random()) {
+// the index of an attack, picked by weight among `allowed` (indices; default: all of them)
+export function pickAttack(profile, r = Math.random(), allowed = null) {
   const list = profile.attacks;
   if (!list) return 0;
-  let w = r * list.reduce((n, a) => n + a.weight, 0);
-  for (let i = 0; i < list.length; i++) if ((w -= list[i].weight) < 0) return i;
-  return list.length - 1;
+  const from = allowed ?? list.map((_, i) => i);
+  let w = r * from.reduce((n, i) => n + list[i].weight, 0);
+  for (const i of from) if ((w -= list[i].weight) < 0) return i;
+  return from[from.length - 1];
+}
+// does the profile throw anything (with any of its attacks)?
+export const isRanged = profile => !!(profile.projectile || profile.attacks?.some(a => a.projectile));
+// which attacks (indices; [0] for a species with one) can start against a target d away
+// across the floor and dy above or below: within the attack's reach (else the profile's) and
+// beyond its minReach; a throw allows more height. A clear line for throws is the caller's.
+export function attacksInReach(profile, d, dy) {
+  const list = profile.attacks ?? [profile], out = [];
+  list.forEach((a, i) => {
+    if (d < (a.reach ?? profile.reach) && d >= (a.minReach ?? 0) && dy < (a.projectile ? 1.5 : 0.5)) out.push(i);
+  });
+  return out;
 }
 
 // how far a pouncing attack carries the enemy towards a target d away
@@ -310,7 +372,8 @@ export function lungeAt(lunge, t) {
 // what a strike (or a projectile) does to the player
 export function blowOf(profile, a = profile) {
   return { damage: Math.round(profile.damage * (a.power ?? 1)), knock: a.knock ?? profile.knock,
-    knockDown: !!a.knockDown, hop: a.hop, reason: a.reason, burn: a.projectile?.burn ?? a.burn ?? null };
+    knockDown: !!a.knockDown, hop: a.hop, reason: a.reason, burn: a.projectile?.burn ?? a.burn ?? null,
+    chill: a.projectile?.chill ?? a.chill ?? null };
 }
 
 // a level-1 value grown to `level`

@@ -1,4 +1,4 @@
-// Projectiles in flight: the fireball / Triangle punch meshes exported beside their thrower
+// Projectiles in flight: the fireball / Triangle punch / ice ball meshes exported beside their thrower
 // (enemymodel.js props), turned along the flight, each with a light and a particle trail.
 // A thrower's kind recolours the mesh and replaces the light and trail colours.
 import * as THREE from 'three';
@@ -7,11 +7,14 @@ import { glow, emit, rand } from './particles.js';
 import { trackLight, untrackLight } from './lightpool.js';
 import { fireFaceModel } from './firefacemodel.js';
 import { triangleModel } from './trianglemodel.js';
+import { shrapsModel } from './shrapsmodel.js';
 import { kindColors, recolor } from './recolor.js';
 
 const LOOKS = {
   fireball: { model: fireFaceModel, prop: () => fireFaceModel.props?.FireFaceBall, light: [0xff7424, 3.5, 3.5], trail: ['#ffd25a', '#ff8a2a', '#ff4a17'], rate: 90 },
   punch: { model: triangleModel, prop: () => triangleModel.props?.TrianglePunch, light: [0xa45cff, 2.5, 3], trail: ['#e2b8ff', '#9a55ff'], rate: 45 },
+  // frost glitter falls off it rather than rising
+  iceball: { model: shrapsModel, prop: () => shrapsModel.props?.ShrapsIceBall, light: [0x9fdcff, 2, 3], trail: ['#ffffff', '#c4ecff', '#7fc8ff'], rate: 50, gravity: 2.5 },
 };
 const ahead = new THREE.Vector3();
 
@@ -41,7 +44,7 @@ export function drawProjectiles(list, dt, off = { x: 0, y: 0, z: 0 }) {
       const r = pr.spec.radius * 0.6;
       emit(glow, g.position.x + rand(-r, r), g.position.y + rand(-r, r), g.position.z + rand(-r, r), {
         v: [-pr.vx * 0.12 + rand(-0.3, 0.3), rand(0.2, 0.9), -pr.vz * 0.12 + rand(-0.3, 0.3)], life: rand(0.2, 0.4),
-        size: rand(0.08, 0.15), color: colors[i % colors.length], drag: 2, gravity: -1 });
+        size: rand(0.08, 0.15), color: colors[i % colors.length], drag: 2, gravity: v.look.gravity ?? -1 });
     }
   }
 }

@@ -111,7 +111,7 @@ or a wall of shooters just to keep every depth's horde thematic.
 | 3 snowy peaks | Frost spiders | One Frost stunder |
 | 4 badlands | Sand vipers / spiders | One Stone stunder |
 | 5–6 roots | Spiders / snakes | One Stunder |
-| 7–8 ice caves | Frost spiders / Frost adders | One or two Octonauts |
+| 7–8 ice caves | Frost spiders / Frost adders | One or two Octonauts or a Shraps |
 | 9–10 swamp | Bog spiders / Venom adders | One Bog octonaut |
 | 11–12 nests | Dense spider nursery, some Redbacks | Occasional heavy |
 | 13–14 mines | Spiders among crystal workings | One Triangle or Stone stunder |

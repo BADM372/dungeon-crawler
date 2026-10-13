@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { flatMap } from './fixtures.js';
 import { toOklch, fromOklch, parseColor, recolorFn, recolorTable, toHex, toLinear } from '../src/core/oklch.js';
-import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, enemyKind, enemyRoll, makeEnemy, GROWTH } from '../src/core/enemies.js';
+import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, SHRAPS, enemyKind, enemyRoll, makeEnemy, GROWTH } from '../src/core/enemies.js';
 import { DEPTH_SPAWNS } from '../src/core/spawns.js';
 import { enemySpots, pickKind } from '../src/game/enemyspawn.js';
 
@@ -101,6 +101,11 @@ test('a kind scales its body, reach and attacks with its size', () => {
   near(big.radius, OCTONAUT.radius * 1.5, 1e-9); near(big.height, OCTONAUT.height * 1.5, 1e-9);
   big.attacks.forEach((a, i) => near(a.hitReach, OCTONAUT.attacks[i].hitReach * 1.5, 1e-9));
   assert.equal(big.size, 1.5); assert.equal(big.hp, OCTONAUT.hp); assert.equal(big.xp, OCTONAUT.xp);
+  // a melee attack's own reach grows with the body, a throw's does not; its muzzle moves with the model
+  const crab = enemyKind(SHRAPS, { type: 'bigcrab', label: 'Big crab', mods: { size: 1.5 } }), [pinch, toss] = crab.attacks;
+  near(pinch.reach, SHRAPS.attacks[0].reach * 1.5, 1e-9); assert.equal(toss.reach, SHRAPS.attacks[1].reach);
+  assert.equal(crab.reach, toss.reach);
+  toss.projectile.muzzle.forEach((v, i) => near(v, SHRAPS.attacks[1].projectile.muzzle[i] * 1.5, 1e-9));
   const e = makeEnemy({ f: null, x: 0, y: 0, z: 0, level: 3 }, BLOOD_VIPER);
   assert.equal(e.type, 'bloodviper'); assert.equal(e.profile.species, 'snake');
   assert.equal(e.hp, Math.round(BLOOD_VIPER.hp * (1 + 2 * GROWTH.hp)), 'a kind grows at the same rate as its species');

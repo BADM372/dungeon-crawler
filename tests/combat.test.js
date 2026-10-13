@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, makeEnemy, attackOf, pickAttack,
-  blowOf, lungeDistance, lungeAt } from '../src/core/enemies.js';
-import { launch, touches, stepProjectile, ignite, burnStep, burntOut } from '../src/core/projectiles.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS, makeEnemy, attackOf, pickAttack,
+  attacksInReach, isRanged, attackDamage, blowOf, lungeDistance, lungeAt } from '../src/core/enemies.js';
+import { launch, touches, stepProjectile, ignite, burnStep, burntOut, chillFrom, chillStep, chillFactor, THAW } from '../src/core/projectiles.js';
 import { SWORD, HEAVY_HIT, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, softTarget, damageEnemy } from '../src/core/combat.js';
 
 const hero = () => ({ x: 0, y: 0, z: 0, yaw: 0, hp: 100, stun: 0, sword: swordState() });
@@ -190,6 +190,54 @@ test('a fireball burns for half a second; the Triangle punch knocks down instead
   for (; !burntOut(b); t += 1 / 60) total += burnStep(b, 1 / 60);
   assert.equal(total, FIREFACE.projectile.burn.damage);
   assert.ok(Math.abs(t - 0.5) < 1.5 / 60, 'burns out after half a second: ' + t);
+});
+test('Shraps pinches up close and throws ice balls from further off', () => {
+  const [pinch, toss] = SHRAPS.attacks;
+  assert.equal(pinch.name, 'pinch'); assert.equal(toss.name, 'throw');
+  assert.equal(SHRAPS.reach, toss.reach, 'the profile reach is its longest attack');
+  assert.ok(isRanged(SHRAPS) && isRanged(FIREFACE) && !isRanged(OCTONAUT));
+  assert.deepEqual(attacksInReach(SHRAPS, 0.6, 0), [0]);
+  assert.deepEqual(attacksInReach(SHRAPS, 1.4, 0), [], 'too far for the claws, too close to throw: it closes in');
+  assert.deepEqual(attacksInReach(SHRAPS, 3, 0), [1]);
+  assert.deepEqual(attacksInReach(SHRAPS, 3, 1), [1], 'a throw allows more height than a pinch');
+  assert.deepEqual(attacksInReach(SHRAPS, 0.6, 1), []);
+  assert.deepEqual(attacksInReach(SHRAPS, toss.reach + 0.1, 0), []);
+  // single and plain multi-attack species keep their old reach rule
+  assert.deepEqual(attacksInReach(OCTONAUT, OCTONAUT.reach - 0.1, 0), [0, 1]);
+  assert.deepEqual(attacksInReach(FIREFACE, 3, 1.2), [0]);
+  assert.deepEqual(attacksInReach(SPIDER, SPIDER.reach + 0.1, 0), []);
+  // picks only among the allowed attacks
+  for (let r = 0; r < 1; r += 0.1) assert.equal(pickAttack(SHRAPS, r, [1]), 1);
+  assert.equal(pickAttack(OCTONAUT, 0.9, [0]), 0);
+  const blow = blowOf(SHRAPS, toss);
+  assert.equal(blow.damage, Math.round(SHRAPS.damage * toss.power)); assert.equal(blow.burn, null);
+  assert.deepEqual(blow.chill, toss.projectile.chill);
+  assert.equal(blowOf(SHRAPS, pinch).chill, null);
+});
+test('the Fire shraps has the fire head and throws burning fireballs', () => {
+  const toss = FIRE_SHRAPS.attacks[1];
+  assert.equal(FIRE_SHRAPS.species, 'shraps');
+  assert.equal(toss.projectile.kind, 'fireball'); assert.equal(toss.projectile.chill, undefined);
+  assert.deepEqual(toss.projectile.burn, FIREFACE.projectile.burn);
+  assert.deepEqual(toss.projectile.muzzle, SHRAPS.attacks[1].projectile.muzzle);
+  assert.ok(FIRE_SHRAPS.hide.includes('ShrapsIce') && !FIRE_SHRAPS.hide.some(m => /Fire|Flame/.test(m)));
+  assert.ok(SHRAPS.hide.includes('ShrapsFlame_glow') && !SHRAPS.hide.some(m => /Ice/.test(m)));
+  assert.ok(FIRE_SHRAPS.hp > SHRAPS.hp && FIRE_SHRAPS.damage > SHRAPS.damage);
+  assert.ok(attackDamage(FIRE_SHRAPS) > attackDamage(SHRAPS), 'the burn counts');
+});
+test('an ice ball chills: slowed for its time, thawing back at the end', () => {
+  const c = chillFrom(SHRAPS.attacks[1].projectile.chill);
+  assert.equal(chillFactor(null), 1);
+  assert.equal(chillFactor(c), c.slow);
+  let t = 0;
+  while (chillStep(c, 1 / 60)) {
+    t += 1 / 60;
+    const f = chillFactor(c);
+    assert.ok(f >= c.slow - 1e-9 && f <= 1);
+    if (c.time - c.t > THAW) assert.equal(f, c.slow);
+  }
+  assert.ok(Math.abs(t - c.time) < 2 / 60);
+  assert.ok(chillFactor(c) > 0.99, 'thawed when it wears off');
 });
 test('the Fire-cat pounce stops short of its target and eases through the leap', () => {
   const { lunge } = FIRECAT;

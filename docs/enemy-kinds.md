@@ -31,6 +31,13 @@ Then add it to `ENEMY_KINDS` and to the rosters that should spawn it.
   - `xp` scales XP and coins. It defaults to `√(hp × damage)`.
 - Any other key replaces the base value outright: `label`, `reason`, `ichor`, `cooldown`,
   `aggro`, and so on.
+- `hide` lists materials the kind does not show: meshes drawn only with them are hidden
+  (`hideParts` in `src/render/recolor.js`). A model can carry parts for several kinds this
+  way: the Shraps has an ice head and a fire head, and each of its kinds hides the other.
+- `fx` names the glow of its own in `GLOW` (`src/render/enemies.js`), in place of the
+  species' (the Fire shraps' flames; the plain Shraps has none).
+- `attacks` replaces the species' attack list before it is sized, e.g. to throw something
+  else: the Fire shraps throws fireballs where the Shraps throws ice balls.
 - `light` (a colour string) replaces the glow light of a species that has one (`GLOW` in
   `src/render/enemies.js`) and the light of its projectile. `sparks` (a list of colours)
   replaces its embers and its projectile trail.
@@ -97,12 +104,16 @@ attack clip's hit frame. `?bg=%23202020` sets the backdrop colour.
 | Coral octonaut | Octonaut | `oklch(0.74 0.13 30)` coral | ×1.3 | ×1.35 | ×1.2 | 1 | ×1.33 | 12–16 |
 | Emerald triangle | Triangle | `oklch(0.80 0.20 155)` green glow | ×1.25 | ×1.1 | ×1 | 1 | ×1.17 | 13–16 |
 | Crimson triangle | Triangle | `oklch(0.64 0.22 25)` red glow | ×1.35 | ×1.35 | ×1 | 1 | ×1.35 | 15–16, 19–20 |
+| Fire shraps | Shraps | `oklch(0.56 0.17 32)` red, fire head | ×1.45 | ×1.4 | ×1.1 | 1 | ×1.42 | 17–19 |
 
 The Crimson triangle also throws 20% more often (`cooldown` × 0.8). Grass snake, Sand viper,
 Blood viper and Shadow mamba are strength tiers: green, ochre, red, then near-black. The red
 one bites 40% harder and moves 20% faster than the green one. The mamba bites 60% harder and
 moves 30% faster. The Frost adder (slow and tough) and the Venom adder (bites hard) give the
 ice and the swamp snakes of their own.
+
+The Fire shraps swaps the Shraps' ice head for a burning one (`hide`), throws fireballs that
+burn instead of ice balls that chill (`attacks`) and glows like the fire species (`fx`).
 
 Fire-face and Fire-cat have `parts` (flame, fur, eyes) but no kinds yet. A blue-fire kind
 would also need its embers, its light and its fireball trail recoloured through `sparks`
