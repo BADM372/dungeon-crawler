@@ -4,7 +4,7 @@
 //                    game's binary heap from src/core/heap.js)
 //   sight:           line of sight like clearLine: small steps along the line, checking each one
 import { Heap } from '../../src/core/heap.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 const C = 26, R = 15, S = 24;
 
@@ -12,10 +12,10 @@ export default function mount(el) {
   const sight = el.dataset.mode === 'sight';
   const W = C * S, H = R * S, { g, c, at } = canvas(el, W, H);
   const row = html(el, sight
-    ? '<div class="row"><span class="muted small">drag the two dots, draw walls with the mouse</span><button class="rnd">Random walls</button><button class="clr">Clear walls</button></div>'
-    : `<div class="row"><button class="bfs">Flood (BFS)</button><button class="astar">A* search</button>
-       <button class="rnd">Random walls</button><button class="clr">Clear walls</button>
-       <span class="muted small">draw walls with the mouse, drag the dots</span></div>`);
+    ? `<div class="row"><span class="muted small">${tr('drag the two dots, draw walls with the mouse', 'zieh die zwei Punkte, mal Wände mit der Maus')}</span><button class="rnd">${tr('Random walls', 'Zufällige Wände')}</button><button class="clr">${tr('Clear walls', 'Wände weg')}</button></div>`
+    : `<div class="row"><button class="bfs">${tr('Flood (BFS)', 'Flut (BFS)')}</button><button class="astar">${tr('A* search', 'A*-Suche')}</button>
+       <button class="rnd">${tr('Random walls', 'Zufällige Wände')}</button><button class="clr">${tr('Clear walls', 'Wände weg')}</button>
+       <span class="muted small">${tr('draw walls with the mouse, drag the dots', 'mal Wände mit der Maus, zieh die Punkte')}</span></div>`);
   const out = html(el, '<div class="out"></div>');
   const wall = new Uint8Array(C * R);
   const A = sight ? [3.5, 7.5] : [2, 7], B = sight ? [22.5, 6.5] : [23, 7];
@@ -88,7 +88,7 @@ export default function mount(el) {
       g.stroke();
     }
     if (sight) drawSight();
-    for (const [p, col, label] of [[A, '#61dc6b', sight ? 'eye' : 'S'], [B, '#ff6a5a', sight ? 'you' : 'G']]) {
+    for (const [p, col, label] of [[A, '#61dc6b', sight ? tr('eye', 'Auge') : 'S'], [B, '#ff6a5a', sight ? tr('you', 'du') : tr('G', 'Z')]]) {
       const [x, y] = sight ? p : [p[0] + 0.5, p[1] + 0.5];
       g.fillStyle = col; g.beginPath(); g.arc(x * S, y * S, S * 0.38, 0, 7); g.fill();
       g.fillStyle = '#0b0d12'; g.font = `bold ${label.length > 1 ? 9 : 12}px ui-monospace, monospace`; g.textAlign = 'center'; g.fillText(label, x * S, y * S + 4); g.textAlign = 'left';
@@ -96,8 +96,9 @@ export default function mount(el) {
     if (!sight) {
       const looked = Math.min(shown, order.length);
       out.innerHTML = algo
-        ? `${algo === 'bfs' ? 'Flood (BFS)' : 'A*'} looked at <b>${looked}</b> squares` + (shown >= order.length ? (path.length ? `, the path is <b>${path.length - 1}</b> steps long.` : ', and found <b>no way</b>!') : '\u2026')
-        : 'Press a button to search. Then draw some walls and compare the two.';
+        ? tr(`${algo === 'bfs' ? 'Flood (BFS)' : 'A*'} looked at <b>${looked}</b> squares`, `${algo === 'bfs' ? 'Flut (BFS)' : 'A*'} hat <b>${looked}</b> Felder angeschaut`)
+          + (shown >= order.length ? (path.length ? tr(`, the path is <b>${path.length - 1}</b> steps long.`, `, der Weg ist <b>${path.length - 1}</b> Schritte lang.`) : tr(', and found <b>no way</b>!', ' und <b>keinen Weg</b> gefunden!')) : '\u2026')
+        : tr('Press a button to search. Then draw some walls and compare the two.', 'Drück einen Knopf zum Suchen. Dann mal ein paar Wände und vergleiche die beiden.');
     }
   }
   // the line of sight, checked every 0.15 cells like clearLine
@@ -113,7 +114,8 @@ export default function mount(el) {
     g.fillStyle = '#ffffffaa';
     for (let i = 1; i < steps; i++) { const t = i / n; g.fillRect((A[0] + (B[0] - A[0]) * t) * S - 1, (A[1] + (B[1] - A[1]) * t) * S - 1, 2, 2); }
     if (blocked) { g.strokeStyle = '#ff6a5a'; g.lineWidth = 3; g.beginPath(); g.arc(end[0] * S, end[1] * S, 7, 0, 7); g.stroke(); }
-    out.innerHTML = blocked ? `Blocked after <b>${steps}</b> little steps: the eye cannot see you.` : `All <b>${n}</b> little steps are free: <b>it sees you!</b>`;
+    out.innerHTML = blocked ? tr(`Blocked after <b>${steps}</b> little steps: the eye cannot see you.`, `Blockiert nach <b>${steps}</b> kleinen Schritten: das Auge kann dich nicht sehen.`)
+      : tr(`All <b>${n}</b> little steps are free: <b>it sees you!</b>`, `Alle <b>${n}</b> kleinen Schritte sind frei: <b>es sieht dich!</b>`);
   }
 
   c.onpointerdown = e => {

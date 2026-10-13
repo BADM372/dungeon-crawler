@@ -2,166 +2,186 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Finding the Way · Kids' Guide to Cube Crawler</title>
+<title data-de="Den Weg finden · Kinderführer zu Cube Crawler">Finding the Way · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="roots">
 <main class="deck">
 
 <section class="slide" id="here-to-there" data-lv="1">
-  <h2>From here to there</h2>
+  <h2 lang="en">From here to there</h2>
+  <h2 lang="de">Von hier nach dort</h2>
   <div class="cols">
     <div>
-      <p class="lead">A spider sees you. Between you and the spider is a wall. How does the spider know to walk <i>around</i> it?</p>
-      <p>The spider does not have eyes like you. It cannot look at the room and "just see" the way. It needs a method, a step-by-step recipe. In computer science, such a recipe is called an <a class="w" href="words.html#algorithm">algorithm</a>.</p>
-      <p>Finding a way is needed all over the game:</p>
+      <p class="lead" lang="en">A spider sees you. Between you and the spider is a wall. How does the spider know to walk <i>around</i> it?</p>
+      <p class="lead" lang="de">Eine Spinne sieht dich. Zwischen dir und der Spinne ist eine Wand. Woher weiß die Spinne, dass sie <i>drumherum</i> laufen muss?</p>
+      <p lang="en">The spider does not have eyes like you. It cannot look at the room and "just see" the way. It needs a method, a step-by-step recipe. In computer science, such a recipe is called an <a class="w" href="words.html#algorithm">algorithm</a>.</p>
+      <p lang="de">Die Spinne hat keine Augen wie du. Sie kann nicht in den Raum schauen und den Weg "einfach sehen". Sie braucht eine Methode, ein Schritt-für-Schritt-Rezept. In der Informatik heißt so ein Rezept <a class="w" href="words.html#algorithm">Algorithmus</a>.</p>
+      <p lang="en">Finding a way is needed all over the game:</p>
+      <p lang="de">Wege finden braucht man überall im Spiel:</p>
       <ul>
-        <li><b>Monsters</b> chase you, walk home, and wander around.</li>
-        <li><b>You</b> click on the floor, and the hero walks there, around obstacles.</li>
-        <li><b>The world builder</b> plans routes between the gates of every cube.</li>
+        <li lang="en"><b>Monsters</b> chase you, walk home, and wander around.</li>
+        <li lang="de"><b>Monster</b> jagen dich, laufen nach Hause und wandern herum.</li>
+        <li lang="en"><b>You</b> click on the floor, and the hero walks there, around obstacles.</li>
+        <li lang="de"><b>Du</b> klickst auf den Boden, und der Held läuft dorthin, um Hindernisse herum.</li>
+        <li lang="en"><b>The world builder</b> plans routes between the gates of every cube.</li>
+        <li lang="de"><b>Der Weltbauer</b> plant Routen zwischen den Toren jedes Würfels.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>The floor is a grid</h3>
-      <p>Each cube is 16 by 16 cells. For walking, the game only asks: from this cell, which of my four neighbours (east, west, south, north) can I step to?</p>
-      <p>A neighbour is blocked by walls, cliffs that are too high, fences, water, and ceilings too low for your body. (A big Stunder needs more headroom than a little spider!)</p>
-      <p>A map of "who can step where" is called a <a class="w" href="words.html#graph">graph</a>.</p>
+      <h3 lang="en">The floor is a grid</h3>
+      <h3 lang="de">Der Boden ist ein Gitter</h3>
+      <p lang="en">Each cube is 16 by 16 cells. For walking, the game only asks: from this cell, which of my four neighbours (east, west, south, north) can I step to?</p>
+      <p lang="de">Jeder Würfel hat 16 mal 16 Zellen. Fürs Laufen fragt das Spiel nur: Von dieser Zelle aus, auf welche meiner vier Nachbarn (Osten, Westen, Süden, Norden) kann ich treten?</p>
+      <p lang="en">A neighbour is blocked by walls, cliffs that are too high, fences, water, and ceilings too low for your body. (A big Stunder needs more headroom than a little spider!)</p>
+      <p lang="de">Ein Nachbar ist versperrt durch Wände, zu hohe Klippen, Zäune, Wasser und Decken, die zu niedrig für deinen Körper sind. (Ein großer Stunder braucht mehr Kopffreiheit als eine kleine Spinne!)</p>
+      <p lang="en">A map of "who can step where" is called a <a class="w" href="words.html#graph">graph</a>.</p>
+      <p lang="de">Eine Karte von "wer kann wohin treten" heißt <a class="w" href="words.html#graph">Graph</a>.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="flood" data-lv="1">
-  <h2>Try it: the flood</h2>
-  <p>Press <b>Flood</b>. The search spreads out like water poured on the floor: first every square 1 step away, then 2 steps, then 3...
+  <h2 lang="en">Try it: the flood</h2>
+  <h2 lang="de">Probier es: die Flut</h2>
+  <p lang="en">Press <b>Flood</b>. The search spreads out like water poured on the floor: first every square 1 step away, then 2 steps, then 3...
     The first time the water reaches the goal, we have found the shortest way. Draw walls and try to trap it!</p>
+  <p lang="de">Drück <b>Flut</b>. Die Suche breitet sich aus wie Wasser, das man auf den Boden gießt: zuerst jedes Feld 1 Schritt entfernt, dann 2 Schritte, dann 3...
+    Wenn das Wasser zum ersten Mal das Ziel erreicht, haben wir den kürzesten Weg gefunden. Mal Wände und versuch, es einzusperren!</p>
   <div class="demo" data-demo="paths"></div>
-  <p class="small muted">S is the start, G the goal. The colours show how many steps away each square is. Ignore the A* button for now, it comes next.</p>
+  <p class="small muted" lang="en">S is the start, G the goal. The colours show how many steps away each square is. Ignore the A* button for now, it comes next.</p>
+  <p class="small muted" lang="de">S ist der Start, Z das Ziel. Die Farben zeigen, wie viele Schritte jedes Feld entfernt ist. Den A*-Knopf kannst du erst mal ignorieren, der kommt gleich.</p>
 </section>
 
-<section class="slide" id="bfs" data-lv="2">
-  <h2>Breadth-first search, and breadcrumbs</h2>
+<section class="slide" id="bfs" data-lv="2" data-src="src/game/enemyai.js#decide,act">
+  <h2 lang="en">Breadth-first search, and breadcrumbs</h2>
+  <h2 lang="de">Breitensuche und Brotkrumen</h2>
   <div class="cols">
     <div>
-      <p>The flood has a real name: <a class="w" href="words.html#bfs">breadth-first search</a>, or BFS. "Breadth first" means it goes wide before it goes far.</p>
-      <p>How does it know the way <i>back</i>? Every time the water reaches a new square, it leaves a <b>breadcrumb</b> there: "I came from that square". At the goal, follow the breadcrumbs back to the start, and turn the list around. That's the path!</p>
-      <p>Monsters use BFS to chase you. Your hero uses it too when you click on the floor. If the spot cannot be reached, the hero walks to the reachable square closest to it.</p>
+      <p lang="en">The flood has a real name: <a class="w" href="words.html#bfs">breadth-first search</a>, or BFS. "Breadth first" means it goes wide before it goes far.</p>
+      <p lang="de">Die Flut hat einen echten Namen: <a class="w" href="words.html#bfs">Breitensuche</a> (Breadth-First Search, BFS). "Breite zuerst" heißt: Sie geht erst in die Breite, bevor sie weit geht.</p>
+      <p lang="en">How does it know the way <i>back</i>? Every time the water reaches a new square, it leaves a <b>breadcrumb</b> there: "I came from that square". At the goal, follow the breadcrumbs back to the start, and turn the list around. That's the path!</p>
+      <p lang="de">Woher kennt sie den Weg <i>zurück</i>? Jedes Mal, wenn das Wasser ein neues Feld erreicht, lässt es dort eine <b>Brotkrume</b> liegen: "Ich kam von dem Feld da." Am Ziel folgst du den Brotkrumen zurück zum Start und drehst die Liste um. Das ist der Weg!</p>
+      <p lang="en">Monsters use BFS to chase you. Your hero uses it too when you click on the floor. If the spot cannot be reached, the hero walks to the reachable square closest to it.</p>
+      <p lang="de">Monster benutzen die Breitensuche, um dich zu jagen. Dein Held benutzt sie auch, wenn du auf den Boden klickst. Wenn die Stelle nicht erreichbar ist, läuft der Held zum erreichbaren Feld, das am nächsten dran ist.</p>
     </div>
     <div class="card">
-      <h3>Monsters give up</h3>
-      <p>Searching a whole cube for every monster, many times a second, would be slow. So each search has a limit:</p>
+      <h3 lang="en">Monsters give up</h3>
+      <h3 lang="de">Monster geben auf</h3>
+      <p lang="en">Searching a whole cube for every monster, many times a second, would be slow. So each search has a limit:</p>
+      <p lang="de">Für jedes Monster mehrmals pro Sekunde einen ganzen Würfel zu durchsuchen, wäre langsam. Darum hat jede Suche eine Grenze:</p>
       <table>
-        <tr><td>noticing you</td><td><b>10</b> steps</td></tr>
-        <tr><td>chasing you</td><td><b>16</b> steps</td></tr>
-        <tr><td>walking home</td><td><b>40</b> steps</td></tr>
-        <tr><td>wandering about</td><td><b>6</b> steps</td></tr>
+        <tr><td lang="en">noticing you</td> <td lang="de">dich bemerken</td><td lang="en"><b>10</b> steps</td> <td lang="de"><b>10</b> Schritte</td></tr>
+        <tr><td lang="en">chasing you</td> <td lang="de">dich jagen</td><td lang="en"><b>16</b> steps</td> <td lang="de"><b>16</b> Schritte</td></tr>
+        <tr><td lang="en">walking home</td> <td lang="de">nach Hause laufen</td><td lang="en"><b>40</b> steps</td> <td lang="de"><b>40</b> Schritte</td></tr>
+        <tr><td lang="en">wandering about</td> <td lang="de">herumwandern</td><td lang="en"><b>6</b> steps</td> <td lang="de"><b>6</b> Schritte</td></tr>
       </table>
-      <p>If you are further away than the limit, the monster cannot find a way to you. Climb a ladder, and they lose you!</p>
-      <a class="portal" href="enemies.html">Monster brains</a>
+      <p lang="en">If you are further away than the limit, the monster cannot find a way to you. Climb a ladder, and they lose you!</p>
+      <p lang="de">Bist du weiter weg als die Grenze, findet das Monster keinen Weg zu dir. Kletter eine Leiter hoch, und sie verlieren dich!</p>
+      <a class="portal" href="enemies.html" lang="en">Monster brains</a>
+      <a class="portal" href="enemies.html" lang="de">Monster-Gehirne</a>
     </div>
   </div>
 </section>
 
-<section class="slide" id="astar" data-lv="2">
-  <h2>A*: searching with a hunch</h2>
+<section class="slide" id="astar" data-lv="2" data-src="src/cubegen/route.js#search">
+  <h2 lang="en">A*: searching with a hunch</h2>
+  <h2 lang="de">A*: Suchen mit einer Ahnung</h2>
   <div class="cols">
     <div>
-      <p>The flood is a bit silly: it searches in <b>all</b> directions, even away from the goal. <a class="w" href="words.html#astar">A*</a> (say "A star") is smarter.</p>
-      <p>For every square it could look at next, it adds up two numbers:</p>
+      <p lang="en">The flood is a bit silly: it searches in <b>all</b> directions, even away from the goal. <a class="w" href="words.html#astar">A*</a> (say "A star") is smarter.</p>
+      <p lang="de">Die Flut ist ein bisschen dumm: Sie sucht in <b>alle</b> Richtungen, auch weg vom Ziel. <a class="w" href="words.html#astar">A*</a> (sprich "A-Stern") ist schlauer.</p>
+      <p lang="en">For every square it could look at next, it adds up two numbers:</p>
+      <p lang="de">Für jedes Feld, das es als Nächstes anschauen könnte, zählt es zwei Zahlen zusammen:</p>
       <ul>
-        <li>how many steps it took to get there, and</li>
-        <li>a <b>guess</b> of how many steps are left: just the distance across and down, as if there were no walls.</li>
+        <li lang="en">how many steps it took to get there, and</li>
+        <li lang="de">wie viele Schritte es gebraucht hat, um dorthin zu kommen, und</li>
+        <li lang="en">a <b>guess</b> of how many steps are left: just the distance across and down, as if there were no walls.</li>
+        <li lang="de">eine <b>Schätzung</b>, wie viele Schritte noch fehlen: einfach die Strecke quer und runter, als gäbe es keine Wände.</li>
       </ul>
-      <p>It always continues from the square with the smallest total. So it heads towards the goal first, and only spreads out when a wall is in the way.</p>
-      <p>Go back to the demo and compare: A* usually looks at far fewer squares, and still finds a shortest path.</p>
+      <p lang="en">It always continues from the square with the smallest total. So it heads towards the goal first, and only spreads out when a wall is in the way.</p>
+      <p lang="de">Es macht immer beim Feld mit der kleinsten Summe weiter. So geht es zuerst Richtung Ziel und breitet sich nur aus, wenn eine Wand im Weg ist.</p>
+      <p lang="en">Go back to the demo and compare: A* usually looks at far fewer squares, and still finds a shortest path.</p>
+      <p lang="de">Geh zurück zur Demo und vergleiche: A* schaut meistens viel weniger Felder an und findet trotzdem einen kürzesten Weg.</p>
     </div>
     <div class="card">
-      <h3>The world builder uses A*</h3>
-      <p>When the builder plans the routes through a cube, a step is not just "walk": it can be a stair, a bridge, a ladder, a jump or a drop. Each <b>costs</b> a different amount, so the builder prefers walking.</p>
-      <p>Two more tricks:</p>
+      <h3 lang="en">The world builder uses A*</h3>
+      <h3 lang="de">Der Weltbauer benutzt A*</h3>
+      <p lang="en">When the builder plans the routes through a cube, a step is not just "walk": it can be a stair, a bridge, a ladder, a jump or a drop. Each <b>costs</b> a different amount, so the builder prefers walking.</p>
+      <p lang="de">Wenn der Baumeister die Routen durch einen Würfel plant, ist ein Schritt nicht nur "gehen": Es kann eine Treppe sein, eine Brücke, eine Leiter, ein Sprung oder ein Fall. Jeder <b>kostet</b> unterschiedlich viel, darum geht der Baumeister lieber zu Fuß.</p>
+      <p lang="en">Two more tricks:</p>
+      <p lang="de">Zwei weitere Tricks:</p>
       <ul>
-        <li>Moves already used by another route cost almost nothing. So routes <b>share</b> stairs and bridges instead of building new ones.</li>
-        <li>Every square gets a small random extra cost. So two cubes with the same shape still get different routes.</li>
+        <li lang="en">Moves already used by another route cost almost nothing. So routes <b>share</b> stairs and bridges instead of building new ones.</li>
+        <li lang="de">Bewegungen, die schon eine andere Route benutzt, kosten fast nichts. So <b>teilen</b> sich Routen Treppen und Brücken, statt neue zu bauen.</li>
+        <li lang="en">Every square gets a small random extra cost. So two cubes with the same shape still get different routes.</li>
+        <li lang="de">Jedes Feld bekommt kleine zufällige Extrakosten. So bekommen zwei Würfel mit derselben Form trotzdem verschiedene Routen.</li>
       </ul>
     </div>
   </div>
 </section>
 
-<section class="slide" id="sight" data-lv="2">
-  <h2>Can it see me? Line of sight</h2>
+<section class="slide" id="sight" data-lv="2" data-src="src/physics/enemynav.js#clearLine">
+  <h2 lang="en">Can it see me? Line of sight</h2>
+  <h2 lang="de">Kann es mich sehen? Die Sichtlinie</h2>
   <div class="cols wide-right">
     <div>
-      <p>A monster only starts chasing you if it can <b>see</b> you. The Fire-face only spits fireballs if nothing is in the way.</p>
-      <p>The test is simple: walk along the straight line from the eye to you, in tiny steps of 0.15 cells, and at each step ask "is this inside something solid?". If any step is, the view is blocked.</p>
-      <p>Simple, and fast enough to do for every monster several times a second.</p>
+      <p lang="en">A monster only starts chasing you if it can <b>see</b> you. The Fire-face only spits fireballs if nothing is in the way.</p>
+      <p lang="de">Ein Monster fängt erst an, dich zu jagen, wenn es dich <b>sehen</b> kann. Das Fire-face spuckt nur Feuerbälle, wenn nichts im Weg ist.</p>
+      <p lang="en">The test is simple: walk along the straight line from the eye to you, in tiny steps of 0.15 cells, and at each step ask "is this inside something solid?". If any step is, the view is blocked.</p>
+      <p lang="de">Der Test ist einfach: Geh die gerade Linie vom Auge zu dir in winzigen Schritten von 0,15 Zellen entlang und frag bei jedem Schritt: "Ist das in etwas Festem drin?" Wenn auch nur ein Schritt es ist, ist die Sicht versperrt.</p>
+      <p lang="en">Simple, and fast enough to do for every monster several times a second.</p>
+      <p lang="de">Einfach, und schnell genug, um es für jedes Monster mehrmals pro Sekunde zu machen.</p>
     </div>
     <div class="demo" data-demo="paths" data-mode="sight"></div>
   </div>
 </section>
 
 <section class="slide" id="bfs-code" data-lv="3">
-  <h2>The real code: a monster's path</h2>
+  <h2 lang="en">The real code: a monster's path</h2>
+  <h2 lang="de">Der echte Code: der Weg eines Monsters</h2>
   <div class="cols wide-left">
-    <pre data-file="src/physics/enemynav.js"><code>export function findPath(a, b, maxLen, height = 0.9) {
-  if (!a || !b || !walkable(a, height) || !walkable(b, height)) return null;
-  const prev = new Map([[a, null]]);
-  let front = [a];
-  for (let d = 0; d &lt; maxLen &amp;&amp; front.length &amp;&amp; !prev.has(b); d++) {
-    const next = [];
-    for (const f of front) for (const g of neighbors(f, height))
-      if (!prev.has(g)) { prev.set(g, f); next.push(g); }
-    front = next;
-  }
-  if (!prev.has(b)) return null;
-  const path = [];
-  for (let f = b; f; f = prev.get(f)) path.unshift(f);
-  return path;
-}</code></pre>
+    <pre data-code="src/physics/enemynav.js#findPath"></pre>
     <div>
-      <p><code>a</code> and <code>b</code> are floors (cells you can stand on). <code>height</code> is how tall the monster is.</p>
-      <p><code>prev</code> is the breadcrumb map: for each floor, where we came from.</p>
-      <p><code>front</code> is the edge of the water. Each round of the loop makes the next ring, <code>next</code>, from all neighbours not seen before.</p>
-      <p>The loop stops after <code>maxLen</code> rounds (the "give up" limit), when the water cannot spread, or when <code>b</code> is reached.</p>
-      <p>The last loop follows the breadcrumbs back from <code>b</code>, and <code>unshift</code> puts each one at the <i>front</i> of the list, so the path comes out in the right order.</p>
+      <p lang="en"><code>a</code> and <code>b</code> are floors (cells you can stand on). <code>height</code> is how tall the monster is.</p>
+      <p lang="de"><code>a</code> und <code>b</code> sind Böden (Zellen, auf denen man stehen kann). <code>height</code> ist, wie groß das Monster ist.</p>
+      <p lang="en"><code>prev</code> is the breadcrumb map: for each floor, where we came from.</p>
+      <p lang="de"><code>prev</code> ist die Brotkrumen-Karte: für jeden Boden, woher wir kamen.</p>
+      <p lang="en"><code>front</code> is the edge of the water. Each round of the loop makes the next ring, <code>next</code>, from all neighbours not seen before.</p>
+      <p lang="de"><code>front</code> ist der Rand des Wassers. Jede Runde der Schleife macht den nächsten Ring, <code>next</code>, aus allen Nachbarn, die noch nicht gesehen wurden.</p>
+      <p lang="en">The loop stops after <code>maxLen</code> rounds (the "give up" limit), when the water cannot spread, or when <code>b</code> is reached.</p>
+      <p lang="de">Die Schleife hört nach <code>maxLen</code> Runden auf (die "Aufgeben"-Grenze), wenn sich das Wasser nicht mehr ausbreiten kann oder wenn <code>b</code> erreicht ist.</p>
+      <p lang="en">The last loop follows the breadcrumbs back from <code>b</code>, and <code>unshift</code> puts each one at the <i>front</i> of the list, so the path comes out in the right order.</p>
+      <p lang="de">Die letzte Schleife folgt den Brotkrumen von <code>b</code> zurück, und <code>unshift</code> legt jede an den <i>Anfang</i> der Liste, damit der Weg richtig herum herauskommt.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="astar-code" data-lv="3">
-  <h2>The real code: A* in the world builder</h2>
+  <h2 lang="en">The real code: A* in the world builder</h2>
+  <h2 lang="de">Der echte Code: A* im Weltbauer</h2>
   <div class="cols wide-left">
-    <pre data-file="src/cubegen/route.js (shortened)"><code>export function search(ctx, from, goal, jitter, have) {
-  const gs = new Float64Array(SZ).fill(Infinity), prev = new Array(SZ).fill(null);
-  const hfn = f => Math.abs(f.x - goal.x) + Math.abs(f.z - goal.z);
-  const open = new Heap();
-  gs[from.id] = 0; open.push(hfn(from), from);
-  while (open.size) {
-    const cur = open.pop();
-    if (cur === goal) break;
-    for (const mv of movesFrom(cur)) {
-      const ng = gs[cur.id] + (have.has(moveKey(mv)) ? 0.2 : mv.cost + jitter[mv.to.id]);
-      if (ng &lt; gs[mv.to.id]) {
-        gs[mv.to.id] = ng; prev[mv.to.id] = mv;
-        open.push(ng + hfn(mv.to), mv.to);
-      }
-    }
-  }
-  /* ... follow prev back from the goal, like BFS ... */
-}</code></pre>
+    <pre data-code="src/cubegen/route.js#search"></pre>
     <div>
-      <p><code>gs</code>: the cheapest cost found so far to reach each floor. <code>hfn</code>: the hunch, the distance across plus the distance down.</p>
-      <p><code>open</code> is a <a class="w" href="words.html#heap">heap</a>: a to-do list that always hands you the item with the smallest number first. The game's heap is in <code>src/core/heap.js</code>, only 30 lines long. The A* in the demo uses it too.</p>
-      <p>See the trick from the last slide? A move already in <code>have</code> costs only <code>0.2</code>. Otherwise it costs its normal <code>cost</code> plus a little random <code>jitter</code>.</p>
+      <p lang="en"><code>gs</code>: the cheapest cost found so far to reach each floor. <code>hfn</code>: the hunch, the distance across plus the distance down.</p>
+      <p lang="de"><code>gs</code>: die bisher billigsten Kosten, um jeden Boden zu erreichen. <code>hfn</code>: die Ahnung, die Strecke quer plus die Strecke runter.</p>
+      <p lang="en"><code>open</code> is a <a class="w" href="words.html#heap">heap</a>: a to-do list that always hands you the item with the smallest number first. The game's heap is in <code>src/core/heap.js</code>, only 30 lines long. The A* in the demo uses it too.</p>
+      <p lang="de"><code>open</code> ist ein <a class="w" href="words.html#heap">Heap</a>: eine Aufgabenliste, die dir immer zuerst das Ding mit der kleinsten Zahl gibt. Der Heap des Spiels steht in <code>src/core/heap.js</code> und ist nur 30 Zeilen lang. Das A* in der Demo benutzt ihn auch.</p>
+      <p lang="en">See the trick from the last slide? A move already in <code>have</code> costs only <code>0.2</code>. Otherwise it costs its normal <code>cost</code> plus a little random <code>jitter</code>.</p>
+      <p lang="de">Siehst du den Trick von der letzten Folie? Eine Bewegung, die schon in <code>have</code> ist, kostet nur <code>0.2</code>. Sonst kostet sie ihre normalen <code>cost</code> plus ein bisschen zufälliges <code>jitter</code>.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Finding the Way</h2>
+  <h2 lang="en">Prompt quests: Finding the Way</h2>
+  <h2 lang="de">Prompt-Aufgaben: Den Weg finden</h2>
   <div class="quests">
-    <div class="prompt" data-title="STUBBORN SPIDERS" data-stars="1"><q>Spiders give up chasing me quite fast. Show me the numbers that decide when a spider notices me and when it gives up, then make spiders chase a bit longer.</q><span class="why">Hint: aggro and giveUp in the SPIDER profile in src/core/enemies.js.</span></div>
-    <div class="prompt" data-title="SEE THE PLAN" data-stars="3"><q>In dev mode (?dev=1), draw a thin line on the floor showing the path each chasing enemy plans to walk. Keep it out of normal play. Follow how the existing route overlay (the P key) is drawn.</q><span class="why">Pointing to something similar that already exists helps the agent match the game's style.</span></div>
-    <div class="prompt" data-title="EXPLAIN A*" data-stars="1"><q>Explain the A* search in src/cubegen/route.js to me like I'm 12. Why do moves that are already used cost only 0.2?</q><span class="why">You can always ask an agent to explain code at your level.</span></div>
+    <div class="prompt" data-title="STUBBORN SPIDERS" data-stars="1" data-de-data-title="STURE SPINNEN"><q lang="en">Spiders give up chasing me quite fast. Show me the numbers that decide when a spider notices me and when it gives up, then make spiders chase a bit longer.</q> <q lang="de">Spinnen hören ziemlich schnell auf, mich zu jagen. Zeig mir die Zahlen, die entscheiden, wann eine Spinne mich bemerkt und wann sie aufgibt, und lass Spinnen dann etwas länger jagen.</q><span class="why" lang="en">"Show me the numbers" first: you learn what they are called and where they live, before anything changes.</span> <span class="why" lang="de">Erst "zeig mir die Zahlen": So lernst du, wie sie heißen und wo sie wohnen, bevor sich etwas ändert.</span></div>
+    <div class="prompt" data-title="SEE THE PLAN" data-stars="3" data-de-data-title="DEN PLAN SEHEN"><q lang="en">In dev mode (?dev=1), draw a thin line on the floor showing the path each chasing enemy plans to walk. Keep it out of normal play. Follow how the existing route overlay (the P key) is drawn.</q> <q lang="de">Zeichne im Entwicklermodus (?dev=1) eine dünne Linie auf den Boden, die zeigt, welchen Weg jedes jagende Monster laufen will. Im normalen Spiel soll sie nicht erscheinen. Mach es so, wie die bestehende Routenanzeige (Taste P) gezeichnet wird.</q><span class="why" lang="en">Pointing to something similar that already exists helps the agent match the game's style.</span> <span class="why" lang="de">Auf etwas Ähnliches zu zeigen, das es schon gibt, hilft dem Agenten, den Stil des Spiels zu treffen.</span></div>
+    <div class="prompt" data-title="EXPLAIN A*" data-stars="1" data-de-data-title="A* ERKLÄREN"><q lang="en">Explain the A* search the world builder uses for its routes to me like I'm 12. Why do moves that are already used cost only 0.2?</q> <q lang="de">Erklär mir die A*-Suche, die der Weltbauer für seine Routen benutzt, als wäre ich 12. Warum kosten Bewegungen, die schon benutzt werden, nur 0.2?</q><span class="why" lang="en">You can always ask an agent to explain code at your level.</span> <span class="why" lang="de">Du kannst einen Agenten immer bitten, Code auf deinem Niveau zu erklären.</span></div>
   </div>
 </section>
 

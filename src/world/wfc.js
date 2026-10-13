@@ -19,6 +19,7 @@ export class WFC {
     this.tiles = new Map([TOWN_KEY, merchantCampKey(seed)].map(k => [k, { ...meadow, K: 1 }]));
   }
 
+  // kids-docs: world.html#wfc-code (see kids-docs/README.md)
   domain(k) {
     const nb = [0, 1, 2, 3].map(d => this.tiles.get(step(k, d)));
     return TILES.filter(t => nb.every((n, d) => !n || n.sock[OPP6[d]] === t.sock[d]));
@@ -31,6 +32,7 @@ export class WFC {
 
   rng(k, salt = 0) { return mulberry32(hash32(this.seed ^ hashKey(k) ^ salt)); }
 
+  // kids-docs: world.html#wfc #wfc-code (see kids-docs/README.md)
   collapse(keys) {
     const todo = new Set(keys.filter(k => !this.tiles.has(k)));
     while (todo.size) {

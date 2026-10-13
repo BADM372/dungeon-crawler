@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { scene } from './scene.js';
 
+// kids-docs: drawing.html#pool (see kids-docs/README.md)
 const POOL = 8;
 const pool = Array.from({ length: POOL }, () => { const l = new THREE.PointLight(0xffffff, 0, 1, 2); scene.add(l); return l; });
 let sources = [];

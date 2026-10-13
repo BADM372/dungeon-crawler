@@ -6,13 +6,13 @@ import { itemStats, weaponDps, affixLines, displayName, baseLine } from '../../s
 import { AFFIX } from '../../src/core/gear/affixes.js';
 import { ITEMS } from '../../src/core/items.js';
 import { mulberry32 } from '../../src/core/util.js';
-import { canvas, html } from '../deck.js';
+import { canvas, html, t as tr } from '../deck.js';
 
 export default function mount(el) {
   if (el.dataset.mode === 'odds') return odds(el);
-  const row = html(el, `<div><div class="row"><label>item level <input type="range" class="lv" min="1" max="25" value="5"> <b class="lvv">5</b></label>
-    <label><input type="checkbox" class="guard"> guardian luck</label>
-    <button class="roll">Roll a weapon!</button><button class="many">Open 100 chests</button></div></div>`);
+  const row = html(el, `<div><div class="row"><label>${tr('item level', 'Gegenstandsstufe')} <input type="range" class="lv" min="1" max="25" value="5"> <b class="lvv">5</b></label>
+    <label><input type="checkbox" class="guard"> ${tr('guardian luck', 'Wächter-Glück')}</label>
+    <button class="roll">${tr('Roll a weapon!', 'Waffe würfeln!')}</button><button class="many">${tr('Open 100 chests', '100 Truhen öffnen')}</button></div></div>`);
   const card = html(el, '<div style="margin-top:10px"></div>');
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
@@ -20,15 +20,20 @@ export default function mount(el) {
   const opts = () => $('.guard').checked ? { luck: 0.2, floor: RARITY.uncommon.rank, ancient: true } : {};
   function show(item) {
     const r = RARITY[item.gen.rarity], s = itemStats(item), base = ITEMS[item.itemId];
-    card.innerHTML = `<div class="weapon" style="--rarity:${r.css}"><img src="../${base.icon}" alt="">
-      <div><h4>${displayName(item)}</h4><div class="base">${r.name} \u00B7 item level ${item.gen.ilvl}${baseLine(item) ? ' \u00B7 ' + baseLine(item) : ''}</div>
-      <div class="stats">${s.damage} damage \u00B7 ${(1 / s.interval).toFixed(2)} attacks per second \u00B7 ${Math.round(weaponDps(s))} damage per second
-reach ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical hits</div>
-      <ul>${affixLines(item).map((t, i) => `<li>${t} <span style="color:#5a6678">(${AFFIX[item.gen.affixes[i].id].name}, tier ${item.gen.affixes[i].tier})</span></li>`).join('')}</ul></div></div>`;
+    card.innerHTML = `<div class="weapon" style="--rarity:${r.css}"><img src="${new URL('../../' + base.icon, import.meta.url)}" alt="">
+      <div><h4>${displayName(item)}</h4><div class="base">${r.name} \u00B7 ${tr('item level', 'Stufe')} ${item.gen.ilvl}${baseLine(item) ? ' \u00B7 ' + baseLine(item) : ''}</div>
+      <div class="stats">${tr(`${s.damage} damage \u00B7 ${(1 / s.interval).toFixed(2)} attacks per second \u00B7 ${Math.round(weaponDps(s))} damage per second
+reach ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical hits`, `${s.damage} Schaden \u00B7 ${(1 / s.interval).toFixed(2)} Hiebe pro Sekunde \u00B7 ${Math.round(weaponDps(s))} Schaden pro Sekunde
+Reichweite ${s.range.toFixed(2)} Felder \u00B7 ${Math.round(s.crit * 100)}% kritische Treffer`)}</div>
+      <ul>${affixLines(item).map((t, i) => `<li>${t} <span style="color:#5a6678">(${AFFIX[item.gen.affixes[i].id].name}, ${tr('tier', 'Stufe')} ${item.gen.affixes[i].tier})</span></li>`).join('')}</ul></div></div>`;
     const kinds = item.gen.affixes.map(a => AFFIX[a.id].kind);
-    out.innerHTML = `The dice decided, step by step:\n1. rarity: <b style="color:${r.css}">${r.name}</b> \u2192 ${r.affixes} affix${r.affixes === 1 ? '' : 'es'}, damage \u00D7${r.damage}\n`
+    const list = kinds.length ? item.gen.affixes.map((a, i) => `<b>${AFFIX[a.id].name}</b> (${kinds[i]})`).join(', ') : tr('none', 'keine');
+    out.innerHTML = tr(`The dice decided, step by step:\n1. rarity: <b style="color:${r.css}">${r.name}</b> \u2192 ${r.affixes} affix${r.affixes === 1 ? '' : 'es'}, damage \u00D7${r.damage}\n`
       + `2. base: <b>${base.name}</b> (${base.weapon.damage} damage at level 1, +5% per item level)\n`
-      + `3. affixes: ${kinds.length ? item.gen.affixes.map((a, i) => `<b>${AFFIX[a.id].name}</b> (${kinds[i]})`).join(', ') : 'none'}\n4. name: <b>${displayName(item)}</b>`;
+      + `3. affixes: ${list}\n4. name: <b>${displayName(item)}</b>`,
+      `Die Würfel haben Schritt für Schritt entschieden:\n1. Seltenheit: <b style="color:${r.css}">${r.name}</b> \u2192 ${r.affixes} Affix${r.affixes === 1 ? '' : 'e'}, Schaden \u00D7${r.damage}\n`
+      + `2. Grundtyp: <b>${base.name}</b> (${base.weapon.damage} Schaden auf Stufe 1, +5% pro Gegenstandsstufe)\n`
+      + `3. Affixe: ${list}\n4. Name: <b>${displayName(item)}</b>`);
   }
   $('.lv').oninput = () => { $('.lvv').textContent = $('.lv').value; };
   $('.roll').onclick = () => show(rollWeapon(mulberry32(seed++), +$('.lv').value, opts()));
@@ -36,15 +41,15 @@ reach ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical h
     const n = {};
     for (let i = 0; i < 100; i++) { const it = rollWeapon(mulberry32(seed++), +$('.lv').value, opts()); n[it.gen.rarity] = (n[it.gen.rarity] || 0) + 1; }
     card.innerHTML = `<div class="card">${RARITIES.filter(r => n[r.id]).map(r => `<span class="chip" style="border-color:${r.css};color:${r.css}">${r.name}: ${n[r.id]}</span>`).join('')}</div>`;
-    out.innerHTML = '100 weapons rolled. Try a higher item level, or guardian luck.';
+    out.innerHTML = tr('100 weapons rolled. Try a higher item level, or guardian luck.', '100 Waffen gewürfelt. Probier eine höhere Gegenstandsstufe oder Wächter-Glück.');
   };
   $('.roll').click();
 }
 
 function odds(el) {
   const W = 640, H = 250, { g } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label>item level <input type="range" class="lv" min="1" max="25" value="1"> <b class="lvv">1</b></label>
-    <label>luck <input type="range" class="luck" min="0" max="0.45" step="0.05" value="0"> <b class="lk">0</b></label></div>`);
+  const row = html(el, `<div class="row"><label>${tr('item level', 'Gegenstandsstufe')} <input type="range" class="lv" min="1" max="25" value="1"> <b class="lvv">1</b></label>
+    <label>${tr('luck', 'Glück')} <input type="range" class="luck" min="0" max="0.45" step="0.05" value="0"> <b class="lk">0</b></label></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
   function draw() {
@@ -59,11 +64,12 @@ function odds(el) {
       g.fillStyle = '#e6e9ef'; g.font = '12px ui-monospace, monospace'; g.textAlign = 'center';
       g.fillText(r.name, x + bw / 2, 218);
       g.fillStyle = share ? r.css : '#5a6678';
-      g.fillText(share ? (share >= 0.01 ? (share * 100).toFixed(1) + '%' : (share * 100).toFixed(2) + '%') : r.guardianOnly ? 'guardians' : `lv ${r.minLevel}+`, x + bw / 2, 238);
+      g.fillText(share ? (share >= 0.01 ? (share * 100).toFixed(1) + '%' : (share * 100).toFixed(2) + '%') : r.guardianOnly ? tr('guardians', 'Wächter') : `lv ${r.minLevel}+`, x + bw / 2, 238);
     });
     g.textAlign = 'left';
     const best = RARITIES.filter((r, i) => p[i] > 0).at(-1);
-    out.innerHTML = `At item level <b>${lv}</b>, the best possible is <b style="color:${best.css}">${best.name}</b>. Bars are drawn by the square root, so tiny chances stay visible.`;
+    out.innerHTML = tr(`At item level <b>${lv}</b>, the best possible is <b style="color:${best.css}">${best.name}</b>. Bars are drawn by the square root, so tiny chances stay visible.`,
+      `Auf Gegenstandsstufe <b>${lv}</b> ist das Beste, was geht: <b style="color:${best.css}">${best.name}</b>. Die Balken sind mit der Wurzel gezeichnet, damit winzige Chancen sichtbar bleiben.`);
   }
   row.querySelectorAll('input').forEach(i => i.oninput = draw);
   draw();

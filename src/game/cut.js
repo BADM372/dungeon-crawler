@@ -10,11 +10,14 @@ import { updateCamera } from './camera.js';
 import { mapInfo, inSlab, outOfSlabs } from './cutinfo.js';
 import { viewBlockedAt } from '../core/blockers.js';
 
+// kids-docs: drawing.html#cut-how (see kids-docs/README.md)
 const REVEAL = 0.07, RESTORE = 0.12, RESTORE_DELAY = 1;   // spring times (s), wait before restoring
+// kids-docs: drawing.html#cut-code (see kids-docs/README.md)
 const STEP = 0.12;
 let cut = Infinity, vel = 0, hold = 0, lastMap = null;
 
 // height of the first solid on the way from (x,y,z) to the camera (Infinity if the view is clear)
+// kids-docs: drawing.html#cut-code (see kids-docs/README.md)
 function blockedAt(x, y, z, top) {
   const cp = camera.position;
   let dx = cp.x - x, dy = cp.y - y, dz = cp.z - z;
@@ -33,6 +36,7 @@ function blockedAt(x, y, z, top) {
   return Infinity;
 }
 
+// kids-docs: drawing.html#cut-how (see kids-docs/README.md)
 function target(m) {
   const info = mapInfo(m), p = player, y = p.visY;
   // never below our feet, and never below the surface of the water we swim in

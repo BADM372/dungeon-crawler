@@ -15,10 +15,15 @@ import { themeAt, MAX_DEPTH } from '../themes/depth.js';
 import { playSong, setMood } from '../audio/music.js';
 import { MOODS } from '../audio/score.js';
 
+// kids-docs: sound.html#mood-rules (see kids-docs/README.md)
 const NEAR = 8;          // cells: an enemy this close is sensed
+// kids-docs: sound.html#mood-rules (see kids-docs/README.md)
 const CLOSE = 4;         // cells: an enemy after you this close is a fight
+// kids-docs: sound.html#mood-rules (see kids-docs/README.md)
 const TREASURE = 6;      // cells: a chest this close
+// kids-docs: sound.html#mood-rules (see kids-docs/README.md)
 const FIGHT_MEMORY = 6;  // s: a blow keeps the fight going this long while an enemy is after you or near
+// kids-docs: sound.html#mood-code #mood-rules (see kids-docs/README.md)
 const HOLD = { treasure: 1, sense: 2, rise: 3, fight: 4, boss: 5 };   // s the calmer reason must hold
 const RANK = Object.fromEntries(MOODS.map((m, i) => [m, i]));      // MOODS runs calm to fierce
 
@@ -58,8 +63,10 @@ function wanted() {
   return want;
 }
 
+// kids-docs: sound.html#mood-code (see kids-docs/README.md)
 export const songFor = map => map.enemyFree ? 'town' : map.depth >= MAX_DEPTH ? 'core' : themeAt(map.depth).music;
 
+// kids-docs: sound.html#mood-code (see kids-docs/README.md)
 export function updateMusic(dt) {
   if (!state.map) return;
   playSong(songFor(state.map));

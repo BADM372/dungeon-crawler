@@ -56,6 +56,7 @@ def material(name, hex_color, emission=0.0, roughness=0.62):
 
 
 # --- SDF helpers -------------------------------------------------------------
+# kids-docs: art.html#sdf-code (see kids-docs/README.md)
 def ellipsoid(P, center, radii):
     """IQ ellipsoid distance approximation (well-behaved zero surface)."""
     q = P - np.asarray(center, np.float32)

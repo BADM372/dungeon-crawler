@@ -18,6 +18,7 @@ import { mulberry32, hash32 } from './util.js';
 export const D = (mix, ...roster) => Object.freeze({ mix, roster: Object.freeze(roster.map(([type, chance, lo, hi, pack = 1, kinds = { [type]: 1 }]) =>
   Object.freeze({ type, chance, lo, hi, pack, kinds: Object.freeze(kinds) }))) });
 
+// kids-docs: enemies.html#rosters (see kids-docs/README.md)
 export const DEPTH_SPAWNS = Object.freeze([
   /*  0 road out of town */ D(1, ['snake', 1, 1, 2]),
   /*  1 meadow islands */ D(2, ['snake', 1, 2, 4], ['stunder', .2, 1, 1]),

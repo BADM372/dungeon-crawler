@@ -2,206 +2,259 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Drawing the World · Kids' Guide to Cube Crawler</title>
+<title data-de="Die Welt malen · Kinderführer zu Cube Crawler">Drawing the World · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="ruins">
 <main class="deck">
 
 <section class="slide" id="triangles" data-lv="1">
-  <h2>Painting with triangles</h2>
+  <h2 lang="en">Painting with triangles</h2>
+  <h2 lang="de">Malen mit Dreiecken</h2>
   <div class="cols wide-right">
     <div>
-      <p class="lead">Everything you see in the game, the hills, the hero, the swords, the spiders, is made of tiny flat <b>triangles</b>.</p>
-      <p>Why triangles? Three points always lie flat, so a triangle is the simplest shape a computer can fill in. Glue enough of them together and you can make anything.</p>
-      <p>The <a class="w" href="words.html#gpu">graphics card</a> in your computer is a machine made just for painting triangles, millions of them every second.</p>
-      <p>Switch on "show triangles" and switch off "paint": that's what the computer really sees.</p>
+      <p class="lead" lang="en">Everything you see in the game, the hills, the hero, the swords, the spiders, is made of tiny flat <b>triangles</b>.</p>
+      <p class="lead" lang="de">Alles, was du im Spiel siehst, die Hügel, der Held, die Schwerter, die Spinnen, besteht aus winzigen flachen <b>Dreiecken</b>.</p>
+      <p lang="en">Why triangles? Three points always lie flat, so a triangle is the simplest shape a computer can fill in. Glue enough of them together and you can make anything.</p>
+      <p lang="de">Warum Dreiecke? Drei Punkte liegen immer flach, darum ist ein Dreieck die einfachste Form, die ein Computer ausfüllen kann. Klebt man genug davon zusammen, kann man alles bauen.</p>
+      <p lang="en">The <a class="w" href="words.html#gpu">graphics card</a> in your computer is a machine made just for painting triangles, millions of them every second.</p>
+      <p lang="de">Die <a class="w" href="words.html#gpu">Grafikkarte</a> in deinem Computer ist eine Maschine nur zum Dreiecke-Malen, Millionen pro Sekunde.</p>
+      <p lang="en">Switch on "show triangles" and switch off "paint": that's what the computer really sees.</p>
+      <p lang="de">Schalte "Dreiecke zeigen" an und "malen" aus: So sieht es der Computer wirklich.</p>
     </div>
     <div class="demo" data-demo="tri"></div>
   </div>
 </section>
 
-<section class="slide" id="camera" data-lv="2">
-  <h2>From 3D to your flat screen</h2>
+<section class="slide" id="camera" data-lv="2" data-src="src/game/camera.js#pitch src/render/scene.js#camera">
+  <h2 lang="en">From 3D to your flat screen</h2>
+  <h2 lang="de">Von 3D auf deinen flachen Bildschirm</h2>
   <div class="cols">
     <div>
-      <p>Every corner of every triangle has three numbers: x, y and z. Your screen is flat: it only has x and y. The <b>camera</b> turns one into the other:</p>
+      <p lang="en">Every corner of every triangle has three numbers: x, y and z. Your screen is flat: it only has x and y. The <b>camera</b> turns one into the other:</p>
+      <p lang="de">Jede Ecke jedes Dreiecks hat drei Zahlen: x, y und z. Dein Bildschirm ist flach: Er hat nur x und y. Die <b>Kamera</b> verwandelt das eine ins andere:</p>
       <ol class="steps">
-        <li>Turn and tilt the world, so it is seen from the camera's point of view.</li>
-        <li>Divide by the distance: things far away get smaller. That's called <a class="w" href="words.html#perspective">perspective</a>.</li>
-        <li>Fill in the triangle's pixels, and colour them.</li>
+        <li lang="en">Turn and tilt the world, so it is seen from the camera's point of view.</li>
+        <li lang="de">Die Welt drehen und kippen, damit man sie aus Sicht der Kamera sieht.</li>
+        <li lang="en">Divide by the distance: things far away get smaller. That's called <a class="w" href="words.html#perspective">perspective</a>.</li>
+        <li lang="de">Durch die Entfernung teilen: Ferne Dinge werden kleiner. Das heißt <a class="w" href="words.html#perspective">Perspektive</a>.</li>
+        <li lang="en">Fill in the triangle's pixels, and colour them.</li>
+        <li lang="de">Die Pixel des Dreiecks ausfüllen und färben.</li>
       </ol>
-      <p>A helper library called <a class="w" href="words.html#threejs">three.js</a> does the hard math and talks to the graphics card. The game tells it what to draw.</p>
+      <p lang="en">A helper library called <a class="w" href="words.html#threejs">three.js</a> does the hard math and talks to the graphics card. The game tells it what to draw.</p>
+      <p lang="de">Eine Hilfsbibliothek namens <a class="w" href="words.html#threejs">three.js</a> macht die schwere Mathe und redet mit der Grafikkarte. Das Spiel sagt ihr, was gemalt werden soll.</p>
     </div>
     <div class="card">
-      <h3>Cube Crawler's camera</h3>
+      <h3 lang="en">Cube Crawler's camera</h3>
+      <h3 lang="de">Die Kamera von Cube Crawler</h3>
       <ul>
-        <li>looks down at <b>44&deg;</b>, from far away</li>
-        <li>has a narrow lens (28&deg;), so the cube looks almost like a little model on a table, a <i>diorama</i></li>
-        <li>is just far enough away that the whole cube fits on the screen</li>
-        <li>turns in 90&deg; steps with <kbd>Q</kbd> and <kbd>E</kbd>, and zooms in 5 steps with <kbd>K</kbd> and <kbd>L</kbd> (zoomed in, it follows the hero)</li>
-        <li>gets a tiny shove on every hit, and springs back</li>
+        <li lang="en">looks down at <b>44°</b>, from far away</li>
+        <li lang="de">schaut mit <b>44°</b> von weit weg nach unten</li>
+        <li lang="en">has a narrow lens (28°), so the cube looks almost like a little model on a table, a <i>diorama</i></li>
+        <li lang="de">hat ein schmales Objektiv (28°), darum sieht der Würfel fast aus wie ein kleines Modell auf dem Tisch, ein <i>Diorama</i></li>
+        <li lang="en">is just far enough away that the whole cube fits on the screen</li>
+        <li lang="de">ist genau so weit weg, dass der ganze Würfel auf den Bildschirm passt</li>
+        <li lang="en">turns in 90° steps with <kbd>Q</kbd> and <kbd>E</kbd>, and zooms in 5 steps with <kbd>K</kbd> and <kbd>L</kbd> (zoomed in, it follows the hero)</li>
+        <li lang="de">dreht sich in 90°-Schritten mit <kbd>Q</kbd> und <kbd>E</kbd> und zoomt in 5 Stufen mit <kbd>K</kbd> und <kbd>L</kbd> (reingezoomt folgt sie dem Helden)</li>
+        <li lang="en">gets a tiny shove on every hit, and springs back</li>
+        <li lang="de">bekommt bei jedem Treffer einen winzigen Schubs und federt zurück</li>
       </ul>
-      <p class="small muted"><code>src/game/camera.js</code>, only 40 lines.</p>
+      <p class="small muted" lang="en"><code>src/game/camera.js</code>, only 40 lines.</p>
+      <p class="small muted" lang="de"><code>src/game/camera.js</code>, nur etwa 40 Zeilen.</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="light" data-lv="2">
-  <h2>Light and shadow</h2>
+<section class="slide" id="light" data-lv="2" data-src="src/render/scene.js#sun,hemi">
+  <h2 lang="en">Light and shadow</h2>
+  <h2 lang="de">Licht und Schatten</h2>
   <div class="cols">
     <div>
-      <p>How bright is a triangle? It depends on how much it <b>faces the light</b>. A slope that faces the sun is bright, one that turns away is darker. Try moving the sun in the triangle demo.</p>
-      <p>The game uses three kinds of light:</p>
+      <p lang="en">How bright is a triangle? It depends on how much it <b>faces the light</b>. A slope that faces the sun is bright, one that turns away is darker. Try moving the sun in the triangle demo.</p>
+      <p lang="de">Wie hell ist ein Dreieck? Das hängt davon ab, wie sehr es <b>zum Licht zeigt</b>. Ein Hang zur Sonne ist hell, einer, der sich wegdreht, ist dunkler. Beweg in der Dreiecks-Demo mal die Sonne.</p>
+      <p lang="en">The game uses three kinds of light:</p>
+      <p lang="de">Das Spiel benutzt drei Arten von Licht:</p>
       <ul>
-        <li><b>The sun:</b> light from one direction, the same everywhere. It also casts <b>shadows</b>.</li>
-        <li><b>Sky light:</b> a soft light, a bit bluer from above and browner from below, so nothing is ever pitch black.</li>
-        <li><b>Point lights:</b> glowing things like lava, portals, crystals and fire monsters, shining in all directions around them.</li>
+        <li lang="en"><b>The sun:</b> light from one direction, the same everywhere. It also casts <b>shadows</b>.</li>
+        <li lang="de"><b>Die Sonne:</b> Licht aus einer Richtung, überall gleich. Sie wirft auch <b>Schatten</b>.</li>
+        <li lang="en"><b>Sky light:</b> a soft light, a bit bluer from above and browner from below, so nothing is ever pitch black.</li>
+        <li lang="de"><b>Himmelslicht:</b> ein weiches Licht, von oben etwas bläulicher und von unten bräunlicher, damit nichts ganz schwarz ist.</li>
+        <li lang="en"><b>Point lights:</b> glowing things like lava, portals, crystals and fire monsters, shining in all directions around them.</li>
+        <li lang="de"><b>Punktlichter:</b> leuchtende Dinge wie Lava, Portale, Kristalle und Feuermonster, die in alle Richtungen um sich herum scheinen.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>How shadows work</h3>
-      <p>Before drawing the picture, the game first draws the world <i>from the sun's point of view</i>, but only remembers how far away everything is. That's the <b>shadow map</b>, 2048 by 2048 pixels.</p>
-      <p>Then, for each pixel of the real picture, it asks: "can the sun see this spot, or is something closer to the sun in the way?" If something is in the way: shadow!</p>
+      <h3 lang="en">How shadows work</h3>
+      <h3 lang="de">Wie Schatten funktionieren</h3>
+      <p lang="en">Before drawing the picture, the game first draws the world <i>from the sun's point of view</i>, but only remembers how far away everything is. That's the <b>shadow map</b>, 2048 by 2048 pixels.</p>
+      <p lang="de">Bevor das Bild gemalt wird, malt das Spiel die Welt erst <i>aus Sicht der Sonne</i>, merkt sich aber nur, wie weit alles weg ist. Das ist die <b>Schattenkarte</b> (shadow map), 2048 mal 2048 Pixel.</p>
+      <p lang="en">Then, for each pixel of the real picture, it asks: "can the sun see this spot, or is something closer to the sun in the way?" If something is in the way: shadow!</p>
+      <p lang="de">Dann fragt es für jeden Pixel des echten Bildes: "Kann die Sonne diese Stelle sehen, oder ist etwas näher an der Sonne im Weg?" Wenn etwas im Weg ist: Schatten!</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="pool" data-lv="1">
-  <h2>Try it: only 8 lights at a time</h2>
-  <p>A cave can have dozens of glowing things. But the game only ever uses <b>8</b> real lights: the ones closest to you. Move around the cave and watch them follow you.
+<section class="slide" id="pool" data-lv="1" data-src="src/render/lightpool.js#POOL">
+  <h2 lang="en">Try it: only 8 lights at a time</h2>
+  <h2 lang="de">Probier es: nur 8 Lichter auf einmal</h2>
+  <p lang="en">A cave can have dozens of glowing things. But the game only ever uses <b>8</b> real lights: the ones closest to you. Move around the cave and watch them follow you.
     Then switch off the pool and see how the number of lights jumps around.</p>
+  <p lang="de">Eine Höhle kann Dutzende leuchtende Dinge haben. Aber das Spiel benutzt immer nur <b>8</b> echte Lichter: die, die dir am nächsten sind. Beweg dich durch die Höhle und schau, wie sie dir folgen.
+    Schalte dann den Vorrat aus und sieh, wie die Zahl der Lichter herumspringt.</p>
   <div class="demo" data-demo="lightpool"></div>
-  <div class="note"><b>Why?</b> The graphics card runs small programs called <a class="w" href="words.html#shader">shaders</a>. When the number of lights changes, three.js has to rebuild every one of them. That took so long that the game stuttered every time you entered a new cube. A fixed pool of 8 lights that just move around fixed it. This was the biggest stutter in the game!</div>
+  <div class="note" lang="en"><b>Why?</b> The graphics card runs small programs called <a class="w" href="words.html#shader">shaders</a>. When the number of lights changes, three.js has to rebuild every one of them. That took so long that the game stuttered every time you entered a new cube. A fixed pool of 8 lights that just move around fixed it. This was the biggest stutter in the game!</div>
+  <div class="note" lang="de"><b>Warum?</b> Die Grafikkarte führt kleine Programme aus, die <a class="w" href="words.html#shader">Shader</a> heißen. Wenn sich die Zahl der Lichter ändert, muss three.js jeden davon neu bauen. Das dauerte so lange, dass das Spiel jedes Mal ruckelte, wenn man einen neuen Würfel betrat. Ein fester Vorrat aus 8 Lichtern, die nur herumwandern, hat das repariert. Das war das größte Ruckeln im Spiel!</div>
 </section>
 
 <section class="slide" id="cutaway" data-lv="1">
-  <h2>Try it: cutting holes in the roof</h2>
-  <p>When you walk under a bridge or into a cave, the walls and floors above you would hide you. So the game <b>cuts them away</b>, only around you, only in front of you.
+  <h2 lang="en">Try it: cutting holes in the roof</h2>
+  <h2 lang="de">Probier es: Löcher ins Dach schneiden</h2>
+  <p lang="en">When you walk under a bridge or into a cave, the walls and floors above you would hide you. So the game <b>cuts them away</b>, only around you, only in front of you.
     Drag the hero under the floor and onto the hill.</p>
+  <p lang="de">Wenn du unter eine Brücke oder in eine Höhle gehst, würden die Wände und Böden über dir dich verdecken. Darum <b>schneidet</b> das Spiel sie weg, nur um dich herum und nur vor dir.
+    Zieh den Helden unter den Boden und auf den Hügel.</p>
   <div class="demo" data-demo="cutaway"></div>
-  <p class="small muted">The white dots are the probe: the game checks the way from your chest to the camera every 0.12 units. The red circle is the first thing in the way.</p>
+  <p class="small muted" lang="en">The white dots are the probe: the game checks the way from your chest to the camera every 0.12 units. The red circle is the first thing in the way.</p>
+  <p class="small muted" lang="de">Die weißen Punkte sind die Sonde: Das Spiel prüft den Weg von deiner Brust zur Kamera alle 0,12 Einheiten. Der rote Kreis ist das Erste, was im Weg ist.</p>
 </section>
 
-<section class="slide" id="cut-how" data-lv="2">
-  <h2>How the cutaway works</h2>
+<section class="slide" id="cut-how" data-lv="2" data-src="src/game/cut.js#REVEAL,target src/render/cutshader.js#CORNERS,REGION">
+  <h2 lang="en">How the cutaway works</h2>
+  <h2 lang="de">Wie der Ausschnitt funktioniert</h2>
   <div class="cols">
     <div>
       <ol class="steps">
-        <li><b>Look:</b> send probes from the hero's chest and head towards the camera, and from points around the hero. Find the lowest solid thing in the way.</li>
-        <li><b>Pick a height:</b> just under the floor above you if there is one, otherwise snapped to the terrain levels.</li>
-        <li><b>Cut:</b> while drawing, every pixel that is above that height, closer to the camera than the hero, and inside a shape around the hero is simply not drawn.</li>
-        <li><b>Fill in:</b> the cut edges are painted as a flat lid (like a cake cut open), and the removed parts as very faint glass, so you still see their shape.</li>
+        <li lang="en"><b>Look:</b> send probes from the hero's chest and head towards the camera, and from points around the hero. Find the lowest solid thing in the way.</li>
+        <li lang="de"><b>Schauen:</b> Sonden von Brust und Kopf des Helden zur Kamera schicken, und von Punkten rund um den Helden. Das niedrigste feste Ding im Weg finden.</li>
+        <li lang="en"><b>Pick a height:</b> just under the floor above you if there is one, otherwise snapped to the terrain levels.</li>
+        <li lang="de"><b>Eine Höhe wählen:</b> direkt unter dem Boden über dir, wenn es einen gibt, sonst auf die Geländestufen eingerastet.</li>
+        <li lang="en"><b>Cut:</b> while drawing, every pixel that is above that height, closer to the camera than the hero, and inside a shape around the hero is simply not drawn.</li>
+        <li lang="de"><b>Schneiden:</b> Beim Malen wird jeder Pixel, der über dieser Höhe liegt, näher an der Kamera als der Held ist und in einer Form um den Helden liegt, einfach nicht gemalt.</li>
+        <li lang="en"><b>Fill in:</b> the cut edges are painted as a flat lid (like a cake cut open), and the removed parts as very faint glass, so you still see their shape.</li>
+        <li lang="de"><b>Auffüllen:</b> Die Schnittkanten werden als flacher Deckel gemalt (wie ein aufgeschnittener Kuchen), und die weggeschnittenen Teile als ganz blasses Glas, damit du ihre Form noch siehst.</li>
       </ol>
     </div>
     <div class="card">
-      <h3>Little touches</h3>
+      <h3 lang="en">Little touches</h3>
+      <h3 lang="de">Kleine Details</h3>
       <ul>
-        <li>The shape is not a circle, but a nine-cornered polygon that slowly turns. It looks more hand-made.</li>
-        <li>The cut opens <b>fast</b> (you should never be hidden), but closes <b>slowly</b>, and only after you were visible for a second. Otherwise it would flicker all the time.</li>
-        <li>In caves, the walls on the camera's side are cut down too, to just above the hero.</li>
+        <li lang="en">The shape is not a circle, but a nine-cornered polygon that slowly turns. It looks more hand-made.</li>
+        <li lang="de">Die Form ist kein Kreis, sondern ein Neuneck, das sich langsam dreht. Das sieht handgemachter aus.</li>
+        <li lang="en">The cut opens <b>fast</b> (you should never be hidden), but closes <b>slowly</b>, and only after you were visible for a second. Otherwise it would flicker all the time.</li>
+        <li lang="de">Der Schnitt öffnet sich <b>schnell</b> (du sollst nie versteckt sein), schließt sich aber <b>langsam</b>, und erst nachdem du eine Sekunde sichtbar warst. Sonst würde er dauernd flackern.</li>
+        <li lang="en">In caves, the walls on the camera's side are cut down too, to just above the hero. Inside a house they come down all the way to the floor, so you look into the room like into a doll's house.</li>
+        <li lang="de">In Höhlen werden die Wände auf der Kameraseite auch heruntergeschnitten, bis knapp über den Helden. In einem Haus geht es ganz bis zum Boden hinunter, und du schaust in das Zimmer hinein wie in ein Puppenhaus.</li>
       </ul>
-      <figure><img class="shot" src="img/swamp.jpg" alt="A cave with the walls near the camera cut away"><figcaption>The cave walls in front are cut down so you can look in.</figcaption></figure>
+      <figure><img class="shot" src="img/swamp.jpg" alt="A cave with the walls near the camera cut away" data-de-alt="Eine Höhle, deren Wände zur Kamera hin weggeschnitten sind"><figcaption lang="en">The cave walls in front are cut down so you can look in.</figcaption> <figcaption lang="de">Die Höhlenwände vorne sind heruntergeschnitten, damit du hineinschauen kannst.</figcaption></figure>
     </div>
   </div>
 </section>
 
 <section class="slide" id="dither" data-lv="1">
-  <h2>Try it: fading without see-through</h2>
-  <p>When you walk through a portal, the old cube fades out and the new one fades in. But making 3D things see-through is surprisingly hard for a graphics card
+  <h2 lang="en">Try it: fading without see-through</h2>
+  <h2 lang="de">Probier es: Überblenden ohne Durchsichtigkeit</h2>
+  <p lang="en">When you walk through a portal, the old cube fades out and the new one fades in. But making 3D things see-through is surprisingly hard for a graphics card
     (it has to sort everything from back to front). So the game uses a trick from old printers: <a class="w" href="words.html#dither">dithering</a>. Each pixel is either fully old cube, or fully new cube.</p>
+  <p lang="de">Wenn du durch ein Portal gehst, blendet der alte Würfel aus und der neue ein. Aber 3D-Dinge durchsichtig zu machen ist für eine Grafikkarte überraschend schwer
+    (sie muss alles von hinten nach vorne sortieren). Darum benutzt das Spiel einen Trick von alten Druckern: <a class="w" href="words.html#dither">Dithering</a>. Jeder Pixel ist entweder ganz alter Würfel oder ganz neuer Würfel.</p>
   <div class="demo" data-demo="dither"></div>
-  <p class="small muted">Turn the pixel size down to 1: from a little distance, your eyes blend the pattern into a smooth fade. That's how it looks in the game.</p>
+  <p class="small muted" lang="en">Turn the pixel size down to 1: from a little distance, your eyes blend the pattern into a smooth fade. That's how it looks in the game.</p>
+  <p class="small muted" lang="de">Stell die Pixelgröße auf 1: Aus ein bisschen Abstand mischen deine Augen das Muster zu einer weichen Überblendung. So sieht es im Spiel aus.</p>
 </section>
 
 <section class="slide" id="themes" data-lv="2">
-  <h2>Every depth has its own look</h2>
-  <p>The colours are not painted by hand on every cube. Each <b>theme</b> has a small table of colours by height: low ground, high ground, cliff stripes, the sky.
+  <h2 lang="en">Every depth has its own look</h2>
+  <h2 lang="de">Jede Tiefe hat ihr eigenes Aussehen</h2>
+  <p lang="en">The colours are not painted by hand on every cube. Each <b>theme</b> has a small table of colours by height: low ground, high ground, cliff stripes, the sky.
     The game mixes between them. Going deeper, the light even fades slowly from one theme to the next. This table is read live from the game's code:</p>
+  <p lang="de">Die Farben werden nicht auf jeden Würfel von Hand gemalt. Jedes <b>Thema</b> hat eine kleine Farbtabelle nach Höhe: niedriger Boden, hoher Boden, Klippenstreifen, der Himmel.
+    Das Spiel mischt dazwischen. Beim Hinabsteigen geht das Licht sogar langsam von einem Thema ins nächste über. Diese Tabelle wird live aus dem Code des Spiels gelesen:</p>
   <div class="demo real" data-demo="themes"></div>
 </section>
 
 <section class="slide" id="fast" data-lv="2">
-  <h2>Keeping it fast</h2>
+  <h2 lang="en">Keeping it fast</h2>
+  <h2 lang="de">Schnell bleiben</h2>
   <div class="cols">
     <div>
-      <p>The game wants a new picture every 16 milliseconds. Everything that takes longer has to be done cleverly:</p>
+      <p lang="en">The game wants a new picture every 16 milliseconds. Everything that takes longer has to be done cleverly:</p>
+      <p lang="de">Das Spiel will alle 16 Millisekunden ein neues Bild. Alles, was länger dauert, muss schlau gemacht werden:</p>
       <ul>
-        <li><b>A helper in the background.</b> A <a class="w" href="words.html#worker">web worker</a> invents the cubes <i>and</i> builds their triangles, then hands them over in one go. The game keeps running smoothly meanwhile.</li>
-        <li><b>Cubes behind portals are prepared early</b>, so travelling usually starts at once.</li>
-        <li><b>Cubes you're not in</b> are drawn as simple copies: no plants, no monsters, no lights, no shadows.</li>
+        <li lang="en"><b>A helper in the background.</b> A <a class="w" href="words.html#worker">web worker</a> invents the cubes <i>and</i> builds their triangles, then hands them over in one go. The game keeps running smoothly meanwhile.</li>
+        <li lang="de"><b>Ein Helfer im Hintergrund.</b> Ein <a class="w" href="words.html#worker">Web Worker</a> erfindet die Würfel <i>und</i> baut ihre Dreiecke und gibt sie dann auf einen Schlag ab. Das Spiel läuft währenddessen flüssig weiter.</li>
+        <li lang="en"><b>Cubes behind portals are prepared early</b>, so travelling usually starts at once.</li>
+        <li lang="de"><b>Würfel hinter Portalen werden früh vorbereitet</b>, damit die Reise meistens sofort losgeht.</li>
+        <li lang="en"><b>Cubes you're not in</b> are drawn as simple copies: no plants, no monsters, no lights, no shadows.</li>
+        <li lang="de"><b>Würfel, in denen du nicht bist</b>, werden als einfache Kopien gemalt: keine Pflanzen, keine Monster, keine Lichter, keine Schatten.</li>
       </ul>
     </div>
     <div>
       <ul>
-        <li><b>One draw for many props.</b> A hundred identical rocks are sent to the graphics card in <i>one</i> go, each with its own position (called <a class="w" href="words.html#instancing">instancing</a>).</li>
-        <li><b>Out of sight, out of mind.</b> Cubes behind the camera, or hidden in the fog, are skipped.</li>
-        <li><b>Grass that sways</b> in the wind is moved by the graphics card itself, not by the game.</li>
-        <li><b>The stars</b> twinkle on the graphics card too, one star at a time, not pixel by pixel.</li>
+        <li lang="en"><b>One draw for many props.</b> A hundred identical rocks are sent to the graphics card in <i>one</i> go, each with its own position (called <a class="w" href="words.html#instancing">instancing</a>).</li>
+        <li lang="de"><b>Einmal malen für viele Dinge.</b> Hundert gleiche Steine werden in <i>einem</i> Rutsch an die Grafikkarte geschickt, jeder mit seiner eigenen Position (das heißt <a class="w" href="words.html#instancing">Instancing</a>).</li>
+        <li lang="en"><b>Out of sight, out of mind.</b> Cubes behind the camera, or hidden in the fog, are skipped.</li>
+        <li lang="de"><b>Aus den Augen, aus dem Sinn.</b> Würfel hinter der Kamera oder im Nebel werden übersprungen.</li>
+        <li lang="en"><b>Grass that sways</b> in the wind is moved by the graphics card itself, not by the game.</li>
+        <li lang="de"><b>Gras, das im Wind wiegt</b>, wird von der Grafikkarte selbst bewegt, nicht vom Spiel.</li>
+        <li lang="en"><b>The stars</b> twinkle on the graphics card too, one star at a time, not pixel by pixel.</li>
+        <li lang="de"><b>Die Sterne</b> funkeln auch auf der Grafikkarte, einer nach dem anderen, nicht Pixel für Pixel.</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section class="slide" id="shader-code" data-lv="3">
-  <h2>The real code: a tiny shader</h2>
+  <h2 lang="en">The real code: a tiny shader</h2>
+  <h2 lang="de">Der echte Code: ein winziger Shader</h2>
   <div class="cols wide-left">
-    <pre data-file="src/render/fade.js"><code>const DITHER = `
-  if (uFade &lt; 0.999 || uFadeInv > 0.5 || uRangeFade &lt; 0.999) {
-    const float B[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
-    ivec2 q = ivec2(mod(gl_FragCoord.xy, 4.0));
-    float threshold = (B[q.x + q.y * 4] + 0.5) / 16.0;
-    bool keep = threshold &lt; uFade;
-    if (keep == (uFadeInv > 0.5) || threshold >= uRangeFade) discard;
-  }`;</code></pre>
+    <pre data-code="src/render/fade.js#DITHER"></pre>
     <div>
-      <p>This is <b>GLSL</b>, the language of shaders. This little program runs on the graphics card <b>for every single pixel</b> of a fading cube.</p>
+      <p lang="en">This is <b>GLSL</b>, the language of shaders. This little program runs on the graphics card <b>for every single pixel</b> of a fading cube.</p>
+      <p lang="de">Das ist <b>GLSL</b>, die Sprache der Shader. Dieses kleine Programm läuft auf der Grafikkarte <b>für jeden einzelnen Pixel</b> eines Würfels, der überblendet.</p>
       <ul>
-        <li><code>gl_FragCoord.xy</code> is the pixel's position on screen. <code>mod(..., 4.0)</code> picks its spot in the 4&times;4 table.</li>
-        <li><code>uFade</code> is how far the fade is (0 to 1), set by the game every frame.</li>
-        <li><code>discard</code> means: don't draw this pixel at all.</li>
-        <li><code>uFadeInv</code> flips the test, for the cube you're leaving. That's why the two never overlap.</li>
+        <li lang="en"><code>gl_FragCoord.xy</code> is the pixel's position on screen. <code>mod(..., 4.0)</code> picks its spot in the 4×4 table.</li>
+        <li lang="de"><code>gl_FragCoord.xy</code> ist die Position des Pixels auf dem Bildschirm. <code>mod(..., 4.0)</code> sucht seinen Platz in der 4×4-Tabelle.</li>
+        <li lang="en"><code>uFade</code> is how far the fade is (0 to 1), set by the game every frame.</li>
+        <li lang="de"><code>uFade</code> ist, wie weit die Überblendung ist (0 bis 1), vom Spiel in jedem Bild gesetzt.</li>
+        <li lang="en"><code>discard</code> means: don't draw this pixel at all.</li>
+        <li lang="de"><code>discard</code> heißt: Mal diesen Pixel gar nicht.</li>
+        <li lang="en"><code>uFadeInv</code> flips the test, for the cube you're leaving. That's why the two never overlap.</li>
+        <li lang="de"><code>uFadeInv</code> dreht den Test um, für den Würfel, den du verlässt. Darum überlappen sich die beiden nie.</li>
       </ul>
-      <p>The game slips this code into three.js's own materials just before they are built (<code>onBeforeCompile</code>).</p>
+      <p lang="en">The game slips this code into three.js's own materials just before they are built (<code>onBeforeCompile</code>).</p>
+      <p lang="de">Das Spiel schmuggelt diesen Code in die eigenen Materialien von three.js, kurz bevor sie gebaut werden (<code>onBeforeCompile</code>).</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="cut-code" data-lv="3">
-  <h2>The real code: the probe</h2>
+  <h2 lang="en">The real code: the probe</h2>
+  <h2 lang="de">Der echte Code: die Sonde</h2>
   <div class="cols wide-left">
-    <pre data-file="src/game/cut.js (shortened)"><code>const STEP = 0.12;
-
-// height of the first solid on the way from (x,y,z) to the camera (Infinity if the view is clear)
-function blockedAt(x, y, z, top) {
-  const cp = camera.position;
-  let dx = cp.x - x, dy = cp.y - y, dz = cp.z - z;
-  const len = Math.hypot(dx, dy, dz);
-  dx /= len; dy /= len; dz /= len;
-  for (let t = STEP; t &lt; len; t += STEP) {
-    const px = x + dx * t, py = y + dy * t, pz = z + dz * t;
-    if (py > top) break;
-    if (insideSolid(px, pz, py) || viewBlockedAt(state.map, px, py, pz)) return py;
-  }
-  return Infinity;
-}</code></pre>
+    <pre data-code="src/game/cut.js#STEP,blockedAt"></pre>
     <div>
-      <p>The direction to the camera is divided by its length (<code>dx /= len</code>...). Now it's exactly 1 long, so <code>t</code> counts real distance.</p>
-      <p>Then walk: <code>t = 0.12</code>, <code>0.24</code>, <code>0.36</code>... At each spot, ask the world: is this inside something solid? Or inside a tree crown or a roof (<code>viewBlockedAt</code>)?</p>
-      <p>Above the top of the cube nothing can block, so stop there (<code>break</code>).</p>
-      <p>It's the same idea as the monsters' <a class="portal" href="paths.html#sight">line of sight</a>!</p>
+      <p lang="en">The direction to the camera is divided by its length (<code>dx /= len</code>...). Now it's exactly 1 long, so <code>t</code> counts real distance.</p>
+      <p lang="de">Die Richtung zur Kamera wird durch ihre Länge geteilt (<code>dx /= len</code>...). Jetzt ist sie genau 1 lang, also zählt <code>t</code> echte Strecke.</p>
+      <p lang="en">Then walk: <code>t = 0.12</code>, <code>0.24</code>, <code>0.36</code>... At each spot, ask the world: is this inside something solid? Or inside a tree crown or a roof (<code>viewBlockedAt</code>)?</p>
+      <p lang="de">Dann laufen: <code>t = 0.12</code>, <code>0.24</code>, <code>0.36</code>... An jeder Stelle die Welt fragen: Ist das in etwas Festem drin? Oder in einer Baumkrone oder einem Dach (<code>viewBlockedAt</code>)?</p>
+      <p lang="en">Above the top of the cube nothing can block, so stop there (<code>break</code>).</p>
+      <p lang="de">Über der Oberkante des Würfels kann nichts mehr im Weg sein, also dort aufhören (<code>break</code>).</p>
+      <p lang="en">It's the same idea as the monsters' <a class="portal" href="paths.html#sight">line of sight</a>!</p>
+      <p lang="de">Das ist dieselbe Idee wie die <a class="portal" href="paths.html#sight">Sichtlinie</a> der Monster!</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Drawing the World</h2>
+  <h2 lang="en">Prompt quests: Drawing the World</h2>
+  <h2 lang="de">Prompt-Aufgaben: Die Welt malen</h2>
   <div class="quests">
-    <div class="prompt" data-title="WIDER VIEW" data-stars="1"><q>Make the camera look down a bit steeper, like 55 degrees instead of 44. Show me the number, then I'll tell you if I like it.</q><span class="why">"I'll tell you if I like it": for looks, you are the judge. Try, look, adjust.</span></div>
-    <div class="prompt" data-title="PINK SKY" data-stars="1"><q>Make the sky of the meadow islands theme a sunset: pink at the top and orange at the bottom. Only change colours in src/themes/index.js.</q><span class="why">Data changes are the safest changes: no logic, just values.</span></div>
-    <div class="prompt" data-title="BIGGER HOLE" data-stars="2"><q>The cutaway hole around my hero feels too small when I'm zoomed out. Find where its size is set and make it 30% bigger. Take a screenshot before and after if you can.</q><span class="why">Agents that can run a browser can compare screenshots, a great way to check visual changes.</span></div>
-    <div class="prompt" data-title="RAINBOW FADE" data-stars="3"><q>When I travel through a portal, the new cube dissolves in with a dither pattern. Explain how src/render/fade.js does it. Then try a different pattern: a diamond-shaped wipe from the centre of the screen instead.</q><span class="why">Shaders are hard. Asking for an explanation first means you can follow what the agent does next.</span></div>
+    <div class="prompt" data-title="WIDER VIEW" data-stars="1" data-de-data-title="STEILERER BLICK"><q lang="en">Make the camera look down a bit steeper, like 55 degrees instead of 44. Show me the number, then I'll tell you if I like it.</q> <q lang="de">Lass die Kamera etwas steiler nach unten schauen, etwa 55 Grad statt 44. Zeig mir die Zahl, dann sage ich dir, ob es mir gefällt.</q><span class="why" lang="en">"I'll tell you if I like it": for looks, you are the judge. Try, look, adjust.</span> <span class="why" lang="de">"Dann sage ich dir, ob es mir gefällt": Beim Aussehen bist du der Richter. Probieren, schauen, nachstellen.</span></div>
+    <div class="prompt" data-title="PINK SKY" data-stars="1" data-de-data-title="ROSA HIMMEL"><q lang="en">Make the sky of the meadow islands theme a sunset: pink at the top and orange at the bottom. Only change colours.</q> <q lang="de">Mach den Himmel des Wiesen-Themas zu einem Sonnenuntergang: oben rosa und unten orange. Ändere nur Farben.</q><span class="why" lang="en">Data changes are the safest changes: no logic, just values.</span> <span class="why" lang="de">Datenänderungen sind die sichersten Änderungen: keine Logik, nur Werte.</span></div>
+    <div class="prompt" data-title="BIGGER HOLE" data-stars="2" data-de-data-title="GRÖSSERES LOCH"><q lang="en">The cutaway hole around my hero feels too small when I'm zoomed out. Find where its size is set and make it 30% bigger. Take a screenshot before and after if you can.</q> <q lang="de">Das Ausschnitt-Loch um meinen Helden ist zu klein, wenn ich rausgezoomt bin. Finde, wo seine Größe festgelegt wird, und mach es 30% größer. Mach vorher und nachher einen Screenshot, wenn du kannst.</q><span class="why" lang="en">Agents that can run a browser can compare screenshots, a great way to check visual changes.</span> <span class="why" lang="de">Agenten, die einen Browser bedienen können, können Screenshots vergleichen: ein toller Weg, Änderungen am Aussehen zu prüfen.</span></div>
+    <div class="prompt" data-title="RAINBOW FADE" data-stars="3" data-de-data-title="REGENBOGEN-ÜBERBLENDUNG"><q lang="en">When I travel through a portal, the new cube dissolves in with a dither pattern. Explain how that works. Then try a different pattern: a diamond-shaped wipe from the centre of the screen instead.</q> <q lang="de">Wenn ich durch ein Portal reise, löst sich der neue Würfel mit einem Dither-Muster ein. Erklär mir, wie das funktioniert. Dann probier ein anderes Muster: ein rautenförmiges Wischen von der Bildschirmmitte aus.</q><span class="why" lang="en">Shaders are hard. Asking for an explanation first means you can follow what the agent does next.</span> <span class="why" lang="de">Shader sind schwer. Erst um eine Erklärung zu bitten heißt, dass du verstehen kannst, was der Agent als Nächstes macht.</span></div>
   </div>
 </section>
 

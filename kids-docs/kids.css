@@ -23,6 +23,8 @@
 [data-theme=core]     { --sky1: #4a1404; --sky2: #0a0201; --accent: #ff5a00; }
 
 * { box-sizing: border-box; }
+/* every text block exists twice, <x lang="en"> and <x lang="de">; lang.js picks one */
+html:not([data-lang=de]) body [lang=de], html[data-lang=de] body [lang=en] { display: none !important; }
 html, body { margin: 0; min-height: 100%; }
 body { background: radial-gradient(ellipse at 50% 35%, var(--sky1) 0%, var(--sky2) 70%, #05070a 100%) fixed;
   color: var(--text); font: 17px/1.55 var(--read); }
@@ -46,6 +48,10 @@ pre { background: var(--deep); border: 1px solid #2a2f3a; border-left: 3px solid
 pre code { background: none; border: 0; padding: 0; white-space: pre; color: inherit; font-size: inherit; }
 pre .c { color: #6f7f95; font-style: italic; } pre .s { color: #a5d6a7; } pre .k { color: #ffb86b; } pre .n { color: #8fd8ff; }
 pre .file { display: block; color: var(--dim); font-size: 11px; margin-bottom: 4px; font-style: normal; }
+pre .file .live, pre .file .excerpt { font-size: 9px; letter-spacing: 1px; border: 1px solid; border-radius: 3px; padding: 0 4px; margin-left: 6px; }
+pre .file .live { color: var(--lv1); } pre .file .excerpt { color: var(--dim); }
+pre[data-code] { max-height: 62vh; }
+.note.stale { border-color: #ff8a7a; } .note.stale b:first-child { color: #ff8a7a; }
 img { max-width: 100%; }
 button, .btn { font-size: 13px; color: #e7dfcf; background: #343d46; border: 1px solid #69746d; border-radius: 4px; padding: 6px 10px;
   cursor: pointer; text-decoration: none; display: inline-block; line-height: 1.3; }
@@ -154,6 +160,11 @@ body.scroll .qbar { display: none; }
 body.scroll .bar { background: #0b0d12f0; border-bottom: 1px solid #2a2f3a; }
 .endnote { text-align: center; color: var(--dim); font: 12px var(--mono); margin-top: 18px; }
 
+/* language switch: in the room bar, or top right on the map and the word book */
+.langsw { font-weight: bold; letter-spacing: 1px; }
+.langbar { position: fixed; top: 10px; right: 14px; z-index: 10; }
+.langbar .langsw { font-size: 12px; padding: 4px 9px; }
+
 /* help overlay, like the game's */
 #help { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: #080c13a0; }
 #help section { width: min(480px, 92vw); padding: 16px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
@@ -166,6 +177,8 @@ body.scroll .bar { background: #0b0d12f0; border-bottom: 1px solid #2a2f3a; }
   border-radius: 3px; font: 10px var(--mono); letter-spacing: 2px; padding: 1px 6px; }
 .demo[data-keys]:focus { outline: 1px solid var(--gold); }
 .demo.real::before { content: "TRY IT \00B7 REAL GAME CODE"; color: var(--gold); border-color: #6a5a30; }
+html[data-lang=de] .demo::before { content: "AUSPROBIEREN"; }
+html[data-lang=de] .demo.real::before { content: "AUSPROBIEREN \00B7 ECHTER SPIELCODE"; }
 .demo canvas { display: block; width: 100%; height: auto; max-height: 54vh; object-fit: contain; margin: 0 auto; border-radius: 4px; background: #070910; touch-action: none; }
 .demo .row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 8px 0 0; }
 .demo .out { font: 13px/1.5 var(--mono); color: var(--muted); margin-top: 8px; min-height: 1.5em; white-space: pre-wrap; }

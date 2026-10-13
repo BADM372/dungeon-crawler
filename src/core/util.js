@@ -9,6 +9,7 @@ export const edgeKey = (a, b, c, d) => {
   return k1 < k2 ? k1 + '|' + k2 : k2 + '|' + k1;
 };
 
+// kids-docs: random.html#mulberry (see kids-docs/README.md)
 export function mulberry32(a) {
   return function () {
     a |= 0; a = a + 0x6D2B79F5 | 0;

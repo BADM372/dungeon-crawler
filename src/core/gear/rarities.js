@@ -12,6 +12,7 @@ const tier = (id, name, rank, oklch, spec) => {
 // deeper down); affixes: how many;
 // tierBonus: affix tiers above what the item level allows; damage: base damage factor;
 // glow: what the floor shows (none, ring, halo, beam height, sparks, runes, light, shimmer)
+// kids-docs: loot.html#rarities, random.html#weighted (see kids-docs/README.md)
 export const RARITIES = Object.freeze([
   tier('junk', 'Junk', 0, { l: 0.62, c: 0.012, h: 250 },
     { weight: 24, minLevel: 1, affixes: 0, tierBonus: 0, damage: 0.8, glow: null }),
@@ -41,11 +42,13 @@ export const rarityOf = item => RARITY[item?.gen?.rarity] || RARITY.common;
 
 // how much each step up the tiers gains per item level, on top of its base weight: deeper
 // drops are better, but a Legendary stays a find (about 1 weapon in 40 at item level 20)
+// kids-docs: loot.html#rarities (see kids-docs/README.md)
 export const LEVEL_SHIFT = 0.025;
 
 // the odds of every rarity at item level `ilvl`. luck shifts weight upwards (guardians, chests);
 // floor: the least rank that may roll (lowered to the best this item level allows); ancient:
 // whether Ancient may roll at all
+// kids-docs: loot.html#odds (see kids-docs/README.md)
 export function rarityOdds(ilvl, { luck = 0, floor = 0, ancient = false } = {}) {
   floor = Math.min(floor, Math.max(...RARITIES.filter(r => ilvl >= r.minLevel && (!r.guardianOnly || ancient)).map(r => r.rank)));
   const w = RARITIES.map(r => r.rank < floor || ilvl < r.minLevel || (r.guardianOnly && !ancient) ? 0

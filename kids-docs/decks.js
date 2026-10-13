@@ -1,41 +1,61 @@
 // The rooms of the kids' guide, in the order we suggest walking through them. Like the game,
 // the guide goes down one depth per room: each room borrows the look of a game depth (theme).
 // index.html draws the map from this list; deck.js uses it for the "next room" portal.
+// `de` holds the German texts (the pages themselves carry both languages, see deck.js). Icons
+// are relative to this file (see iconUrl).
 export const DECKS = [
-  { file: 'start.html', title: 'Welcome to Town', short: 'Start here', theme: 'meadow', depth: 0, icon: '../assets/items/item_town_portal.png',
-    teaser: 'What Cube Crawler is, what it is made of, and how this guide works.' },
-  { file: 'loop.html', title: 'The Heartbeat', short: 'Game loop', theme: 'meadow', depth: 1, icon: '../assets/items/item_potion_health.png',
-    teaser: 'The game redraws itself 60 times a second. What happens in one tick?' },
-  { file: 'random.html', title: 'Magic Numbers', short: 'Seeds & dice', theme: 'peaks', depth: 3, icon: '../assets/items/item_crystal_diamond.png',
-    teaser: 'Random that is not really random: seeds, dice and bags of marbles.' },
-  { file: 'world.html', title: 'Building the World', short: 'World generation', theme: 'badlands', depth: 4, icon: '../assets/items/item_crystal_amethyst.png',
-    teaser: 'How a computer invents a whole world of cubes, and checks that you can finish it.' },
-  { file: 'paths.html', title: 'Finding the Way', short: 'Pathfinding', theme: 'roots', depth: 5, icon: '../assets/items/item_stick_forked.png',
-    teaser: 'How monsters and the generator find a way from here to there.' },
-  { file: 'physics.html', title: 'Run, Jump, Fall', short: 'Physics', theme: 'frozen', depth: 7, icon: '../assets/items/item_potion_stamina.png',
-    teaser: 'Gravity, jumping, sliding along walls, and floppy ragdolls.' },
-  { file: 'combat.html', title: 'Swords & Fighting', short: 'Combat', theme: 'swamp', depth: 9, icon: '../assets/items/weapon_sword_long.png',
-    teaser: 'How a swing works, how the game knows you hit, and why hits feel good.' },
-  { file: 'enemies.html', title: 'Monster Brains', short: 'Enemy AI', theme: 'nests', depth: 11, icon: '../assets/items/item_crystal_ruby.png',
-    teaser: 'Monsters that wander, notice you, chase you and give up.' },
-  { file: 'loot.html', title: 'Treasure & Weapons', short: 'Loot', theme: 'mines', depth: 13, icon: '../assets/items/treasure_chest.png',
-    teaser: 'Rarities, affixes and funny names: a machine that makes swords.' },
-  { file: 'drawing.html', title: 'Drawing the World', short: 'Rendering', theme: 'ruins', depth: 15, icon: '../assets/items/item_crystal_sapphire.png',
-    teaser: 'Triangles, cameras, lights, and cutting holes in roofs so you can see.' },
-  { file: 'sound.html', title: 'Sounds & Music', short: 'Audio', theme: 'volcanic', depth: 17, icon: '../assets/items/item_coin_gold.png',
-    teaser: 'Every sound is made from math. Music that changes with danger.' },
-  { file: 'art.html', title: 'Making Monsters', short: 'Art & models', theme: 'abyss', depth: 19, icon: '../assets/items/item_crystal_emerald.png',
-    teaser: 'Models built by code in Blender, from blobs of digital clay.' },
-  { file: 'agents.html', title: 'Building with AI Helpers', short: 'Prompting', theme: 'core', depth: 20, icon: '../assets/items/item_potion_mana.png',
-    teaser: 'How to ask a coding agent to change the game, and check its work.' },
+  { file: 'start.html', theme: 'meadow', depth: 0, icon: '../assets/items/item_town_portal.png',
+    title: 'Welcome to Town', teaser: 'What Cube Crawler is, what it is made of, and how this guide works.',
+    de: { title: 'Willkommen in der Stadt', teaser: 'Was Cube Crawler ist, woraus es besteht und wie dieser Führer funktioniert.' } },
+  { file: 'loop.html', theme: 'meadow', depth: 1, icon: '../assets/items/item_potion_health.png',
+    title: 'The Heartbeat', teaser: 'The game redraws itself 60 times a second. What happens in one tick?',
+    de: { title: 'Der Herzschlag', teaser: 'Das Spiel malt sich 60-mal pro Sekunde neu. Was passiert in einem Takt?' } },
+  { file: 'random.html', theme: 'peaks', depth: 3, icon: '../assets/items/item_crystal_diamond.png',
+    title: 'Magic Numbers', teaser: 'Random that is not really random: seeds, dice and bags of marbles.',
+    de: { title: 'Zauberzahlen', teaser: 'Zufall, der nicht wirklich zufällig ist: Seeds, Würfel und Murmelbeutel.' } },
+  { file: 'world.html', theme: 'badlands', depth: 4, icon: '../assets/items/item_crystal_amethyst.png',
+    title: 'Building the World', teaser: 'How a computer invents a whole world of cubes, and checks that you can finish it.',
+    de: { title: 'Die Welt erschaffen', teaser: 'Wie ein Computer eine ganze Welt aus Würfeln erfindet und prüft, dass man sie schaffen kann.' } },
+  { file: 'paths.html', theme: 'roots', depth: 5, icon: '../assets/items/item_stick_forked.png',
+    title: 'Finding the Way', teaser: 'How monsters and the generator find a way from here to there.',
+    de: { title: 'Den Weg finden', teaser: 'Wie Monster und der Weltbauer einen Weg von hier nach dort finden.' } },
+  { file: 'physics.html', theme: 'frozen', depth: 7, icon: '../assets/items/item_potion_stamina.png',
+    title: 'Run, Jump, Fall', teaser: 'Gravity, jumping, sliding along walls, and floppy ragdolls.',
+    de: { title: 'Rennen, Springen, Fallen', teaser: 'Schwerkraft, Sprünge, an Wänden entlangrutschen und schlabbrige Ragdolls.' } },
+  { file: 'combat.html', theme: 'swamp', depth: 9, icon: '../assets/items/weapon_sword_long.png',
+    title: 'Swords & Fighting', teaser: 'How a swing works, how the game knows you hit, and why hits feel good.',
+    de: { title: 'Schwerter & Kämpfe', teaser: 'Wie ein Schwerthieb funktioniert, woher das Spiel weiß, dass du triffst, und warum Treffer sich gut anfühlen.' } },
+  { file: 'enemies.html', theme: 'nests', depth: 11, icon: '../assets/items/item_crystal_ruby.png',
+    title: 'Monster Brains', teaser: 'Monsters that wander, notice you, chase you and give up.',
+    de: { title: 'Monster-Gehirne', teaser: 'Monster, die herumlaufen, dich bemerken, dich jagen und aufgeben.' } },
+  { file: 'loot.html', theme: 'mines', depth: 13, icon: '../assets/items/treasure_chest.png',
+    title: 'Treasure & Weapons', teaser: 'Rarities, affixes and funny names: a machine that makes swords.',
+    de: { title: 'Schätze & Waffen', teaser: 'Seltenheiten, Affixe und lustige Namen: eine Maschine, die Schwerter baut.' } },
+  { file: 'drawing.html', theme: 'ruins', depth: 15, icon: '../assets/items/item_crystal_sapphire.png',
+    title: 'Drawing the World', teaser: 'Triangles, cameras, lights, and cutting holes in roofs so you can see.',
+    de: { title: 'Die Welt malen', teaser: 'Dreiecke, Kameras, Licht und Löcher in Dächern, damit du etwas siehst.' } },
+  { file: 'sound.html', theme: 'volcanic', depth: 17, icon: '../assets/items/item_coin_gold.png',
+    title: 'Sounds & Music', teaser: 'Every sound is made from math. Music that changes with danger.',
+    de: { title: 'Geräusche & Musik', teaser: 'Jedes Geräusch ist aus Mathe gemacht. Musik, die sich mit der Gefahr ändert.' } },
+  { file: 'art.html', theme: 'abyss', depth: 19, icon: '../assets/items/item_crystal_emerald.png',
+    title: 'Making Monsters', teaser: 'Models built by code in Blender, from blobs of digital clay.',
+    de: { title: 'Monster bauen', teaser: 'Modelle, die Code in Blender baut, aus Klumpen digitaler Knete.' } },
+  { file: 'agents.html', theme: 'core', depth: 20, icon: '../assets/items/item_potion_mana.png',
+    title: 'Building with AI Helpers', teaser: 'How to ask a coding agent to change the game, and check its work.',
+    de: { title: 'Bauen mit KI-Helfern', teaser: 'Wie du einen Coding-Agenten bittest, das Spiel zu ändern, und seine Arbeit prüfst.' } },
 ];
+
+// a room's texts in a language ('en' or 'de')
+export const local = (d, lang) => lang === 'de' && d.de ? { ...d, ...d.de } : d;
+// a room's icon as a URL that works from any page
+export const iconUrl = d => new URL(d.icon, import.meta.url).href;
 
 // what the three detail levels are called (slides carry data-lv="1|2|3")
 export const LEVELS = [
   null,
-  { name: 'Big idea', short: 'Lv 1', color: '#61dc6b' },
-  { name: 'How it works', short: 'Lv 2', color: '#51a9ff' },
-  { name: 'Real code', short: 'Lv 3', color: '#fd9f07' },
+  { name: 'Big idea', de: 'Große Idee', short: 'Lv 1', color: '#61dc6b' },
+  { name: 'How it works', de: 'So funktioniert es', short: 'Lv 2', color: '#51a9ff' },
+  { name: 'Real code', de: 'Echter Code', short: 'Lv 3', color: '#fd9f07' },
 ];
 
 // the game depth each theme name stands for (shown in the top bar)
@@ -43,4 +63,9 @@ export const THEME_NAMES = {
   meadow: 'Meadow islands', peaks: 'Snowy peaks', badlands: 'Badlands', roots: 'Root caves', frozen: 'Frozen caves',
   swamp: 'Fungal swamp', nests: 'Spider nests', mines: 'Crystal mines', ruins: 'Buried ruins', volcanic: 'Volcanic depths',
   abyss: 'Obsidian abyss', core: 'The core',
+};
+export const THEME_NAMES_DE = {
+  meadow: 'Wiesen-Inseln', peaks: 'Schneegipfel', badlands: 'Ödland', roots: 'Wurzelhöhlen', frozen: 'Eishöhlen',
+  swamp: 'Pilzsumpf', nests: 'Spinnennester', mines: 'Kristallminen', ruins: 'Verschüttete Ruinen', volcanic: 'Vulkantiefen',
+  abyss: 'Obsidian-Abgrund', core: 'Der Kern',
 };

@@ -2,227 +2,270 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Monster Brains · Kids' Guide to Cube Crawler</title>
+<title data-de="Monster-Gehirne · Kinderführer zu Cube Crawler">Monster Brains · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="nests">
 <main class="deck">
 
 <section class="slide" id="numbers" data-lv="1">
-  <h2>A monster is a list of numbers</h2>
+  <h2 lang="en">A monster is a list of numbers</h2>
+  <h2 lang="de">Ein Monster ist eine Liste von Zahlen</h2>
   <div class="cols">
     <div>
-      <p class="lead">To the game, a spider is not scary at all. It is a short list of numbers, called a <a class="w" href="words.html#profile">profile</a>:</p>
+      <p class="lead" lang="en">To the game, a spider is not scary at all. It is a short list of numbers, called a <a class="w" href="words.html#profile">profile</a>:</p>
+      <p class="lead" lang="de">Für das Spiel ist eine Spinne überhaupt nicht gruselig. Sie ist eine kurze Liste von Zahlen, ein sogenanntes <a class="w" href="words.html#profile">Profil</a>:</p>
       <table>
-        <tr><td>health</td><td><b>32</b></td><td class="muted">two hits with the Old Sword</td></tr>
-        <tr><td>bite damage</td><td><b>15</b></td><td class="muted">you have 100 health at the start</td></tr>
-        <tr><td>notices you within</td><td><b>3</b> cells</td><td class="muted">"aggro" range</td></tr>
-        <tr><td>gives up beyond</td><td><b>6</b> cells</td><td></td></tr>
-        <tr><td>chase speed</td><td><b>2.6</b> cells/s</td><td class="muted">you run at 2.8!</td></tr>
-        <tr><td>wander speed</td><td><b>0.6</b> cells/s</td><td></td></tr>
-        <tr><td>bite reach</td><td><b>0.85</b> cells</td><td></td></tr>
-        <tr><td>wind-up before the bite</td><td><b>0.42</b> s</td><td class="muted">your chance to step away</td></tr>
-        <tr><td>rest after a bite</td><td><b>1.2</b> s</td><td class="muted">"cooldown"</td></tr>
+        <tr><td><span lang="en">health</span><span lang="de">Gesundheit</span></td><td><b data-val="src/core/enemies.js#SPIDER.hp">32</b></td><td class="muted"><span lang="en">two hits with the Old Sword</span><span lang="de">zwei Treffer mit dem Alten Schwert</span></td></tr>
+        <tr><td><span lang="en">bite damage</span><span lang="de">Bissschaden</span></td><td><b data-val="src/core/enemies.js#SPIDER.damage">15</b></td><td class="muted"><span lang="en">you have 100 health at the start</span><span lang="de">du hast am Anfang 100 Gesundheit</span></td></tr>
+        <tr><td><span lang="en">notices you within</span><span lang="de">bemerkt dich innerhalb</span></td><td><b data-val="src/core/enemies.js#SPIDER.aggro">3</b> <span lang="en">cells</span><span lang="de">Zellen</span></td><td class="muted"><span lang="en">"aggro" range</span><span lang="de">"Aggro"-Reichweite</span></td></tr>
+        <tr><td><span lang="en">gives up beyond</span><span lang="de">gibt auf ab</span></td><td><b data-val="src/core/enemies.js#SPIDER.giveUp">6</b> <span lang="en">cells</span><span lang="de">Zellen</span></td><td></td></tr>
+        <tr><td><span lang="en">chase speed</span><span lang="de">Jagdtempo</span></td><td><b data-val="src/core/enemies.js#SPIDER.chase">2.6</b> <span lang="en">cells/s</span><span lang="de">Zellen/s</span></td><td class="muted"><span lang="en">you run at 2.8!</span><span lang="de">du rennst mit 2,8!</span></td></tr>
+        <tr><td><span lang="en">wander speed</span><span lang="de">Wandertempo</span></td><td><b data-val="src/core/enemies.js#SPIDER.wander">0.6</b> <span lang="en">cells/s</span><span lang="de">Zellen/s</span></td><td></td></tr>
+        <tr><td><span lang="en">bite reach</span><span lang="de">Bissreichweite</span></td><td><b data-val="src/core/enemies.js#SPIDER.reach">0.85</b> <span lang="en">cells</span><span lang="de">Zellen</span></td><td></td></tr>
+        <tr><td><span lang="en">wind-up before the bite</span><span lang="de">Ausholen vor dem Biss</span></td><td><b data-val="src/core/enemies.js#SPIDER.hitAt">0.42</b> <span lang="en">s</span><span lang="de">s</span></td><td class="muted"><span lang="en">your chance to step away</span><span lang="de">deine Chance auszuweichen</span></td></tr>
+        <tr><td><span lang="en">rest after a bite</span><span lang="de">Pause nach einem Biss</span></td><td><b data-val="src/core/enemies.js#SPIDER.cooldown">1.2</b> <span lang="en">s</span><span lang="de">s</span></td><td class="muted"><span lang="en">"cooldown"</span><span lang="de">"Abklingzeit"</span></td></tr>
       </table>
-      <p class="small">All monsters share the same brain. Only their numbers (and models) are different.</p>
+      <p class="small" lang="en">All monsters share the same brain. Only their numbers (and models) are different.</p>
+      <p class="small" lang="de">Alle Monster teilen sich dasselbe Gehirn. Nur ihre Zahlen (und Modelle) sind verschieden.</p>
     </div>
-    <figure><img class="shot" src="img/mines.jpg" alt="A dark crystal mine full of spiders and glowing triangles"><figcaption>Depth 13: spiders and Triangles in the crystal mines.</figcaption></figure>
+    <figure><img class="shot" src="img/mines.jpg" alt="A dark crystal mine full of spiders and glowing triangles" data-de-alt="Eine dunkle Kristallmine voller Spinnen und leuchtender Dreiecke"><figcaption lang="en">Depth 13: spiders and Triangles in the crystal mines.</figcaption> <figcaption lang="de">Tiefe 13: Spinnen und Triangles in den Kristallminen.</figcaption></figure>
   </div>
 </section>
 
 <section class="slide" id="brain" data-lv="1">
-  <h2>Try it: a spider's brain</h2>
-  <p>Drag the hero (the white dot) around. Get close to the spider, but stay behind the wall: it can't see you! Then step out. When it's winding up (red), step away quickly.
+  <h2 lang="en">Try it: a spider's brain</h2>
+  <h2 lang="de">Probier es: das Gehirn einer Spinne</h2>
+  <p lang="en">Drag the hero (the white dot) around. Get close to the spider, but stay behind the wall: it can't see you! Then step out. When it's winding up (red), step away quickly.
     The dashed circle is how far it can see. Escape further than 6 cells, and it gives up.</p>
+  <p lang="de">Zieh den Helden (den weißen Punkt) herum. Geh nah an die Spinne heran, aber bleib hinter der Wand: Sie kann dich nicht sehen! Dann tritt hervor. Wenn sie ausholt (rot), geh schnell weg.
+    Der gestrichelte Kreis zeigt, wie weit sie sehen kann. Flieh weiter als 6 Zellen, und sie gibt auf. (Die Zustände heißen im Code idle, walk, chase, attack und home.)</p>
   <div class="demo real" data-demo="brain"></div>
 </section>
 
-<section class="slide" id="state-machine" data-lv="2">
-  <h2>One mood at a time: a state machine</h2>
+<section class="slide" id="state-machine" data-lv="2" data-src="src/game/enemyai.js#decide,act">
+  <h2 lang="en">One mood at a time: a state machine</h2>
+  <h2 lang="de">Immer nur eine Laune: ein Zustandsautomat</h2>
   <div class="cols">
     <div>
-      <p>The spider's brain is always in exactly one <b>state</b>, like a mood. Each state has its own job, and its own rules for when to switch to another one. This is called a <a class="w" href="words.html#state-machine">state machine</a>.</p>
+      <p lang="en">The spider's brain is always in exactly one <b>state</b>, like a mood. Each state has its own job, and its own rules for when to switch to another one. This is called a <a class="w" href="words.html#state-machine">state machine</a>.</p>
+      <p lang="de">Das Gehirn der Spinne ist immer in genau einem <b>Zustand</b>, wie in einer Laune. Jeder Zustand hat seine eigene Aufgabe und eigene Regeln, wann er in einen anderen wechselt. Das nennt man <a class="w" href="words.html#state-machine">Zustandsautomat</a>.</p>
       <table>
-        <tr><th>STATE</th><th>DOES</th><th>SWITCHES WHEN</th></tr>
-        <tr><td>idle</td><td>rests, looks at you if close</td><td>timer runs out &rarr; walk</td></tr>
-        <tr><td>walk</td><td>wanders near home</td><td>arrived &rarr; idle</td></tr>
-        <tr><td>chase</td><td>follows its path to you</td><td>close and ready &rarr; attack<br>lost you &rarr; home</td></tr>
-        <tr><td>attack</td><td>winds up, bites, finishes</td><td>done &rarr; chase</td></tr>
-        <tr><td>home</td><td>walks back home</td><td>arrived &rarr; idle</td></tr>
+        <tr><th lang="en">STATE</th> <th lang="de">ZUSTAND</th><th lang="en">DOES</th> <th lang="de">MACHT</th><th lang="en">SWITCHES WHEN</th> <th lang="de">WECHSELT, WENN</th></tr>
+        <tr><td lang="en">idle</td> <td lang="de">idle (ruhen)</td><td lang="en">rests, looks at you if close</td> <td lang="de">ruht, schaut dich an, wenn du nah bist</td><td lang="en">timer runs out → walk</td> <td lang="de">Zeit ist um → walk</td></tr>
+        <tr><td lang="en">walk</td> <td lang="de">walk (wandern)</td><td lang="en">wanders near home</td> <td lang="de">läuft nahe dem Zuhause herum</td><td lang="en">arrived → idle</td> <td lang="de">angekommen → idle</td></tr>
+        <tr><td lang="en">chase</td> <td lang="de">chase (jagen)</td><td lang="en">follows its path to you</td> <td lang="de">folgt seinem Weg zu dir</td><td lang="en">close and ready → attack<br>lost you → home</td> <td lang="de">nah und bereit → attack<br>dich verloren → home</td></tr>
+        <tr><td lang="en">attack</td> <td lang="de">attack (angreifen)</td><td lang="en">winds up, bites, finishes</td> <td lang="de">holt aus, beißt, macht fertig</td><td lang="en">done → chase</td> <td lang="de">fertig → chase</td></tr>
+        <tr><td lang="en">home</td> <td lang="de">home (heimgehen)</td><td lang="en">walks back home</td> <td lang="de">läuft nach Hause</td><td lang="en">arrived → idle</td> <td lang="de">angekommen → idle</td></tr>
       </table>
-      <p class="small">From idle or walk, seeing you switches to chase. A hit that staggers it switches to chase too.</p>
+      <p class="small" lang="en">From idle or walk, seeing you switches to chase. A hit that staggers it switches to chase too.</p>
+      <p class="small" lang="de">Aus idle oder walk wechselt sie zu chase, wenn sie dich sieht. Ein Treffer, der sie taumeln lässt, wechselt auch zu chase.</p>
     </div>
     <div class="card">
-      <h3>Why is this a good idea?</h3>
-      <p>Each state is small and easy to understand. To add a new behaviour (say, "flee when hurt"), you add one state and a few switches. You don't have to rethink everything.</p>
-      <p>Guardians use one more state, <b>defend</b>: they stay near their post and only charge when you come close to their gate.</p>
-      <p>Most game characters, from Pac-Man's ghosts to big game bosses, use a state machine somewhere inside.</p>
+      <h3 lang="en">Why is this a good idea?</h3>
+      <h3 lang="de">Warum ist das eine gute Idee?</h3>
+      <p lang="en">Each state is small and easy to understand. To add a new behaviour (say, "flee when hurt"), you add one state and a few switches. You don't have to rethink everything.</p>
+      <p lang="de">Jeder Zustand ist klein und leicht zu verstehen. Für ein neues Verhalten (zum Beispiel "fliehen, wenn verletzt") fügst du einen Zustand und ein paar Wechsel hinzu. Du musst nicht alles neu durchdenken.</p>
+      <p lang="en">Guardians use one more state, <b>defend</b>: they stay near their post and only charge when you come close to their gate.</p>
+      <p lang="de">Wächter benutzen noch einen Zustand, <b>defend</b> (verteidigen): Sie bleiben nahe ihrem Posten und stürmen nur los, wenn du ihrem Tor zu nahe kommst.</p>
+      <p lang="en">Most game characters, from Pac-Man's ghosts to big game bosses, use a state machine somewhere inside.</p>
+      <p lang="de">Die meisten Spielfiguren, von den Geistern in Pac-Man bis zu großen Spiel-Bossen, haben irgendwo innen einen Zustandsautomaten.</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="fair" data-lv="2">
-  <h2>Thinking slowly on purpose</h2>
+<section class="slide" id="fair" data-lv="2" data-src="src/game/enemyai.js#stepEnemies src/game/enemies.js#ENTRY_GRACE">
+  <h2 lang="en">Thinking slowly on purpose</h2>
+  <h2 lang="de">Absichtlich langsam denken</h2>
   <div class="cols">
     <div>
-      <p><b>Thinking five times a second.</b> Monsters <i>move</i> every frame, but they only <i>decide</i> every 0.2 seconds. Searching for paths is work, and with 20 spiders in a room, it adds up. It also looks more natural: real animals don't react instantly either.</p>
-      <p><b>Wind-ups you can see.</b> Every attack starts with a wind-up animation. This is called a <a class="w" href="words.html#telegraph">telegraph</a>: the monster tells you what it's about to do. Once it starts, it is committed and can't change its mind. That's your chance to dodge!</p>
+      <p lang="en"><b>Thinking five times a second.</b> Monsters <i>move</i> every frame, but they only <i>decide</i> every 0.2 seconds. Searching for paths is work, and with 20 spiders in a room, it adds up. It also looks more natural: real animals don't react instantly either.</p>
+      <p lang="de"><b>Fünfmal pro Sekunde denken.</b> Monster <i>bewegen</i> sich in jedem Bild, aber sie <i>entscheiden</i> nur alle 0,2 Sekunden. Wege suchen ist Arbeit, und mit 20 Spinnen in einem Raum summiert sich das. Es sieht auch natürlicher aus: Echte Tiere reagieren auch nicht sofort.</p>
+      <p lang="en"><b>Wind-ups you can see.</b> Every attack starts with a wind-up animation. This is called a <a class="w" href="words.html#telegraph">telegraph</a>: the monster tells you what it's about to do. Once it starts, it is committed and can't change its mind. That's your chance to dodge!</p>
+      <p lang="de"><b>Ausholen, das man sieht.</b> Jeder Angriff beginnt mit einer Ausholbewegung. Das nennt man eine <a class="w" href="words.html#telegraph">Ankündigung</a> (englisch: telegraph): Das Monster verrät dir, was es gleich tun wird. Sobald es anfängt, ist es festgelegt und kann es sich nicht anders überlegen. Das ist deine Chance auszuweichen!</p>
     </div>
     <div>
-      <p><b>Aiming stops early.</b> A Fire-face turns to aim at you, but stops turning before it spits. So stepping sideways at the right moment makes it miss.</p>
-      <p><b>A moment of peace.</b> When you enter a cube, monsters may chase you, but they don't attack for 1.2 seconds (or until you hit one). No getting bitten the moment you arrive.</p>
-      <p><b>No contact damage.</b> Just bumping into a monster never hurts. Only real attacks do.</p>
-      <div class="note think"><b>Think</b> All of these make the game <i>easier</i>, but also <i>fairer</i>. When you lose, it should feel like your mistake, not the game cheating.</div>
+      <p lang="en"><b>Aiming stops early.</b> A Fire-face turns to aim at you, but stops turning before it spits. So stepping sideways at the right moment makes it miss.</p>
+      <p lang="de"><b>Das Zielen hört früh auf.</b> Ein Fire-face dreht sich, um auf dich zu zielen, hört aber auf zu drehen, bevor es spuckt. Ein Schritt zur Seite im richtigen Moment lässt es also danebenschießen.</p>
+      <p lang="en"><b>A moment of peace.</b> When you enter a cube, monsters may chase you, but they don't attack for 1.2 seconds (or until you hit one). No getting bitten the moment you arrive.</p>
+      <p lang="de"><b>Ein Moment Ruhe.</b> Wenn du einen Würfel betrittst, dürfen Monster dich jagen, greifen aber 1,2 Sekunden lang nicht an (oder bis du eins triffst). Kein Biss in der Sekunde, in der du ankommst.</p>
+      <p lang="en"><b>No contact damage.</b> Just bumping into a monster never hurts. Only real attacks do.</p>
+      <p lang="de"><b>Kein Berührungsschaden.</b> Einfach gegen ein Monster zu laufen tut nie weh. Nur echte Angriffe.</p>
+      <div class="note think" lang="en"><b>Think</b> All of these make the game <i>easier</i>, but also <i>fairer</i>. When you lose, it should feel like your mistake, not the game cheating.</div>
+      <div class="note think" lang="de"><b>Denk nach</b> All das macht das Spiel <i>leichter</i>, aber auch <i>fairer</i>. Wenn du verlierst, soll es sich nach deinem Fehler anfühlen, nicht nach einem schummelnden Spiel.</div>
     </div>
   </div>
 </section>
 
 <section class="slide" id="bestiary" data-lv="1">
-  <h2>Meet the monsters</h2>
-  <p>Seven <b>species</b> live in the depths. They are all made in Blender by code. <a class="portal" href="art.html">How they're made</a></p>
+  <h2 lang="en">Meet the monsters</h2>
+  <h2 lang="de">Lerne die Monster kennen</h2>
+  <p lang="en">Seven <b>species</b> live in the depths. They are all made in Blender by code. <a class="portal" href="art.html">How they're made</a></p>
+  <p lang="de">Sieben <b>Arten</b> leben in den Tiefen. Alle werden in Blender von Code gebaut. <a class="portal" href="art.html">Wie sie gemacht werden</a></p>
   <div class="cols3 small">
-    <figure><img class="shot" src="../blender/previews/snake-preview.png" alt="A green snake in six poses"><figcaption>Snake: slithers, coils and bites</figcaption></figure>
-    <figure><img class="shot" src="../blender/previews/octonaut-preview.png" alt="A pale blue creature with six legs and two arms"><figcaption>Octonaut: slaps, or spins and knocks you over</figcaption></figure>
-    <figure><img class="shot" src="../blender/previews/fireface-preview.png" alt="A floating angry flame"><figcaption>Fire-face: spits fireballs that set you on fire</figcaption></figure>
-    <figure><img class="shot" src="../blender/previews/triangle-preview.png" alt="A floating purple triangle"><figcaption>Triangle: shoots its inner triangles at you</figcaption></figure>
-    <figure><img class="shot" src="../blender/previews/firecat-preview.png" alt="A dark red cat with flames"><figcaption>Fire-cat: prowls, then pounces</figcaption></figure>
-    <div class="card"><h3>And...</h3><p><b>Spiders</b>, which come in big packs, and the <b>Stunder</b>, a huge, slow beast that rams you with its head and always knocks you over.</p></div>
+    <figure><img class="shot" src="../blender/previews/snake-preview.png" alt="A green snake in six poses" data-de-alt="Eine grüne Schlange in sechs Posen"><figcaption lang="en">Snake: slithers, coils and bites</figcaption> <figcaption lang="de">Snake (Schlange): schlängelt, rollt sich ein und beißt</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/octonaut-preview.png" alt="A pale blue creature with six legs and two arms" data-de-alt="Ein blassblaues Wesen mit sechs Beinen und zwei Armen"><figcaption lang="en">Octonaut: slaps, or spins and knocks you over</figcaption> <figcaption lang="de">Octonaut: klatscht, oder wirbelt herum und wirft dich um</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/fireface-preview.png" alt="A floating angry flame" data-de-alt="Eine schwebende, wütende Flamme"><figcaption lang="en">Fire-face: spits fireballs that set you on fire</figcaption> <figcaption lang="de">Fire-face: spuckt Feuerbälle, die dich anzünden</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/triangle-preview.png" alt="A floating purple triangle" data-de-alt="Ein schwebendes lila Dreieck"><figcaption lang="en">Triangle: shoots its inner triangles at you</figcaption> <figcaption lang="de">Triangle: schießt seine inneren Dreiecke auf dich</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/firecat-preview.png" alt="A dark red cat with flames" data-de-alt="Eine dunkelrote Katze mit Flammen"><figcaption lang="en">Fire-cat: prowls, then pounces</figcaption> <figcaption lang="de">Fire-cat: schleicht, dann springt sie</figcaption></figure>
+    <div class="card"><h3 lang="en">And...</h3> <h3 lang="de">Und...</h3><p lang="en"><b>Spiders</b>, which come in big packs, and the <b>Stunder</b>, a huge, slow beast that rams you with its head and always knocks you over.</p> <p lang="de"><b>Spinnen</b>, die in großen Rudeln kommen, und den <b>Stunder</b>, ein riesiges, langsames Biest, das dich mit dem Kopf rammt und immer umwirft.</p></div>
   </div>
 </section>
 
-<section class="slide" id="kinds" data-lv="2">
-  <h2>Species, kinds and levels</h2>
+<section class="slide" id="kinds" data-lv="2" data-src="src/core/enemies.js#BLOOD_VIPER,enemyKind">
+  <h2 lang="en">Species, kinds and levels</h2>
+  <h2 lang="de">Arten, Sorten und Stufen</h2>
   <div class="cols">
     <div>
-      <p>A <b>kind</b> is a species with new colours and stronger numbers. No new model is needed! A Blood viper is a snake that is red, with:</p>
+      <p lang="en">A <b>kind</b> is a species with new colours and stronger numbers. No new model is needed! A Blood viper is a snake that is red, with:</p>
+      <p lang="de">Eine <b>Sorte</b> (kind) ist eine Art mit neuen Farben und stärkeren Zahlen. Kein neues Modell nötig! Eine Blood viper (Blutviper) ist eine Schlange, die rot ist, mit:</p>
       <table>
-        <tr><td>health</td><td>&times;1.4</td></tr><tr><td>damage</td><td>&times;1.4</td></tr>
-        <tr><td>speed</td><td>&times;1.2</td></tr><tr><td>size</td><td>&times;1.1</td></tr>
+        <tr><td lang="en">health</td> <td lang="de">Gesundheit</td><td lang="en">×1.4</td> <td lang="de">×1,4</td></tr><tr><td lang="en">damage</td> <td lang="de">Schaden</td><td lang="en">×1.4</td> <td lang="de">×1,4</td></tr>
+        <tr><td lang="en">speed</td> <td lang="de">Tempo</td><td lang="en">×1.2</td> <td lang="de">×1,2</td></tr><tr><td lang="en">size</td> <td lang="de">Größe</td><td lang="en">×1.1</td> <td lang="de">×1,1</td></tr>
       </table>
-      <p>The snakes get stronger the deeper you go: Grass snake (green), Sand viper (ochre), Blood viper (red), Shadow mamba (almost black). Ice levels have Frost adders, the swamp has Venom adders.</p>
-      <p class="small">Preview them all: <a href="../tools/kinds.html">tools/kinds.html</a> (with the game's server running).</p>
+      <p lang="en">The snakes get stronger the deeper you go: Grass snake (green), Sand viper (ochre), Blood viper (red), Shadow mamba (almost black). Ice levels have Frost adders, the swamp has Venom adders.</p>
+      <p lang="de">Die Schlangen werden stärker, je tiefer du kommst: Grass snake (grün), Sand viper (ocker), Blood viper (rot), Shadow mamba (fast schwarz). In den Eisgebieten gibt es Frost adders, im Sumpf Venom adders.</p>
+      <p class="small" lang="en">Preview them all: <a href="../tools/kinds.html">tools/kinds.html</a> (with the game's server running).</p>
+      <p class="small" lang="de">Schau sie dir alle an: <a href="../tools/kinds.html">tools/kinds.html</a> (mit laufendem Spielserver).</p>
     </div>
     <div class="card">
-      <h3>Levels</h3>
-      <p>A monster's level is about the depth it lives at: level 1 near the top, level 20 at the core. Every level adds:</p>
+      <h3 lang="en">Levels</h3>
+      <h3 lang="de">Stufen</h3>
+      <p lang="en">A monster's level is about the depth it lives at: level 1 near the top, level 20 at the core. Every level adds:</p>
+      <p lang="de">Die Stufe eines Monsters ist ungefähr die Tiefe, in der es lebt: Stufe 1 oben, Stufe 20 am Kern. Jede Stufe gibt:</p>
       <ul>
-        <li><b>+17%</b> health</li>
-        <li><b>+10%</b> damage</li>
-        <li><b>+25%</b> experience and coins</li>
+        <li lang="en"><b>+17%</b> health</li>
+        <li lang="de"><b>+17%</b> Gesundheit</li>
+        <li lang="en"><b>+10%</b> damage</li>
+        <li lang="de"><b>+10%</b> Schaden</li>
+        <li lang="en"><b>+25%</b> experience and coins</li>
+        <li lang="de"><b>+25%</b> Erfahrung und Münzen</li>
       </ul>
-      <p>...of its level 1 numbers. So a level 11 spider has 32 &times; (1 + 0.17 &times; 10) = <b>86</b> health.</p>
-      <p>Monster levels never follow <i>your</i> level. Going back up to easy depths is safe, but gives little experience.</p>
+      <p lang="en">...of its level 1 numbers. So a level 11 spider has 32 × (1 + 0.17 × 10) = <b>86</b> health.</p>
+      <p lang="de">...gemessen an seinen Zahlen auf Stufe 1. Eine Spinne auf Stufe 11 hat also 32 × (1 + 0,17 × 10) = <b>86</b> Gesundheit.</p>
+      <p lang="en">Monster levels never follow <i>your</i> level. Going back up to easy depths is safe, but gives little experience.</p>
+      <p lang="de">Monsterstufen richten sich nie nach <i>deiner</i> Stufe. Zurück in leichte Tiefen zu gehen ist sicher, bringt aber wenig Erfahrung.</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="rosters" data-lv="2">
-  <h2>Who lives where</h2>
+<section class="slide" id="rosters" data-lv="2" data-src="src/core/spawns.js#DEPTH_SPAWNS">
+  <h2 lang="en">Who lives where</h2>
+  <h2 lang="de">Wer wo wohnt</h2>
   <div class="cols">
     <div>
-      <p>Each depth has a <b>roster</b>: a list of which monsters can live there, how likely, and how many. For example, at depth 3 (the snowy peaks):</p>
+      <p lang="en">Each depth has a <b>roster</b>: a list of which monsters can live there, how likely, and how many. For example, at depth 3 (the snowy peaks):</p>
+      <p lang="de">Jede Tiefe hat eine <b>Besetzungsliste</b>: welche Monster dort leben können, wie wahrscheinlich und wie viele. Zum Beispiel in Tiefe 3 (den Schneegipfeln):</p>
       <ul>
-        <li><b>spiders</b>, always, 8 to 14, in packs of up to 3, mostly Frost spiders</li>
-        <li><b>Stunders</b>, 50% of the time, 1 or 2, Frost stunders</li>
-        <li><b>Triangles</b>, 12% of the time, just one: a mini-boss!</li>
+        <li lang="en"><b>spiders</b>, always, 8 to 14, in packs of up to 3, mostly Frost spiders</li>
+        <li lang="de"><b>Spinnen</b>, immer, 8 bis 14, in Rudeln bis 3, meistens Frost spiders</li>
+        <li lang="en"><b>Stunders</b>, 50% of the time, 1 or 2, Frost stunders</li>
+        <li lang="de"><b>Stunder</b>, in 50% der Fälle, 1 oder 2, Frost stunders</li>
+        <li lang="en"><b>Triangles</b>, 12% of the time, just one: a mini-boss!</li>
+        <li lang="de"><b>Triangles</b>, in 12% der Fälle, nur eins: ein Mini-Boss!</li>
       </ul>
-      <p>Every cube rolls its own dice: which species are there, how many, and which one <b>leads</b> (has the most). So two cubes at the same depth can feel very different: a spider den with a lone snake, or a snake pit with a few spiders.</p>
+      <p lang="en">Every cube rolls its own dice: which species are there, how many, and which one <b>leads</b> (has the most). So two cubes at the same depth can feel very different: a spider den with a lone snake, or a snake pit with a few spiders.</p>
+      <p lang="de">Jeder Würfel würfelt selbst: welche Arten da sind, wie viele und welche <b>anführt</b> (die meisten hat). So können sich zwei Würfel in derselben Tiefe ganz verschieden anfühlen: eine Spinnenhöhle mit einer einsamen Schlange, oder eine Schlangengrube mit ein paar Spinnen.</p>
     </div>
     <div class="card">
-      <h3>Design rules</h3>
+      <h3 lang="en">Design rules</h3>
+      <h3 lang="de">Regeln beim Planen</h3>
       <ul>
-        <li>The surface starts easy: depth 1 has only snakes and a rare Stunder.</li>
-        <li>Each theme has its signature monsters: Octonauts in the frozen caves, spiders in the nests, fire monsters in the volcanic depths.</li>
-        <li>Rare guests show up one theme early, as a preview.</li>
-        <li>Shooting monsters stay few (at most 4 per cube): many fireballs at once are hard to dodge.</li>
-        <li>Monsters never spawn near entrances.</li>
+        <li lang="en">The surface starts easy: depth 1 has only snakes and a rare Stunder.</li>
+        <li lang="de">Oben fängt es leicht an: Tiefe 1 hat nur Schlangen und einen seltenen Stunder.</li>
+        <li lang="en">Each theme has its signature monsters: Octonauts in the frozen caves, spiders in the nests, fire monsters in the volcanic depths.</li>
+        <li lang="de">Jedes Thema hat seine typischen Monster: Octonauts in den Eishöhlen, Spinnen in den Nestern, Feuermonster in den Vulkantiefen.</li>
+        <li lang="en">Rare guests show up one theme early, as a preview.</li>
+        <li lang="de">Seltene Gäste tauchen ein Thema früher auf, als Vorschau.</li>
+        <li lang="en">Shooting monsters stay few (at most 4 per cube): many fireballs at once are hard to dodge.</li>
+        <li lang="de">Schießende Monster bleiben wenige (höchstens 4 pro Würfel): Viele Feuerbälle auf einmal kann man schlecht ausweichen.</li>
+        <li lang="en">Monsters never spawn near entrances.</li>
+        <li lang="de">Monster erscheinen nie nahe an Eingängen.</li>
       </ul>
     </div>
   </div>
 </section>
 
-<section class="slide" id="guardians" data-lv="2">
-  <h2>Guardians and balance</h2>
+<section class="slide" id="guardians" data-lv="2" data-src="src/core/enemies.js#GUARDIAN_TIERS">
+  <h2 lang="en">Guardians and balance</h2>
+  <h2 lang="de">Wächter und Balance</h2>
   <div class="cols">
     <div class="card">
-      <h3>Guardians</h3>
-      <p>Every well down is guarded by a <b style="color:#ffb000">descent guardian</b> (gold), and one or two gates on the way by <b style="color:#ff5ab4">side guardians</b> (pink). They are normal species, promoted: much more health, harder hits, and lots of poise.</p>
-      <p>Their gate stays sealed with a red cross until the guardian dies. Killing the others is not enough. Their arena has twice the usual monsters, and they defend together.</p>
-      <p>Guardians always drop good loot.</p>
+      <h3 lang="en">Guardians</h3>
+      <h3 lang="de">Wächter</h3>
+      <p lang="en">Every well down is guarded by a <b style="color:#ffb000">descent guardian</b> (gold), and one or two gates on the way by <b style="color:#ff5ab4">side guardians</b> (pink). They are normal species, promoted: much more health, harder hits, and lots of poise.</p>
+      <p lang="de">Jeder Brunnen nach unten wird von einem <b style="color:#ffb000">Brunnenwächter</b> (gold) bewacht, und ein oder zwei Tore unterwegs von <b style="color:#ff5ab4">Torwächtern</b> (pink). Es sind normale Arten, befördert: viel mehr Gesundheit, härtere Treffer und viel Standfestigkeit.</p>
+      <p lang="en">Their gate stays sealed with a red cross until the guardian dies. Killing the others is not enough. Their arena has twice the usual monsters, and they defend together.</p>
+      <p lang="de">Ihr Tor bleibt mit einem roten Kreuz versiegelt, bis der Wächter tot ist. Die anderen zu besiegen reicht nicht. In ihrer Arena gibt es doppelt so viele Monster wie sonst, und sie verteidigen gemeinsam.</p>
+      <p lang="en">Guardians always drop good loot.</p>
+      <p lang="de">Wächter lassen immer gute Beute fallen.</p>
     </div>
     <div class="card">
-      <h3>Fair and fun: balance</h3>
-      <p>The game is tuned so you stay about <b>two levels above the depth</b> you're at, and fights feel the same all the way down: a spider always takes about 1 hit, a Stunder 3 to 5.</p>
-      <p>How do the makers know? A tool <b>plays the game in fast-forward</b>, using the real tables, and prints where a player would be at each depth:</p>
+      <h3 lang="en">Fair and fun: balance</h3>
+      <h3 lang="de">Fair und spaßig: Balance</h3>
+      <p lang="en">The game is tuned so you stay about <b>two levels above the depth</b> you're at, and fights feel the same all the way down: a spider always takes about 1 hit, a Stunder 3 to 5.</p>
+      <p lang="de">Das Spiel ist so eingestellt, dass du etwa <b>zwei Stufen über der Tiefe</b> bleibst, in der du bist, und Kämpfe sich bis ganz unten gleich anfühlen: Eine Spinne braucht immer etwa 1 Treffer, ein Stunder 3 bis 5.</p>
+      <p lang="en">How do the makers know? A tool <b>plays the game in fast-forward</b>, using the real tables, and prints where a player would be at each depth:</p>
+      <p lang="de">Woher wissen die Macher das? Ein Werkzeug <b>spielt das Spiel im Schnelldurchlauf</b>, mit den echten Tabellen, und druckt aus, wo ein Spieler in jeder Tiefe stehen würde:</p>
       <pre><code>node tools/balance.mjs</code></pre>
-      <p class="small muted">Details for grown-ups: <code>docs/balance.md</code></p>
+      <p class="small muted" lang="en">Details for grown-ups: <code>docs/balance.md</code></p>
+      <p class="small muted" lang="de">Details für Erwachsene: <code>docs/balance.md</code></p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="decide-code" data-lv="3">
-  <h2>The real code: deciding</h2>
+  <h2 lang="en">The real code: deciding</h2>
+  <h2 lang="de">Der echte Code: entscheiden</h2>
   <div class="cols wide-left">
-    <pre data-file="src/game/enemyai.js (shortened)"><code>function decide(e) {
-  const p = player, cfg = e.profile, target = playerFloor(cfg.height);
-  const alive = !p.ragdoll &amp;&amp; p.hp > 0, dist = Math.hypot(p.x - e.x, p.z - e.z);
-  if (e.mode !== 'chase' &amp;&amp; e.mode !== 'attack') {
-    if (!alive || !target || dist > cfg.aggro || Math.abs(p.y - e.y) > 1) return;
-    if (!clearLine(e.x, e.y + 0.4, e.z, p.x, p.y + 0.6, p.z)) return;
-    const path = findPath(e.f, target, 10, cfg.height);
-    if (path) { e.path = path; e.mode = 'chase'; e.lost = 0; }
-    return;
-  }
-  if (e.mode === 'attack') return;
-  e.path = alive &amp;&amp; target ? findPath(e.f, target, 16, cfg.height) : null;
-  e.lost = !e.path || dist > cfg.giveUp ? e.lost + 0.2 : 0;
-  if (e.lost > 1.4) { e.mode = 'home'; e.path = findPath(e.f, e.home, 40, cfg.height) || [e.f]; }
-}
-
-// in stepEnemies, every frame, for every enemy:
-if ((e.think -= dt) &lt;= 0) { e.think = 0.2; decide(e); }
-act(e, dt);</code></pre>
+    <pre data-code="src/game/enemyai.js#decide,stepEnemies"></pre>
     <div>
-      <p>To start chasing, <b>all</b> of these must be true: you're alive, close (<code>aggro</code>), at about the same height (within 1), visible (<code>clearLine</code> from its eyes to your chest), and there's a path of at most 10 steps.</p>
-      <p>While chasing, it plans a new path every think. <code>e.lost</code> counts up while it has no path or you're too far. After 1.4 seconds of that, it goes home.</p>
-      <p><code>e.think</code> is a countdown. When it reaches zero, think, and start again at 0.2. That's how "five times a second" works.</p>
-      <p>The demo uses the same rules on a little grid.</p>
+      <p lang="en">To start chasing, <b>all</b> of these must be true: you're alive, close (<code>aggro</code>), at about the same height (within 1), visible (<code>clearLine</code> from its eyes to your chest), and there's a path of at most 10 steps.</p>
+      <p lang="de">Um mit dem Jagen anzufangen, muss <b>alles</b> davon stimmen: Du lebst, bist nah (<code>aggro</code>), auf etwa derselben Höhe (höchstens 1 Unterschied), sichtbar (<code>clearLine</code> von ihren Augen zu deiner Brust), und es gibt einen Weg mit höchstens 10 Schritten.</p>
+      <p lang="en">While chasing, it plans a new path every think. <code>e.lost</code> counts up while it has no path or you're too far. After 1.4 seconds of that, it goes home.</p>
+      <p lang="de">Beim Jagen plant sie bei jedem Nachdenken einen neuen Weg. <code>e.lost</code> zählt hoch, solange sie keinen Weg hat oder du zu weit weg bist. Nach 1,4 Sekunden davon geht sie nach Hause.</p>
+      <p lang="en"><code>e.think</code> is a countdown. When it reaches zero, think, and start again at 0.2. That's how "five times a second" works.</p>
+      <p lang="de"><code>e.think</code> ist ein Countdown. Wenn er null erreicht: nachdenken und wieder bei 0,2 anfangen. So funktioniert "fünfmal pro Sekunde".</p>
+      <p lang="en">The demo uses the same rules on a little grid.</p>
+      <p lang="de">Die Demo benutzt dieselben Regeln auf einem kleinen Gitter.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="kind-code" data-lv="3">
-  <h2>The real code: making a kind</h2>
+  <h2 lang="en">The real code: making a kind</h2>
+  <h2 lang="de">Der echte Code: eine Sorte machen</h2>
   <div class="cols wide-left">
-    <pre data-file="src/core/enemies.js"><code>export const BLOOD_VIPER = enemyKind(SNAKE, {
-  type: 'bloodviper', label: 'Blood viper', reason: 'Bitten by a Blood viper!',
-  colors: { skin: 'oklch(0.60 0.19 27)', eyes: 'oklch(0.93 0.18 100)' },
-  ichor: Object.freeze(['#e0503a', '#6a1410']),
-  mods: { hp: 1.4, damage: 1.4, speed: 1.2, size: 1.1 },
-});
-
-export const GROWTH = Object.freeze({ hp: 0.17, damage: 0.1, xp: 0.25, coins: 0.25 });</code></pre>
+    <pre data-code="src/core/enemies.js#BLOOD_VIPER,GROWTH"></pre>
     <div>
-      <p><code>enemyKind(SNAKE, {...})</code> copies the snake's profile and changes it:</p>
+      <p lang="en"><code>enemyKind(SNAKE, {...})</code> copies the snake's profile and changes it:</p>
+      <p lang="de"><code>enemyKind(SNAKE, {...})</code> kopiert das Profil der Schlange und ändert es:</p>
       <ul>
-        <li><code>label</code>: its name. <code>reason</code>: what the game says if it kills you.</li>
-        <li><code>colors</code>: new colours for its skin and eyes. <code>oklch</code> is a way to write colours by lightness, colourfulness and hue. <a class="portal" href="art.html#recolour">Recolouring</a></li>
-        <li><code>ichor</code>: the colours of its blood droplets when hit.</li>
-        <li><code>mods</code>: multipliers for its numbers.</li>
+        <li lang="en"><code>label</code>: its name. <code>reason</code>: what the game says if it kills you.</li>
+        <li lang="de"><code>label</code>: ihr Name. <code>reason</code>: was das Spiel sagt, wenn sie dich erwischt.</li>
+        <li lang="en"><code>colors</code>: new colours for its skin and eyes. <code>oklch</code> is a way to write colours by lightness, colourfulness and hue. <a class="portal" href="art.html#recolour">Recolouring</a></li>
+        <li lang="de"><code>colors</code>: neue Farben für Haut und Augen. <code>oklch</code> ist eine Art, Farben nach Helligkeit, Buntheit und Farbton aufzuschreiben. <a class="portal" href="art.html#recolour">Umfärben</a></li>
+        <li lang="en"><code>ichor</code>: the colours of its blood droplets when hit.</li>
+        <li lang="de"><code>ichor</code>: die Farben ihrer Blutströpfchen, wenn sie getroffen wird.</li>
+        <li lang="en"><code>mods</code>: multipliers for its numbers.</li>
+        <li lang="de"><code>mods</code>: Multiplikatoren für ihre Zahlen.</li>
       </ul>
-      <p>Then it's added to the list <code>ENEMY_KINDS</code> and to the rosters of the depths where it should live. That's it: a new monster in 10 lines!</p>
+      <p lang="en">Then it's added to the list <code>ENEMY_KINDS</code> and to the rosters of the depths where it should live. That's it: a new monster in 10 lines!</p>
+      <p lang="de">Dann kommt sie in die Liste <code>ENEMY_KINDS</code> und in die Besetzungslisten der Tiefen, in denen sie leben soll. Fertig: ein neues Monster in 10 Zeilen!</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Monster Brains</h2>
+  <h2 lang="en">Prompt quests: Monster Brains</h2>
+  <h2 lang="de">Prompt-Aufgaben: Monster-Gehirne</h2>
   <div class="quests">
-    <div class="prompt" data-title="NEW KIND" data-stars="2"><q>Add a new spider kind called "Ghost spider": pale and see-through looking (very light colours), 1.2x health, 1.3x speed. Let it spawn sometimes at depths 15 and 16. Follow docs/enemy-kinds.md and run the tests.</q><span class="why">The game has a doc just for this. Pointing the agent at it gives much better results.</span></div>
-    <div class="prompt" data-title="SCAREDY SNAKES" data-stars="3"><q>Give snakes a new behaviour: when their health drops below 25%, they flee away from me for 3 seconds before fighting again. Add it as a new mode in src/game/enemyai.js, only for snakes, and explain the change to me.</q><span class="why">A new state in the state machine! Ask for an explanation so you learn how it was done.</span></div>
-    <div class="prompt" data-title="DEPTH TOUR" data-stars="1"><q>Which monsters live at depth 9, and how many? Read src/core/spawns.js and explain the row for depth 9 in simple words.</q><span class="why">Reading data tables with an agent is a great way to learn how a game is set up.</span></div>
-    <div class="prompt" data-title="SLOWER BITES" data-stars="1"><q>Spiders are too hard for my little brother. Make their wind-up before the bite longer, so it is easier to step away. Keep the animation in sync with the bite.</q><span class="why">"Keep the animation in sync" warns the agent about a trap: the bite should still land on the right animation frame.</span></div>
+    <div class="prompt" data-title="NEW KIND" data-stars="2" data-de-data-title="NEUE SORTE"><q lang="en">Add a new spider kind called "Ghost spider": pale and see-through looking (very light colours), 1.2x health, 1.3x speed. Let it spawn sometimes at depths 15 and 16. Do it the way the other kinds are made, and run the tests.</q> <q lang="de">Füge eine neue Spinnensorte namens "Ghost spider" hinzu: blass und fast durchsichtig aussehend (sehr helle Farben), 1,2-fache Gesundheit, 1,3-faches Tempo. Lass sie manchmal in Tiefe 15 und 16 erscheinen. Mach es so, wie die anderen Sorten gemacht sind, und lass die Tests laufen.</q><span class="why" lang="en">"The way the others are made" sends the agent to the existing kinds and their notes, so the new one fits right in.</span> <span class="why" lang="de">"So, wie die anderen gemacht sind" schickt den Agenten zu den bestehenden Sorten und ihren Notizen, damit die neue genau dazupasst.</span></div>
+    <div class="prompt" data-title="SCAREDY SNAKES" data-stars="3" data-de-data-title="ANGSTHASEN-SCHLANGEN"><q lang="en">Give snakes a new behaviour: when their health drops below 25%, they flee away from me for 3 seconds before fighting again. Add it as a new state of the monster brain, only for snakes, and explain the change to me.</q> <q lang="de">Gib Schlangen ein neues Verhalten: Wenn ihre Gesundheit unter 25% fällt, fliehen sie 3 Sekunden lang vor mir, bevor sie wieder kämpfen. Bau es als neuen Zustand ins Monster-Gehirn ein, nur für Schlangen, und erklär mir die Änderung.</q><span class="why" lang="en">A new state in the state machine! Ask for an explanation so you learn how it was done.</span> <span class="why" lang="de">Ein neuer Zustand im Zustandsautomaten! Bitte um eine Erklärung, damit du lernst, wie es gemacht wurde.</span></div>
+    <div class="prompt" data-title="DEPTH TOUR" data-stars="1" data-de-data-title="TIEFEN-TOUR"><q lang="en">Which monsters live at depth 9, and how many? Find the table that decides it and explain the row for depth 9 in simple words.</q> <q lang="de">Welche Monster leben in Tiefe 9, und wie viele? Finde die Tabelle, die das entscheidet, und erklär mir die Zeile für Tiefe 9 in einfachen Worten.</q><span class="why" lang="en">Reading data tables with an agent is a great way to learn how a game is set up.</span> <span class="why" lang="de">Datentabellen mit einem Agenten zu lesen ist ein toller Weg zu lernen, wie ein Spiel eingerichtet ist.</span></div>
+    <div class="prompt" data-title="SLOWER BITES" data-stars="1" data-de-data-title="LANGSAMERE BISSE"><q lang="en">Spiders are too hard for my little brother. Make their wind-up before the bite longer, so it is easier to step away. Keep the animation in sync with the bite.</q> <q lang="de">Spinnen sind zu schwer für meinen kleinen Bruder. Mach ihr Ausholen vor dem Biss länger, damit man leichter ausweichen kann. Die Animation soll trotzdem zum Biss passen.</q><span class="why" lang="en">"Keep the animation in sync" warns the agent about a trap: the bite should still land on the right animation frame.</span> <span class="why" lang="de">"Die Animation soll passen" warnt den Agenten vor einer Falle: Der Biss soll weiterhin im richtigen Animationsbild landen.</span></div>
   </div>
 </section>
 

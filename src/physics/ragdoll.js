@@ -7,10 +7,12 @@ import { groundAt, insideSolid } from './collide.js';
 // particle order (see render/ragdollpose.js)
 // 0 pelvis 1 chest 2 neck 3 head top | 4 shoulder 5 elbow 6 hand (L) | 7 8 9 (R)
 // 10 hip 11 knee 12 foot (L) | 13 14 15 (R)
+// kids-docs: physics.html#verlet (see kids-docs/README.md)
 const BONES = [[0, 1], [1, 2], [2, 3], [4, 5], [5, 6], [7, 8], [8, 9], [10, 11], [11, 12], [13, 14], [14, 15]];
 const RIGID = [[0, 1, 10, 13], [1, 2, 4, 7]];   // pelvis block and chest block keep their shape
 // keep-apart constraints [a, b, fraction of rest length]: stop joints folding flat
 const APART = [[0, 2, 0.8], [1, 3, 0.85], [4, 6, 0.45], [7, 9, 0.45], [10, 12, 0.55], [13, 15, 0.55], [12, 15, 0.25], [6, 9, 0.2]];
+// kids-docs: physics.html#verlet (see kids-docs/README.md)
 const RAD = 0.06, SUB = 1 / 120, ITERS = 6;
 
 export class Ragdoll {
@@ -39,6 +41,7 @@ export class Ragdoll {
     if ((this.calm > 0.25 && this.t > 0.6) || this.t > 4) this.done = true;
   }
 
+  // kids-docs: physics.html#ragdoll-code (see kids-docs/README.md)
   substep() {
     const g = GRAV * SUB * SUB;
     for (let i = 0; i < this.p.length; i++) {
@@ -54,6 +57,7 @@ export class Ragdoll {
     }
   }
 
+  // kids-docs: physics.html#ragdoll-code (see kids-docs/README.md)
   solve(a, b, len, apartOnly) {
     const A = this.p[a], B = this.p[b];
     const dx = B[0] - A[0], dy = B[1] - A[1], dz = B[2] - A[2];

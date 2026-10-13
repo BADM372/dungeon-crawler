@@ -25,6 +25,7 @@ let defenceThink = 0;
 
 // coming into a cube (or back after a death), enemies hold their attacks this long, or until
 // you land a hit: a bad spawn spot is not an instant beating
+// kids-docs: enemies.html#fair (see kids-docs/README.md)
 export const ENTRY_GRACE = 1.2;
 
 // enemies spawned with the dev tools (game/devspawn.js), of any species; gone when the cube resets

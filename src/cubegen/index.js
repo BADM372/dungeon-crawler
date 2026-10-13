@@ -56,6 +56,7 @@ function pathPoints(ctx, moves) {
   return pts;
 }
 
+// kids-docs: world.html#assembly #generate-code (see kids-docs/README.md)
 function tryGenerate(seed, spec) {
   const ctx = createContext(seed);
   ctx.spec = spec;
@@ -106,6 +107,7 @@ function tryGenerate(seed, spec) {
 }
 
 // spec: what the world fixes for this cube (faces, portals, layers; see world/world.js)
+// kids-docs: world.html#generate-code #inspector (see kids-docs/README.md)
 export function generate(spec) {
   if (spec.town || spec.merchantCamp) return generateClearing(spec);
   if (spec.guardian) return generateGuardian(spec);

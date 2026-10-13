@@ -6,6 +6,7 @@ import { key, faceKey } from './coords.js';
 import { MAX_DEPTH } from '../themes/depth.js';
 import { planSites } from './sites.js';
 
+// kids-docs: world.html#route (see kids-docs/README.md)
 export const MIN_ROUTE_ROOMS = 7, MAX_ROUTE_ROOMS = 14;
 const RADIUS = d => d >= MAX_DEPTH ? 0 : d <= 5 ? 3 : d <= 12 ? 2 : 1;
 const AXES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -16,6 +17,7 @@ const direction = (a, b) => AXES.findIndex(([x, z]) => a[0] + x === b[0] && a[1]
 
 // Bounded DFS, with a stable random priority per cell. Unlike a shortest path this
 // can keep the deep, small rings long enough without creating disconnected gates.
+// kids-docs: world.html#backtracking #route-code (see kids-docs/README.md)
 function route(candidates, prefix, length, goal, R) {
   const allowed = new Set(candidates.map(id)), used = new Set(prefix.map(id));
   const priority = new Map(candidates.map(c => [id(c), R()])), out = [...prefix];
@@ -36,6 +38,7 @@ function route(candidates, prefix, length, goal, R) {
 
 export const guardianDepth = (_seed, d) => d >= 0 && d < MAX_DEPTH;
 
+// kids-docs: world.html#backtracking #route (see kids-docs/README.md)
 function build(seed, d, above) {
   const R = mulberry32(hash32(seed ^ Math.imul(d + 1, 0x9e3779b1))), Y = -d, r = RADIUS(d);
   const K = c => key(c[0], Y, c[1]);

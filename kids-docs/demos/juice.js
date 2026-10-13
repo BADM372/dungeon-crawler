@@ -1,7 +1,7 @@
 // Game feel: the same hit with and without the extras from src/game/juice.js. Hit pause (time
 // at 3% for 0.055 s, 0.09 s on a kill), a camera nudge, sparks and droplets, a floating damage
 // number, the enemy's white flash and push, and the generated "hit" sound (src/audio/sfx.js).
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 let ac = null;
 // the "hit" and "kill" recipes from src/audio/sfx.js: a thump, a body of noise, a bright crack
@@ -20,8 +20,8 @@ function sound(kill) {
 
 export default function mount(el) {
   const W = 640, H = 230, { g, c } = canvas(el, W, H);
-  const FX = [['stop', 'hit pause'], ['kick', 'camera nudge'], ['sparks', 'sparks'], ['num', 'damage number'], ['flash', 'white flash + push'], ['snd', 'sound']];
-  const row = html(el, `<div><div class="row"><button class="hit">Hit it! (or click the picture)</button><button class="all">all on</button><button class="none">all off</button></div>
+  const FX = [['stop', tr('hit pause', 'Trefferpause')], ['kick', tr('camera nudge', 'Kamera-Schubs')], ['sparks', tr('sparks', 'Funken')], ['num', tr('damage number', 'Schadenszahl')], ['flash', tr('white flash + push', 'weißer Blitz + Stoß')], ['snd', tr('sound', 'Geräusch')]];
+  const row = html(el, `<div><div class="row"><button class="hit">${tr('Hit it! (or click the picture)', 'Hau drauf! (oder klick ins Bild)')}</button><button class="all">${tr('all on', 'alle an')}</button><button class="none">${tr('all off', 'alle aus')}</button></div>
     <div class="row">${FX.map(([k, n]) => `<label><input type="checkbox" class="${k}" checked> ${n}</label>`).join('')}</div></div>`);
   const on = k => row.querySelector('.' + k).checked;
   const blob = { x: 430, hp: 100, flash: 0, push: 0, dead: 0 };

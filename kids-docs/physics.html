@@ -2,201 +2,219 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Run, Jump, Fall · Kids' Guide to Cube Crawler</title>
+<title data-de="Rennen, Springen, Fallen · Kinderführer zu Cube Crawler">Run, Jump, Fall · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="frozen">
 <main class="deck">
 
 <section class="slide" id="adding" data-lv="1">
-  <h2>Moving is just adding</h2>
+  <h2 lang="en">Moving is just adding</h2>
+  <h2 lang="de">Bewegen ist nur Zusammenzählen</h2>
   <div class="cols">
     <div>
-      <p class="lead">To the computer, the hero is just a few numbers: where it is, and how fast it is going.</p>
+      <p class="lead" lang="en">To the computer, the hero is just a few numbers: where it is, and how fast it is going.</p>
+      <p class="lead" lang="de">Für den Computer ist der Held nur ein paar Zahlen: wo er ist und wie schnell er sich bewegt.</p>
       <ul>
-        <li><b>Position</b>: where the hero is. <code>x</code> is east-west, <code>z</code> is north-south, <code>y</code> is up-down.</li>
-        <li><b>Velocity</b>: how fast it moves in each direction, in cells per second.</li>
+        <li lang="en"><b>Position</b>: where the hero is. <code>x</code> is east-west, <code>z</code> is north-south, <code>y</code> is up-down.</li>
+        <li lang="de"><b>Position</b>: wo der Held ist. <code>x</code> ist Ost-West, <code>z</code> ist Nord-Süd, <code>y</code> ist oben-unten.</li>
+        <li lang="en"><b>Velocity</b>: how fast it moves in each direction, in cells per second.</li>
+        <li lang="de"><b>Geschwindigkeit</b>: wie schnell er sich in jede Richtung bewegt, in Zellen pro Sekunde.</li>
       </ul>
-      <p>Every frame, the game does a tiny bit of adding:</p>
-      <pre><code>position = position + velocity × dt</code></pre>
-      <p>And <b>gravity</b> is just as simple. Every frame, it pulls the up-down speed down a bit:</p>
-      <pre><code>velocity.y = velocity.y - 22 × dt</code></pre>
-      <p>That is all you need for a jump: set the up-speed to a big number, and gravity bends it back down into a nice curve.</p>
+      <p lang="en">Every frame, the game does a tiny bit of adding:</p>
+      <p lang="de">In jedem Bild rechnet das Spiel ein bisschen zusammen:</p>
+      <pre><code lang="en">position = position + velocity × dt</code> <code lang="de">Position = Position + Geschwindigkeit × dt</code></pre>
+      <p lang="en">And <b>gravity</b> is just as simple. Every frame, it pulls the up-down speed down a bit:</p>
+      <p lang="de">Und die <b>Schwerkraft</b> ist genauso einfach. In jedem Bild zieht sie die Auf-und-ab-Geschwindigkeit ein Stück nach unten:</p>
+      <pre><code lang="en">velocity.y = velocity.y - 22 × dt</code> <code lang="de">Geschwindigkeit.y = Geschwindigkeit.y - 22 × dt</code></pre>
+      <p lang="en">That is all you need for a jump: set the up-speed to a big number, and gravity bends it back down into a nice curve.</p>
+      <p lang="de">Mehr braucht man nicht für einen Sprung: Setz die Aufwärts-Geschwindigkeit auf eine große Zahl, und die Schwerkraft biegt sie zu einer schönen Kurve zurück.</p>
     </div>
     <div class="card">
-      <h3>The game's own measurements</h3>
+      <h3 lang="en">The game's own measurements</h3>
+      <h3 lang="de">Die Maße des Spiels</h3>
       <table>
-        <tr><td>one cell</td><td>1 unit wide</td></tr>
-        <tr><td>one terrain level</td><td>0.5 units high</td></tr>
-        <tr><td>the hero</td><td>0.85 units tall</td></tr>
-        <tr><td>running</td><td>2.8 units per second</td></tr>
-        <tr><td>walking (hold <kbd>Ctrl</kbd>)</td><td>1.9 units per second</td></tr>
-        <tr><td>gravity</td><td>22 units per second, every second</td></tr>
-        <tr><td>jump speed</td><td>6.27 units per second up: about 0.9 units high</td></tr>
+        <tr><td><span lang="en">one cell</span><span lang="de">eine Zelle</span></td><td>1 <span lang="en">unit wide</span><span lang="de">Einheit breit</span></td></tr>
+        <tr><td><span lang="en">one terrain level</span><span lang="de">eine Geländestufe</span></td><td><b data-val="src/core/constants.js#LH">0.5</b> <span lang="en">units high</span><span lang="de">Einheiten hoch</span></td></tr>
+        <tr><td><span lang="en">the hero</span><span lang="de">der Held</span></td><td><b data-val="src/core/constants.js#CHAR_H">0.85</b> <span lang="en">units tall</span><span lang="de">Einheiten groß</span></td></tr>
+        <tr><td><span lang="en">running</span><span lang="de">rennen</span></td><td><b data-val="src/core/constants.js#RUN_SPEED">2.8</b> <span lang="en">units per second</span><span lang="de">Einheiten pro Sekunde</span></td></tr>
+        <tr><td><span lang="en">walking (hold <kbd>Ctrl</kbd>)</span><span lang="de">gehen (<kbd>Strg</kbd> halten)</span></td><td><b data-val="src/core/constants.js#WALK_SPEED">1.9</b> <span lang="en">units per second</span><span lang="de">Einheiten pro Sekunde</span></td></tr>
+        <tr><td><span lang="en">gravity</span><span lang="de">Schwerkraft</span></td><td><b data-val="src/core/constants.js#GRAV">22</b> <span lang="en">units per second, every second</span><span lang="de">Einheiten pro Sekunde, jede Sekunde</span></td></tr>
+        <tr><td><span lang="en">jump speed</span><span lang="de">Sprungtempo</span></td><td><b data-val="src/core/constants.js#JUMP_V">6.27</b> <span lang="en">units per second up: about 0.9 units high</span><span lang="de">Einheiten pro Sekunde nach oben: etwa 0,9 Einheiten hoch</span></td></tr>
       </table>
-      <p class="small muted">All in <code>src/core/constants.js</code>. Change them, and the whole game feels different.</p>
+      <p class="small muted" lang="en">All in <code>src/core/constants.js</code>. Change them, and the whole game feels different.</p>
+      <p class="small muted" lang="de">Alles in <code>src/core/constants.js</code>. Ändere sie, und das ganze Spiel fühlt sich anders an.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="try-jump" data-lv="1">
-  <h2>Try it: run and jump</h2>
-  <p>Click the picture, then run with <kbd>&larr;</kbd> <kbd>&rarr;</kbd> and jump with <kbd>Space</kbd>. Can you leap over the water?
+  <h2 lang="en">Try it: run and jump</h2>
+  <h2 lang="de">Probier es: rennen und springen</h2>
+  <p lang="en">Click the picture, then run with <kbd>←</kbd> <kbd>→</kbd> and jump with <kbd>Space</kbd>. Can you leap over the water?
     Can you get onto the high block? Then play with gravity and the jump speed: try moon gravity!</p>
+  <p lang="de">Klick ins Bild, dann renn mit <kbd>←</kbd> <kbd>→</kbd> und spring mit der <kbd>Leertaste</kbd>. Schaffst du den Sprung über das Wasser?
+    Kommst du auf den hohen Block? Dann spiel mit Schwerkraft und Sprungtempo: Probier Mond-Schwerkraft!</p>
   <div class="demo real" data-demo="jump"></div>
 </section>
 
-<section class="slide" id="feel" data-lv="2">
-  <h2>Tricks that make it feel good</h2>
-  <p>Real physics is not always fun. Game makers cheat a little, on purpose, so the controls feel fair:</p>
+<section class="slide" id="feel" data-lv="2" data-src="src/physics/move.js#horizontal,jumping,LEAP src/core/constants.js#RUN_RAMP,BRAKE">
+  <h2 lang="en">Tricks that make it feel good</h2>
+  <h2 lang="de">Tricks, damit es sich gut anfühlt</h2>
+  <p lang="en">Real physics is not always fun. Game makers cheat a little, on purpose, so the controls feel fair:</p>
+  <p lang="de">Echte Physik macht nicht immer Spaß. Spielemacher schummeln absichtlich ein bisschen, damit sich die Steuerung fair anfühlt:</p>
   <div class="cols">
-    <div class="card"><h3>Coyote time</h3><p>Like the cartoon coyote who runs off a cliff and only falls when he looks down: for <b>0.12 seconds</b> after you walk off an edge, you can still jump. Without it, you would often press jump "just too late" and fall, and it would feel unfair.</p>
-      <p class="small">Try it in the demo: switch coyote time off and jump very late at the edge of the water.</p></div>
-    <div class="card"><h3>Jump buffer</h3><p>If you press jump a tiny moment <b>before</b> you land (up to 0.15 seconds), the game remembers it and jumps as soon as your feet touch the ground.</p></div>
-    <div class="card"><h3>Speed ramp</h3><p>You don't reach full speed instantly: it takes 0.25 seconds. But stopping is fast (about 0.1 seconds). Short taps stay precise, and you never slide past where you wanted to stop.</p></div>
-    <div class="card"><h3>The leap</h3><p>Jumping while running gives you a little push forward: just enough to get over a gap of one cell. The world builder knows this number too, and only plans jumps you can really make!</p></div>
+    <div class="card"><h3 lang="en">Coyote time</h3> <h3 lang="de">Kojotenzeit</h3><p lang="en">Like the cartoon coyote who runs off a cliff and only falls when he looks down: for <b>0.12 seconds</b> after you walk off an edge, you can still jump. Without it, you would often press jump "just too late" and fall, and it would feel unfair.</p> <p lang="de">Wie der Kojote im Zeichentrick, der über eine Klippe rennt und erst fällt, wenn er nach unten schaut: <b>0,12 Sekunden</b> nachdem du über eine Kante gelaufen bist, kannst du noch springen. Ohne das würdest du oft "gerade zu spät" springen und fallen, und es würde sich unfair anfühlen.</p>
+      <p class="small" lang="en">Try it in the demo: switch coyote time off and jump very late at the edge of the water.</p>
+      <p class="small" lang="de">Probier es in der Demo: Schalte die Kojotenzeit aus und spring ganz spät am Rand des Wassers.</p></div>
+    <div class="card"><h3 lang="en">Jump buffer</h3> <h3 lang="de">Sprungpuffer</h3><p lang="en">If you press jump a tiny moment <b>before</b> you land (up to 0.15 seconds), the game remembers it and jumps as soon as your feet touch the ground.</p> <p lang="de">Wenn du die Sprungtaste einen winzigen Moment <b>bevor</b> du landest drückst (bis zu 0,15 Sekunden), merkt sich das Spiel das und springt, sobald deine Füße den Boden berühren.</p></div>
+    <div class="card"><h3 lang="en">Speed ramp</h3> <h3 lang="de">Anlaufen</h3><p lang="en">You don't reach full speed instantly: it takes 0.25 seconds. But stopping is fast (about 0.1 seconds). Short taps stay precise, and you never slide past where you wanted to stop.</p> <p lang="de">Du erreichst die volle Geschwindigkeit nicht sofort: Es dauert 0,25 Sekunden. Aber Anhalten geht schnell (etwa 0,1 Sekunden). So bleiben kurze Tipper genau, und du rutschst nie über die Stelle hinaus, an der du stehen wolltest.</p></div>
+    <div class="card"><h3 lang="en">The leap</h3> <h3 lang="de">Der Weitsprung</h3><p lang="en">Jumping while running gives you a little push forward: just enough to get over a gap of one cell. The world builder knows this number too, and only plans jumps you can really make!</p> <p lang="de">Springen beim Rennen gibt dir einen kleinen Schubs nach vorn: genau genug, um über eine Lücke von einer Zelle zu kommen. Der Weltbauer kennt diese Zahl auch und plant nur Sprünge, die du wirklich schaffen kannst!</p></div>
   </div>
 </section>
 
-<section class="slide" id="walls" data-lv="2">
-  <h2>Bumping into things</h2>
+<section class="slide" id="walls" data-lv="2" data-src="src/physics/move.js#horizontal,movePlayer">
+  <h2 lang="en">Bumping into things</h2>
+  <h2 lang="de">Gegen Dinge stoßen</h2>
   <div class="cols">
     <div>
-      <p><b>Sliding along walls.</b> Walk diagonally into a wall: you don't stop dead, you slide along it. The trick: the game moves you east-west first and checks for a wall, then north-south and checks again. If only one direction is blocked, the other one still works.</p>
-      <p><b>Little steps.</b> A ledge up to 0.3 units high is walked up without jumping. Higher than that, you need to jump.</p>
-      <p><b>Walking downhill.</b> Without help, you would fly off every little slope like off a ramp. So when you are on the ground, the game sticks you to the floor if it is less than 0.25 units below you.</p>
+      <p lang="en"><b>Sliding along walls.</b> Walk diagonally into a wall: you don't stop dead, you slide along it. The trick: the game moves you east-west first and checks for a wall, then north-south and checks again. If only one direction is blocked, the other one still works.</p>
+      <p lang="de"><b>An Wänden entlangrutschen.</b> Lauf schräg gegen eine Wand: Du bleibst nicht stecken, sondern rutschst an ihr entlang. Der Trick: Das Spiel bewegt dich zuerst Ost-West und prüft auf eine Wand, dann Nord-Süd und prüft nochmal. Ist nur eine Richtung versperrt, geht die andere trotzdem.</p>
+      <p lang="en"><b>Little steps.</b> A ledge up to 0.3 units high is walked up without jumping. Higher than that, you need to jump.</p>
+      <p lang="de"><b>Kleine Stufen.</b> Eine Kante bis 0,3 Einheiten Höhe gehst du ohne Springen hoch. Ist sie höher, musst du springen.</p>
+      <p lang="en"><b>Walking downhill.</b> Without help, you would fly off every little slope like off a ramp. So when you are on the ground, the game sticks you to the floor if it is less than 0.25 units below you.</p>
+      <p lang="de"><b>Bergab gehen.</b> Ohne Hilfe würdest du von jedem kleinen Hang abheben wie von einer Rampe. Darum klebt dich das Spiel am Boden fest, wenn du am Boden bist und der Boden weniger als 0,25 Einheiten unter dir ist.</p>
     </div>
     <div>
-      <p><b>Slopes.</b> Walking uphill is slower. Slopes that are too steep make you slide down.</p>
-      <p><b>Ceilings.</b> Jump under a bridge, and you bump your head: your upward speed is set to zero.</p>
-      <p><b>Fluids.</b> Water, lava and acid are deadly. When you <i>walk</i> towards their edge, the game stops you. But a jump, a knockback or a fall can still carry you in. So be careful!</p>
-      <div class="note think"><b>Think</b> Why does the game stop you at the edge of water when walking, but not when jumping? (Because walking in by accident is annoying, but jumping is a choice!)</div>
+      <p lang="en"><b>Slopes.</b> Walking uphill is slower. Slopes that are too steep make you slide down.</p>
+      <p lang="de"><b>Hänge.</b> Bergauf gehen ist langsamer. Zu steile Hänge lassen dich runterrutschen.</p>
+      <p lang="en"><b>Ceilings.</b> Jump under a bridge, and you bump your head: your upward speed is set to zero.</p>
+      <p lang="de"><b>Decken.</b> Spring unter einer Brücke, und du stößt dir den Kopf: Deine Aufwärts-Geschwindigkeit wird auf null gesetzt.</p>
+      <p lang="en"><b>Fluids.</b> Water, lava and acid are deadly. When you <i>walk</i> towards their edge, the game stops you. But a jump, a knockback or a fall can still carry you in. So be careful!</p>
+      <p lang="de"><b>Flüssigkeiten.</b> Wasser, Lava und Säure sind tödlich. Wenn du auf ihren Rand zu <i>gehst</i>, hält das Spiel dich an. Aber ein Sprung, ein Rückstoß oder ein Sturz kann dich trotzdem hineintragen. Also Vorsicht!</p>
+      <div class="note think" lang="en"><b>Think</b> Why does the game stop you at the edge of water when walking, but not when jumping? (Because walking in by accident is annoying, but jumping is a choice!)</div>
+      <div class="note think" lang="de"><b>Denk nach</b> Warum hält das Spiel dich beim Gehen am Wasser an, aber nicht beim Springen? (Weil aus Versehen hineinzulaufen nervt, aber Springen eine Entscheidung ist!)</div>
     </div>
   </div>
 </section>
 
-<section class="slide" id="landing" data-lv="2">
-  <h2>Hard landings</h2>
+<section class="slide" id="landing" data-lv="2" data-src="src/game/update.js#updatePlayer">
+  <h2 lang="en">Hard landings</h2>
+  <h2 lang="de">Harte Landungen</h2>
   <div class="cols">
     <div>
-      <p>When you land, the game looks at how fast you were falling:</p>
+      <p lang="en">When you land, the game looks at how fast you were falling:</p>
+      <p lang="de">Wenn du landest, schaut das Spiel, wie schnell du gefallen bist:</p>
       <table>
-        <tr><th>FALLING SPEED</th><th>WHAT HAPPENS</th></tr>
-        <tr><td>up to 10</td><td>a normal landing</td></tr>
-        <tr><td>more than 10</td><td>you land on your bottom and are dizzy for a moment</td></tr>
-        <tr><td>more than 14</td><td>you tumble over as a <b>ragdoll</b>, and it hurts: up to 60 damage</td></tr>
+        <tr><th lang="en">FALLING SPEED</th> <th lang="de">FALLTEMPO</th><th lang="en">WHAT HAPPENS</th> <th lang="de">WAS PASSIERT</th></tr>
+        <tr><td><span lang="en">up to</span><span lang="de">bis</span> <b data-val="src/core/constants.js#SIT_IMPACT">10</b></td><td lang="en">a normal landing</td> <td lang="de">eine normale Landung</td></tr>
+        <tr><td><span lang="en">more than</span><span lang="de">mehr als</span> <b data-val="src/core/constants.js#SIT_IMPACT">10</b></td><td lang="en">you land on your bottom and are dizzy for a moment</td> <td lang="de">du landest auf dem Hintern und bist kurz benommen</td></tr>
+        <tr><td><span lang="en">more than</span><span lang="de">mehr als</span> <b data-val="src/core/constants.js#RAGDOLL_IMPACT">14</b></td><td lang="en">you tumble over as a <b>ragdoll</b>, and it hurts: up to 60 damage</td> <td lang="de">du kippst als <b>Ragdoll</b> um, und es tut weh: bis zu 60 Schaden</td></tr>
       </table>
-      <p>Falling speed grows the longer you fall, so this is really about how <i>high</i> you fell. Try the drop buttons in the jump demo!</p>
+      <p lang="en">Falling speed grows the longer you fall, so this is really about how <i>high</i> you fell. Try the drop buttons in the jump demo!</p>
+      <p lang="de">Das Falltempo wächst, je länger du fällst. Eigentlich geht es also darum, wie <i>hoch</i> du gefallen bist. Probier die Fall-Knöpfe in der Sprung-Demo!</p>
     </div>
     <div class="card">
-      <h3>Falling into the cube below</h3>
-      <p>Some cubes have holes, open to the depth below. Fall in, and you slide down into the cube below... but the landing costs the full 60 damage, and puts you back in the cube you fell from, at the last safe spot. No shortcuts!</p>
-      <p>The holes line up with the world: there is only a hole where the cube below really exists.</p>
+      <h3 lang="en">Falling into the cube below</h3>
+      <h3 lang="de">In den Würfel darunter fallen</h3>
+      <p lang="en">Some cubes have holes, open to the depth below. Fall in, and you slide down into the cube below... but the landing costs the full 60 damage, and puts you back in the cube you fell from, at the last safe spot. No shortcuts!</p>
+      <p lang="de">Manche Würfel haben Löcher, offen zur Tiefe darunter. Fällst du hinein, rutschst du in den Würfel darunter... aber die Landung kostet die vollen 60 Schaden und setzt dich zurück in den Würfel, aus dem du gefallen bist, an die letzte sichere Stelle. Keine Abkürzungen!</p>
+      <p lang="en">The holes line up with the world: there is only a hole where the cube below really exists.</p>
+      <p lang="de">Die Löcher passen zur Welt: Es gibt nur ein Loch, wo der Würfel darunter wirklich existiert.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="ragdoll" data-lv="1">
-  <h2>Floppy! The ragdoll</h2>
-  <p>When the hero gets knocked over, the animation stops, and a <a class="w" href="words.html#ragdoll">ragdoll</a> takes over: the body flops around by physics, like a puppet with cut strings.
+  <h2 lang="en">Floppy! The ragdoll</h2>
+  <h2 lang="de">Schlabberig! Die Ragdoll</h2>
+  <p lang="en">When the hero gets knocked over, the animation stops, and a <a class="w" href="words.html#ragdoll">ragdoll</a> takes over: the body flops around by physics, like a puppet with cut strings.
     It's made of just <b>dots and sticks</b>. Knock it over, kick it, or grab a dot and throw it!</p>
+  <p lang="de">Wenn der Held umgestoßen wird, hört die Animation auf, und eine <a class="w" href="words.html#ragdoll">Ragdoll</a> (Stoffpuppe) übernimmt: Der Körper schlackert durch Physik herum wie eine Marionette mit durchgeschnittenen Fäden.
+    Sie besteht nur aus <b>Punkten und Stäben</b>. Stoß sie um, tritt sie, oder pack einen Punkt und wirf ihn!</p>
   <div class="demo" data-demo="ragdoll"></div>
-  <p class="small muted">This is the game's ragdoll, flattened into a side view. The game's version works the same way in 3D.</p>
+  <p class="small muted" lang="en">This is the game's ragdoll, flattened into a side view. The game's version works the same way in 3D.</p>
+  <p class="small muted" lang="de">Das ist die Ragdoll des Spiels, platt gemacht zu einer Seitenansicht. Die Version im Spiel funktioniert genauso, nur in 3D.</p>
 </section>
 
-<section class="slide" id="verlet" data-lv="2">
-  <h2>How a ragdoll works</h2>
+<section class="slide" id="verlet" data-lv="2" data-src="src/physics/ragdoll.js#BONES,ITERS">
+  <h2 lang="en">How a ragdoll works</h2>
+  <h2 lang="de">Wie eine Ragdoll funktioniert</h2>
   <div class="cols">
     <div>
-      <p>The ragdoll has 16 dots, one at each joint: pelvis, chest, neck, head, shoulders, elbows, hands, hips, knees and feet.</p>
+      <p lang="en">The ragdoll has 16 dots, one at each joint: pelvis, chest, neck, head, shoulders, elbows, hands, hips, knees and feet.</p>
+      <p lang="de">Die Ragdoll hat 16 Punkte, einen an jedem Gelenk: Becken, Brust, Hals, Kopf, Schultern, Ellbogen, Hände, Hüften, Knie und Füße.</p>
       <ol class="steps">
-        <li><b>Move every dot</b> as if it were alone. Its speed? Where it is now, minus where it was one step ago. (This trick is called <a class="w" href="words.html#verlet">Verlet</a>.) Add gravity.</li>
-        <li><b>Fix the sticks.</b> Some sticks are now too long or too short. Push both ends towards the right length.</li>
-        <li>Fixing one stick breaks another a bit... so fix them all <b>6 times</b>. Close enough!</li>
-        <li><b>Floor:</b> a dot below the floor is put back on top, and slowed down (friction).</li>
+        <li lang="en"><b>Move every dot</b> as if it were alone. Its speed? Where it is now, minus where it was one step ago. (This trick is called <a class="w" href="words.html#verlet">Verlet</a>.) Add gravity.</li>
+        <li lang="de"><b>Jeden Punkt bewegen</b>, als wäre er allein. Seine Geschwindigkeit? Wo er jetzt ist, minus wo er einen Schritt vorher war. (Dieser Trick heißt <a class="w" href="words.html#verlet">Verlet</a>.) Schwerkraft dazu.</li>
+        <li lang="en"><b>Fix the sticks.</b> Some sticks are now too long or too short. Push both ends towards the right length.</li>
+        <li lang="de"><b>Die Stäbe reparieren.</b> Manche Stäbe sind jetzt zu lang oder zu kurz. Schieb beide Enden in Richtung der richtigen Länge.</li>
+        <li lang="en">Fixing one stick breaks another a bit... so fix them all <b>6 times</b>. Close enough!</li>
+        <li lang="de">Einen Stab zu reparieren macht einen anderen ein bisschen kaputt... also repariere alle <b>6-mal</b>. Nah genug!</li>
+        <li lang="en"><b>Floor:</b> a dot below the floor is put back on top, and slowed down (friction).</li>
+        <li lang="de"><b>Boden:</b> Ein Punkt unter dem Boden wird wieder obendrauf gesetzt und abgebremst (Reibung).</li>
       </ol>
-      <p>That runs 120 times a second, more often than the picture, so it stays stable.</p>
+      <p lang="en">That runs 120 times a second, more often than the picture, so it stays stable.</p>
+      <p lang="de">Das läuft 120-mal pro Sekunde, öfter als das Bild, damit es stabil bleibt.</p>
     </div>
     <div class="card">
-      <h3>Getting up again</h3>
-      <p>When the dots stop moving, the game checks: is the body lying face down or on its back? Then it plays the matching "get up" animation.</p>
-      <p>The tricky part: the animation was made for a body lying in one exact pose, but the ragdoll lies in a random heap. So the game smoothly <b>morphs</b> the ragdoll's pose into the first frames of the get-up animation, and turns the hero to match. The feet stay planted, so nothing slides.</p>
-      <p class="small muted"><code>src/game/ragdoll.js</code> and <code>src/render/animator.js</code></p>
+      <h3 lang="en">Getting up again</h3>
+      <h3 lang="de">Wieder aufstehen</h3>
+      <p lang="en">When the dots stop moving, the game checks: is the body lying face down or on its back? Then it plays the matching "get up" animation.</p>
+      <p lang="de">Wenn die Punkte still liegen, prüft das Spiel: Liegt der Körper auf dem Bauch oder auf dem Rücken? Dann spielt es die passende "Aufstehen"-Animation.</p>
+      <p lang="en">The tricky part: the animation was made for a body lying in one exact pose, but the ragdoll lies in a random heap. So the game smoothly <b>morphs</b> the ragdoll's pose into the first frames of the get-up animation, and turns the hero to match. The feet stay planted, so nothing slides.</p>
+      <p lang="de">Das Knifflige: Die Animation wurde für einen Körper in einer ganz bestimmten Lage gemacht, aber die Ragdoll liegt als zufälliger Haufen da. Darum <b>verwandelt</b> das Spiel die Haltung der Ragdoll sanft in die ersten Bilder der Aufsteh-Animation und dreht den Helden passend. Die Füße bleiben stehen, damit nichts rutscht.</p>
+      <p class="small muted" lang="en"><code>src/game/ragdoll.js</code> and <code>src/render/animator.js</code></p>
+      <p class="small muted" lang="de"><code>src/game/ragdoll.js</code> und <code>src/render/animator.js</code></p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="move-code" data-lv="3">
-  <h2>The real code: jumping</h2>
+  <h2 lang="en">The real code: jumping</h2>
+  <h2 lang="de">Der echte Code: springen</h2>
   <div class="cols wide-left">
-    <pre data-file="src/physics/move.js"><code>const LEAP = 3.4;   // horizontal speed of a jump while moving
-
-// jump with a little coyote time (just walked off a ledge) and a short input buffer
-function jumping(dt, jump) {
-  const p = player;
-  p.coyote = p.grounded &amp;&amp; !p.swimming ? 0.12 : p.coyote - dt;
-  p.jumpBuf = jump ? 0.15 : p.jumpBuf - dt;
-  if (p.jumpBuf &lt;= 0 || !(p.coyote > 0 || p.swimming)) return;
-  p.vy = p.swimming ? 4.8 : JUMP_V;
-  // jumping while moving is a leap: enough speed to clear a one-cell gap
-  const s = Math.hypot(p.vx, p.vz);
-  if (!p.swimming &amp;&amp; s > 0.8 &amp;&amp; s &lt; LEAP) { p.vx *= LEAP / s; p.vz *= LEAP / s; }
-  p.grounded = p.swimming = false;
-  p.coyote = p.jumpBuf = 0;
-  p.jumpCount++;
-}</code></pre>
+    <pre data-code="src/physics/move.js#LEAP,jumping"></pre>
     <div>
-      <p><code>p.coyote</code> is a timer. On the ground it is always reset to 0.12. In the air it counts down by <code>dt</code> every frame.</p>
-      <p><code>p.jumpBuf</code> is a timer too: pressing jump sets it to 0.15, then it counts down.</p>
-      <p>The jump only happens if <b>both</b> timers are still above zero. That's the whole trick: two countdowns!</p>
-      <p>In water, the same code makes you paddle up out of the water, a bit slower (4.8).</p>
-      <p><code>Math.hypot(vx, vz)</code> is the speed along the ground (Pythagoras!).</p>
+      <p lang="en"><code>p.coyote</code> is a timer. On the ground it is always reset to 0.12. In the air it counts down by <code>dt</code> every frame.</p>
+      <p lang="de"><code>p.coyote</code> ist ein Zeitmesser. Am Boden wird er immer wieder auf 0,12 gesetzt. In der Luft zählt er in jedem Bild um <code>dt</code> herunter.</p>
+      <p lang="en"><code>p.jumpBuf</code> is a timer too: pressing jump sets it to 0.15, then it counts down.</p>
+      <p lang="de"><code>p.jumpBuf</code> ist auch ein Zeitmesser: Die Sprungtaste setzt ihn auf 0,15, dann zählt er herunter.</p>
+      <p lang="en">The jump only happens if <b>both</b> timers are still above zero. That's the whole trick: two countdowns!</p>
+      <p lang="de">Der Sprung passiert nur, wenn <b>beide</b> Zeitmesser noch über null sind. Das ist der ganze Trick: zwei Countdowns!</p>
+      <p lang="en">In water, the same code makes you paddle up out of the water, a bit slower (4.8).</p>
+      <p lang="de">Im Wasser lässt dich derselbe Code aus dem Wasser hochpaddeln, etwas langsamer (4,8).</p>
+      <p lang="en"><code>Math.hypot(vx, vz)</code> is the speed along the ground (Pythagoras!).</p>
+      <p lang="de"><code>Math.hypot(vx, vz)</code> ist das Tempo über den Boden (Pythagoras!).</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="ragdoll-code" data-lv="3">
-  <h2>The real code: one ragdoll step</h2>
+  <h2 lang="en">The real code: one ragdoll step</h2>
+  <h2 lang="de">Der echte Code: ein Ragdoll-Schritt</h2>
   <div class="cols wide-left">
-    <pre data-file="src/physics/ragdoll.js"><code>substep() {
-  const g = GRAV * SUB * SUB;
-  for (let i = 0; i &lt; this.p.length; i++) {
-    const q = this.p[i], o = this.o[i];
-    const vx = (q[0] - o[0]) * 0.998, vy = (q[1] - o[1]) * 0.998, vz = (q[2] - o[2]) * 0.998;
-    o[0] = q[0]; o[1] = q[1]; o[2] = q[2];
-    q[0] += vx; q[1] += vy - g; q[2] += vz;
-  }
-  for (let it = 0; it &lt; ITERS; it++) {
-    for (const [a, b, len] of this.sticks) this.solve(a, b, len, false);
-    for (const [a, b, len] of this.apart) this.solve(a, b, len, true);
-    for (let i = 0; i &lt; this.p.length; i++) this.collide(i);
-  }
-}
-
-solve(a, b, len, apartOnly) {
-  const A = this.p[a], B = this.p[b];
-  const dx = B[0] - A[0], dy = B[1] - A[1], dz = B[2] - A[2];
-  const d = Math.hypot(dx, dy, dz) || 1e-6;
-  if (apartOnly &amp;&amp; d >= len) return;
-  const k = (d - len) / d * 0.5;
-  A[0] += dx * k; A[1] += dy * k; A[2] += dz * k;
-  B[0] -= dx * k; B[1] -= dy * k; B[2] -= dz * k;
-}</code></pre>
+    <pre data-code="src/physics/ragdoll.js#substep,solve"></pre>
     <div>
-      <p><code>p</code> is where each dot is, <code>o</code> where it was ("old"). Their difference is the speed. <code>0.998</code> loses a tiny bit each step, like air slowing it down.</p>
-      <p><code>solve</code> measures a stick (<code>d</code>), compares it with its length (<code>len</code>) and moves <b>both</b> ends half of the difference (<code>* 0.5</code>) towards each other or apart.</p>
-      <p>"Apart" sticks only push, never pull: they just stop a knee from folding all the way into the hip.</p>
+      <p lang="en"><code>p</code> is where each dot is, <code>o</code> where it was ("old"). Their difference is the speed. <code>0.998</code> loses a tiny bit each step, like air slowing it down.</p>
+      <p lang="de"><code>p</code> ist, wo jeder Punkt ist, <code>o</code>, wo er war ("old" heißt alt). Der Unterschied ist das Tempo. <code>0.998</code> verliert in jedem Schritt ein winziges bisschen, als würde die Luft bremsen.</p>
+      <p lang="en"><code>solve</code> measures a stick (<code>d</code>), compares it with its length (<code>len</code>) and moves <b>both</b> ends half of the difference (<code>* 0.5</code>) towards each other or apart.</p>
+      <p lang="de"><code>solve</code> misst einen Stab (<code>d</code>), vergleicht ihn mit seiner Länge (<code>len</code>) und schiebt <b>beide</b> Enden um die Hälfte des Unterschieds (<code>* 0.5</code>) aufeinander zu oder auseinander.</p>
+      <p lang="en">"Apart" sticks only push, never pull: they just stop a knee from folding all the way into the hip.</p>
+      <p lang="de">"Abstands"-Stäbe drücken nur, ziehen nie: Sie verhindern bloß, dass ein Knie ganz in die Hüfte klappt.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Run, Jump, Fall</h2>
+  <h2 lang="en">Prompt quests: Run, Jump, Fall</h2>
+  <h2 lang="de">Prompt-Aufgaben: Rennen, Springen, Fallen</h2>
   <div class="quests">
-    <div class="prompt" data-title="SUPER JUMP" data-stars="1"><q>Make the hero jump a bit higher, about 1.2 units instead of 0.9. Tell me which number you changed and how you calculated it.</q><span class="why">Height = speed &times; speed / (2 &times; gravity). Ask the agent to show the math!</span></div>
-    <div class="prompt" data-title="DOUBLE JUMP" data-stars="2"><q>Add a double jump: pressing jump once more in the air gives a second, smaller jump. Only one extra jump until I land. Put the logic in src/physics/move.js next to the coyote time.</q><span class="why">Careful: the world builder plans jumps based on how far you can jump. A double jump makes the game easier, but should not break it.</span></div>
-    <div class="prompt" data-title="SLIPPERY ICE" data-stars="3"><q>In the frozen caves (depths 7 and 8), make the floor slippery: speeding up and braking should take much longer there. Add the setting to the theme in src/themes/caves.js instead of checking the depth number in the movement code.</q><span class="why">Saying where a setting should live keeps the code tidy. The agent might not choose that by itself.</span></div>
+    <div class="prompt" data-title="SUPER JUMP" data-stars="1" data-de-data-title="SUPERSPRUNG"><q lang="en">Make the hero jump a bit higher, about 1.2 units instead of 0.9. Tell me which number you changed and how you calculated it.</q> <q lang="de">Lass den Helden ein bisschen höher springen, etwa 1,2 Einheiten statt 0,9. Sag mir, welche Zahl du geändert hast und wie du sie ausgerechnet hast.</q><span class="why" lang="en">Height = speed × speed / (2 × gravity). Ask the agent to show the math!</span> <span class="why" lang="de">Höhe = Tempo × Tempo / (2 × Schwerkraft). Lass dir vom Agenten die Rechnung zeigen!</span></div>
+    <div class="prompt" data-title="DOUBLE JUMP" data-stars="2" data-de-data-title="DOPPELSPRUNG"><q lang="en">Add a double jump: pressing jump once more in the air gives a second, smaller jump. Only one extra jump until I land. Put it next to the coyote time.</q> <q lang="de">Füge einen Doppelsprung hinzu: Nochmal Springen in der Luft gibt einen zweiten, kleineren Sprung. Nur ein Extrasprung, bis ich lande. Bau ihn neben die Kojotenzeit.</q><span class="why" lang="en">Careful: the world builder plans jumps based on how far you can jump. A double jump makes the game easier, but should not break it.</span> <span class="why" lang="de">Vorsicht: Der Weltbauer plant Sprünge danach, wie weit du springen kannst. Ein Doppelsprung macht das Spiel leichter, sollte es aber nicht kaputtmachen.</span></div>
+    <div class="prompt" data-title="SLIPPERY ICE" data-stars="3" data-de-data-title="RUTSCHIGES EIS"><q lang="en">In the frozen caves (depths 7 and 8), make the floor slippery: speeding up and braking should take much longer there. Make it a setting of the frozen caves theme instead of checking the depth number in the movement code.</q> <q lang="de">Mach in den Eishöhlen (Tiefe 7 und 8) den Boden rutschig: Beschleunigen und Bremsen sollen dort viel länger dauern. Mach es zu einer Einstellung des Eishöhlen-Themas, statt im Bewegungscode die Tiefen-Nummer zu prüfen.</q><span class="why" lang="en">Saying where a setting should live keeps the code tidy. The agent might not choose that by itself.</span> <span class="why" lang="de">Zu sagen, wo eine Einstellung hingehört, hält den Code ordentlich. Der Agent wählt das vielleicht nicht von selbst.</span></div>
   </div>
 </section>
 

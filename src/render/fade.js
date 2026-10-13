@@ -3,6 +3,7 @@
 // keeps depth writes and sorting intact. Materials must not be shared between cubes.
 // Inverted, a group draws exactly the pixels a normal group with the same value drops: two
 // versions of one cube cross-fade without gaps or overlap.
+// kids-docs: drawing.html#shader-code (see kids-docs/README.md)
 const DITHER = `
   if (uFade < 0.999 || uFadeInv > 0.5 || uRangeFade < 0.999) {
     const float B[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);

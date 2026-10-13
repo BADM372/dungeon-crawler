@@ -3,6 +3,7 @@
 // character (corners at irregular angles), turning slowly.
 import * as THREE from 'three';
 
+// kids-docs: drawing.html#cut-how (see kids-docs/README.md)
 const CORNERS = 9, TURN = 0.18;   // rad/s
 const JITTER = [0.05, -0.22, 0.17, -0.08, 0.26, -0.15, 0.1, -0.27, 0.2];   // in corner steps
 
@@ -26,6 +27,7 @@ export function turnShape(time) {
 turnShape(0);
 
 // 1 inside the cutaway, 0 outside; y-test optional
+// kids-docs: drawing.html#cut-how (see kids-docs/README.md)
 const REGION = `
   bool inPoly(vec2 p) {
     for (int i = 0; i < ${CORNERS}; i++) {

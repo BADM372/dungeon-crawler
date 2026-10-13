@@ -4,6 +4,7 @@ import { player } from '../game/state.js';
 import { groundAt, ceilingAt, slopeAt } from './collide.js';
 import { canMove } from './canmove.js';
 
+// kids-docs: physics.html#feel #walls (see kids-docs/README.md)
 function horizontal(dt, dx, dz, run) {
   const p = player;
   const speed = p.swimming ? (p.fluid === ACID ? 0.6 : SWIM_SPEED) : run ? RUN_SPEED : WALK_SPEED;
@@ -35,9 +36,11 @@ function horizontal(dt, dx, dz, run) {
   if (Math.abs(mz) > 1e-6) { if (canMove(p.x, p.z + mz, 'z', Math.sign(mz))) p.z += mz; else p.vz = 0; }
 }
 
+// kids-docs: physics.html#feel #move-code (see kids-docs/README.md)
 const LEAP = 3.4;   // horizontal speed of a jump while moving
 
 // jump with a little coyote time (just walked off a ledge) and a short input buffer
+// kids-docs: physics.html#feel #move-code (see kids-docs/README.md)
 function jumping(dt, jump) {
   const p = player;
   p.coyote = p.grounded && !p.swimming ? 0.12 : p.coyote - dt;
@@ -53,6 +56,7 @@ function jumping(dt, jump) {
 }
 
 // returns the ground info plus `landed` (impact speed of a landing this step, else 0)
+// kids-docs: physics.html#walls (see kids-docs/README.md)
 export function movePlayer(dt, dx, dz, run, jump) {
   const p = player;
   if (p.stun > 0) { p.stun -= dt; dx = dz = 0; jump = false; }

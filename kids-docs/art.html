@@ -2,118 +2,145 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Making Monsters · Kids' Guide to Cube Crawler</title>
+<title data-de="Monster bauen · Kinderführer zu Cube Crawler">Making Monsters · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="abyss">
 <main class="deck">
 
 <section class="slide" id="by-code" data-lv="1">
-  <h2>Models made by code</h2>
+  <h2 lang="en">Models made by code</h2>
+  <h2 lang="de">Modelle, die Code baut</h2>
   <div class="cols">
     <div>
-      <p class="lead">The houses, trees, swords and monsters are 3D <a class="w" href="words.html#model">models</a>. Usually, an artist builds them by hand in a 3D program, pulling points around with the mouse.</p>
-      <p>In Cube Crawler, they are built by <b>code</b>. In the <code>blender/</code> folder there is a Python script for each one: <code>snake.py</code>, <code>octonaut.py</code>, <code>town.py</code>... Running a script in <b>Blender</b> (a free 3D program) builds the model, its skeleton and its animations, takes preview pictures, and saves everything into <code>assets/</code> for the game.</p>
-      <p>The snake started as a sketch on a whiteboard. Then it was described in words, turned into code, looked at, and improved, again and again.</p>
+      <p class="lead" lang="en">The houses, trees, swords and monsters are 3D <a class="w" href="words.html#model">models</a>. Usually, an artist builds them by hand in a 3D program, pulling points around with the mouse.</p>
+      <p class="lead" lang="de">Die Häuser, Bäume, Schwerter und Monster sind 3D-<a class="w" href="words.html#model">Modelle</a>. Normalerweise baut eine Künstlerin sie von Hand in einem 3D-Programm und zieht dabei Punkte mit der Maus herum.</p>
+      <p lang="en">In Cube Crawler, they are built by <b>code</b>. In the <code>blender/</code> folder there is a Python script for each one: <code>snake.py</code>, <code>octonaut.py</code>, <code>town.py</code>... Running a script in <b>Blender</b> (a free 3D program) builds the model, its skeleton and its animations, takes preview pictures, and saves everything into <code>assets/</code> for the game.</p>
+      <p lang="de">In Cube Crawler werden sie von <b>Code</b> gebaut. Im Ordner <code>blender/</code> gibt es für jedes ein Python-Skript: <code>snake.py</code>, <code>octonaut.py</code>, <code>town.py</code>... Ein Skript in <b>Blender</b> (einem kostenlosen 3D-Programm) auszuführen baut das Modell, sein Skelett und seine Animationen, macht Vorschaubilder und speichert alles für das Spiel in <code>assets/</code>.</p>
+      <p lang="en">The snake started as a sketch on a whiteboard. Then it was described in words, turned into code, looked at, and improved, again and again.</p>
+      <p lang="de">Die Schlange fing als Skizze auf einem Whiteboard an. Dann wurde sie in Worten beschrieben, in Code verwandelt, angeschaut und verbessert, immer wieder.</p>
     </div>
-    <figure><img class="shot" src="../blender/previews/town-preview.png" alt="The town's buildings: an inn, a stable, a pet shop, a blacksmith and three market tents"><figcaption>The town's buildings, all made by blender/town.py. These preview pictures are made by the scripts too.</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/town-preview.png" alt="The town's buildings: an inn, a stable, a pet shop, a blacksmith and three market tents" data-de-alt="Die Gebäude der Stadt: ein Gasthaus, ein Stall, eine Tierhandlung, eine Schmiede und drei Marktstände"><figcaption lang="en">The town's buildings, all made by blender/town.py. These preview pictures are made by the scripts too.</figcaption> <figcaption lang="de">Die Gebäude der Stadt, alle gebaut von blender/town.py. Auch diese Vorschaubilder machen die Skripte.</figcaption></figure>
   </div>
 </section>
 
 <section class="slide" id="clay" data-lv="1">
-  <h2>Try it: digital clay</h2>
-  <p>The monsters are made like clay figures: a body, a head, some legs, and they <b>melt together</b> where they meet. Drag the blobs and change how much they melt.</p>
+  <h2 lang="en">Try it: digital clay</h2>
+  <h2 lang="de">Probier es: digitale Knete</h2>
+  <p lang="en">The monsters are made like clay figures: a body, a head, some legs, and they <b>melt together</b> where they meet. Drag the blobs and change how much they melt.</p>
+  <p lang="de">Die Monster werden gemacht wie Knetfiguren: ein Körper, ein Kopf, ein paar Beine, und wo sie sich treffen, <b>verschmelzen</b> sie. Zieh die Klumpen herum und ändere, wie sehr sie verschmelzen.</p>
   <div class="demo" data-demo="sdf"></div>
-  <p class="small muted">The game's monster scripts do this in 3D with dozens of shapes: tubes for legs, balls for eyes, cones for flames.</p>
+  <p class="small muted" lang="en">The game's monster scripts do this in 3D with dozens of shapes: tubes for legs, balls for eyes, cones for flames.</p>
+  <p class="small muted" lang="de">Die Monster-Skripte des Spiels machen das in 3D mit Dutzenden Formen: Röhren für Beine, Kugeln für Augen, Kegel für Flammen.</p>
 </section>
 
 <section class="slide" id="sdf" data-lv="2">
-  <h2>Signed distance fields</h2>
+  <h2 lang="en">Signed distance fields</h2>
+  <h2 lang="de">Vorzeichenbehaftete Distanzfelder</h2>
   <div class="cols">
     <div>
-      <p>How do you describe a ball with code? Not with points and triangles, but with a question: <i>"how far is this spot from the ball's surface?"</i></p>
-      <pre><code>distance = (distance to the centre) - radius</code></pre>
-      <p>Outside the ball the answer is positive, on the surface zero, inside negative. That's why it's called a <b>signed</b> distance <a class="w" href="words.html#sdf">field</a>. Switch on "show distances" in the demo to see the rings.</p>
-      <p>To join two shapes: take the <b>smaller</b> of the two distances. For melting, use a <i>smooth</i> minimum, which rounds off the crease where they meet.</p>
+      <p lang="en">How do you describe a ball with code? Not with points and triangles, but with a question: <i>"how far is this spot from the ball's surface?"</i></p>
+      <p lang="de">Wie beschreibt man eine Kugel mit Code? Nicht mit Punkten und Dreiecken, sondern mit einer Frage: <i>"Wie weit ist diese Stelle von der Oberfläche der Kugel entfernt?"</i></p>
+      <pre><code lang="en">distance = (distance to the centre) - radius</code> <code lang="de">Abstand = (Abstand zur Mitte) - Radius</code></pre>
+      <p lang="en">Outside the ball the answer is positive, on the surface zero, inside negative. That's why it's called a <b>signed</b> distance <a class="w" href="words.html#sdf">field</a>. Switch on "show distances" in the demo to see the rings.</p>
+      <p lang="de">Außerhalb der Kugel ist die Antwort positiv, auf der Oberfläche null, innen negativ. Darum heißt es <b>vorzeichenbehaftetes</b> Distanz<a class="w" href="words.html#sdf">feld</a> (Signed Distance Field, SDF). Schalte in der Demo "Abstände zeigen" an, um die Ringe zu sehen.</p>
+      <p lang="en">To join two shapes: take the <b>smaller</b> of the two distances. For melting, use a <i>smooth</i> minimum, which rounds off the crease where they meet.</p>
+      <p lang="de">Um zwei Formen zu verbinden: Nimm den <b>kleineren</b> der beiden Abstände. Zum Verschmelzen nimmt man ein <i>weiches</i> Minimum, das die Kante abrundet, wo sie sich treffen.</p>
     </div>
     <div class="card">
-      <h3>From field to triangles</h3>
-      <p>The graphics card wants triangles, not questions. So the script asks the question at millions of points on a 3D grid, and a program called OpenVDB builds the triangles along the "zero" surface.</p>
-      <p>Then all parts become <b>one smooth mesh</b> with plain colours: no pictures painted on it. That's what gives the monsters their soft, toy-like look.</p>
-      <figure><img class="shot" src="../blender/previews/fireface-preview.png" alt="The Fire-face monster in six poses"><figcaption>The Fire-face: flame tongues are melted cones.</figcaption></figure>
+      <h3 lang="en">From field to triangles</h3>
+      <h3 lang="de">Vom Feld zu Dreiecken</h3>
+      <p lang="en">The graphics card wants triangles, not questions. So the script asks the question at millions of points on a 3D grid, and a program called OpenVDB builds the triangles along the "zero" surface.</p>
+      <p lang="de">Die Grafikkarte will Dreiecke, keine Fragen. Darum stellt das Skript die Frage an Millionen Punkten auf einem 3D-Gitter, und ein Programm namens OpenVDB baut die Dreiecke entlang der "Null"-Oberfläche.</p>
+      <p lang="en">Then all parts become <b>one smooth mesh</b> with plain colours: no pictures painted on it. That's what gives the monsters their soft, toy-like look.</p>
+      <p lang="de">Dann werden alle Teile zu <b>einem glatten Netz</b> mit einfachen Farben: keine aufgemalten Bilder. Das gibt den Monstern ihr weiches, spielzeugartiges Aussehen.</p>
+      <figure><img class="shot" src="../blender/previews/fireface-preview.png" alt="The Fire-face monster in six poses" data-de-alt="Das Fire-face-Monster in sechs Posen"><figcaption lang="en">The Fire-face: flame tongues are melted cones.</figcaption> <figcaption lang="de">Das Fire-face: Die Flammenzungen sind verschmolzene Kegel.</figcaption></figure>
     </div>
   </div>
 </section>
 
-<section class="slide" id="bones" data-lv="2">
-  <h2>Bones and animations</h2>
+<section class="slide" id="bones" data-lv="2" data-src="src/core/enemies.js#SNAKE">
+  <h2 lang="en">Bones and animations</h2>
+  <h2 lang="de">Knochen und Animationen</h2>
   <div class="cols">
     <div>
-      <p>To move, a model needs a <b>skeleton</b>: invisible bones inside it. Every corner of the mesh is glued to one or more bones, a bit like skin. Move the bone, and the skin follows.</p>
-      <p>The scripts compute every pose with math, and save it as <b>keyframes</b>, 30 per second. A few short clips per monster: walk, attack, death.</p>
-      <p>The snake's walk is clever: a wave runs backwards along its body at exactly its walking speed. So its body slides along a path that stays still on the floor, like a real snake!</p>
+      <p lang="en">To move, a model needs a <b>skeleton</b>: invisible bones inside it. Every corner of the mesh is glued to one or more bones, a bit like skin. Move the bone, and the skin follows.</p>
+      <p lang="de">Um sich zu bewegen, braucht ein Modell ein <b>Skelett</b>: unsichtbare Knochen darin. Jede Ecke des Netzes klebt an einem oder mehreren Knochen, ein bisschen wie Haut. Beweg den Knochen, und die Haut folgt.</p>
+      <p lang="en">The scripts compute every pose with math, and save it as <b>keyframes</b>, 30 per second. A few short clips per monster: walk, attack, death.</p>
+      <p lang="de">Die Skripte berechnen jede Pose mit Mathe und speichern sie als <b>Schlüsselbilder</b> (Keyframes), 30 pro Sekunde. Ein paar kurze Clips pro Monster: laufen, angreifen, sterben.</p>
+      <p lang="en">The snake's walk is clever: a wave runs backwards along its body at exactly its walking speed. So its body slides along a path that stays still on the floor, like a real snake!</p>
+      <p lang="de">Der Lauf der Schlange ist schlau: Eine Welle läuft genau mit ihrem Lauftempo rückwärts den Körper entlang. So gleitet ihr Körper einen Weg entlang, der auf dem Boden stillsteht, wie bei einer echten Schlange!</p>
     </div>
     <div class="card">
-      <h3>The game and the art must agree</h3>
-      <p>The snake's attack clip snaps its jaw shut on <b>frame 12</b>. So the game deals the bite damage at 12/30 = 0.4 seconds into the attack. If one changes without the other, the bite would hurt before (or after) the jaw closes.</p>
-      <p>That's why the game has tests that open the exported models and check that the clips, bones and hit frames are what the code expects.</p>
-      <p>In the game, the hero's clips are also <b>blended</b>: idle into walk into run, depending on speed, and the legs swing further when running faster than the clip.</p>
+      <h3 lang="en">The game and the art must agree</h3>
+      <h3 lang="de">Spiel und Kunst müssen zusammenpassen</h3>
+      <p lang="en">The snake's attack clip snaps its jaw shut on <b>frame 12</b>. So the game deals the bite damage at 12/30 = 0.4 seconds into the attack. If one changes without the other, the bite would hurt before (or after) the jaw closes.</p>
+      <p lang="de">Der Angriffsclip der Schlange schnappt bei <b>Bild 12</b> den Kiefer zu. Darum macht das Spiel den Bissschaden nach 12/30 = 0,4 Sekunden des Angriffs. Würde sich eins ändern ohne das andere, täte der Biss weh, bevor (oder nachdem) der Kiefer zuschnappt.</p>
+      <p lang="en">That's why the game has tests that open the exported models and check that the clips, bones and hit frames are what the code expects.</p>
+      <p lang="de">Darum hat das Spiel Tests, die die exportierten Modelle öffnen und prüfen, dass Clips, Knochen und Trefferbilder so sind, wie der Code es erwartet.</p>
+      <p lang="en">In the game, the hero's clips are also <b>blended</b>: idle into walk into run, depending on speed, and the legs swing further when running faster than the clip.</p>
+      <p lang="de">Im Spiel werden die Clips des Helden auch <b>gemischt</b>: Stehen geht in Gehen über und Gehen in Rennen, je nach Tempo, und die Beine schwingen weiter aus, wenn er schneller rennt als der Clip.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="recolour" data-lv="1">
-  <h2>Try it: same snake, new colours</h2>
-  <p>A Blood viper is the same model as a Grass snake, just recoloured. The game picks one <b>anchor</b> colour (the skin) and moves all related colours along with it, so the darker rib bands stay darker by the same amount. Click the kinds, or mix your own.</p>
+  <h2 lang="en">Try it: same snake, new colours</h2>
+  <h2 lang="de">Probier es: dieselbe Schlange, neue Farben</h2>
+  <p lang="en">A Blood viper is the same model as a Grass snake, just recoloured. The game picks one <b>anchor</b> colour (the skin) and moves all related colours along with it, so the darker rib bands stay darker by the same amount. Click the kinds, or mix your own.</p>
+  <p lang="de">Eine Blood viper ist dasselbe Modell wie eine Grass snake, nur umgefärbt. Das Spiel wählt eine <b>Ankerfarbe</b> (die Haut) und bewegt alle verwandten Farben mit, damit die dunkleren Rippenstreifen um genauso viel dunkler bleiben. Klick die Sorten an oder misch deine eigene.</p>
   <div class="demo real" data-demo="recolor"></div>
-  <p class="small muted">The colours use OKLCH: <b>L</b>ightness, <b>C</b>olourfulness (chroma) and <b>H</b>ue. Unlike plain RGB, changing the hue doesn't make a colour suddenly look brighter or darker.</p>
+  <p class="small muted" lang="en">The colours use OKLCH: <b>L</b>ightness, <b>C</b>olourfulness (chroma) and <b>H</b>ue. Unlike plain RGB, changing the hue doesn't make a colour suddenly look brighter or darker.</p>
+  <p class="small muted" lang="de">Die Farben benutzen OKLCH: <b>L</b> für Helligkeit (lightness), <b>C</b> für Buntheit (chroma) und <b>H</b> für den Farbton (hue). Anders als bei einfachem RGB sieht eine Farbe nicht plötzlich heller oder dunkler aus, wenn man den Farbton ändert.</p>
 </section>
 
 <section class="slide" id="checking-art" data-lv="2">
-  <h2>Looking at your work</h2>
+  <h2 lang="en">Looking at your work</h2>
+  <h2 lang="de">Die eigene Arbeit anschauen</h2>
   <div class="cols">
     <div>
-      <p>An AI helper can't hold the model in its hands. So the scripts make it easy to <b>look</b>:</p>
+      <p lang="en">An AI helper can't hold the model in its hands. So the scripts make it easy to <b>look</b>:</p>
+      <p lang="de">Ein KI-Helfer kann das Modell nicht in die Hand nehmen. Darum machen es die Skripte leicht, <b>hinzuschauen</b>:</p>
       <ul>
-        <li>Every script renders a <b>contact sheet</b>: the model in several poses, side by side, saved as a picture in <code>blender/previews/</code>. A person, or an agent that can see images, can check it.</li>
-        <li>Blender can be controlled from outside: an agent can talk to a running Blender, build a model, and look at it.</li>
-        <li><code>blender/tests/</code> has test scripts that check the libraries of props and items.</li>
+        <li lang="en">Every script renders a <b>contact sheet</b>: the model in several poses, side by side, saved as a picture in <code>blender/previews/</code>. A person, or an agent that can see images, can check it.</li>
+        <li lang="de">Jedes Skript zeichnet einen <b>Kontaktbogen</b>: das Modell in mehreren Posen nebeneinander, als Bild in <code>blender/previews/</code> gespeichert. Ein Mensch, oder ein Agent, der Bilder sehen kann, kann es prüfen.</li>
+        <li lang="en">Blender can be controlled from outside: an agent can talk to a running Blender, build a model, and look at it.</li>
+        <li lang="de">Blender lässt sich von außen steuern: Ein Agent kann mit einem laufenden Blender reden, ein Modell bauen und es anschauen.</li>
+        <li lang="en"><code>blender/tests/</code> has test scripts that check the libraries of props and items.</li>
+        <li lang="de">In <code>blender/tests/</code> gibt es Testskripte, die die Sammlungen von Requisiten und Gegenständen prüfen.</li>
       </ul>
     </div>
-    <figure><img class="shot" src="../blender/previews/items-preview.png" alt="A sheet of item models: swords, potions, coins, crystals"><figcaption>The items contact sheet: every sword, potion and coin.</figcaption></figure>
+    <figure><img class="shot" src="../blender/previews/items-preview.png" alt="A sheet of item models: swords, potions, coins, crystals" data-de-alt="Ein Bogen mit Gegenstandsmodellen: Schwerter, Tränke, Münzen, Kristalle"><figcaption lang="en">The items contact sheet: every sword, potion and coin.</figcaption> <figcaption lang="de">Der Kontaktbogen der Gegenstände: jedes Schwert, jeder Trank und jede Münze.</figcaption></figure>
   </div>
 </section>
 
 <section class="slide" id="sdf-code" data-lv="3">
-  <h2>The real code: clay in Python</h2>
+  <h2 lang="en">The real code: clay in Python</h2>
+  <h2 lang="de">Der echte Code: Knete in Python</h2>
   <div class="cols wide-left">
-    <pre data-file="blender/figure.py and blender/creature.py"><code>def _smin(a, b, k):
-    h = np.clip(0.5 + 0.5 * (b - a) / k, 0.0, 1.0)
-    return b * (1 - h) + a * h - k * h * (1 - h)
-
-def ellipsoid(P, center, radii):
-    """IQ ellipsoid distance approximation (well-behaved zero surface)."""
-    q = P - np.asarray(center, np.float32)
-    r = np.asarray(radii, np.float32)
-    k0 = np.linalg.norm(q / r, axis=-1)
-    k1 = np.linalg.norm(q / (r * r), axis=-1)
-    return np.where(k1 > 1e-8, k0 * (k0 - 1) / np.maximum(k1, 1e-8), -min(r))</code></pre>
+    <pre data-code="blender/figure.py#_smin blender/creature.py#ellipsoid"></pre>
     <div>
-      <p>This is <b>Python</b>, the language Blender speaks. <code>np</code> is NumPy, which does math on millions of points at once.</p>
-      <p><code>_smin</code> is the smooth minimum. <code>h</code> says how much each shape wins at this spot; the last part, <code>- k * h * (1 - h)</code>, pulls the surface outwards where both are close: that's the melted fillet. The demo two slides back uses this exact formula.</p>
-      <p><code>ellipsoid</code> is the distance to an egg shape (IQ is Inigo Quilez, who shares lots of these formulas online).</p>
-      <p>A monster is a long list of shapes like this, joined with <code>_smin</code>.</p>
+      <p lang="en">This is <b>Python</b>, the language Blender speaks. <code>np</code> is NumPy, which does math on millions of points at once.</p>
+      <p lang="de">Das ist <b>Python</b>, die Sprache, die Blender spricht. <code>np</code> ist NumPy, das Mathe mit Millionen Punkten auf einmal macht.</p>
+      <p lang="en"><code>_smin</code> is the smooth minimum. <code>h</code> says how much each shape wins at this spot; the last part, <code>- k * h * (1 - h)</code>, pulls the surface outwards where both are close: that's the melted fillet. The demo two slides back uses this exact formula.</p>
+      <p lang="de"><code>_smin</code> ist das weiche Minimum. <code>h</code> sagt, wie sehr jede Form an dieser Stelle gewinnt; der letzte Teil, <code>- k * h * (1 - h)</code>, zieht die Oberfläche nach außen, wo beide nah sind: Das ist die verschmolzene Rundung. Die Demo zwei Folien vorher benutzt genau diese Formel.</p>
+      <p lang="en"><code>ellipsoid</code> is the distance to an egg shape (IQ is Inigo Quilez, who shares lots of these formulas online).</p>
+      <p lang="de"><code>ellipsoid</code> ist der Abstand zu einer Eiform (IQ ist Inigo Quilez, der viele solche Formeln im Internet teilt).</p>
+      <p lang="en">A monster is a long list of shapes like this, joined with <code>_smin</code>.</p>
+      <p lang="de">Ein Monster ist eine lange Liste solcher Formen, verbunden mit <code>_smin</code>.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Making Monsters</h2>
+  <h2 lang="en">Prompt quests: Making Monsters</h2>
+  <h2 lang="de">Prompt-Aufgaben: Monster bauen</h2>
   <div class="quests">
-    <div class="prompt" data-title="NEW EYES" data-stars="1"><q>Change the Octonaut's eye colour from purple to bright yellow in its Blender script, re-export it, and show me the new preview picture.</q><span class="why">Asking for the preview picture means you (and the agent) can see if it worked.</span></div>
-    <div class="prompt" data-title="PET MUSHROOM" data-stars="3"><q>I drew a walking mushroom monster: a red cap with white dots, a fat stem, two stubby legs and big eyes. Make a new Blender script for it, built from SDF shapes like blender/snake.py and creature.py, with a walk, an attack and a death clip. Render a preview contact sheet so I can see it. Don't add it to the game yet.</q><span class="why">You can even give the agent a photo of your drawing! And "don't add it to the game yet" keeps the first step small.</span></div>
-    <div class="prompt" data-title="EXPLAIN A SCRIPT" data-stars="1"><q>Explain how blender/triangle.py builds the Triangle monster, part by part, in simple words.</q><span class="why">Reading a model script with an agent is like having the artist explain their work.</span></div>
+    <div class="prompt" data-title="NEW EYES" data-stars="1" data-de-data-title="NEUE AUGEN"><q lang="en">Change the Octonaut's eye colour from purple to bright yellow in its Blender script, re-export it, and show me the new preview picture.</q> <q lang="de">Ändere die Augenfarbe des Octonauts in seinem Blender-Skript von lila zu knallgelb, exportiere es neu und zeig mir das neue Vorschaubild.</q><span class="why" lang="en">Asking for the preview picture means you (and the agent) can see if it worked.</span> <span class="why" lang="de">Nach dem Vorschaubild zu fragen heißt, dass du (und der Agent) sehen könnt, ob es geklappt hat.</span></div>
+    <div class="prompt" data-title="PET MUSHROOM" data-stars="3" data-de-data-title="HAUSTIER-PILZ"><q lang="en">I drew a walking mushroom monster: a red cap with white dots, a fat stem, two stubby legs and big eyes. Make a new Blender script for it, built the same way as the other monsters, with a walk, an attack and a death clip. Render a preview contact sheet so I can see it. Don't add it to the game yet.</q> <q lang="de">Ich habe ein laufendes Pilzmonster gemalt: ein roter Hut mit weißen Punkten, ein dicker Stiel, zwei stummelige Beine und große Augen. Schreib ein neues Blender-Skript dafür, gebaut wie die anderen Monster, mit einem Lauf-, einem Angriffs- und einem Sterbe-Clip. Mach einen Kontaktbogen, damit ich es sehen kann. Bau es noch nicht ins Spiel ein.</q><span class="why" lang="en">You can even give the agent a photo of your drawing! And "don't add it to the game yet" keeps the first step small.</span> <span class="why" lang="de">Du kannst dem Agenten sogar ein Foto deiner Zeichnung geben! Und "bau es noch nicht ein" hält den ersten Schritt klein.</span></div>
+    <div class="prompt" data-title="EXPLAIN A SCRIPT" data-stars="1" data-de-data-title="EIN SKRIPT ERKLÄRT"><q lang="en">Explain how the Triangle monster's model is built, part by part, in simple words.</q> <q lang="de">Erklär mir Teil für Teil in einfachen Worten, wie das Modell des Triangle-Monsters gebaut wird.</q><span class="why" lang="en">Reading a model script with an agent is like having the artist explain their work.</span> <span class="why" lang="de">Ein Modell-Skript mit einem Agenten zu lesen ist, als würde die Künstlerin ihre Arbeit erklären.</span></div>
   </div>
 </section>
 

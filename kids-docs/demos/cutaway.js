@@ -2,7 +2,7 @@
 // are probed in small steps; the first solid in the way sets how deep the cut goes (just under
 // a floor above, or snapped to the terrain levels). Everything above the cut and in front of
 // the hero is drawn as faint glass. The cut springs open fast and closes slowly.
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 const PX = 40, LH = 0.5, STEP = 0.12, PITCH = 44 * Math.PI / 180;
 // solids in a side view: [x0, x1, bottom, top] in game units
@@ -11,8 +11,8 @@ const GROUND = [0, 1, 5];   // what the hero can stand on (it walks under the fl
 
 export default function mount(el) {
   const W = 640, H = 300, { g, c, at } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label><input type="checkbox" class="on" checked> cutaway</label>
-    <label><input type="checkbox" class="ray" checked> show the probe</label><span class="muted small">drag the hero left and right</span></div>`);
+  const row = html(el, `<div class="row"><label><input type="checkbox" class="on" checked> ${tr('cutaway', 'Ausschnitt')}</label>
+    <label><input type="checkbox" class="ray" checked> ${tr('show the probe', 'Sonde zeigen')}</label><span class="muted small">${tr('drag the hero left and right', 'zieh den Helden nach links und rechts')}</span></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
   const hero = { x: 6, y: 1.5 };
@@ -63,15 +63,16 @@ export default function mount(el) {
     const hx = X(hero.x), hy = Y(hero.y);
     g.fillStyle = '#e6e9ef'; g.beginPath(); g.roundRect(hx - 8, hy - 0.85 * PX, 16, 0.85 * PX, 6); g.fill();
     // the camera, far up and to the right, and the probe
-    g.fillStyle = '#8a96a8'; g.font = '12px ui-monospace, monospace'; g.fillText('to the camera \u2197', W - 130, 18);
+    g.fillStyle = '#8a96a8'; g.font = '12px ui-monospace, monospace'; g.fillText(tr('to the camera \u2197', 'zur Kamera \u2197'), W - 130, 18);
     if ($('.ray').checked) {
       for (const [px, py] of tg.b.probes) { g.fillStyle = '#ffffffaa'; g.fillRect(X(px) - 1, Y(py) - 1, 2, 2); }
       if (tg.b.at) { g.strokeStyle = '#ff6a5a'; g.lineWidth = 2; g.beginPath(); g.arc(X(tg.b.at[0]), Y(tg.b.at[1]), 6, 0, 7); g.stroke(); }
     }
     if (on && cut < TOP) { g.strokeStyle = '#ffcf7a'; g.setLineDash([6, 5]); g.beginPath(); g.moveTo(X(hero.x - 0.6), Y(cut)); g.lineTo(W, Y(cut)); g.stroke(); g.setLineDash([]);
-      g.fillStyle = '#ffcf7a'; g.fillText(`cut at ${cut.toFixed(2)}`, X(hero.x) + 14, Y(cut) - 6); }
-    out.innerHTML = tg.b.h === Infinity ? 'Nothing between the hero and the camera: no cut needed.'
-      : `The probe hit something at height <b>${tg.b.h.toFixed(2)}</b> after ${tg.b.probes.length} little steps. The cut goes to <b>${tg.t.toFixed(2)}</b>${on ? '' : ' (but the cutaway is off: where is the hero?)'}.`;
+      g.fillStyle = '#ffcf7a'; g.fillText(`${tr('cut at', 'Schnitt bei')} ${cut.toFixed(2)}`, X(hero.x) + 14, Y(cut) - 6); }
+    out.innerHTML = tg.b.h === Infinity ? tr('Nothing between the hero and the camera: no cut needed.', 'Nichts zwischen Held und Kamera: kein Schnitt nötig.')
+      : tr(`The probe hit something at height <b>${tg.b.h.toFixed(2)}</b> after ${tg.b.probes.length} little steps. The cut goes to <b>${tg.t.toFixed(2)}</b>${on ? '' : ' (but the cutaway is off: where is the hero?)'}.`,
+        `Die Sonde ist nach ${tg.b.probes.length} kleinen Schritten in Höhe <b>${tg.b.h.toFixed(2)}</b> auf etwas gestoßen. Der Schnitt geht bis <b>${tg.t.toFixed(2)}</b>${on ? '' : ' (aber der Ausschnitt ist aus: wo ist der Held?)'}.`);
   }
   c.onpointerdown = e => { drag = true; c.setPointerCapture(e.pointerId); move(e); };
   c.onpointermove = e => { if (drag) move(e); };

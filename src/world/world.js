@@ -13,8 +13,10 @@ import { isTown, isMerchantCamp, isClearing, enemyFreeAt, isInterior } from './t
 import { generateInterior } from '../cubegen/interior.js';
 
 // how much each WFC kind leans towards an archetype (times the theme's weights)
+// kids-docs: world.html#archetypes (see kids-docs/README.md)
 const LEAN = { highland: { mesa: 2, spire: 2, archipelago: 0.3 }, lake: { archipelago: 3, crater: 2 }, gorge: { chasm: 3 },
   river: { chasm: 1.5, archipelago: 0.5 }, meadow: { plain: 1.5 }, slope: { mesa: 1.5 } };
+// kids-docs: random.html#pick-code, world.html#archetypes (see kids-docs/README.md)
 function archetype(theme, kind, R) {
   const w = Object.entries(theme.arche).map(([a, v]) => [a, v * (LEAN[kind]?.[a] ?? 1)]);
   let r = R() * w.reduce((s, [, v]) => s + v, 0);

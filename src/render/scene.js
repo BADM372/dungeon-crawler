@@ -15,10 +15,13 @@ scene.fog = new THREE.Fog(0x000000, 1e4, 2e4);   // always present (adding fog l
 
 // the backdrop (sky gradient, clouds, stars) is in sky.js
 
+// kids-docs: drawing.html#camera (see kids-docs/README.md)
 export const camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.1, 500);
 
+// kids-docs: drawing.html#light (see kids-docs/README.md)
 export const hemi = new THREE.HemisphereLight(0xdfeaff, 0x3a3020, 1.1);
 scene.add(hemi);
+// kids-docs: drawing.html#light (see kids-docs/README.md)
 export const sun = new THREE.DirectionalLight(0xfff1dd, 2.4);
 sun.position.set(N / 2 - 12, 34, N / 2 + 8);
 sun.target.position.set(N / 2, 0, N / 2);

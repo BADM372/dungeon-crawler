@@ -2,17 +2,17 @@
 // blended in between, then a few layers (octaves) added up: big gentle hills plus smaller and
 // smaller bumps. The ground is cut into levels, like the game's terrain steps.
 import { hash32 } from '../../src/core/util.js';
-import { canvas, html } from '../deck.js';
+import { canvas, html, t as tr } from '../deck.js';
 
 export default function mount(el) {
   const W = 640, H = 300, { g } = canvas(el, W, H);
   const row = html(el, `<div class="row">
-    <label><input type="checkbox" class="o0" checked> big hills</label>
-    <label><input type="checkbox" class="o1" checked> medium bumps</label>
-    <label><input type="checkbox" class="o2" checked> small bumps</label>
-    <label>stretch <input type="range" class="zoom" min="2" max="40" value="12"></label>
-    <label>levels <input type="range" class="lv" min="2" max="24" value="12"></label>
-    <button class="dice">New seed</button></div>`);
+    <label><input type="checkbox" class="o0" checked> ${tr('big hills', 'große Hügel')}</label>
+    <label><input type="checkbox" class="o1" checked> ${tr('medium bumps', 'mittlere Buckel')}</label>
+    <label><input type="checkbox" class="o2" checked> ${tr('small bumps', 'kleine Buckel')}</label>
+    <label>${tr('stretch', 'Dehnung')} <input type="range" class="zoom" min="2" max="40" value="12"></label>
+    <label>${tr('levels', 'Stufen')} <input type="range" class="lv" min="2" max="24" value="12"></label>
+    <button class="dice">${tr('New seed', 'Neuer Seed')}</button></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
   let seed = 7;
@@ -37,7 +37,7 @@ export default function mount(el) {
       for (let px = 0; px <= W; px += 2) { const y = 8 + o * 34 + (1 - octave(o, px / cw / zoom)) * 28; px ? g.lineTo(px, y) : g.moveTo(px, y); }
       g.stroke();
       g.fillStyle = on[o] ? colors[o] : '#5a6678'; g.font = '11px ui-monospace, monospace';
-      g.fillText(['big hills \u00D71', 'medium \u00D7\u00BD', 'small \u00D7\u00BC'][o], W - 104, 20 + o * 34);
+      g.fillText([tr('big hills \u00D71', 'große Hügel \u00D71'), tr('medium \u00D7\u00BD', 'mittel \u00D7\u00BD'), tr('small \u00D7\u00BC', 'klein \u00D7\u00BC')][o], W - 118, 20 + o * 34);
     }
     // their sum, normalised like the game's (each layer half as strong as the one before)
     const sum = x => { let s = 0, n = 0; for (let o = 0; o < 3; o++) if (on[o]) { s += octave(o, x) * 0.5 ** o; n += 0.5 ** o; } return n ? s / n : 0.5; };
@@ -54,8 +54,9 @@ export default function mount(el) {
     g.strokeStyle = '#ffffff33'; g.setLineDash([4, 4]);
     for (let i = 16; i < cells; i += 16) { g.beginPath(); g.moveTo(i * cw, top - 10); g.lineTo(i * cw, base); g.stroke(); }
     g.setLineDash([]);
-    g.fillStyle = '#8a96a8'; g.fillText('dashed lines: where one cube ends and the next begins', 8, top - 14);
-    out.innerHTML = `${on.filter(Boolean).length} layer(s) added together, cut into <b>${levels}</b> levels. White line: the smooth noise. Blocks: the ground.`;
+    g.fillStyle = '#8a96a8'; g.fillText(tr('dashed lines: where one cube ends and the next begins', 'gestrichelt: wo ein Würfel endet und der nächste beginnt'), 8, top - 14);
+    out.innerHTML = tr(`${on.filter(Boolean).length} layer(s) added together, cut into <b>${levels}</b> levels. White line: the smooth noise. Blocks: the ground.`,
+      `${on.filter(Boolean).length} Schicht(en) zusammengezählt, in <b>${levels}</b> Stufen geschnitten. Weiße Linie: das glatte Rauschen. Blöcke: der Boden.`);
   }
   row.querySelectorAll('input').forEach(i => i.oninput = draw);
   $('.dice').onclick = () => { seed = Math.floor(Math.random() * 1e9); draw(); };

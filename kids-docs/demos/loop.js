@@ -2,9 +2,9 @@
 //   basic:  a runner, an FPS slider and the listen / think / draw steps lighting up
 //   dt:     two runners: one moves speed × dt, the other a fixed step per frame
 //   follow: smoothing, the way the game's camera and zoom catch up (x += (target - x) × dt × k)
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
-const PHASES = ['LISTEN', 'THINK', 'DRAW'];
+const PHASES = () => [tr('LISTEN', 'HÖREN'), tr('THINK', 'DENKEN'), tr('DRAW', 'MALEN')];
 
 function runner(g, x, y, t, color) {
   const leg = Math.sin(t * 14) * 6;
@@ -20,8 +20,8 @@ export default function mount(el) {
   const mode = el.dataset.mode || 'basic';
   if (mode === 'follow') return follow(el);
   const H = mode === 'dt' ? 220 : 190, { g, w, c } = canvas(el, 640, H);
-  const row = html(el, `<div class="row"><label>pictures per second <input type="range" min="1" max="60" value="60"> <b class="fps">60</b></label>
-    ${mode === 'basic' ? '<span class="muted small">click the picture to jump</span>' : '<button class="reset">restart race</button>'}</div>`);
+  const row = html(el, `<div class="row"><label>${tr('pictures per second', 'Bilder pro Sekunde')} <input type="range" min="1" max="60" value="60"> <b class="fps">60</b></label>
+    ${mode === 'basic' ? `<span class="muted small">${tr('click the picture to jump', 'klick auf das Bild zum Springen')}</span>` : `<button class="reset">${tr('restart race', 'Rennen neu starten')}</button>`}</div>`);
   const out = html(el, '<div class="out"></div>');
   const slider = row.querySelector('input'), fpsOut = row.querySelector('.fps');
   let fps = 60, acc = 0, frames = 0, flash = 0, t = 0, wantJump = false;
@@ -56,8 +56,8 @@ export default function mount(el) {
     else {
       g.fillStyle = '#ffcf7a55'; g.fillRect(w - 40, 10, 3, H - 20);
       runner(g, A.x, 95, t, '#61dc6b'); runner(g, B.x, 190, t, '#ff8a7a');
-      g.font = '12px ui-monospace, monospace'; g.fillStyle = '#61dc6b'; g.fillText('moves speed \u00D7 dt', 8, 20);
-      g.fillStyle = '#ff8a7a'; g.fillText('moves the same step every picture', 8, 115);
+      g.font = '12px ui-monospace, monospace'; g.fillStyle = '#61dc6b'; g.fillText(tr('moves speed \u00D7 dt', 'bewegt sich Tempo \u00D7 dt'), 8, 20);
+      g.fillStyle = '#ff8a7a'; g.fillText(tr('moves the same step every picture', 'macht in jedem Bild den gleichen Schritt'), 8, 115);
     }
   }
   loop(el, dt => {
@@ -70,17 +70,19 @@ export default function mount(el) {
       // the three steps of the last tick, lit one after the other
       const p = flash > 0 ? Math.min(2, Math.floor((1 - flash / Math.min(0.3, 1 / fps)) * 3)) : -1;
       g.clearRect(0, 160, w, 30);
-      PHASES.forEach((name, i) => {
+      PHASES().forEach((name, i) => {
         g.fillStyle = i === p ? ['#5fd3ff', '#ffcf7a', '#61dc6b'][i] : '#2a2f3a';
         g.fillRect(8 + i * 112, 164, 104, 22);
         g.fillStyle = i === p ? '#0b0d12' : '#8a96a8'; g.font = 'bold 12px ui-monospace, monospace';
         g.fillText(name, 18 + i * 112, 179);
       });
-      out.innerHTML = `pictures drawn: <b>${frames}</b>   time between pictures: <b>${(1000 / fps).toFixed(1)} ms</b>`;
+      out.innerHTML = `${tr('pictures drawn', 'gemalte Bilder')}: <b>${frames}</b>   ${tr('time between pictures', 'Zeit zwischen den Bildern')}: <b>${(1000 / fps).toFixed(1)} ms</b>`;
     } else {
       out.innerHTML = race.done
-        ? (Math.abs(A.x - B.x) < 8 ? 'A tie! At 60 pictures per second both ways give the same result.' : `The ${A.x > B.x ? 'green' : 'red'} runner wins. Now try another speed.`)
-        : `green: <b>${Math.round(A.x)}</b> px   red: <b>${Math.round(B.x)}</b> px`;
+        ? (Math.abs(A.x - B.x) < 8 ? tr('A tie! At 60 pictures per second both ways give the same result.', 'Unentschieden! Bei 60 Bildern pro Sekunde kommt bei beiden das Gleiche heraus.')
+          : A.x > B.x ? tr('The green runner wins. Now try another speed.', 'Der grüne Läufer gewinnt. Probier jetzt eine andere Geschwindigkeit.')
+          : tr('The red runner wins. Now try another speed.', 'Der rote Läufer gewinnt. Probier jetzt eine andere Geschwindigkeit.'))
+        : `${tr('green', 'grün')}: <b>${Math.round(A.x)}</b> px   ${tr('red', 'rot')}: <b>${Math.round(B.x)}</b> px`;
     }
   });
   draw();
@@ -88,8 +90,8 @@ export default function mount(el) {
 
 function follow(el) {
   const { g, w, h, c, at } = canvas(el, 640, 220);
-  const row = html(el, `<div class="row"><label>catch-up speed <input type="range" min="1" max="40" value="8"> <b>8</b></label>
-    <span class="muted small">move your mouse (or finger) over the picture</span></div>`);
+  const row = html(el, `<div class="row"><label>${tr('catch-up speed', 'Aufholtempo')} <input type="range" min="1" max="40" value="8"> <b>8</b></label>
+    <span class="muted small">${tr('move your mouse (or finger) over the picture', 'beweg die Maus (oder den Finger) über das Bild')}</span></div>`);
   const s = row.querySelector('input'), sOut = row.querySelector('b');
   let k = 8; s.oninput = () => { k = +s.value; sOut.textContent = k; };
   const target = [w / 2, h / 2], pos = [w / 2, h / 2], trail = [];
@@ -103,6 +105,6 @@ function follow(el) {
     g.strokeStyle = '#5fd3ff'; g.lineWidth = 2; g.beginPath(); g.arc(...target, 10, 0, 7); g.stroke();
     g.fillStyle = '#ffcf7a'; g.beginPath(); g.arc(...pos, 9, 0, 7); g.fill();
     g.font = '12px ui-monospace, monospace'; g.fillStyle = '#8a96a8';
-    g.fillText('blue: where it wants to be   gold: where it is (like the camera)', 10, h - 10);
+    g.fillText(tr('blue: where it wants to be   gold: where it is (like the camera)', 'blau: wo es hin will   gold: wo es ist (wie die Kamera)'), 10, h - 10);
   });
 }

@@ -17,6 +17,7 @@ export const xpForLevel = level => {
 };
 export const maxHealth = level => PLAYER.HP + PLAYER.HP_PER_LEVEL * (level - 1);
 // what the player's level multiplies weapon damage by
+// kids-docs: combat.html#damage (see kids-docs/README.md)
 export const levelDamage = level => 1 + PLAYER.DAMAGE_PER_LEVEL * (level - 1);
 export function levelFromXP(xp) {
   whole(xp);

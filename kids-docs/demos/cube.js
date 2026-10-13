@@ -6,7 +6,7 @@ import { World } from '../../src/world/world.js';
 import { themeAt, MAX_DEPTH } from '../../src/themes/depth.js';
 import { runY } from '../../src/core/surfaces.js';
 import { N, LH, BASE } from '../../src/core/constants.js';
-import { canvas, html } from '../deck.js';
+import { canvas, html, t as tr, themeLabel } from '../deck.js';
 
 const FLUID = { 1: [46, 134, 222], 2: [255, 90, 0], 3: [125, 255, 58] };
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
@@ -23,11 +23,11 @@ function stop(stops, level) {
 export default function mount(el) {
   const W = 640, H = 540, { g } = canvas(el, W, H);
   const row = html(el, `<div class="row">
-    <label>seed <input type="number" class="seed" value="${1 + Math.floor(Math.random() * 999)}"></label>
-    <label>depth <select class="depth">${Array.from({ length: MAX_DEPTH + 1 }, (_, d) => `<option value="${d}" ${d === 1 ? 'selected' : ''}>${d} \u00B7 ${themeAt(d).name}</option>`).join('')}</select></label>
-    <label>room <input type="range" class="room" min="0" max="6" value="2"> <b class="rn"></b></label></div>
-    <div class="row"><button class="build">Build it!</button><button class="dice">New seed</button><button class="turn">Turn view</button>
-    <label><input type="checkbox" class="route" checked> show route</label></div>`);
+    <label>Seed <input type="number" class="seed" value="${1 + Math.floor(Math.random() * 999)}"></label>
+    <label>${tr('depth', 'Tiefe')} <select class="depth">${Array.from({ length: MAX_DEPTH + 1 }, (_, d) => `<option value="${d}" ${d === 1 ? 'selected' : ''}>${d} \u00B7 ${themeLabel(themeAt(d))}</option>`).join('')}</select></label>
+    <label>${tr('room', 'Raum')} <input type="range" class="room" min="0" max="6" value="2"> <b class="rn"></b></label></div>
+    <div class="row"><button class="build">${tr('Build it!', 'Bauen!')}</button><button class="dice">${tr('New seed', 'Neuer Seed')}</button><button class="turn">${tr('Turn view', 'Ansicht drehen')}</button>
+    <label><input type="checkbox" class="route" checked> ${tr('show route', 'Route zeigen')}</label></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s) || el.querySelector(s);
   let world = null, worldSeed = null, rot = 0, last = null;
@@ -111,10 +111,11 @@ export default function mount(el) {
       g.beginPath(); pts.forEach((q, i) => { const [x, y] = P(q.x, q.z, q.y); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
       g.setLineDash([]);
     }
-    const roomName = last.role ? last.role.replace(/-/g, ' ') : 'room';
-    out.innerHTML = `cube <b>${last.k}</b> \u00B7 depth ${d}: <b>${theme.name}</b> \u00B7 ${roomName} ${last.i + 1} of ${last.n}\n`
-      + `land: <b>${m.kind}</b> \u00B7 shape: <b>${m.archetype || 'town'}</b> \u00B7 layers: <b>${m.K}</b> \u00B7 `
-      + (last.fresh ? `built in <b>${last.ms.toFixed(0)} ms</b>${m.attempts ? ` on try number <b>${m.attempts}</b>` : ''}` : 'already built (the world remembers its cubes)');
+    const roomName = last.role ? last.role.replace(/-/g, ' ') : tr('room', 'Raum');
+    out.innerHTML = `${tr('cube', 'Würfel')} <b>${last.k}</b> \u00B7 ${tr('depth', 'Tiefe')} ${d}: <b>${themeLabel(theme)}</b> \u00B7 ${roomName} ${last.i + 1} ${tr('of', 'von')} ${last.n}\n`
+      + `${tr('land', 'Land')}: <b>${m.kind}</b> \u00B7 ${tr('shape', 'Form')}: <b>${m.archetype || 'town'}</b> \u00B7 ${tr('layers', 'Ebenen')}: <b>${m.K}</b> \u00B7 `
+      + (last.fresh ? tr(`built in <b>${last.ms.toFixed(0)} ms</b>`, `gebaut in <b>${last.ms.toFixed(0)} ms</b>`) + (m.attempts ? tr(` on try number <b>${m.attempts}</b>`, ` beim <b>${m.attempts}.</b> Versuch`) : '')
+        : tr('already built (the world remembers its cubes)', 'schon gebaut (die Welt merkt sich ihre Würfel)'));
   }
 
   $('.build').onclick = build;

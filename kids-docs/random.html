@@ -2,126 +2,152 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Magic Numbers · Kids' Guide to Cube Crawler</title>
+<title data-de="Zauberzahlen · Kinderführer zu Cube Crawler">Magic Numbers · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="peaks">
 <main class="deck">
 
 <section class="slide" id="dice" data-lv="1">
-  <h2>Dice inside the computer</h2>
+  <h2 lang="en">Dice inside the computer</h2>
+  <h2 lang="de">Würfel im Computer</h2>
   <div class="cols">
     <div>
-      <p class="lead">Games need dice. Where does the spider stand? Which sword does the chest hold? Is this cube a meadow or a lake?</p>
-      <p>But a computer is an exact machine. It does the same thing every time. It cannot really roll a die!</p>
-      <p>So it uses a trick. It takes a number and puts it through a scrambling formula. Out comes a new number that <i>looks</i> random.
+      <p class="lead" lang="en">Games need dice. Where does the spider stand? Which sword does the chest hold? Is this cube a meadow or a lake?</p>
+      <p class="lead" lang="de">Spiele brauchen Würfel. Wo steht die Spinne? Welches Schwert liegt in der Truhe? Ist dieser Würfel eine Wiese oder ein See?</p>
+      <p lang="en">But a computer is an exact machine. It does the same thing every time. It cannot really roll a die!</p>
+      <p lang="de">Aber ein Computer ist eine ganz genaue Maschine. Er macht jedes Mal dasselbe. Er kann gar nicht richtig würfeln!</p>
+      <p lang="en">So it uses a trick. It takes a number and puts it through a scrambling formula. Out comes a new number that <i>looks</i> random.
         Put that one through the formula again, and you get the next one. And so on, forever.</p>
-      <p>The very first number is called the <a class="w" href="words.html#seed">seed</a>. Everything grows from the seed, like a plant.</p>
+      <p lang="de">Darum benutzt er einen Trick. Er nimmt eine Zahl und steckt sie in eine Durcheinander-Formel. Heraus kommt eine neue Zahl, die zufällig <i>aussieht</i>.
+        Steck die wieder in die Formel, und du bekommst die nächste. Und so weiter, für immer.</p>
+      <p lang="en">The very first number is called the <a class="w" href="words.html#seed">seed</a>. Everything grows from the seed, like a plant.</p>
+      <p lang="de">Die allererste Zahl heißt <a class="w" href="words.html#seed">Seed</a> (englisch für Samenkorn). Alles wächst aus dem Seed, wie eine Pflanze.</p>
     </div>
     <div class="card">
-      <h3>The big secret</h3>
-      <p>The same seed always gives <b>exactly the same</b> numbers, in the same order.</p>
-      <p>So the same seed gives the same world: the same hills, the same rivers, the same monsters in the same places.</p>
-      <p>Try it in the game: <a href="../index.html?seed=123"><code>?seed=123</code></a> and then <a href="../index.html?seed=124"><code>?seed=124</code></a>.
+      <h3 lang="en">The big secret</h3>
+      <h3 lang="de">Das große Geheimnis</h3>
+      <p lang="en">The same seed always gives <b>exactly the same</b> numbers, in the same order.</p>
+      <p lang="de">Derselbe Seed gibt immer <b>genau dieselben</b> Zahlen, in derselben Reihenfolge.</p>
+      <p lang="en">So the same seed gives the same world: the same hills, the same rivers, the same monsters in the same places.</p>
+      <p lang="de">Also gibt derselbe Seed dieselbe Welt: dieselben Hügel, dieselben Flüsse, dieselben Monster an denselben Stellen.</p>
+      <p lang="en">Try it in the game: <a href="../index.html?seed=123"><code>?seed=123</code></a> and then <a href="../index.html?seed=124"><code>?seed=124</code></a>.
         Visit them twice. The town is always there, but the cubes behind it change with the seed.</p>
+      <p lang="de">Probier es im Spiel aus: <a href="../index.html?seed=123"><code>?seed=123</code></a> und dann <a href="../index.html?seed=124"><code>?seed=124</code></a>.
+        Besuch jede zweimal. Die Stadt ist immer da, aber die Würfel dahinter ändern sich mit dem Seed.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="try-seeds" data-lv="1">
-  <h2>Try it: same seed, same dice</h2>
-  <p>Seed A and seed B start the same. Roll a few times: the seeded rows are the same every time. The bottom row uses the browser's own <code>Math.random()</code>, which picks a new secret seed itself, so it changes.</p>
+  <h2 lang="en">Try it: same seed, same dice</h2>
+  <h2 lang="de">Probier es: gleicher Seed, gleiche Würfel</h2>
+  <p lang="en">Seed A and seed B start the same. Roll a few times: the seeded rows are the same every time. The bottom row uses the browser's own <code>Math.random()</code>, which picks a new secret seed itself, so it changes.</p>
+  <p lang="de">Seed A und Seed B fangen gleich an. Würfel ein paarmal: Die Reihen mit Seed sind jedes Mal gleich. Die unterste Reihe benutzt das eigene <code>Math.random()</code> des Browsers, das sich selbst einen geheimen Seed ausdenkt. Darum ändert sie sich.</p>
   <div class="demo real" data-demo="seeds"></div>
-  <p class="small muted">This uses the game's real dice, the function <code>mulberry32</code> from <code>src/core/util.js</code>.</p>
+  <p class="small muted" lang="en">This uses the game's real dice, the function <code>mulberry32</code> from <code>src/core/util.js</code>.</p>
+  <p class="small muted" lang="de">Hier laufen die echten Würfel des Spiels, die Funktion <code>mulberry32</code> aus <code>src/core/util.js</code>.</p>
 </section>
 
 <section class="slide" id="why" data-lv="2">
-  <h2>Why "not really random" is great</h2>
+  <h2 lang="en">Why "not really random" is great</h2>
+  <h2 lang="de">Warum "nicht wirklich zufällig" super ist</h2>
   <div class="cols3">
-    <div class="card"><h3>Hunting bugs</h3><p>If a bridge is broken in world 123, a developer (or an AI helper) can open world 123 and see the exact same broken bridge. Fixing a bug you cannot see again is almost impossible.</p></div>
-    <div class="card"><h3>Tests</h3><p>The game's tests build hundreds of worlds with fixed seeds and check them. Because the seeds are fixed, a test that passes today passes tomorrow, unless the code changed.</p></div>
-    <div class="card"><h3>No cheating</h3><p>What a monster drops is decided by the world seed and the monster's name. If you die and the monster comes back, it drops <b>the same thing</b> again. Dying on purpose does not give you better loot!</p></div>
+    <div class="card"><h3 lang="en">Hunting bugs</h3> <h3 lang="de">Fehlerjagd</h3><p lang="en">If a bridge is broken in world 123, a developer (or an AI helper) can open world 123 and see the exact same broken bridge. Fixing a bug you cannot see again is almost impossible.</p> <p lang="de">Wenn in Welt 123 eine Brücke kaputt ist, kann ein Entwickler (oder ein KI-Helfer) Welt 123 öffnen und genau dieselbe kaputte Brücke sehen. Einen Fehler zu reparieren, den man nicht wiederfinden kann, ist fast unmöglich.</p></div>
+    <div class="card"><h3>Tests</h3><p lang="en">The game's tests build hundreds of worlds with fixed seeds and check them. Because the seeds are fixed, a test that passes today passes tomorrow, unless the code changed.</p> <p lang="de">Die Tests des Spiels bauen Hunderte Welten mit festen Seeds und prüfen sie. Weil die Seeds fest sind, besteht ein Test, der heute besteht, auch morgen, außer der Code hat sich geändert.</p></div>
+    <div class="card"><h3 lang="en">No cheating</h3> <h3 lang="de">Kein Schummeln</h3><p lang="en">What a monster drops is decided by the world seed and the monster's name. If you die and the monster comes back, it drops <b>the same thing</b> again. Dying on purpose does not give you better loot!</p> <p lang="de">Was ein Monster fallen lässt, hängt vom Welt-Seed und vom Namen des Monsters ab. Wenn du stirbst und das Monster wiederkommt, lässt es <b>dasselbe</b> wieder fallen. Absichtlich sterben bringt dir keine bessere Beute!</p></div>
   </div>
 </section>
 
 <section class="slide" id="streams" data-lv="2">
-  <h2>Every cube gets its own dice</h2>
+  <h2 lang="en">Every cube gets its own dice</h2>
+  <h2 lang="de">Jeder Würfel bekommt eigene Würfel</h2>
   <div class="cols wide-right">
     <div>
-      <p>If the whole world used one row of dice, building cube A first or cube B first would change both of them. Messy!</p>
-      <p>So every cube makes its <b>own</b> seed: it mixes the world seed with its own name, like <code>"2,-1,0"</code> (that is: 2 east, depth 1, 0 south).</p>
-      <p>The mixer is called a <a class="w" href="words.html#hash">hash</a>: a formula that turns anything into a number that looks random. A tiny change in the name gives a totally different number.</p>
-      <p>The walls between cubes, the monsters, the loot and the decorations get their own streams too.</p>
+      <p lang="en">If the whole world used one row of dice, building cube A first or cube B first would change both of them. Messy!</p>
+      <p lang="de">Würde die ganze Welt eine einzige Würfelreihe benutzen, dann würde es beide verändern, ob zuerst Würfel A oder Würfel B gebaut wird. Chaos!</p>
+      <p lang="en">So every cube makes its <b>own</b> seed: it mixes the world seed with its own name, like <code>"2,-1,0"</code> (that is: 2 east, depth 1, 0 south).</p>
+      <p lang="de">Darum macht sich jeder Würfel seinen <b>eigenen</b> Seed: Er mischt den Welt-Seed mit seinem eigenen Namen, zum Beispiel <code>"2,-1,0"</code> (also: 2 nach Osten, Tiefe 1, 0 nach Süden).</p>
+      <p lang="en">The mixer is called a <a class="w" href="words.html#hash">hash</a>: a formula that turns anything into a number that looks random. A tiny change in the name gives a totally different number.</p>
+      <p lang="de">Der Mixer heißt <a class="w" href="words.html#hash">Hash</a>: eine Formel, die alles in eine Zahl verwandelt, die zufällig aussieht. Eine winzige Änderung im Namen gibt eine völlig andere Zahl.</p>
+      <p lang="en">The walls between cubes, the monsters, the loot and the decorations get their own streams too.</p>
+      <p lang="de">Die Wände zwischen Würfeln, die Monster, die Beute und die Deko bekommen auch eigene Zahlenreihen.</p>
     </div>
     <div class="demo real" data-demo="seeds" data-mode="cubes"></div>
   </div>
 </section>
 
-<section class="slide" id="weighted" data-lv="2">
-  <h2>A bag of marbles</h2>
-  <p>Not everything should be equally likely. A <b>rare</b> sword should be rare! So the game uses <a class="w" href="words.html#weight">weights</a>:
+<section class="slide" id="weighted" data-lv="2" data-src="src/core/gear/rarities.js#RARITIES">
+  <h2 lang="en">A bag of marbles</h2>
+  <h2 lang="de">Ein Beutel voller Murmeln</h2>
+  <p lang="en">Not everything should be equally likely. A <b>rare</b> sword should be rare! So the game uses <a class="w" href="words.html#weight">weights</a>:
     imagine a bag with 24 grey marbles (Junk), 40 white (Common), 22 green (Uncommon) and 8 blue (Rare). Grab one without looking.</p>
+  <p lang="de">Nicht alles soll gleich wahrscheinlich sein. Ein <b>seltenes</b> Schwert soll selten sein! Darum benutzt das Spiel <a class="w" href="words.html#weight">Gewichte</a>:
+    Stell dir einen Beutel vor mit 24 grauen Murmeln (Junk = Schrott), 40 weißen (Common = gewöhnlich), 22 grünen (Uncommon = ungewöhnlich) und 8 blauen (Rare = selten). Greif blind hinein.</p>
   <div class="demo real" data-demo="marbles"></div>
-  <p class="small muted">The game uses this for almost every choice: which kind of cube, which archetype, which monster, which sword, which name.</p>
+  <p class="small muted" lang="en">The game uses this for almost every choice: which kind of cube, which archetype, which monster, which sword, which name.</p>
+  <p class="small muted" lang="de">Das Spiel benutzt das für fast jede Wahl: welche Art Würfel, welcher Archetyp, welches Monster, welches Schwert, welcher Name.</p>
 </section>
 
 <section class="slide" id="mulberry" data-lv="3">
-  <h2>The real dice: <code>mulberry32</code></h2>
+  <h2 lang="en">The real dice: <code>mulberry32</code></h2>
+  <h2 lang="de">Die echten Würfel: <code>mulberry32</code></h2>
   <div class="cols wide-left">
-    <pre data-file="src/core/util.js"><code>export function mulberry32(a) {
-  return function () {
-    a |= 0; a = a + 0x6D2B79F5 | 0;
-    let t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}</code></pre>
+    <pre data-code="src/core/util.js#mulberry32"></pre>
     <div>
-      <p>Don't worry about every symbol. Here is the idea:</p>
+      <p lang="en">Don't worry about every symbol. Here is the idea:</p>
+      <p lang="de">Keine Sorge wegen jedem einzelnen Zeichen. Das ist die Idee:</p>
       <ul>
-        <li><code>mulberry32(seed)</code> gives you a <b>function</b>. Each time you call it, you get the next number between 0 and 1.</li>
-        <li>Inside, <code>a</code> remembers where we are. Each call adds a big odd number to it.</li>
-        <li><code>Math.imul</code>, <code>^</code> and <code>&gt;&gt;&gt;</code> multiply, flip and shift the bits: they shuffle the number like a deck of cards.</li>
-        <li>Dividing by 4294967296 (that is 2<sup>32</sup>) squeezes the result between 0 and 1.</li>
+        <li lang="en"><code>mulberry32(seed)</code> gives you a <b>function</b>. Each time you call it, you get the next number between 0 and 1.</li>
+        <li lang="de"><code>mulberry32(seed)</code> gibt dir eine <b>Funktion</b>. Jedes Mal, wenn du sie aufrufst, bekommst du die nächste Zahl zwischen 0 und 1.</li>
+        <li lang="en">Inside, <code>a</code> remembers where we are. Each call adds a big odd number to it.</li>
+        <li lang="de">Innen merkt sich <code>a</code>, wo wir gerade sind. Jeder Aufruf zählt eine große ungerade Zahl dazu.</li>
+        <li lang="en"><code>Math.imul</code>, <code>^</code> and <code>&gt;&gt;&gt;</code> multiply, flip and shift the bits: they shuffle the number like a deck of cards.</li>
+        <li lang="de"><code>Math.imul</code>, <code>^</code> und <code>&gt;&gt;&gt;</code> multiplizieren, kippen und verschieben die Bits: Sie mischen die Zahl wie ein Kartenspiel.</li>
+        <li lang="en">Dividing by 4294967296 (that is 2<sup>32</sup>) squeezes the result between 0 and 1.</li>
+        <li lang="de">Das Teilen durch 4294967296 (das ist 2<sup>32</sup>) quetscht das Ergebnis zwischen 0 und 1.</li>
       </ul>
-      <p>To roll a die: <code>Math.floor(R() * 6) + 1</code>.</p>
+      <p lang="en">To roll a die: <code>Math.floor(R() * 6) + 1</code>.</p>
+      <p lang="de">Um einen Würfel zu werfen: <code>Math.floor(R() * 6) + 1</code>.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="pick-code" data-lv="3">
-  <h2>The real marble bag</h2>
+  <h2 lang="en">The real marble bag</h2>
+  <h2 lang="de">Der echte Murmelbeutel</h2>
   <div class="cols">
     <div>
-      <pre data-file="src/world/world.js"><code>// how a cube picks its archetype (chasm, spire, mesa, ...)
-function archetype(theme, kind, R) {
-  const w = Object.entries(theme.arche)
-    .map(([a, v]) => [a, v * (LEAN[kind]?.[a] ?? 1)]);
-  let r = R() * w.reduce((s, [, v]) => s + v, 0);
-  for (const [a, v] of w) if ((r -= v) < 0) return a;
-  return 'plain';
-}</code></pre>
+      <pre data-code="src/world/world.js#archetype"></pre>
     </div>
     <div>
-      <p>Read it like the marble demo:</p>
+      <p lang="en">Read it like the marble demo:</p>
+      <p lang="de">Lies es wie die Murmel-Demo:</p>
       <ol class="steps">
-        <li><code>w</code> is the list of choices and their weights. The theme sets them, and the kind of cube <i>leans</i> them: a lake cube makes islands three times more likely.</li>
-        <li><code>R() * sum</code> throws the needle onto the line.</li>
-        <li>The loop walks along: subtract each weight. When we go below zero, that's our pick.</li>
-        <li>The last line is a safety net that should never be needed.</li>
+        <li lang="en"><code>w</code> is the list of choices and their weights. The theme sets them, and the kind of cube <i>leans</i> them: a lake cube makes islands three times more likely.</li>
+        <li lang="de"><code>w</code> ist die Liste der Möglichkeiten mit ihren Gewichten. Das Thema legt sie fest, und die Art des Würfels <i>neigt</i> sie: Ein See-Würfel macht Inseln dreimal wahrscheinlicher.</li>
+        <li lang="en"><code>R() * sum</code> throws the needle onto the line.</li>
+        <li lang="de"><code>R() * Summe</code> wirft die Nadel auf die Linie.</li>
+        <li lang="en">The loop walks along: subtract each weight. When we go below zero, that's our pick.</li>
+        <li lang="de">Die Schleife läuft entlang: Zieh jedes Gewicht ab. Wenn wir unter null kommen, ist das unsere Wahl.</li>
+        <li lang="en">The last line is a safety net that should never be needed.</li>
+        <li lang="de">Die letzte Zeile ist ein Sicherheitsnetz, das nie gebraucht werden sollte.</li>
       </ol>
-      <a class="portal" href="world.html#archetypes">Archetypes in the world room</a>
+      <a class="portal" href="world.html#archetypes" lang="en">Archetypes in the world room</a>
+      <a class="portal" href="world.html#archetypes" lang="de">Archetypen in "Die Welt erschaffen"</a>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Magic Numbers</h2>
+  <h2 lang="en">Prompt quests: Magic Numbers</h2>
+  <h2 lang="de">Prompt-Aufgaben: Zauberzahlen</h2>
   <div class="quests">
-    <div class="prompt" data-title="SEED DETECTIVE" data-stars="1"><q>How does the game pick its world seed when I do not put ?seed= in the address? Explain it simply and show me the code.</q><span class="why">Hint: search for "seed" in src/game/state.js.</span></div>
-    <div class="prompt" data-title="MORE ISLANDS" data-stars="2"><q>In the meadow theme, make archipelago (island) cubes twice as common as now. Show me the weights before and after.</q><span class="why">Hint: the "arche" weights in src/themes/index.js.</span></div>
-    <div class="prompt" data-title="LUCKY DAY" data-stars="2"><q>Explain how the weights in src/core/gear/rarities.js decide how rare swords are. Then make Rare swords a little more common, run the loot table tool, and show me how the odds changed.</q><span class="why">"node tools/loot-table.mjs" prints the odds. Asking for before and after numbers is a good habit.</span></div>
+    <div class="prompt" data-title="SEED DETECTIVE" data-stars="1" data-de-data-title="SEED-DETEKTIV"><q lang="en">How does the game pick its world seed when I do not put ?seed= in the address? Explain it simply and show me the code.</q> <q lang="de">Wie wählt das Spiel seinen Welt-Seed, wenn ich kein ?seed= in die Adresse schreibe? Erklär es einfach und zeig mir den Code.</q><span class="why" lang="en">"Show me the code" turns an answer into a little lesson.</span> <span class="why" lang="de">"Zeig mir den Code" macht aus einer Antwort eine kleine Lektion.</span></div>
+    <div class="prompt" data-title="MORE ISLANDS" data-stars="2" data-de-data-title="MEHR INSELN"><q lang="en">In the meadow theme, make archipelago (island) cubes twice as common as now. Show me the weights before and after.</q> <q lang="de">Mach im Wiesen-Thema (meadow) Archipel-Würfel (Inseln) doppelt so häufig wie jetzt. Zeig mir die Gewichte vorher und nachher.</q><span class="why" lang="en">Asking for before and after makes it easy to check, and easy to undo.</span> <span class="why" lang="de">Nach vorher und nachher zu fragen macht es leicht zu prüfen und leicht rückgängig zu machen.</span></div>
+    <div class="prompt" data-title="LUCKY DAY" data-stars="2" data-de-data-title="GLÜCKSTAG"><q lang="en">Explain how the game decides how rare swords are. Then make Rare swords a little more common, run the game's loot table tool, and show me how the odds changed.</q> <q lang="de">Erklär mir, wie das Spiel entscheidet, wie selten Schwerter sind. Dann mach seltene (Rare) Schwerter ein bisschen häufiger, lass das Beutetabellen-Werkzeug des Spiels laufen und zeig mir, wie sich die Chancen geändert haben.</q><span class="why" lang="en">Asking for numbers before and after is a good habit.</span> <span class="why" lang="de">Nach Zahlen vorher und nachher zu fragen ist eine gute Gewohnheit.</span></div>
   </div>
 </section>
 

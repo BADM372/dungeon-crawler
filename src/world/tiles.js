@@ -4,6 +4,7 @@
 // already collapsed neighbours always succeeds. Uniform tiles weigh more, which grows regions;
 // the mixed tiles (slope, gorge) appear where regions meet.
 const SOCKETS = ['L', 'H', 'W'];
+// kids-docs: world.html#wfc (see kids-docs/README.md)
 const W = { meadow: 6, highland: 5, slope: 0.35, river: 0.6, lake: 0.12, gorge: 0.03 };
 const LAYERS = { meadow: [1, 3], highland: [2, 4], slope: [2, 4], river: [1, 3], lake: [2, 3], gorge: [2, 4] };
 export const KIND_COLOR = { meadow: '#6fae4f', highland: '#a08052', slope: '#8f9a4c', river: '#3f8fd8', lake: '#2fb6c4', gorge: '#7a5a8c' };

@@ -3,14 +3,14 @@
 import { SWORD, inSwordArc } from '../../src/core/combat.js';
 import { WEAPONS } from '../../src/core/items.js';
 import { SPIDER, STUNDER } from '../../src/core/enemies.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 export default function mount(el) {
   const W = 640, H = 320, PX = 120, { g, c, at } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label>sword <select class="w">${WEAPONS.map((w, i) => `<option value="${i}">${w.name}</option>`).join('')}</select></label>
-    <label>enemy <select class="e"><option value="spider">spider</option><option value="stunder">Stunder (big)</option></select></label>
-    <label>enemy stands <input type="range" class="h" min="-1.5" max="1.5" step="0.05" value="0"> <b class="hv">0</b> higher</label>
-    <label>hero turns <input type="range" class="turn" min="-180" max="180" value="0"></label></div>`);
+  const row = html(el, `<div class="row"><label>${tr('sword', 'Schwert')} <select class="w">${WEAPONS.map((w, i) => `<option value="${i}">${w.name}</option>`).join('')}</select></label>
+    <label>${tr('enemy', 'Gegner')} <select class="e"><option value="spider">${tr('spider', 'Spinne')}</option><option value="stunder">${tr('Stunder (big)', 'Stunder (groß)')}</option></select></label>
+    <label>${tr('enemy stands', 'Gegner steht')} <input type="range" class="h" min="-1.5" max="1.5" step="0.05" value="0"> <b class="hv">0</b> ${tr('higher', 'höher')}</label>
+    <label>${tr('hero turns', 'Held dreht sich')} <input type="range" class="turn" min="-180" max="180" value="0"></label></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
   const player = { x: 1.5, y: 0, z: H / PX / 2, sword: null };
@@ -46,20 +46,20 @@ export default function mount(el) {
     g.fillStyle = hit ? '#ffcf7a' : '#ff6a5a'; g.globalAlpha = 0.85;
     g.beginPath(); g.arc(X(enemy.x), Y(enemy.z), enemy.profile.radius * PX, 0, 7); g.fill(); g.globalAlpha = 1;
     g.fillStyle = '#0b0d12'; g.font = 'bold 11px ui-monospace, monospace'; g.textAlign = 'center';
-    g.fillText(hit ? 'HIT' : 'drag me', X(enemy.x), Y(enemy.z) + 4); g.textAlign = 'left';
+    g.fillText(hit ? tr('HIT', 'TREFFER') : tr('drag me', 'zieh mich'), X(enemy.x), Y(enemy.z) + 4); g.textAlign = 'left';
     // side view of the heights, bottom right
     const sx = W - 150, sy = H - 20, S = 60;
     g.fillStyle = '#0b0d12cc'; g.fillRect(sx - 10, sy - 170, 150, 180);
-    g.fillStyle = '#8a96a8'; g.font = '11px ui-monospace, monospace'; g.fillText('from the side', sx, sy - 155);
+    g.fillStyle = '#8a96a8'; g.font = '11px ui-monospace, monospace'; g.fillText(tr('from the side', 'von der Seite'), sx, sy - 155);
     g.fillStyle = '#ffcf7a33'; g.fillRect(sx, sy - (0.85) * S, 130, (0.85 - 0.08) * S);
-    g.fillStyle = '#ffcf7a'; g.fillText('blade height', sx + 40, sy - 0.5 * S);
+    g.fillStyle = '#ffcf7a'; g.fillText(tr('blade height', 'Klingenhöhe'), sx + 40, sy - 0.5 * S);
     g.fillStyle = '#e6e9ef'; g.fillRect(sx + 6, sy - 0.85 * S, 12, 0.85 * S);
     g.fillStyle = height ? '#61dc6b' : '#ff6a5a'; g.globalAlpha = 0.8;
     g.fillRect(sx + 90, sy - (enemy.y + enemy.profile.bodyHeight) * S, 26, enemy.profile.bodyHeight * S); g.globalAlpha = 1;
     g.fillStyle = '#5a6678'; g.fillRect(sx - 10, sy, 150, 2);
     const chip = (ok, text) => `<span class="chip ${ok ? 'ok' : 'no'}">${ok ? '\u2713' : '\u2717'} ${text}</span>`;
-    out.innerHTML = chip(near, `close enough (${d.toFixed(2)} \u2264 ${reach.toFixed(2)})`) + chip(inArc, 'inside the arc') + chip(height, 'at blade height')
-      + `\ninSwordArc() says: <b style="color:${hit ? '#ffcf7a' : '#ff8a7a'}">${hit ? 'HIT!' : 'miss'}</b>`;
+    out.innerHTML = chip(near, `${tr('close enough', 'nah genug')} (${d.toFixed(2)} \u2264 ${reach.toFixed(2)})`) + chip(inArc, tr('inside the arc', 'im Bogen')) + chip(height, tr('at blade height', 'auf Klingenhöhe'))
+      + `\ninSwordArc() ${tr('says', 'sagt')}: <b style="color:${hit ? '#ffcf7a' : '#ff8a7a'}">${hit ? tr('HIT!', 'TREFFER!') : tr('miss', 'daneben')}</b>`;
   }
   c.onpointerdown = e => { drag = true; c.setPointerCapture(e.pointerId); move(e); };
   c.onpointermove = e => { if (drag) move(e); };

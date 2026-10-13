@@ -2,15 +2,15 @@
 // nearest to the hero really shine. Changing how many lights there are would make three.js
 // rebuild every lit material; a fixed pool of 8 that moves around never does.
 import { mulberry32 } from '../../src/core/util.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 const POOL = 8;
 const KINDS = [['#ff6a1a', 'lava'], ['#7dff3a', 'glowing mushroom'], ['#8fd8ff', 'crystal'], ['#ffc94a', 'portal'], ['#ffb347', 'lamp']];
 
 export default function mount(el) {
   const W = 640, H = 300, { g, c, at } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label><input type="checkbox" class="pool" checked> use the pool of 8</label>
-    <span class="muted small">move your mouse (or finger) over the cave</span></div>`);
+  const row = html(el, `<div class="row"><label><input type="checkbox" class="pool" checked> ${tr('use the pool of 8', 'den 8er-Vorrat benutzen')}</label>
+    <span class="muted small">${tr('move your mouse (or finger) over the cave', 'beweg die Maus (oder den Finger) über die Höhle')}</span></div>`);
   const out = html(el, '<div class="out"></div>');
   const R = mulberry32(42), lamps = Array.from({ length: 34 }, () => ({ x: 20 + R() * (W - 40), y: 20 + R() * (H - 40), k: KINDS[Math.floor(R() * KINDS.length)] }));
   const hero = { x: W / 2, y: H / 2 }, aim = { x: W / 2, y: H / 2 };
@@ -39,7 +39,9 @@ export default function mount(el) {
     for (const l of lamps) { const on = lit.some(s => s.l === l); g.fillStyle = on ? l.k[0] : '#3a3540'; g.beginPath(); g.arc(l.x, l.y, on ? 5 : 3, 0, 7); g.fill(); }
     g.fillStyle = '#e6e9ef'; g.beginPath(); g.arc(hero.x, hero.y, 8, 0, 7); g.fill();
     out.innerHTML = pool
-      ? `<b>${lamps.length}</b> glowing things in this cave, <b>${POOL}</b> lights shining: always the 8 closest to you. The number never changes, so nothing has to be rebuilt.`
-      : `<b>${lit.length}</b> lights near you right now. The number changed <b>${changes}</b> times: in the real game, each change would rebuild every material, and the game would stutter.`;
+      ? tr(`<b>${lamps.length}</b> glowing things in this cave, <b>${POOL}</b> lights shining: always the 8 closest to you. The number never changes, so nothing has to be rebuilt.`,
+        `<b>${lamps.length}</b> leuchtende Dinge in dieser Höhle, <b>${POOL}</b> Lichter leuchten: immer die 8, die dir am nächsten sind. Die Zahl ändert sich nie, also muss nichts neu gebaut werden.`)
+      : tr(`<b>${lit.length}</b> lights near you right now. The number changed <b>${changes}</b> times: in the real game, each change would rebuild every material, and the game would stutter.`,
+        `<b>${lit.length}</b> Lichter gerade in deiner Nähe. Die Zahl hat sich <b>${changes}</b>-mal geändert: im echten Spiel würde jede Änderung alle Materialien neu bauen, und das Spiel würde ruckeln.`);
   });
 }

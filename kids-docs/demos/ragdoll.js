@@ -2,7 +2,7 @@
 // joints, sticks that keep their distance, a few "keep apart" sticks so joints don't fold flat,
 // gravity, 120 small steps a second, 6 rounds of fixing the sticks, and friction on the floor.
 import { GRAV } from '../../src/core/constants.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 // the same tables as src/physics/ragdoll.js
 const BONES = [[0, 1], [1, 2], [2, 3], [4, 5], [5, 6], [7, 8], [8, 9], [10, 11], [11, 12], [13, 14], [14, 15]];
@@ -16,7 +16,7 @@ const floorAt = x => x > 3.2 ? 0.35 : x < 0.6 ? 0.6 - x * 0.4 : 0;   // a slope 
 
 export default function mount(el) {
   const W = 640, H = 260, { g, c, at } = canvas(el, W, H);
-  const row = html(el, '<div class="row"><button class="knock">Knock over!</button><button class="kick">Big kick</button><button class="drop">Drop from high up</button><button class="stand">Stand up</button><span class="muted small">or grab a dot and throw it</span></div>');
+  const row = html(el, `<div class="row"><button class="knock">${tr('Knock over!', 'Umstoßen!')}</button><button class="kick">${tr('Big kick', 'Großer Tritt')}</button><button class="drop">${tr('Drop from high up', 'Von hoch oben fallen')}</button><button class="stand">${tr('Stand up', 'Aufstehen')}</button><span class="muted small">${tr('or grab a dot and throw it', 'oder pack einen Punkt und wirf ihn')}</span></div>`);
   const out = html(el, '<div class="out"></div>');
   let P, O, sticks, apart, acc = 0, drag = -1, mouse = [0, 0];
   const dist = (a, b) => Math.hypot(P[a][0] - P[b][0], P[a][1] - P[b][1]);
@@ -85,6 +85,7 @@ export default function mount(el) {
     let n = 0;
     while (acc >= SUB) { acc -= SUB; substep(); n++; }
     draw();
-    out.innerHTML = `16 dots, ${sticks.length} sticks (white: bones, blue: stiff body parts), ${apart.length} keep-apart sticks (violet) \u00B7 <b>${n}</b> small steps this frame`;
+    out.innerHTML = tr(`16 dots, ${sticks.length} sticks (white: bones, blue: stiff body parts), ${apart.length} keep-apart sticks (violet) \u00B7 <b>${n}</b> small steps this frame`,
+      `16 Punkte, ${sticks.length} Stäbe (weiß: Knochen, blau: steife Körperteile), ${apart.length} Abstandsstäbe (violett) \u00B7 <b>${n}</b> kleine Schritte in diesem Bild`);
   });
 }

@@ -2,324 +2,383 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Building the World · Kids' Guide to Cube Crawler</title>
+<title data-de="Die Welt erschaffen · Kinderführer zu Cube Crawler">Building the World · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="badlands">
 <main class="deck">
 
 <section class="slide" id="inventing" data-lv="1">
-  <h2>Inventing a whole world</h2>
-  <p class="lead">Nobody drew the cubes of Cube Crawler. The game invents them while you play. This is called
+  <h2 lang="en">Inventing a whole world</h2>
+  <h2 lang="de">Eine ganze Welt erfinden</h2>
+  <p class="lead" lang="en">Nobody drew the cubes of Cube Crawler. The game invents them while you play. This is called
     <a class="w" href="words.html#procedural">procedural generation</a>: instead of drawing a level, you write the <i>rules</i> for making levels.</p>
-  <p>The game does it like a team of four workers:</p>
+  <p class="lead" lang="de">Niemand hat die Würfel von Cube Crawler gezeichnet. Das Spiel erfindet sie, während du spielst. Das nennt man
+    <a class="w" href="words.html#procedural">prozedurale Erzeugung</a>: Statt ein Level zu zeichnen, schreibst du die <i>Regeln</i>, nach denen Level entstehen.</p>
+  <p lang="en">The game does it like a team of four workers:</p>
+  <p lang="de">Das Spiel macht es wie ein Team aus vier Arbeitern:</p>
   <div class="cols">
     <ol class="steps">
-      <li><b>The planner</b> draws a path of rooms for each depth: where you come in, where the well is, where the guardians wait.</li>
-      <li><b>The puzzle solver</b> decides what kind of land each cube is: meadow, highland, river, lake... Neighbours must fit together like puzzle pieces.</li>
-      <li><b>The builder</b> makes one cube: hills, rivers, upper floors, stairs, bridges, ladders, fences.</li>
-      <li><b>The inspector</b> checks that you can really walk from every entrance to the exit. If not: throw it away and build again!</li>
+      <li lang="en"><b>The planner</b> draws a path of rooms for each depth: where you come in, where the well is, where the guardians wait.</li>
+      <li lang="de"><b>Der Planer</b> zeichnet für jede Tiefe einen Weg aus Räumen: wo du hereinkommst, wo der Brunnen ist, wo die Wächter warten.</li>
+      <li lang="en"><b>The puzzle solver</b> decides what kind of land each cube is: meadow, highland, river, lake... Neighbours must fit together like puzzle pieces.</li>
+      <li lang="de"><b>Der Puzzle-Löser</b> entscheidet, welche Art Land jeder Würfel ist: Wiese, Hochland, Fluss, See... Nachbarn müssen zusammenpassen wie Puzzleteile.</li>
+      <li lang="en"><b>The builder</b> makes one cube: hills, rivers, upper floors, stairs, bridges, ladders, fences.</li>
+      <li lang="de"><b>Der Baumeister</b> baut einen Würfel: Hügel, Flüsse, obere Stockwerke, Treppen, Brücken, Leitern, Zäune.</li>
+      <li lang="en"><b>The inspector</b> checks that you can really walk from every entrance to the exit. If not: throw it away and build again!</li>
+      <li lang="de"><b>Der Prüfer</b> kontrolliert, dass du wirklich von jedem Eingang zum Ausgang laufen kannst. Wenn nicht: wegwerfen und neu bauen!</li>
     </ol>
-    <figure><img class="shot" src="img/route-overlay.jpg" alt="A cube with a pink line showing the route the generator planned"><figcaption>Press P in the game to see the route the builder planned (the pink line).</figcaption></figure>
+    <figure><img class="shot" src="img/route-overlay.jpg" alt="A cube with a pink line showing the route the generator planned" data-de-alt="Ein Würfel mit einer rosa Linie, die den geplanten Weg zeigt"><figcaption lang="en">Press P in the game to see the route the builder planned (the pink line).</figcaption> <figcaption lang="de">Drück im Spiel P, um den Weg zu sehen, den der Baumeister geplant hat (die rosa Linie).</figcaption></figure>
   </div>
 </section>
 
-<section class="slide" id="route" data-lv="1">
-  <h2>The planner: a path of rooms</h2>
+<section class="slide" id="route" data-lv="1" data-src="src/world/layout.js#build">
+  <h2 lang="en">The planner: a path of rooms</h2>
+  <h2 lang="de">Der Planer: ein Weg aus Räumen</h2>
   <div class="cols wide-right">
     <div>
-      <p>Every depth has a <b>route</b> of 7 to 14 rooms. It starts right under the well of the depth above, and ends at the next well down.</p>
-      <p>Before the well there is always a strong <b>descent guardian</b> (gold), and on the way one or two <b>side guardians</b> (pink) block gates. Beat them to open the way.</p>
-      <p>Some rooms get a side room with a treasure chest.</p>
-      <p>Move the depth slider: deeper down, the ring gets smaller, until the core at depth 20.</p>
+      <p lang="en">Every depth has a <b>route</b> of <b data-val="src/world/layout.js#MIN_ROUTE_ROOMS">7</b> to <b data-val="src/world/layout.js#MAX_ROUTE_ROOMS">14</b> rooms. It starts right under the well of the depth above, and ends at the next well down.</p>
+      <p lang="de">Jede Tiefe hat eine <b>Route</b> aus <b data-val="src/world/layout.js#MIN_ROUTE_ROOMS">7</b> bis <b data-val="src/world/layout.js#MAX_ROUTE_ROOMS">14</b> Räumen. Sie fängt direkt unter dem Brunnen der Tiefe darüber an und endet am nächsten Brunnen nach unten.</p>
+      <p lang="en">Before the well there is always a strong <b>descent guardian</b> (gold), and on the way one or two <b>side guardians</b> (pink) block gates. Beat them to open the way.</p>
+      <p lang="de">Vor dem Brunnen steht immer ein starker <b>Brunnenwächter</b> (gold), und unterwegs versperren ein oder zwei <b>Torwächter</b> (pink) die Tore. Besiege sie, um den Weg zu öffnen.</p>
+      <p lang="en">Some rooms get a side room with a treasure chest.</p>
+      <p lang="de">Manche Räume bekommen einen Nebenraum mit einer Schatztruhe.</p>
+      <p lang="en">Move the depth slider: deeper down, the ring gets smaller, until the core at depth 20.</p>
+      <p lang="de">Beweg den Tiefen-Regler: Je tiefer, desto kleiner wird der Ring, bis zum Kern in Tiefe 20.</p>
     </div>
     <div class="demo real" data-demo="layout"></div>
   </div>
 </section>
 
-<section class="slide" id="backtracking" data-lv="2">
-  <h2>How the planner finds a path: try, back up, try again</h2>
+<section class="slide" id="backtracking" data-lv="2" data-src="src/world/layout.js#build,route">
+  <h2 lang="en">How the planner finds a path: try, back up, try again</h2>
+  <h2 lang="de">Wie der Planer einen Weg findet: probieren, zurückgehen, nochmal probieren</h2>
   <div class="cols">
     <div>
-      <p>The planner has a ring of possible cubes around the middle of the world. It wants a path of, say, 11 rooms that ends on the inner edge of the ring.</p>
+      <p lang="en">The planner has a ring of possible cubes around the middle of the world. It wants a path of, say, 11 rooms that ends on the inner edge of the ring.</p>
+      <p lang="de">Der Planer hat einen Ring aus möglichen Würfeln rund um die Mitte der Welt. Er will einen Weg aus, sagen wir, 11 Räumen, der am inneren Rand des Rings endet.</p>
       <ol class="steps">
-        <li>Start at the room under the last well.</li>
-        <li>Step to a neighbour that is not used yet. (Which one first? The dice decide.)</li>
-        <li>Stuck, but not long enough yet? <b>Step back</b> and try a different neighbour.</li>
-        <li>Long enough and at the right spot? Done!</li>
+        <li lang="en">Start at the room under the last well.</li>
+        <li lang="de">Fang im Raum unter dem letzten Brunnen an.</li>
+        <li lang="en">Step to a neighbour that is not used yet. (Which one first? The dice decide.)</li>
+        <li lang="de">Geh zu einem Nachbarn, der noch nicht benutzt ist. (Welcher zuerst? Das entscheiden die Würfel.)</li>
+        <li lang="en">Stuck, but not long enough yet? <b>Step back</b> and try a different neighbour.</li>
+        <li lang="de">Steckengeblieben, aber noch nicht lang genug? <b>Geh einen Schritt zurück</b> und probier einen anderen Nachbarn.</li>
+        <li lang="en">Long enough and at the right spot? Done!</li>
+        <li lang="de">Lang genug und an der richtigen Stelle? Fertig!</li>
       </ol>
-      <p>This is called <a class="w" href="words.html#backtracking">backtracking</a>. It is how you solve a maze with a pencil: go until you hit a dead end, then go back to the last fork.</p>
+      <p lang="en">This is called <a class="w" href="words.html#backtracking">backtracking</a>. It is how you solve a maze with a pencil: go until you hit a dead end, then go back to the last fork.</p>
+      <p lang="de">Das heißt <a class="w" href="words.html#backtracking">Backtracking</a> (Zurückverfolgen). So löst du ein Labyrinth mit dem Bleistift: Geh, bis du in einer Sackgasse landest, dann zurück zur letzten Abzweigung.</p>
     </div>
     <div class="card">
-      <h3>Then the extras</h3>
+      <h3 lang="en">Then the extras</h3>
+      <h3 lang="de">Dann die Extras</h3>
       <ul>
-        <li><b>Guardians:</b> the room with the well always gets the descent guardian. One or two rooms along the way get side guardians.</li>
-        <li><b>Side rooms:</b> some rooms get one extra room next to them, never more than 14 rooms per depth in total.</li>
-        <li><b>No shortcuts:</b> side rooms never connect to other rooms, so you cannot sneak around a guardian.</li>
-        <li><b>Treasure:</b> each depth plans four treasure sites, mostly in side rooms.</li>
+        <li lang="en"><b>Guardians:</b> the room with the well always gets the descent guardian. One or two rooms along the way get side guardians.</li>
+        <li lang="de"><b>Wächter:</b> Der Raum mit dem Brunnen bekommt immer den Brunnenwächter. Ein oder zwei Räume unterwegs bekommen Torwächter.</li>
+        <li lang="en"><b>Side rooms:</b> some rooms get one extra room next to them, never more than 14 rooms per depth in total.</li>
+        <li lang="de"><b>Nebenräume:</b> Manche Räume bekommen einen zusätzlichen Raum daneben, aber nie mehr als 14 Räume pro Tiefe insgesamt.</li>
+        <li lang="en"><b>No shortcuts:</b> side rooms never connect to other rooms, so you cannot sneak around a guardian.</li>
+        <li lang="de"><b>Keine Abkürzungen:</b> Nebenräume sind nie mit anderen Räumen verbunden, also kannst du dich nicht an einem Wächter vorbeischleichen.</li>
+        <li lang="en"><b>Treasure:</b> each depth plans four treasure sites, mostly in side rooms.</li>
+        <li lang="de"><b>Schätze:</b> Jede Tiefe plant vier Schatzplätze, meistens in Nebenräumen.</li>
       </ul>
-      <a class="deeper" data-lv="3" href="#route-code">See the route code</a>
+      <a class="deeper" data-lv="3" href="#route-code" lang="en">See the route code</a>
+      <a class="deeper" data-lv="3" href="#route-code" lang="de">Sieh dir den Routen-Code an</a>
     </div>
   </div>
 </section>
 
 <section class="slide" id="puzzle" data-lv="1">
-  <h2>The puzzle solver: pieces with matching edges</h2>
+  <h2 lang="en">The puzzle solver: pieces with matching edges</h2>
+  <h2 lang="de">Der Puzzle-Löser: Teile mit passenden Kanten</h2>
   <div class="cols wide-right">
     <div>
-      <p>Each cube is like a puzzle piece with four edges. Each edge is one of three kinds:</p>
+      <p lang="en">Each cube is like a puzzle piece with four edges. Each edge is one of three kinds:</p>
+      <p lang="de">Jeder Würfel ist wie ein Puzzleteil mit vier Kanten. Jede Kante ist eine von drei Sorten:</p>
       <ul>
-        <li><b style="color:#6fae4f">L</b> lowland: the ground is low here</li>
-        <li><b style="color:#a08052">H</b> highland: the ground is high</li>
-        <li><b style="color:#3f8fd8">W</b> water: a river crosses this edge</li>
+        <li lang="en"><b style="color:#6fae4f">L</b> lowland: the ground is low here</li>
+        <li lang="de"><b style="color:#6fae4f">L</b> Tiefland (lowland): Der Boden ist hier niedrig</li>
+        <li lang="en"><b style="color:#a08052">H</b> highland: the ground is high</li>
+        <li lang="de"><b style="color:#a08052">H</b> Hochland (highland): Der Boden ist hoch</li>
+        <li lang="en"><b style="color:#3f8fd8">W</b> water: a river crosses this edge</li>
+        <li lang="de"><b style="color:#3f8fd8">W</b> Wasser: Ein Fluss geht über diese Kante</li>
       </ul>
-      <p>The rule: <b>touching edges must match</b>. A river that leaves one cube must enter the next one.</p>
-      <p>The edges decide the kind of land: all L is a meadow, all H a highland, two W a river...</p>
-      <p>Press <b>Play</b> and watch the world fill in.</p>
+      <p lang="en">The rule: <b>touching edges must match</b>. A river that leaves one cube must enter the next one.</p>
+      <p lang="de">Die Regel: <b>Kanten, die sich berühren, müssen passen.</b> Ein Fluss, der einen Würfel verlässt, muss in den nächsten hineinfließen.</p>
+      <p lang="en">The edges decide the kind of land: all L is a meadow, all H a highland, two W a river...</p>
+      <p lang="de">Die Kanten bestimmen die Art Land: alles L ist eine Wiese (meadow), alles H ein Hochland (highland), zweimal W ein Fluss (river)...</p>
+      <p lang="en">Press <b>Play</b> and watch the world fill in.</p>
+      <p lang="de">Drück <b>Abspielen</b> und schau zu, wie sich die Welt füllt.</p>
     </div>
     <div class="demo real" data-demo="wfc"></div>
   </div>
 </section>
 
-<section class="slide" id="wfc" data-lv="2">
-  <h2>Wave function collapse</h2>
+<section class="slide" id="wfc" data-lv="2" data-src="src/world/tiles.js#W src/world/wfc.js#collapse">
+  <h2 lang="en">Wave function collapse</h2>
+  <h2 lang="de">Wave Function Collapse</h2>
   <div class="cols">
     <div>
-      <p>This puzzle method has a fancy name: <a class="w" href="words.html#wfc">wave function collapse</a> (WFC). The name comes from physics, but the idea is simple:</p>
+      <p lang="en">This puzzle method has a fancy name: <a class="w" href="words.html#wfc">wave function collapse</a> (WFC). The name comes from physics, but the idea is simple:</p>
+      <p lang="de">Diese Puzzle-Methode hat einen schicken Namen: <a class="w" href="words.html#wfc">Wave Function Collapse</a> (WFC, "Zusammenbruch der Wellenfunktion"). Der Name kommt aus der Physik, aber die Idee ist einfach:</p>
       <ol class="steps">
-        <li>At first, every cube could still be <b>any</b> piece. (87 pieces, so the demo shows 87 options.)</li>
-        <li>Pick the cube with the <b>fewest options left</b>. Roll weighted dice to choose one of its pieces. Now it is "collapsed".</li>
-        <li>Its neighbours now have fewer pieces that fit. Repeat!</li>
+        <li lang="en">At first, every cube could still be <b>any</b> piece. (87 pieces, so the demo shows 87 options.)</li>
+        <li lang="de">Am Anfang könnte jeder Würfel noch <b>jedes</b> Teil sein. (87 Teile, darum zeigt die Demo 87 Optionen.)</li>
+        <li lang="en">Pick the cube with the <b>fewest options left</b>. Roll weighted dice to choose one of its pieces. Now it is "collapsed".</li>
+        <li lang="de">Nimm den Würfel mit den <b>wenigsten übrigen Optionen</b>. Wirf gewichtete Würfel, um eins seiner Teile zu wählen. Jetzt ist er "kollabiert".</li>
+        <li lang="en">Its neighbours now have fewer pieces that fit. Repeat!</li>
+        <li lang="de">Seine Nachbarn haben jetzt weniger passende Teile. Wiederholen!</li>
       </ol>
-      <p>Picking the cube with the fewest options first is like Sudoku: you fill in the square where only one or two numbers are possible first.</p>
+      <p lang="en">Picking the cube with the fewest options first is like Sudoku: you fill in the square where only one or two numbers are possible first.</p>
+      <p lang="de">Den Würfel mit den wenigsten Optionen zuerst zu nehmen, ist wie beim Sudoku: Du füllst zuerst das Feld aus, in das nur ein oder zwei Zahlen passen.</p>
     </div>
     <div>
       <div class="card">
-        <h3>Two clever tricks</h3>
-        <p><b>Never stuck:</b> many WFC puzzles can get stuck, with a hole where no piece fits. Here, there is a piece for <i>every</i> combination of edges (3&times;3&times;3&times;3 = 81 combinations). So it always works.</p>
-        <p><b>Big regions:</b> meadows and highlands have big weights (6 and 5), the mixed pieces tiny ones (slope 0.35, gorge 0.03). So same-kind cubes clump together into big areas, and the mixed pieces appear where two areas meet. The theme of each depth changes the weights: the snowy peaks love highlands.</p>
+        <h3 lang="en">Two clever tricks</h3>
+        <h3 lang="de">Zwei schlaue Tricks</h3>
+        <p lang="en"><b>Never stuck:</b> many WFC puzzles can get stuck, with a hole where no piece fits. Here, there is a piece for <i>every</i> combination of edges (3×3×3×3 = 81 combinations). So it always works.</p>
+        <p lang="de"><b>Nie steckenbleiben:</b> Viele WFC-Puzzles können steckenbleiben, mit einem Loch, in das kein Teil passt. Hier gibt es für <i>jede</i> Kombination von Kanten ein Teil (3×3×3×3 = 81 Kombinationen). Also klappt es immer.</p>
+        <p lang="en"><b>Big regions:</b> meadows and highlands have big weights (6 and 5), the mixed pieces tiny ones (slope 0.35, gorge 0.03). So same-kind cubes clump together into big areas, and the mixed pieces appear where two areas meet. The theme of each depth changes the weights: the snowy peaks love highlands.</p>
+        <p lang="de"><b>Große Gebiete:</b> Wiesen und Hochländer haben große Gewichte (6 und 5), die gemischten Teile winzige (Hang 0,35, Schlucht 0,03). Darum klumpen gleiche Würfel zu großen Gebieten zusammen, und die gemischten Teile erscheinen dort, wo zwei Gebiete sich treffen. Das Thema jeder Tiefe ändert die Gewichte: Die Schneegipfel lieben Hochland.</p>
       </div>
-      <p class="small">In the game, a cube and its six neighbours collapse the moment you get close. So the world depends on the seed <b>and</b> on the order you explore in!</p>
+      <p class="small" lang="en">In the game, a cube and its six neighbours collapse the moment you get close. So the world depends on the seed <b>and</b> on the order you explore in!</p>
+      <p class="small" lang="de">Im Spiel kollabieren ein Würfel und seine sechs Nachbarn in dem Moment, in dem du in die Nähe kommst. Die Welt hängt also vom Seed <b>und</b> von der Reihenfolge ab, in der du sie erkundest!</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="noise" data-lv="1">
-  <h2>Hills from noise</h2>
-  <p>To make hills, the game uses <a class="w" href="words.html#noise">noise</a>: random numbers that change <b>smoothly</b>. Pick random heights at a few points, and blend gently in between.
+  <h2 lang="en">Hills from noise</h2>
+  <h2 lang="de">Hügel aus Rauschen</h2>
+  <p lang="en">To make hills, the game uses <a class="w" href="words.html#noise">noise</a>: random numbers that change <b>smoothly</b>. Pick random heights at a few points, and blend gently in between.
     Add a second layer that is twice as wiggly and half as strong, and a third. Big hills with small bumps on top!</p>
+  <p lang="de">Für Hügel benutzt das Spiel <a class="w" href="words.html#noise">Rauschen</a> (Noise): Zufallszahlen, die sich <b>sanft</b> ändern. Wähle an ein paar Punkten zufällige Höhen und verbinde sie weich.
+    Leg eine zweite Schicht drauf, die doppelt so wellig und halb so stark ist, und eine dritte. Große Hügel mit kleinen Buckeln obendrauf!</p>
   <div class="demo real" data-demo="noise"></div>
-  <p class="small muted">The noise is the same everywhere in the world, so the ground at the edge of one cube continues smoothly into the next one.</p>
+  <p class="small muted" lang="en">The noise is the same everywhere in the world, so the ground at the edge of one cube continues smoothly into the next one.</p>
+  <p class="small muted" lang="de">Das Rauschen ist überall in der Welt dasselbe. Darum geht der Boden am Rand eines Würfels sanft in den nächsten über.</p>
 </section>
 
-<section class="slide" id="faces" data-lv="2">
-  <h2>Walls that two cubes share</h2>
+<section class="slide" id="faces" data-lv="2" data-src="src/world/faces.js#sideFace">
+  <h2 lang="en">Walls that two cubes share</h2>
+  <h2 lang="de">Wände, die sich zwei Würfel teilen</h2>
   <div class="cols">
     <div>
-      <p>Two cubes next to each other share a wall, called a <a class="w" href="words.html#face">face</a>. Cubes are built one at a time, maybe hours apart. How do their edges line up?</p>
-      <p>The trick: <b>the face is decided first, and only once</b>. Whichever of the two cubes is prepared first decides it, and saves it. Then both cubes build their edge to match it:</p>
+      <p lang="en">Two cubes next to each other share a wall, called a <a class="w" href="words.html#face">face</a>. Cubes are built one at a time, maybe hours apart. How do their edges line up?</p>
+      <p lang="de">Zwei Würfel nebeneinander teilen sich eine Wand, die <a class="w" href="words.html#face">Seite</a> (Face) heißt. Würfel werden einer nach dem anderen gebaut, vielleicht mit Stunden dazwischen. Wie passen ihre Ränder zusammen?</p>
+      <p lang="en">The trick: <b>the face is decided first, and only once</b>. Whichever of the two cubes is prepared first decides it, and saves it. Then both cubes build their edge to match it:</p>
+      <p lang="de">Der Trick: <b>Die Seite wird zuerst entschieden, und nur einmal.</b> Welcher der beiden Würfel zuerst vorbereitet wird, entscheidet sie und speichert sie. Dann bauen beide Würfel ihren Rand passend dazu:</p>
       <ul>
-        <li>the <b>ground height</b> along the edge, 16 numbers from the noise</li>
-        <li>where a <b>river</b> crosses it, and how wide it is</li>
-        <li>where the <b>portal</b> (the gate) stands, and on which floor</li>
+        <li lang="en">the <b>ground height</b> along the edge, 16 numbers from the noise</li>
+        <li lang="de">die <b>Bodenhöhe</b> entlang des Rands, 16 Zahlen aus dem Rauschen</li>
+        <li lang="en">where a <b>river</b> crosses it, and how wide it is</li>
+        <li lang="de">wo ein <b>Fluss</b> darüber geht und wie breit er ist</li>
+        <li lang="en">where the <b>portal</b> (the gate) stands, and on which floor</li>
+        <li lang="de">wo das <b>Portal</b> (das Tor) steht und auf welchem Stockwerk</li>
       </ul>
-      <p>Each face even has its own dice (its own seed), so it comes out the same no matter which cube decided it.</p>
+      <p lang="en">Each face even has its own dice (its own seed), so it comes out the same no matter which cube decided it.</p>
+      <p lang="de">Jede Seite hat sogar eigene Würfel (einen eigenen Seed). Darum kommt sie gleich heraus, egal welcher Würfel sie entschieden hat.</p>
     </div>
     <div class="card">
-      <h3>Did it work?</h3>
-      <p>The game's makers checked over 400 pairs of neighbouring cubes: on every single one, the ground height and the water match on every edge cell, corners included.</p>
-      <p>Inside the cube, the builder blends from the four edges towards the middle, and adds its own hills there. The middle can be wild, the edges always match.</p>
+      <h3 lang="en">Did it work?</h3>
+      <h3 lang="de">Hat es geklappt?</h3>
+      <p lang="en">The game's makers checked over 400 pairs of neighbouring cubes: on every single one, the ground height and the water match on every edge cell, corners included.</p>
+      <p lang="de">Die Macher des Spiels haben über 400 Paare benachbarter Würfel geprüft: Bei jedem einzelnen passen Bodenhöhe und Wasser an jeder Randzelle, die Ecken eingeschlossen.</p>
+      <p lang="en">Inside the cube, the builder blends from the four edges towards the middle, and adds its own hills there. The middle can be wild, the edges always match.</p>
+      <p lang="de">Im Inneren des Würfels mischt der Baumeister von den vier Rändern zur Mitte hin und fügt dort seine eigenen Hügel hinzu. Die Mitte darf wild sein, die Ränder passen immer.</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="archetypes" data-lv="2">
-  <h2>Big shapes: archetypes</h2>
-  <p>On top of the hills, every cube gets one big shape, its <a class="w" href="words.html#archetype">archetype</a>. The shape fades out near the edges, so the edges still match.</p>
+<section class="slide" id="archetypes" data-lv="2" data-src="src/world/world.js#LEAN,archetype">
+  <h2 lang="en">Big shapes: archetypes</h2>
+  <h2 lang="de">Große Formen: Archetypen</h2>
+  <p lang="en">On top of the hills, every cube gets one big shape, its <a class="w" href="words.html#archetype">archetype</a>. The shape fades out near the edges, so the edges still match.</p>
+  <p lang="de">Über die Hügel bekommt jeder Würfel eine große Form, seinen <a class="w" href="words.html#archetype">Archetyp</a>. Die Form wird zu den Rändern hin schwächer, damit die Ränder trotzdem passen.</p>
   <table>
-    <tr><th>ARCHETYPE</th><th>WHAT IT LOOKS LIKE</th></tr>
-    <tr><td>plain</td><td>nothing extra</td></tr>
-    <tr><td>chasm</td><td>a winding crack across the cube with raised rims</td></tr>
-    <tr><td>spire</td><td>a tall needle of rock on a raised base</td></tr>
-    <tr><td>sinkhole</td><td>a round pit with a raised rim</td></tr>
-    <tr><td>archipelago</td><td>islands</td></tr>
-    <tr><td>mesa</td><td>one big flat-topped block</td></tr>
-    <tr><td>crater</td><td>a ring wall around a lake (of water, lava or acid)</td></tr>
+    <tr><th lang="en">ARCHETYPE</th> <th lang="de">ARCHETYP</th><th lang="en">WHAT IT LOOKS LIKE</th> <th lang="de">WIE ER AUSSIEHT</th></tr>
+    <tr><td>plain</td><td lang="en">nothing extra</td> <td lang="de">nichts Besonderes</td></tr>
+    <tr><td>chasm</td><td lang="en">a winding crack across the cube with raised rims</td> <td lang="de">eine gewundene Spalte quer durch den Würfel mit erhöhten Rändern</td></tr>
+    <tr><td>spire</td><td lang="en">a tall needle of rock on a raised base</td> <td lang="de">eine hohe Felsnadel auf einem erhöhten Sockel</td></tr>
+    <tr><td>sinkhole</td><td lang="en">a round pit with a raised rim</td> <td lang="de">ein rundes Loch mit erhöhtem Rand</td></tr>
+    <tr><td>archipelago</td><td lang="en">islands</td> <td lang="de">Inseln</td></tr>
+    <tr><td>mesa</td><td lang="en">one big flat-topped block</td> <td lang="de">ein großer Block mit flacher Oberseite</td></tr>
+    <tr><td>crater</td><td lang="en">a ring wall around a lake (of water, lava or acid)</td> <td lang="de">eine Ringmauer um einen See (aus Wasser, Lava oder Säure)</td></tr>
   </table>
-  <p>Which one? Weighted dice, of course: the theme of the depth sets the weights, and the kind of land leans them. A lake cube is three times more likely to become islands. <a class="portal" href="random.html#pick-code">The marble bag code</a></p>
+  <p lang="en">Which one? Weighted dice, of course: the theme of the depth sets the weights, and the kind of land leans them. A lake cube is three times more likely to become islands. <a class="portal" href="random.html#pick-code">The marble bag code</a></p>
+  <p lang="de">Welcher? Gewichtete Würfel, natürlich: Das Thema der Tiefe legt die Gewichte fest, und die Art des Landes neigt sie. Ein See-Würfel wird dreimal so oft zu Inseln. <a class="portal" href="random.html#pick-code">Der Murmelbeutel-Code</a></p>
 </section>
 
 <section class="slide" id="factory" data-lv="1">
-  <h2>The builder: try the real cube factory</h2>
+  <h2 lang="en">The builder: try the real cube factory</h2>
+  <h2 lang="de">Der Baumeister: Probier die echte Würfelfabrik</h2>
   <div class="cols wide-right">
     <div>
-      <p>This is the <b>real</b> generator of the game, running right here in your browser.</p>
-      <p>Pick a depth and a room on its route, and press <b>Build it!</b> It plans the route, solves the puzzle, decides the faces and builds the cube, usually in a few thousandths of a second.</p>
-      <p class="small"><b style="color:var(--portal)">Gold rings</b>: gates to other cubes, and the well down. <b style="color:var(--cyan)">Cyan</b>: the ring you came up through. <b style="color:#ff6ad5">Pink dashes</b>: the route the builder planned. Grey: stone stairs. Brown: wooden bridges.</p>
-      <p class="small muted">Rooms called "arena" are guardian rooms: flat, so there is space to fight. Try depth 9 or 17 for caves.</p>
+      <p lang="en">This is the <b>real</b> generator of the game, running right here in your browser.</p>
+      <p lang="de">Das ist der <b>echte</b> Generator des Spiels, er läuft hier in deinem Browser.</p>
+      <p lang="en">Pick a depth and a room on its route, and press <b>Build it!</b> It plans the route, solves the puzzle, decides the faces and builds the cube, usually in a few thousandths of a second.</p>
+      <p lang="de">Wähl eine Tiefe und einen Raum auf ihrer Route und drück <b>Bauen!</b> Er plant die Route, löst das Puzzle, entscheidet die Seiten und baut den Würfel, meistens in ein paar Tausendstelsekunden.</p>
+      <p class="small" lang="en"><b style="color:var(--portal)">Gold rings</b>: gates to other cubes, and the well down. <b style="color:var(--cyan)">Cyan</b>: the ring you came up through. <b style="color:#ff6ad5">Pink dashes</b>: the route the builder planned. Grey: stone stairs. Brown: wooden bridges.</p>
+      <p class="small" lang="de"><b style="color:var(--portal)">Goldene Ringe</b>: Tore zu anderen Würfeln und der Brunnen nach unten. <b style="color:var(--cyan)">Türkis</b>: der Ring, durch den du hochgekommen bist. <b style="color:#ff6ad5">Rosa Striche</b>: die geplante Route. Grau: Steintreppen. Braun: Holzbrücken.</p>
+      <p class="small muted" lang="en">Rooms called "arena" are guardian rooms: flat, so there is space to fight. Try depth 9 or 17 for caves.</p>
+      <p class="small muted" lang="de">Räume namens "arena" sind Wächterräume: flach, damit man Platz zum Kämpfen hat. Probier Tiefe 9 oder 17 für Höhlen.</p>
     </div>
     <div class="demo real" data-demo="cube"></div>
   </div>
 </section>
 
-<section class="slide" id="assembly" data-lv="2">
-  <h2>The assembly line</h2>
-  <p>The builder works in fixed steps, one after the other, like a factory line. Each step adds something:</p>
+<section class="slide" id="assembly" data-lv="2" data-src="src/cubegen/index.js#tryGenerate">
+  <h2 lang="en">The assembly line</h2>
+  <h2 lang="de">Das Fließband</h2>
+  <p lang="en">The builder works in fixed steps, one after the other, like a factory line. Each step adds something:</p>
+  <p lang="de">Der Baumeister arbeitet in festen Schritten, einer nach dem anderen, wie ein Fließband in einer Fabrik. Jeder Schritt fügt etwas hinzu:</p>
   <div class="cols3 small">
     <ol class="steps">
-      <li>How many floors stacked up (1 to 4)</li>
-      <li>Ground heights, blended from the four faces</li>
-      <li>The big shape (archetype)</li>
-      <li>Portals on the faces</li>
-      <li>Rivers, from crossing to crossing</li>
-      <li>Waterfalls into the cube below</li>
+      <li lang="en">How many floors stacked up (1 to 4)</li>
+      <li lang="de">Wie viele Stockwerke übereinander (1 bis 4)</li>
+      <li lang="en">Ground heights, blended from the four faces</li>
+      <li lang="de">Bodenhöhen, gemischt aus den vier Seiten</li>
+      <li lang="en">The big shape (archetype)</li>
+      <li lang="de">Die große Form (Archetyp)</li>
+      <li lang="en">Portals on the faces</li>
+      <li lang="de">Portale an den Seiten</li>
+      <li lang="en">Rivers, from crossing to crossing</li>
+      <li lang="de">Flüsse, von Übergang zu Übergang</li>
+      <li lang="en">Waterfalls into the cube below</li>
+      <li lang="de">Wasserfälle in den Würfel darunter</li>
     </ol>
     <ol class="steps" style="counter-reset: s 6">
-      <li>Space for treasure sites</li>
-      <li>Upper floors (slabs)</li>
-      <li>Ramps and supports</li>
-      <li>Pools and streams</li>
-      <li>Every possible move: walk, drop, jump, stairs, bridge, ladder</li>
-      <li>Routes between the portals</li>
+      <li lang="en">Space for treasure sites</li>
+      <li lang="de">Platz für Schatzplätze</li>
+      <li lang="en">Upper floors (slabs)</li>
+      <li lang="de">Obere Stockwerke (Platten)</li>
+      <li lang="en">Ramps and supports</li>
+      <li lang="de">Rampen und Stützen</li>
+      <li lang="en">Pools and streams</li>
+      <li lang="de">Teiche und Bäche</li>
+      <li lang="en">Every possible move: walk, drop, jump, stairs, bridge, ladder</li>
+      <li lang="de">Jede mögliche Bewegung: gehen, fallen, springen, Treppe, Brücke, Leiter</li>
+      <li lang="en">Routes between the portals</li>
+      <li lang="de">Routen zwischen den Portalen</li>
     </ol>
     <ol class="steps" style="counter-reset: s 12">
-      <li>Escape routes from places you could fall into</li>
-      <li>Place the stairs, bridges and ladders</li>
-      <li>Smooth the ground</li>
-      <li>Bridge styles and pillars</li>
-      <li>Fences on dangerous edges</li>
-      <li><b>The inspection</b></li>
+      <li lang="en">Escape routes from places you could fall into</li>
+      <li lang="de">Fluchtwege aus Stellen, in die man fallen kann</li>
+      <li lang="en">Place the stairs, bridges and ladders</li>
+      <li lang="de">Treppen, Brücken und Leitern aufstellen</li>
+      <li lang="en">Smooth the ground</li>
+      <li lang="de">Den Boden glätten</li>
+      <li lang="en">Bridge styles and pillars</li>
+      <li lang="de">Brückenstile und Pfeiler</li>
+      <li lang="en">Fences on dangerous edges</li>
+      <li lang="de">Zäune an gefährlichen Kanten</li>
+      <li><b lang="en">The inspection</b> <b lang="de">Die Prüfung</b></li>
     </ol>
   </div>
-  <p>Notice step 11 and 12: the builder first lists every move a hero <i>could</i> make, then searches for the cheapest way between the portals. That search is the same kind used for <a class="portal" href="paths.html">finding the way</a>.</p>
+  <p lang="en">Notice step 11 and 12: the builder first lists every move a hero <i>could</i> make, then searches for the cheapest way between the portals. That search is the same kind used for <a class="portal" href="paths.html">finding the way</a>.</p>
+  <p lang="de">Schau dir Schritt 11 und 12 an: Der Baumeister listet erst jede Bewegung auf, die ein Held machen <i>könnte</i>, und sucht dann den billigsten Weg zwischen den Portalen. Das ist dieselbe Art Suche wie beim <a class="portal" href="paths.html">Wegfinden</a>.</p>
 </section>
 
-<section class="slide" id="inspector" data-lv="2">
-  <h2>The inspector: throw it away and try again</h2>
+<section class="slide" id="inspector" data-lv="2" data-src="src/cubegen/index.js#generate src/cubegen/reach.js#reachTo">
+  <h2 lang="en">The inspector: throw it away and try again</h2>
+  <h2 lang="de">Der Prüfer: wegwerfen und nochmal versuchen</h2>
   <div class="cols">
     <div>
-      <p>After building, an inspector plays the cube in its head. Starting from the exit, it works out everything the hero can really do:</p>
+      <p lang="en">After building, an inspector plays the cube in its head. Starting from the exit, it works out everything the hero can really do:</p>
+      <p lang="de">Nach dem Bauen spielt ein Prüfer den Würfel im Kopf durch. Vom Ausgang aus findet er alles heraus, was der Held wirklich tun kann:</p>
       <ul>
-        <li>walk on flat ground and slopes, jump up one level, drop down cliffs that have no fence</li>
-        <li>swim, and climb out of water up to two levels</li>
-        <li>use the stairs, bridges and ladders</li>
+        <li lang="en">walk on flat ground and slopes, jump up one level, drop down cliffs that have no fence</li>
+        <li lang="de">auf flachem Boden und Hängen gehen, eine Stufe hochspringen, Klippen ohne Zaun runterfallen</li>
+        <li lang="en">swim, and climb out of water up to two levels</li>
+        <li lang="de">schwimmen und bis zu zwei Stufen aus dem Wasser klettern</li>
+        <li lang="en">use the stairs, bridges and ladders</li>
+        <li lang="de">Treppen, Brücken und Leitern benutzen</li>
       </ul>
-      <p>If <b>any</b> portal cannot reach the exit, or a route squeezes under a ceiling that is too low, the cube fails. The builder throws it away and tries again with new dice. Up to 200 tries!</p>
-      <p>Usually the first try works: about 1.07 tries per cube on average.</p>
+      <p lang="en">If <b>any</b> portal cannot reach the exit, or a route squeezes under a ceiling that is too low, the cube fails. The builder throws it away and tries again with new dice. Up to 200 tries!</p>
+      <p lang="de">Wenn <b>irgendein</b> Portal den Ausgang nicht erreicht oder eine Route unter einer zu niedrigen Decke durchquetscht, fällt der Würfel durch. Der Baumeister wirft ihn weg und versucht es mit neuen Würfeln. Bis zu 200 Versuche!</p>
+      <p lang="en">Usually the first try works: about 1.07 tries per cube on average.</p>
+      <p lang="de">Meistens klappt der erste Versuch: im Durchschnitt etwa 1,07 Versuche pro Würfel.</p>
     </div>
     <div class="card">
-      <h3>A true story</h3>
-      <p>An earlier version planned its routes from the first portal outwards. But you can drop down a cliff and not climb back up. So some routes only worked in the wrong direction!</p>
-      <p>When the makers tested it: <b>none of 12 test worlds could be finished</b>, and in four of them you were trapped in the town.</p>
-      <p>After the fix, routes are planned from every portal <i>to</i> the exit, and the inspector checks it. Now <b>64 of 64</b> test worlds can be walked from the town all the way to depth 20.</p>
-      <p class="small muted">Lesson: write a check for the thing that must never break.</p>
+      <h3 lang="en">A true story</h3>
+      <h3 lang="de">Eine wahre Geschichte</h3>
+      <p lang="en">An earlier version planned its routes from the first portal outwards. But you can drop down a cliff and not climb back up. So some routes only worked in the wrong direction!</p>
+      <p lang="de">Eine frühere Version hat ihre Routen vom ersten Portal aus nach außen geplant. Aber man kann eine Klippe runterfallen und nicht wieder hochklettern. Manche Routen funktionierten also nur in die falsche Richtung!</p>
+      <p lang="en">When the makers tested it: <b>none of 12 test worlds could be finished</b>, and in four of them you were trapped in the town.</p>
+      <p lang="de">Als die Macher es getestet haben: <b>Keine von 12 Testwelten war schaffbar</b>, und in vier davon war man in der Stadt gefangen.</p>
+      <p lang="en">After the fix, routes are planned from every portal <i>to</i> the exit, and the inspector checks it. Now <b>64 of 64</b> test worlds can be walked from the town all the way to depth 20.</p>
+      <p lang="de">Nach der Reparatur werden Routen von jedem Portal <i>zum</i> Ausgang geplant, und der Prüfer kontrolliert es. Jetzt sind <b>64 von 64</b> Testwelten von der Stadt bis Tiefe 20 begehbar.</p>
+      <p class="small muted" lang="en">Lesson: write a check for the thing that must never break.</p>
+      <p class="small muted" lang="de">Lehre: Schreib eine Prüfung für das, was nie kaputtgehen darf.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="wfc-code" data-lv="3">
-  <h2>The real code: collapsing cubes</h2>
+  <h2 lang="en">The real code: collapsing cubes</h2>
+  <h2 lang="de">Der echte Code: Würfel kollabieren lassen</h2>
   <div class="cols wide-left">
-    <pre data-file="src/world/wfc.js"><code>domain(k) {   // the pieces that fit next to the collapsed neighbours
-  const nb = [0, 1, 2, 3].map(d => this.tiles.get(step(k, d)));
-  return TILES.filter(t => nb.every((n, d) => !n || n.sock[OPP6[d]] === t.sock[d]));
-}
-
-collapse(keys) {
-  const todo = new Set(keys.filter(k => !this.tiles.has(k)));
-  while (todo.size) {
-    let best = null, bestE = Infinity, bestDom = null;
-    for (const k of todo) {
-      const dom = this.domain(k), e = this.entropy(dom, weightAt(k)) + (hashKey(k) % 1000) * 1e-6;
-      if (e &lt; bestE) { best = k; bestE = e; bestDom = dom; }
-    }
-    const R = this.rng(best), w = weightAt(best), sum = bestDom.reduce((s, t) => s + w(t), 0);
-    let r = R() * sum, tile = bestDom[bestDom.length - 1];
-    for (const t of bestDom) if ((r -= w(t)) &lt; 0) { tile = t; break; }
-    this.tiles.set(best, { ...tile, K: layersOf(tile.kind, R(), near) });
-    todo.delete(best);
-  }
-}</code></pre>
+    <pre data-code="src/world/wfc.js#domain,collapse"></pre>
     <div>
-      <p><code>domain</code>: keep only the pieces where every collapsed neighbour's touching edge (<code>OPP6[d]</code> is the opposite side) matches ours.</p>
-      <p><code>entropy</code> is a measure of "how many choices, and how evenly weighted". Low entropy = few real choices.</p>
-      <p>The <code>hashKey(k) % 1000 * 1e-6</code> part is a tiny tie-breaker, so two equal cubes are always picked in the same order.</p>
-      <p>Then the marble bag picks a piece, and <code>layersOf</code> decides how many floors it gets (leaning towards what the neighbours have, so tall regions form).</p>
+      <p lang="en"><code>domain</code>: keep only the pieces where every collapsed neighbour's touching edge (<code>OPP6[d]</code> is the opposite side) matches ours.</p>
+      <p lang="de"><code>domain</code>: Behalte nur die Teile, bei denen die berührende Kante jedes kollabierten Nachbarn (<code>OPP6[d]</code> ist die gegenüberliegende Seite) zu unserer passt.</p>
+      <p lang="en"><code>entropy</code> is a measure of "how many choices, and how evenly weighted". Low entropy = few real choices.</p>
+      <p lang="de"><code>entropy</code> misst "wie viele Möglichkeiten, und wie gleichmäßig gewichtet". Niedrige Entropie = wenig echte Auswahl.</p>
+      <p lang="en">The <code>hashKey(k) % 1000 * 1e-6</code> part is a tiny tie-breaker, so two equal cubes are always picked in the same order.</p>
+      <p lang="de">Der Teil <code>hashKey(k) % 1000 * 1e-6</code> ist ein winziger Gleichstandsbrecher, damit zwei gleiche Würfel immer in derselben Reihenfolge gewählt werden.</p>
+      <p lang="en">Then the marble bag picks a piece, and <code>layersOf</code> decides how many floors it gets (leaning towards what the neighbours have, so tall regions form).</p>
+      <p lang="de">Dann wählt der Murmelbeutel ein Teil, und <code>layersOf</code> entscheidet, wie viele Stockwerke es bekommt (es lehnt sich an die Nachbarn an, damit hohe Gebiete entstehen).</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="generate-code" data-lv="3">
-  <h2>The real code: build, inspect, retry</h2>
+  <h2 lang="en">The real code: build, inspect, retry</h2>
+  <h2 lang="de">Der echte Code: bauen, prüfen, nochmal</h2>
   <div class="cols">
-    <pre data-file="src/cubegen/index.js (shortened)"><code>function tryGenerate(seed, spec) {
-  const ctx = createContext(seed);
-  chooseLayers(ctx); groundHeights(ctx); shapeCube(ctx);
-  placePortals(ctx); carveRiver(ctx); /* ... */
-  makeMoves(ctx);
-  if (!findRoute(ctx)) return null;
-  addEscapes(ctx); finishRoute(ctx);
-  if (!placeStructures(ctx)) return null;
-  smooth(ctx); shapeStructures(ctx); addFences(ctx);
-  // every portal must lead to the exit with the final slopes and fences
-  const safe = reachTo(ctx, ctx.hub, true);
-  if (safe &amp;&amp; ctx.portalFloors.some(f => !safe.has(f.id))) return null;
-  return { /* the finished map */ };
-}
-
-export function generate(spec) {
-  for (let a = 0; a &lt; 200; a++) {
-    const m = tryGenerate(hash32(spec.seed + a * 7919), spec);
-    if (m) return m;
-  }
-  throw new Error('generator failed for cube ' + spec.key);
-}</code></pre>
+    <pre data-code="src/cubegen/index.js#tryGenerate,generate"></pre>
     <div>
-      <p>Each stage is a function that gets the same <code>ctx</code> (the context: the cube under construction) and adds its part.</p>
-      <p><code>return null</code> means "this attempt failed". The loop in <code>generate</code> then tries the next seed: <code>spec.seed + a * 7919</code>, mixed by <code>hash32</code>. (7919 is just a big prime number, so the seeds of the attempts are far apart.)</p>
-      <p>The <code>spec</code> is what the world decided for this cube: its faces, portals and kind. Retries change the dice, but <b>never</b> the spec, so the edges always keep matching.</p>
-      <p class="small muted">The real function also handles treasure sites, the town and guardian arenas.</p>
+      <p lang="en">Each stage is a function that gets the same <code>ctx</code> (the context: the cube under construction) and adds its part.</p>
+      <p lang="de">Jede Station ist eine Funktion, die denselben <code>ctx</code> bekommt (den Kontext: den Würfel im Bau) und ihren Teil hinzufügt.</p>
+      <p lang="en"><code>return null</code> means "this attempt failed". The loop in <code>generate</code> then tries the next seed: <code>spec.seed + a * 7919</code>, mixed by <code>hash32</code>. (7919 is just a big prime number, so the seeds of the attempts are far apart.)</p>
+      <p lang="de"><code>return null</code> heißt "dieser Versuch ist schiefgegangen". Die Schleife in <code>generate</code> probiert dann den nächsten Seed: <code>spec.seed + a * 7919</code>, gemischt durch <code>hash32</code>. (7919 ist einfach eine große Primzahl, damit die Seeds der Versuche weit auseinander liegen.)</p>
+      <p lang="en">The <code>spec</code> is what the world decided for this cube: its faces, portals and kind. Retries change the dice, but <b>never</b> the spec, so the edges always keep matching.</p>
+      <p lang="de">Die <code>spec</code> ist, was die Welt für diesen Würfel entschieden hat: seine Seiten, Portale und Art. Neue Versuche ändern die Würfel, aber <b>nie</b> die spec. Darum passen die Ränder immer.</p>
+      <p class="small muted" lang="en">It also builds the treasure sites; the town and the guardian arenas have builders of their own.</p>
+      <p class="small muted" lang="de">Sie baut auch die Schatzplätze; die Stadt und die Wächter-Arenen haben eigene Baumeister.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="route-code" data-lv="3">
-  <h2>The real code: the backtracking route</h2>
+  <h2 lang="en">The real code: the backtracking route</h2>
+  <h2 lang="de">Der echte Code: die Backtracking-Route</h2>
   <div class="cols wide-left">
-    <pre data-file="src/world/layout.js"><code>function route(candidates, prefix, length, goal, R) {
-  const allowed = new Set(candidates.map(id)), used = new Set(prefix.map(id));
-  const priority = new Map(candidates.map(c => [id(c), R()])), out = [...prefix];
-  function visit() {
-    const c = out.at(-1);
-    if (out.length === length) return goal(c);
-    const next = nb(c).filter(n => allowed.has(id(n)) &amp;&amp; !used.has(id(n)));
-    next.sort((a, b) => priority.get(id(a)) - priority.get(id(b)));
-    for (const n of next) {
-      out.push(n); used.add(id(n));
-      if (visit()) return true;
-      used.delete(id(n)); out.pop();   // back up
-    }
-    return false;
-  }
-  return visit() ? out : null;
-}</code></pre>
+    <pre data-code="src/world/layout.js#route"></pre>
     <div>
-      <p><code>visit</code> calls <b>itself</b> for the next step. That is called <a class="w" href="words.html#recursion">recursion</a>.</p>
-      <p>If the path is long enough, it asks <code>goal(c)</code>: "are we in the right place to end?"</p>
-      <p>Otherwise it tries each free neighbour. <code>out.push</code> walks forward. If the deeper <code>visit()</code> fails, <code>out.pop()</code> walks back, and the loop tries the next neighbour.</p>
-      <p>Each cell gets a random <code>priority</code> once, so the order of trying is shuffled by the seed.</p>
+      <p lang="en"><code>visit</code> calls <b>itself</b> for the next step. That is called <a class="w" href="words.html#recursion">recursion</a>.</p>
+      <p lang="de"><code>visit</code> ruft sich für den nächsten Schritt <b>selbst</b> auf. Das nennt man <a class="w" href="words.html#recursion">Rekursion</a>.</p>
+      <p lang="en">If the path is long enough, it asks <code>goal(c)</code>: "are we in the right place to end?"</p>
+      <p lang="de">Wenn der Weg lang genug ist, fragt sie <code>goal(c)</code>: "Sind wir an der richtigen Stelle, um aufzuhören?"</p>
+      <p lang="en">Otherwise it tries each free neighbour. <code>out.push</code> walks forward. If the deeper <code>visit()</code> fails, <code>out.pop()</code> walks back, and the loop tries the next neighbour.</p>
+      <p lang="de">Sonst probiert sie jeden freien Nachbarn. <code>out.push</code> geht vorwärts. Wenn das tiefere <code>visit()</code> scheitert, geht <code>out.pop()</code> zurück, und die Schleife probiert den nächsten Nachbarn.</p>
+      <p lang="en">Each cell gets a random <code>priority</code> once, so the order of trying is shuffled by the seed.</p>
+      <p lang="de">Jede Zelle bekommt einmal eine zufällige <code>priority</code>, so mischt der Seed die Reihenfolge des Ausprobierens.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Building the World</h2>
+  <h2 lang="en">Prompt quests: Building the World</h2>
+  <h2 lang="de">Prompt-Aufgaben: Die Welt erschaffen</h2>
   <div class="quests">
-    <div class="prompt" data-title="LONGER ADVENTURES" data-stars="1"><q>Each depth has a route of 7 to 14 rooms. Show me where that is decided, and explain what would happen if I made it 10 to 18. Don't change it yet.</q><span class="why">Asking "what would happen" first is smart: bigger changes can break tests.</span></div>
-    <div class="prompt" data-title="CRATER COUNTRY" data-stars="2"><q>Make craters much more common in the badlands theme, then start the game with ?dev=1 and tell me how to jump to depth 4 to see them.</q><span class="why">Hint: arche weights in src/themes/index.js. Dev mode lets you skip ahead.</span></div>
-    <div class="prompt" data-title="NEW ARCHETYPE" data-stars="3"><q>Add a new cube archetype called "twin peaks": two tall rounded hills. Follow how the existing archetypes in src/cubegen/archetypes.js work, add it to some theme weights, and run the tests to make sure every cube can still be finished.</q><span class="why">"Follow how the existing ones work" and "run the tests" make a big change much safer.</span></div>
-    <div class="prompt" data-title="WORLD STATS" data-stars="2"><q>Write a small script in tools/ that generates the first 5 depths for seed 123 and prints how many cubes of each archetype it made.</q><span class="why">Tools that measure things help you see if a change did what you wanted.</span></div>
+    <div class="prompt" data-title="LONGER ADVENTURES" data-stars="1" data-de-data-title="LÄNGERE ABENTEUER"><q lang="en">Each depth has a route of 7 to 14 rooms. Show me where that is decided, and explain what would happen if I made it 10 to 18. Don't change it yet.</q> <q lang="de">Jede Tiefe hat eine Route aus 7 bis 14 Räumen. Zeig mir, wo das festgelegt wird, und erklär mir, was passieren würde, wenn ich 10 bis 18 daraus mache. Ändere es noch nicht.</q><span class="why" lang="en">Asking "what would happen" first is smart: bigger changes can break tests.</span> <span class="why" lang="de">Erst zu fragen "was würde passieren" ist schlau: Größere Änderungen können Tests kaputtmachen.</span></div>
+    <div class="prompt" data-title="CRATER COUNTRY" data-stars="2" data-de-data-title="KRATERLAND"><q lang="en">Make craters much more common in the badlands theme, then start the game with ?dev=1 and tell me how to jump to depth 4 to see them.</q> <q lang="de">Mach Krater im Ödland-Thema (badlands) viel häufiger, dann sag mir, wie ich mit ?dev=1 im Spiel zu Tiefe 4 springe, um sie zu sehen.</q><span class="why" lang="en">Dev mode lets you skip ahead, so you can see a change in seconds.</span> <span class="why" lang="de">Mit dem Entwicklermodus kannst du vorspringen und eine Änderung in Sekunden sehen.</span></div>
+    <div class="prompt" data-title="NEW ARCHETYPE" data-stars="3" data-de-data-title="NEUER ARCHETYP"><q lang="en">Add a new cube archetype called "twin peaks": two tall rounded hills. Follow how the existing archetypes work, add it to some theme weights, and run the tests to make sure every cube can still be finished.</q> <q lang="de">Füge einen neuen Würfel-Archetyp namens "twin peaks" hinzu: zwei hohe, runde Hügel. Mach es so, wie die bestehenden Archetypen funktionieren, trag ihn in ein paar Themen-Gewichte ein und lass die Tests laufen, damit jeder Würfel weiterhin schaffbar ist.</q><span class="why" lang="en">"Follow how the existing ones work" and "run the tests" make a big change much safer.</span> <span class="why" lang="de">"Mach es so wie die bestehenden" und "lass die Tests laufen" machen eine große Änderung viel sicherer.</span></div>
+    <div class="prompt" data-title="WORLD STATS" data-stars="2" data-de-data-title="WELT-STATISTIK"><q lang="en">Write a small tool that generates the first 5 depths for seed 123 and prints how many cubes of each archetype it made.</q> <q lang="de">Schreib ein kleines Werkzeug, das die ersten 5 Tiefen für Seed 123 erzeugt und ausgibt, wie viele Würfel von jedem Archetyp es gebaut hat.</q><span class="why" lang="en">Tools that measure things help you see if a change did what you wanted.</span> <span class="why" lang="de">Werkzeuge, die Dinge messen, helfen dir zu sehen, ob eine Änderung das getan hat, was du wolltest.</span></div>
   </div>
 </section>
 

@@ -4,6 +4,7 @@ import { Heap } from '../core/heap.js';
 
 export const moveKey = m => m.kind + ':' + Math.min(m.from.id, m.to.id) + ':' + Math.max(m.from.id, m.to.id);
 
+// kids-docs: paths.html#astar #astar-code (see kids-docs/README.md)
 export function search(ctx, from, goal, jitter, have) {
   const { SZ, movesFrom } = ctx;
   const gs = new Float64Array(SZ).fill(Infinity), prev = new Array(SZ).fill(null), closed = new Uint8Array(SZ);

@@ -1,15 +1,15 @@
 // Digital clay: signed distance fields in 2D, the way the creatures in blender/ are built in 3D
 // (creature.py, figure.py). Every shape is a function "how far is this point from my surface"
 // (negative inside); shapes are joined with a smooth minimum, so they melt together like clay.
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 // the same smooth minimum as _smin in blender/figure.py
 const smin = (a, b, k) => { if (k <= 0) return Math.min(a, b); const h = Math.min(1, Math.max(0, 0.5 + 0.5 * (b - a) / k)); return b * (1 - h) + a * h - k * h * (1 - h); };
 
 export default function mount(el) {
   const W = 640, H = 300, { g, c, at } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label>melt (smoothness) <input type="range" class="k" min="0" max="60" value="25"> <b class="kv">25</b></label>
-    <label><input type="checkbox" class="dist"> show distances</label><button class="eyes">Add eyes</button><span class="muted small">drag the blobs</span></div>`);
+  const row = html(el, `<div class="row"><label>${tr('melt (smoothness)', 'Schmelzen (Glätte)')} <input type="range" class="k" min="0" max="60" value="25"> <b class="kv">25</b></label>
+    <label><input type="checkbox" class="dist"> ${tr('show distances', 'Abstände zeigen')}</label><button class="eyes">${tr('Add eyes', 'Augen dazu')}</button><span class="muted small">${tr('drag the blobs', 'zieh die Klumpen')}</span></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
   // a body (ellipse), a head (circle), and two "legs" (capsules)
@@ -53,7 +53,8 @@ export default function mount(el) {
       if (s.kind === 'circle') g.arc(s.x, s.y, s.r, 0, 7); else if (s.kind === 'ellipse') g.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, 7);
       else { g.moveTo(s.x, s.y); g.lineTo(s.x2, s.y2); }
       g.stroke(); g.setLineDash([]); }
-    out.innerHTML = k ? `Melt <b>${k}</b>: where two shapes come closer than that, they blend into one smooth surface.` : 'Melt 0: the shapes are just stuck together, with sharp creases.';
+    out.innerHTML = k ? tr(`Melt <b>${k}</b>: where two shapes come closer than that, they blend into one smooth surface.`, `Schmelzen <b>${k}</b>: wo zwei Formen sich näher kommen, verschmelzen sie zu einer glatten Oberfläche.`)
+      : tr('Melt 0: the shapes are just stuck together, with sharp creases.', 'Schmelzen 0: die Formen kleben nur aneinander, mit scharfen Kanten.');
   }
   c.onpointerdown = e => {
     const [x, y] = at(e);

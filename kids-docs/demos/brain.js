@@ -3,17 +3,17 @@
 // idle, walk (wander near home), chase (sees you within aggro range, a path within 10 steps),
 // attack (wind-up, bite, cooldown), home (lost you for a while). Drag the hero around.
 import { SPIDER } from '../../src/core/enemies.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 const S = 32, C = 20, R = 10;   // pixels per cell, grid size
 const STATES = ['idle', 'walk', 'chase', 'attack', 'home'];
-const SAY = {
-  idle: 'Resting. Looking around. In a few seconds it will wander off.',
-  walk: 'Wandering to a random spot near home, slowly.',
-  chase: 'It saw you! Following its path towards you, fast.',
-  attack: 'Winding up... it is committed now and cannot stop. Step away!',
-  home: 'Lost you. Walking back home.',
-};
+const SAY = () => ({
+  idle: tr('Resting. Looking around. In a few seconds it will wander off.', 'Ruht sich aus. Schaut sich um. In ein paar Sekunden läuft sie los.'),
+  walk: tr('Wandering to a random spot near home, slowly.', 'Läuft langsam zu einem zufälligen Platz nahe ihrem Zuhause.'),
+  chase: tr('It saw you! Following its path towards you, fast.', 'Sie hat dich gesehen! Folgt schnell ihrem Weg zu dir.'),
+  attack: tr('Winding up... it is committed now and cannot stop. Step away!', 'Holt aus... jetzt kann sie nicht mehr aufhören. Geh weg!'),
+  home: tr('Lost you. Walking back home.', 'Hat dich verloren. Läuft zurück nach Hause.'),
+});
 
 export default function mount(el) {
   const W = C * S, H = R * S, { g, c, at } = canvas(el, W, H);
@@ -126,7 +126,7 @@ export default function mount(el) {
     // home and the aggro circle
     g.strokeStyle = '#ffffff22'; g.setLineDash([3, 4]); g.strokeRect(e.home[0] * S - 2 * S, e.home[1] * S - 2 * S, 5 * S, 5 * S);
     g.strokeStyle = '#d0503a88'; g.beginPath(); g.arc(e.x * S, e.z * S, P.aggro * S, 0, 7); g.stroke(); g.setLineDash([]);
-    g.fillStyle = '#8a96a8'; g.font = '10px ui-monospace, monospace'; g.fillText('home', e.home[0] * S - 2 * S + 3, e.home[1] * S - 2 * S + 12);
+    g.fillStyle = '#8a96a8'; g.font = '10px ui-monospace, monospace'; g.fillText(tr('home', 'Zuhause'), e.home[0] * S - 2 * S + 3, e.home[1] * S - 2 * S + 12);
     // what it sees
     const dist = Math.hypot(hero.x - e.x, hero.z - e.z);
     if (dist <= P.aggro) { const ok = clearLine(e.x, e.z, hero.x, hero.z); g.strokeStyle = ok ? '#61dc6b' : '#ff6a5a66'; g.lineWidth = 1.5;
@@ -147,7 +147,7 @@ export default function mount(el) {
     g.restore();
     if (e.alert > 0) { g.fillStyle = '#ffcf7a'; g.font = 'bold 18px ui-monospace, monospace'; g.fillText('!', e.x * S - 3, e.z * S - 18); }
     diagram.querySelectorAll('.chip').forEach(ch => { const on = ch.classList.contains('st-' + e.mode); ch.style.background = on ? '#5a4a26' : ''; ch.style.borderColor = on ? '#ffcf7a' : ''; ch.style.color = on ? '#fff' : ''; });
-    out.innerHTML = `<b>${e.mode}</b>: ${SAY[e.mode]}\nlast states: ${log.join(' \u2190 ') || '-'}   your health: <b>${hero.hp}</b>`;
+    out.innerHTML = `<b>${e.mode}</b>: ${SAY()[e.mode]}\n${tr('last states', 'letzte Zustände')}: ${log.join(' \u2190 ') || '-'}   ${tr('your health', 'deine Gesundheit')}: <b>${hero.hp}</b>`;
   }
   c.onpointerdown = ev => { drag = true; c.setPointerCapture(ev.pointerId); move(ev); };
   c.onpointermove = ev => { if (drag) move(ev); };

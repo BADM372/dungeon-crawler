@@ -7,13 +7,43 @@
 //   - <a class="w" href="words.html#seed"> shows the glossary entry when hovered
 //   - <div class="prompt"> becomes a quest card with a copy button
 //   - <pre data-file="..."> gets light syntax colours and a file label
-import { DECKS, LEVELS, THEME_NAMES } from './decks.js';
+// Pages are bilingual: every text block is a <x lang="en"> / <x lang="de"> pair and lang.js
+// shows one of them (attributes: data-de-alt, data-de-title ... replace alt, title ... in German).
+//   - <pre data-code="src/x.js#name"> shows that definition, read live from the game's code
+//   - <b data-val="src/x.js#NAME.field"> shows that value, read live from the game's code
+//   - slides that stamps.json lists as outdated get a note (tools/kids-docs.mjs, README.md)
+import { DECKS, LEVELS, THEME_NAMES, THEME_NAMES_DE, local } from './decks.js';
+import { parseRefs, extract, readValue, formatValue } from './refs.js';
 
 const store = {
   get: (k, d) => { try { return localStorage.getItem('kids.' + k) ?? d; } catch { return d; } },
   set: (k, v) => { try { localStorage.setItem('kids.' + k, v); } catch { /* private mode */ } },
 };
 const here = location.pathname.split('/').pop() || 'index.html';
+
+// ---- language ---------------------------------------------------------------------------------
+export const lang = document.documentElement.dataset.lang === 'de' ? 'de' : 'en';
+// t('text', 'Text'): the English or the German, for the page's language
+export const t = (en, de) => lang === 'de' ? de : en;
+// a game theme's name (src/themes/), in German by its prop set
+export const themeLabel = theme => lang === 'de' ? THEME_NAMES_DE[theme.props] ?? theme.name : theme.name;
+// the element of a language pair (or a single element) that is showing
+export const shown = (root, sel) => root.querySelector(`${sel}[lang=${lang}]`) ?? root.querySelector(sel);
+// German attributes and title
+if (lang === 'de') {
+  for (const el of document.querySelectorAll('*')) for (const a of [...el.attributes])
+    if (a.name.startsWith('data-de-')) el.setAttribute(a.name.slice(8), a.value);
+  const title = document.querySelector('title[data-de]');
+  if (title) document.title = title.dataset.de;
+}
+function langSwitch(into) {
+  const b = document.createElement('button');
+  b.className = 'langsw';
+  b.textContent = lang === 'de' ? 'EN' : 'DE';
+  b.title = lang === 'de' ? 'Switch to English' : 'Auf Deutsch lesen';
+  b.onclick = () => { store.set('lang', lang === 'de' ? 'en' : 'de'); location.reload(); };
+  into.append(b);
+}
 export const level = () => +store.get('lv', 3);
 export const visited = () => new Set(JSON.parse(store.get('visited', '[]')));
 
@@ -60,19 +90,77 @@ function highlight(pre) {
     last = m.index + m[0].length;
   }
   out += esc(src.slice(last));
-  code.innerHTML = (pre.dataset.file ? `<span class="file">${esc(pre.dataset.file)}</span>` : '') + out;
+  code.innerHTML = label(pre) + out;
+}
+// the file label over a code block: data-label, else the files and names it shows
+function label(pre) {
+  const live = pre.dataset.code != null, refs = parseRefs(pre.dataset.code ?? pre.dataset.src);
+  const byFile = new Map();
+  for (const r of refs) byFile.set(r.path, [...(byFile.get(r.path) ?? []), ...(r.name && r.name !== 'header' ? [r.name] : [])]);
+  const text = pre.dataset.label ?? [...byFile].map(([f, names]) => names.length ? `${f} \u00B7 ${names.join(', ')}` : f).join('  +  ');
+  if (!text) return '';
+  return `<span class="file">${esc(text)}${live ? ` <span class="live" title="${t('Read from the game\'s code right now', 'Gerade eben aus dem Code des Spiels gelesen')}">${t('LIVE', 'LIVE')}</span>`
+    : refs.length && !pre.dataset.label ? ` <span class="excerpt">${t('excerpt', 'Auszug')}</span>` : ''}</span>`;
+}
+
+// ---- live code and values from the game ----------------------------------------------------------
+const ROOT = new URL('../', import.meta.url), sources = new Map();
+function source(path) {
+  if (!sources.has(path)) sources.set(path, fetch(new URL(path, ROOT)).then(r => {
+    if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
+    return r.text();
+  }));
+  return sources.get(path);
+}
+const dedent = s => {
+  const ls = s.split('\n'), n = Math.min(...ls.filter(l => l.trim()).map(l => l.match(/^\s*/)[0].length));
+  return ls.map(l => l.slice(n)).join('\n');
+};
+async function liveCode(pre) {
+  try {
+    const parts = await Promise.all(parseRefs(pre.dataset.code).map(async r => {
+      const e = extract(await source(r.path), r.path, r.name);
+      if (e.error) throw new Error(e.error);
+      return dedent(e.text);
+    }));
+    pre.textContent = parts.join('\n\n');
+  } catch (err) {
+    pre.textContent = t(`// This code is read from the game's files, which needs the game's server
+// (npm run serve). ${err.message}`, `// Dieser Code wird aus den Dateien des Spiels gelesen, dafür braucht es den
+// Server des Spiels (npm run serve). ${err.message}`);
+  }
+  highlight(pre);
+}
+async function liveValues(root) {
+  for (const el of root.querySelectorAll('[data-val]')) {
+    const [path, expr] = el.dataset.val.split('#');
+    try {
+      const v = readValue(await import(new URL(path, ROOT).href), expr);
+      if (v !== undefined) el.textContent = formatValue(v, el.dataset.fmt, el.closest('[lang]')?.lang === 'de' ? 'de' : 'en');
+    } catch { /* keep the written value */ }
+  }
+}
+// slides the maintenance tool marked as possibly outdated (tools/kids-docs.mjs --defer)
+async function staleNotes(slides) {
+  let stamps;
+  try { stamps = await (await fetch('stamps.json')).json(); } catch { return; }
+  for (const s of slides) {
+    const why = stamps.outdated?.[`${here}#${s.id}`];
+    if (why) s.querySelector('h2:last-of-type')?.insertAdjacentHTML('afterend', `<div class="note stale"><b>${t('Heads-up', 'Achtung')}</b> ${t(
+      'The game changed since this slide was written, so a detail may be out of date', 'Das Spiel hat sich geändert, seit diese Folie geschrieben wurde, ein Detail ist vielleicht veraltet')} (${esc(why)}).</div>`);
+  }
 }
 
 function prompts(root) {
   for (const p of root.querySelectorAll('.prompt')) {
     const n = +(p.dataset.stars || 1);
-    p.insertAdjacentHTML('afterbegin', `<span class="stars" title="Quest difficulty">${'\u2605'.repeat(n)}${'\u2606'.repeat(3 - n)}</span>`);
+    p.insertAdjacentHTML('afterbegin', `<span class="stars" title="${t('Quest difficulty', 'Schwierigkeit')}">${'\u2605'.repeat(n)}${'\u2606'.repeat(3 - n)}</span>`);
     const btn = document.createElement('button');
-    btn.className = 'copy'; btn.textContent = 'copy';
+    btn.className = 'copy'; btn.textContent = t('copy', 'kopieren');
     btn.onclick = async () => {
-      try { await navigator.clipboard.writeText(p.querySelector('q').textContent.trim()); btn.textContent = 'copied!'; }
-      catch { btn.textContent = 'select & copy'; }
-      setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+      try { await navigator.clipboard.writeText(shown(p, 'q').textContent.trim()); btn.textContent = t('copied!', 'kopiert!'); }
+      catch { btn.textContent = t('select & copy', 'markieren & kopieren'); }
+      setTimeout(() => { btn.textContent = t('copy', 'kopieren'); }, 1500);
     };
     p.append(btn);
   }
@@ -99,7 +187,7 @@ function wordTips() {
     active = a;
     const doc = await loadWords(), id = a.hash.slice(1), el = doc?.getElementById(id);
     if (active !== a || !el) return;
-    tip.innerHTML = `<b>${esc(el.querySelector('dt').textContent)}</b>${esc(el.querySelector('dd').firstChild.textContent.trim())}`;
+    tip.innerHTML = `<b>${esc(shown(el, 'dt').textContent)}</b>${esc(shown(el, 'dd').firstChild.textContent.trim())}`;
     tip.hidden = false; place(e);
   });
   document.addEventListener('mousemove', e => { if (active && !tip.hidden) place(e); });
@@ -116,7 +204,7 @@ function demos(root) {
       target.dataset.mounted = '1';
       io.unobserve(target);
       const box = document.createElement('div');
-      box.className = 'loading'; box.textContent = 'loading\u2026';
+      box.className = 'loading'; box.textContent = t('loading\u2026', 'lädt\u2026');
       target.append(box);
       import(`./demos/${target.dataset.demo}.js`)
         .then(m => { box.remove(); return m.default(target); })
@@ -125,8 +213,9 @@ function demos(root) {
           target.append(box);
           box.className = 'err';
           box.textContent = location.protocol === 'file:'
-            ? 'This demo needs the game\'s web server: run "npm run serve" and open http://localhost:8000/kids-docs/'
-            : 'This demo did not load: ' + err.message;
+            ? t('This demo needs the game\'s web server: run "npm run serve" and open http://localhost:8000/kids-docs/',
+              'Diese Demo braucht den Webserver des Spiels: starte "npm run serve" und öffne http://localhost:8000/kids-docs/')
+            : t('This demo did not load: ', 'Diese Demo ließ sich nicht laden: ') + err.message;
         });
     }
   }, { rootMargin: '200px' });
@@ -161,35 +250,37 @@ export function html(el, s) { el.insertAdjacentHTML('beforeend', s); return el.l
 // ---- the room page ---------------------------------------------------------------------------------
 function deck(main) {
   const slides = [...main.querySelectorAll('section.slide')];
-  const deckIdx = DECKS.findIndex(d => d.file === here), info = DECKS[deckIdx];
+  const deckIdx = DECKS.findIndex(d => d.file === here), info = deckIdx >= 0 ? local(DECKS[deckIdx], lang) : null;
+  const themes = lang === 'de' ? THEME_NAMES_DE : THEME_NAMES, lvName = L => lang === 'de' ? L.de : L.name;
   slides.forEach((s, i) => {
     s.id ||= 'slide-' + (i + 1);
     s.dataset.lv ||= '1';
     const L = LEVELS[s.dataset.lv];
-    s.insertAdjacentHTML('afterbegin', `<span class="tag" title="Detail level">${L.short} \u00B7 ${L.name}</span>`);
+    s.insertAdjacentHTML('afterbegin', `<span class="tag" title="${t('Detail level', 'Detailstufe')}">${L.short} \u00B7 ${lvName(L)}</span>`);
   });
   // the last slide gets the portal to the next room
-  const next = DECKS[deckIdx + 1];
+  const next = DECKS[deckIdx + 1] && local(DECKS[deckIdx + 1], lang);
   if (slides.length) slides.at(-1).insertAdjacentHTML('beforeend', `<div class="links">${next
-    ? `<a class="portal" href="${next.file}">Next room: ${next.title}</a>` : ''}<a class="portal" href="index.html">Back to the map</a></div>
-    <p class="endnote">You reached the end of this room.</p>`);
+    ? `<a class="portal" href="${next.file}">${t('Next room', 'Nächster Raum')}: ${next.title}</a>` : ''}<a class="portal" href="index.html">${t('Back to the map', 'Zurück zur Karte')}</a></div>
+    <p class="endnote">${t('You reached the end of this room.', 'Du bist am Ende dieses Raums angekommen.')}</p>`);
 
   // top bar
   const bar = document.createElement('div');
   bar.className = 'bar';
-  bar.innerHTML = `<a href="index.html" title="The map (M)">\u25C2 Map</a>
-    <div class="where">${info ? `Room ${deckIdx + 1}/${DECKS.length} \u00B7 <b>${info.title}</b> \u00B7 <i>depth ${info.depth} \u00B7 ${THEME_NAMES[info.theme]}</i>` : ''}</div>
-    <div class="tools"><span class="lvpick" title="How much detail do you want?">${[1, 2, 3].map(l =>
-      `<button data-lv="${l}" style="--c:${LEVELS[l].color}" title="${LEVELS[l].name}">${LEVELS[l].short}</button>`).join('')}</span>
-    <button class="mode" title="Slides or one long page (S)">scroll</button><button class="helpbtn" title="Keys (?)">?</button></div>`;
+  bar.innerHTML = `<a href="index.html" title="${t('The map (M)', 'Die Karte (M)')}">\u25C2 ${t('Map', 'Karte')}</a>
+    <div class="where">${info ? `${t('Room', 'Raum')} ${deckIdx + 1}/${DECKS.length} \u00B7 <b>${info.title}</b> \u00B7 <i>${t('depth', 'Tiefe')} ${info.depth} \u00B7 ${themes[info.theme]}</i>` : ''}</div>
+    <div class="tools"><span class="lvpick" title="${t('How much detail do you want?', 'Wie viele Details möchtest du?')}">${[1, 2, 3].map(l =>
+      `<button data-lv="${l}" style="--c:${LEVELS[l].color}" title="${lvName(LEVELS[l])}">${LEVELS[l].short}</button>`).join('')}</span>
+    <button class="mode" title="${t('Slides or one long page (S)', 'Folien oder eine lange Seite (S)')}"></button><button class="helpbtn" title="${t('Keys (?)', 'Tasten (?)')}">?</button></div>`;
+  langSwitch(bar.querySelector('.tools'));
   document.body.prepend(bar);
 
   // quick bar
   const qbar = document.createElement('nav');
   qbar.className = 'qbar';
-  qbar.innerHTML = `<button class="arrow prev" title="Previous (\u2190)">\u25C2</button><div class="slots">${slides.map((s, i) =>
-    `<a class="slot lv${s.dataset.lv}" href="#${s.id}" title="${esc(s.querySelector('h2')?.textContent ?? '')}"><span>${i + 1}</span></a>`).join('')}</div>
-    <button class="arrow next" title="Next (\u2192)">\u25B8</button>`;
+  qbar.innerHTML = `<button class="arrow prev" title="${t('Previous', 'Zurück')} (\u2190)">\u25C2</button><div class="slots">${slides.map((s, i) =>
+    `<a class="slot lv${s.dataset.lv}" href="#${s.id}" title="${esc(shown(s, 'h2')?.textContent ?? '')}"><span>${i + 1}</span></a>`).join('')}</div>
+    <button class="arrow next" title="${t('Next', 'Weiter')} (\u2192)">\u25B8</button>`;
   document.body.append(qbar);
   const slots = [...qbar.querySelectorAll('.slot')];
 
@@ -212,7 +303,7 @@ function deck(main) {
   function setMode(m) {
     document.body.classList.toggle('scroll', m === 'scroll');
     document.body.classList.toggle('slides', m !== 'scroll');
-    bar.querySelector('.mode').textContent = m === 'scroll' ? 'slides' : 'scroll';
+    bar.querySelector('.mode').textContent = m === 'scroll' ? t('slides', 'Folien') : t('scroll', 'Seite');
     store.set('mode', m);
     if (m === 'scroll') slides[cur].scrollIntoView(); else show(cur);
   }
@@ -244,6 +335,7 @@ function deck(main) {
     if (e.key === 'End') show(slides.findLastIndex((_, i) => allowed(i)));
   });
 
+  staleNotes(slides);
   applyLevel();
   if (!fromHash()) show(0, false);
   setMode(store.get('mode', 'slides'));
@@ -256,19 +348,27 @@ function help() {
   if (document.getElementById('help')) { document.getElementById('help').remove(); return; }
   const h = document.createElement('div');
   h.id = 'help';
-  h.innerHTML = `<section><h1>Keys</h1><dl>
+  h.innerHTML = t(`<section><h1>Keys</h1><dl>
     <dt><kbd>\u2192</kbd> <kbd>Space</kbd></dt><dd>next slide</dd><dt><kbd>\u2190</kbd></dt><dd>previous slide</dd>
     <dt><kbd>S</kbd></dt><dd>slides or one long page</dd><dt><kbd>M</kbd></dt><dd>back to the map</dd>
     <dt>Lv 1 / 2 / 3</dt><dd>how much detail: Lv 1 is the big idea, Lv 3 shows the real code</dd>
-    <dt>dotted words</dt><dd>point at them to see what they mean</dd><dt><kbd>?</kbd> <kbd>Esc</kbd></dt><dd>close this</dd></dl></section>`;
+    <dt>dotted words</dt><dd>point at them to see what they mean</dd><dt>DE</dt><dd>read this in German</dd>
+    <dt><kbd>?</kbd> <kbd>Esc</kbd></dt><dd>close this</dd></dl></section>`, `<section><h1>Tasten</h1><dl>
+    <dt><kbd>\u2192</kbd> <kbd>Leertaste</kbd></dt><dd>nächste Folie</dd><dt><kbd>\u2190</kbd></dt><dd>vorige Folie</dd>
+    <dt><kbd>S</kbd></dt><dd>Folien oder eine lange Seite</dd><dt><kbd>M</kbd></dt><dd>zurück zur Karte</dd>
+    <dt>Lv 1 / 2 / 3</dt><dd>wie viele Details: Lv 1 ist die große Idee, Lv 3 zeigt den echten Code</dd>
+    <dt>gepunktete Wörter</dt><dd>zeig darauf, um zu sehen, was sie bedeuten</dd><dt>EN</dt><dd>auf Englisch lesen</dd>
+    <dt><kbd>?</kbd> <kbd>Esc</kbd></dt><dd>schließen</dd></dl></section>`);
   h.onclick = () => h.remove();
   document.body.append(h);
 }
 
 stars();
 wordTips();
-for (const pre of document.querySelectorAll('pre')) highlight(pre);
+for (const pre of document.querySelectorAll('pre')) if (pre.dataset.code != null) liveCode(pre); else highlight(pre);
+liveValues(document);
 prompts(document);
 const main = document.querySelector('main.deck');
 if (main) deck(main);
+else { const box = document.createElement('div'); box.className = 'langbar'; langSwitch(box); document.body.append(box); }
 demos(document);

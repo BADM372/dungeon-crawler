@@ -2,67 +2,61 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>How Cube Crawler Works: the Kids' Guide</title>
+<title data-de="Wie Cube Crawler funktioniert: der Führer für Kinder">How Cube Crawler Works: the Kids' Guide</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="meadow">
 <main style="padding-top: 30px">
   <div class="hero">
     <div>
-      <p class="mono muted small" style="letter-spacing:2px">THE KIDS' GUIDE TO</p>
-      <h1>How Cube Crawler Works</h1>
-      <p class="lead">Cube Crawler is a game where you dig down through 21 floors of floating cubes, fighting monsters and finding treasure.
+      <p class="mono muted small" style="letter-spacing:2px" lang="en">THE KIDS' GUIDE TO</p>
+      <p class="mono muted small" style="letter-spacing:2px" lang="de">DER FÜHRER FÜR KINDER:</p>
+      <h1 lang="en">How Cube Crawler Works</h1>
+      <h1 lang="de">Wie Cube Crawler funktioniert</h1>
+      <p class="lead" lang="en">Cube Crawler is a game where you dig down through 21 floors of floating cubes, fighting monsters and finding treasure.
         This guide shows you how it is built on the inside: how the world gets invented, how monsters think, how swords hit and how the
         picture gets drawn.</p>
-      <p>It was built by a person working together with <a class="w" href="words.html#agent">AI coding agents</a>. At the end you
+      <p class="lead" lang="de">Cube Crawler ist ein Spiel, in dem du dich durch 21 Stockwerke aus schwebenden Würfeln nach unten gräbst, Monster bekämpfst und Schätze findest.
+        Dieser Führer zeigt dir, wie es innen gebaut ist: wie die Welt erfunden wird, wie Monster denken, wie Schwerter treffen und wie das Bild gemalt wird.</p>
+      <p lang="en">It was built by a person working together with <a class="w" href="words.html#agent">AI coding agents</a>. At the end you
         will learn how to do that too: how to <em>ask</em> an agent to change the game, and how to check that it did it right.</p>
-      <p><a class="portal" href="start.html">Start in town</a> <a class="portal" href="../index.html">Play the game</a></p>
+      <p lang="de">Gebaut hat es ein Mensch zusammen mit <a class="w" href="words.html#agent">KI-Coding-Agenten</a>. Am Ende lernst du, wie das geht:
+        wie du einen Agenten <em>bittest</em>, das Spiel zu ändern, und wie du prüfst, dass er es richtig gemacht hat.</p>
+      <p><a class="portal" href="start.html" lang="en">Start in town</a> <a class="portal" href="start.html" lang="de">In der Stadt anfangen</a> <a class="portal" href="../index.html" lang="en">Play the game</a> <a class="portal" href="../index.html" lang="de">Das Spiel spielen</a></p>
     </div>
-    <figure><img class="shot" src="img/town.jpg" alt="The town at the top of the world: a floating cube with houses, trees and a pond"><figcaption>The town: the first cube of every world.</figcaption></figure>
+    <figure><img class="shot" src="img/town.jpg" alt="The town at the top of the world: a floating cube with houses, trees and a pond" data-de-alt="Die Stadt ganz oben in der Welt: ein schwebender Würfel mit Häusern, Bäumen und einem Teich"><figcaption lang="en">The town: the first cube of every world.</figcaption> <figcaption lang="de">Die Stadt: der erste Würfel jeder Welt.</figcaption></figure>
   </div>
 
   <div class="page">
-    <h2>How deep do you want to dive?</h2>
-    <p>Every room has slides with three detail levels. You can switch any time with the buttons at the top right of a room.</p>
+    <h2 lang="en">How deep do you want to dive?</h2>
+    <h2 lang="de">Wie tief willst du tauchen?</h2>
+    <p lang="en">Every room has slides with three detail levels. You can switch any time with the buttons at the top right of a room.</p>
+    <p lang="de">Jeder Raum hat Folien in drei Detailstufen. Du kannst jederzeit mit den Knöpfen oben rechts in einem Raum umschalten.</p>
     <div class="cols3" id="levels"></div>
-    <h2 style="margin-top:30px">The map</h2>
-    <p>Each room explains one part of the game. Like in the game, every room is one step deeper. Rooms you have visited glow cyan,
+    <h2 style="margin-top:30px" lang="en">The map</h2>
+    <h2 style="margin-top:30px" lang="de">Die Karte</h2>
+    <p lang="en">Each room explains one part of the game. Like in the game, every room is one step deeper. Rooms you have visited glow cyan,
       like explored portals in the game. You can visit them in any order, but walking down from the top works best.</p>
+    <p lang="de">Jeder Raum erklärt einen Teil des Spiels. Wie im Spiel geht es mit jedem Raum eine Stufe tiefer. Räume, in denen du schon warst, leuchten
+      türkis, wie erkundete Portale im Spiel. Du kannst sie in jeder Reihenfolge besuchen, aber von oben nach unten klappt es am besten.</p>
   </div>
   <nav class="map" id="map"></nav>
 
   <div class="page" style="margin-top:30px">
     <div class="cols">
-      <div class="card"><h3>The word book</h3><p>Words with a dotted line, like <a class="w" href="words.html#seed">seed</a>, are explained
-        when you point at them. All of them are in the <a href="words.html">word book</a>.</p></div>
-      <div class="card"><h3>For grown-ups</h3><p>The guide runs real game code in its demos, so it needs the game's web server:
+      <div class="card"><h3 lang="en">The word book</h3> <h3 lang="de">Das Wörterbuch</h3><p lang="en">Words with a dotted line, like <a class="w" href="words.html#seed">seed</a>, are explained
+        when you point at them. All of them are in the <a href="words.html">word book</a>.</p> <p lang="de">Wörter mit einer gepunkteten Linie, wie <a class="w" href="words.html#seed">Seed</a>, werden erklärt,
+        wenn du darauf zeigst. Alle stehen im <a href="words.html">Wörterbuch</a>.</p></div>
+      <div class="card"><h3 lang="en">For grown-ups</h3> <h3 lang="de">Für Erwachsene</h3><p lang="en">The guide runs real game code in its demos, so it needs the game's web server:
         <code>npm run serve</code>, then open <code>/kids-docs/</code>. The grown-up design notes are in <code>docs/</code>;
-        how this guide is built is in <code>kids-docs/README.md</code>.</p></div>
+        how this guide is built is in <code>kids-docs/README.md</code>.</p> <p lang="de">Die Demos in diesem Führer benutzen echten Spielcode und brauchen deshalb den Webserver des Spiels:
+        <code>npm run serve</code>, dann <code>/kids-docs/</code> öffnen. Die Entwurfsnotizen für Erwachsene liegen in <code>docs/</code>
+        (auf Englisch); wie dieser Führer gebaut ist, steht in <code>kids-docs/README.md</code>.</p></div>
     </div>
   </div>
 </main>
-<script type="module">
-import './deck.js';
-import { DECKS, LEVELS, THEME_NAMES } from './decks.js';
-const seen = new Set(JSON.parse(localStorage.getItem('kids.visited') || '[]'));
-document.getElementById('map').innerHTML = DECKS.map((d, i) => `
-  <a class="room ${seen.has(d.file) ? 'visited' : ''}" data-theme="${d.theme}" href="${d.file}">
-    <span class="seen"></span><img src="${d.icon}" alt="">
-    <span class="d">ROOM ${i + 1} \u00B7 DEPTH ${d.depth} \u00B7 ${THEME_NAMES[d.theme].toUpperCase()}</span>
-    <h3>${d.title}</h3><p>${d.teaser}</p></a>`).join('');
-const blurb = [null,
-  'Just the big ideas, with pictures and things to try. Start here if this is all new to you.',
-  'How the parts really work, step by step, with more demos and numbers from the game.',
-  'The real code from the game, explained. For when you want to change it yourself (or ask an agent to).'];
-const box = document.getElementById('levels');
-const draw = () => {
-  const lv = +(localStorage.getItem('kids.lv') || 3);
-  box.innerHTML = [1, 2, 3].map(l => `<button class="card${l === lv ? ' on' : ''}" data-lv="${l}" style="text-align:left;border-color:${l <= lv ? LEVELS[l].color : ''}">
-    <span style="color:${LEVELS[l].color}">${LEVELS[l].short} \u00B7 ${LEVELS[l].name}</span><br><span style="font-family:var(--read);font-size:15px;color:var(--muted)">${blurb[l]}</span></button>`).join('');
-  box.querySelectorAll('button').forEach(b => b.onclick = () => { localStorage.setItem('kids.lv', b.dataset.lv); draw(); });
-};
-draw();
-</script>
+<script type="module" src="map.js"></script>
 </body>
 </html>

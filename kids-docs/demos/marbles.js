@@ -2,13 +2,13 @@
 // line, throw a random point onto it and walk along the line, subtracting each weight until
 // the point is passed. The weights are the real rarity weights (src/core/gear/rarities.js).
 import { RARITIES } from '../../src/core/gear/rarities.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 
 export default function mount(el) {
   const items = RARITIES.slice(0, 4).map(r => ({ name: r.name, w: r.weight, color: r.css, n: 0 }));
   const total = items.reduce((s, i) => s + i.w, 0);
   const { g, w, h } = canvas(el, 640, 200);
-  const row = html(el, '<div class="row"><button class="one">Pick one marble</button><button class="many">Pick 1,000</button><button class="clear">Empty the counts</button></div>');
+  const row = html(el, `<div class="row"><button class="one">${tr('Pick one marble', 'Eine Murmel ziehen')}</button><button class="many">${tr('Pick 1,000', '1.000 ziehen')}</button><button class="clear">${tr('Empty the counts', 'Zähler leeren')}</button></div>`);
   const out = html(el, '<div class="out"></div>');
   const X0 = 20, X1 = w - 20, sx = v => X0 + v / total * (X1 - X0);
   let needle = null, anim = 0, picks = 0, steps = [];
@@ -59,7 +59,7 @@ export default function mount(el) {
       g.fillStyle = '#aab3c2'; g.fillText(`${it.n}  (${(share * 100).toFixed(1)}%)`, 520, y + 12);
     });
     out.innerHTML = needle
-      ? `random point: <b>${needle.r.toFixed(1)}</b> \u2192 walk along: ${steps.join(', then ')} \u2192 below zero, so it is <b style="color:${items[needle.i].color}">${items[needle.i].name}</b>`
-      : picks ? `<b>${picks}</b> marbles picked. The gold lines show the share the weights promise.` : 'Pick one marble to watch the walk along the line.';
+      ? `${tr('random point', 'Zufallspunkt')}: <b>${needle.r.toFixed(1)}</b> \u2192 ${tr('walk along', 'entlanglaufen')}: ${steps.join(tr(', then ', ', dann '))} \u2192 ${tr('below zero, so it is', 'unter null, also ist es')} <b style="color:${items[needle.i].color}">${items[needle.i].name}</b>`
+      : picks ? tr(`<b>${picks}</b> marbles picked. The gold lines show the share the weights promise.`, `<b>${picks}</b> Murmeln gezogen. Die goldenen Striche zeigen den Anteil, den die Gewichte versprechen.`) : tr('Pick one marble to watch the walk along the line.', 'Zieh eine Murmel und schau dem Weg entlang der Linie zu.');
   });
 }

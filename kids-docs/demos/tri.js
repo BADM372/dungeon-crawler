@@ -1,14 +1,14 @@
 // Painting 3D with triangles: a little block of terrain (made like the game's cubes: a grid of
 // columns of different heights) turned into triangles, put through a perspective camera, shaded
 // by how much each triangle faces the sun, and painted far to near.
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr } from '../deck.js';
 import { makeNoise, mulberry32 } from '../../src/core/util.js';
 
 export default function mount(el) {
   const W = 640, H = 330, { g } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label><input type="checkbox" class="fill" checked> paint</label>
-    <label><input type="checkbox" class="edges"> show triangles</label><label><input type="checkbox" class="light" checked> sunlight</label>
-    <label><input type="checkbox" class="spin" checked> turn</label><label>sun <input type="range" class="sun" min="0" max="360" value="220"></label></div>`);
+  const row = html(el, `<div class="row"><label><input type="checkbox" class="fill" checked> ${tr('paint', 'malen')}</label>
+    <label><input type="checkbox" class="edges"> ${tr('show triangles', 'Dreiecke zeigen')}</label><label><input type="checkbox" class="light" checked> ${tr('sunlight', 'Sonnenlicht')}</label>
+    <label><input type="checkbox" class="spin" checked> ${tr('turn', 'drehen')}</label><label>${tr('sun', 'Sonne')} <input type="range" class="sun" min="0" max="360" value="220"></label></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => row.querySelector(s);
   // a 6x6 grid of columns; heights from the game's own noise function
@@ -53,6 +53,7 @@ export default function mount(el) {
       }
       if ($('.edges').checked || !$('.fill').checked) { g.strokeStyle = '#ffcf7acc'; g.lineWidth = 0.7; g.stroke(); }
     }
-    out.innerHTML = `<b>${tris.length}</b> triangles, painted far-to-near. A cube in the real game has thousands, the whole screen often hundreds of thousands.`;
+    out.innerHTML = tr(`<b>${tris.length}</b> triangles, painted far-to-near. A cube in the real game has thousands, the whole screen often hundreds of thousands.`,
+      `<b>${tris.length}</b> Dreiecke, von hinten nach vorne gemalt. Ein Würfel im echten Spiel hat Tausende, der ganze Bildschirm oft Hunderttausende.`);
   });
 }

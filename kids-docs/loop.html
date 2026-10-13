@@ -2,151 +2,183 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>The Heartbeat · Kids' Guide to Cube Crawler</title>
+<title data-de="Der Herzschlag · Kinderführer zu Cube Crawler">The Heartbeat · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="meadow">
 <main class="deck">
 
 <section class="slide" id="flipbook" data-lv="1">
-  <h2>A flipbook that thinks</h2>
+  <h2 lang="en">A flipbook that thinks</h2>
+  <h2 lang="de">Ein Daumenkino, das denkt</h2>
   <div class="cols">
     <div>
-      <p class="lead">Have you ever made a flipbook? You draw a stick figure on every page, a tiny bit further along. Flip fast, and it runs!</p>
-      <p>A game works the same way. It draws a new picture about <b>60 times every second</b>. Each picture is called a <a class="w" href="words.html#frame">frame</a>.</p>
-      <p>But a game is a flipbook that <b>draws its next page while you watch</b>, and the page depends on what you do. Press a key, and the next page shows the hero a little bit further to the left.</p>
-      <p>The code that makes one page, again and again, is called the <a class="w" href="words.html#game-loop">game loop</a>. It is the heartbeat of every game.</p>
+      <p class="lead" lang="en">Have you ever made a flipbook? You draw a stick figure on every page, a tiny bit further along. Flip fast, and it runs!</p>
+      <p class="lead" lang="de">Hast du schon mal ein Daumenkino gemacht? Du malst auf jede Seite ein Strichmännchen, jedes ein kleines Stück weiter. Blätterst du schnell, rennt es!</p>
+      <p lang="en">A game works the same way. It draws a new picture about <b>60 times every second</b>. Each picture is called a <a class="w" href="words.html#frame">frame</a>.</p>
+      <p lang="de">Ein Spiel funktioniert genauso. Es malt ungefähr <b>60 neue Bilder pro Sekunde</b>. Jedes Bild heißt <a class="w" href="words.html#frame">Frame</a>.</p>
+      <p lang="en">But a game is a flipbook that <b>draws its next page while you watch</b>, and the page depends on what you do. Press a key, and the next page shows the hero a little bit further to the left.</p>
+      <p lang="de">Aber ein Spiel ist ein Daumenkino, das <b>seine nächste Seite malt, während du zuschaust</b>, und die Seite hängt davon ab, was du tust. Drück eine Taste, und auf der nächsten Seite steht der Held ein bisschen weiter links.</p>
+      <p lang="en">The code that makes one page, again and again, is called the <a class="w" href="words.html#game-loop">game loop</a>. It is the heartbeat of every game.</p>
+      <p lang="de">Der Code, der eine Seite macht, immer und immer wieder, heißt <a class="w" href="words.html#game-loop">Spielschleife</a> (Game Loop). Sie ist der Herzschlag jedes Spiels.</p>
     </div>
     <div class="card">
-      <h3>Every frame, three steps</h3>
+      <h3 lang="en">Every frame, three steps</h3>
+      <h3 lang="de">Jedes Bild, drei Schritte</h3>
       <ol class="steps">
-        <li><b>Listen:</b> what is the player doing right now?</li>
-        <li><b>Think:</b> move everything a tiny bit, and check what happened (hits, falls, pickups).</li>
-        <li><b>Draw:</b> paint the new picture.</li>
+        <li lang="en"><b>Listen:</b> what is the player doing right now?</li>
+        <li lang="de"><b>Hören:</b> Was macht der Spieler gerade?</li>
+        <li lang="en"><b>Think:</b> move everything a tiny bit, and check what happened (hits, falls, pickups).</li>
+        <li lang="de"><b>Denken:</b> alles ein winziges Stück bewegen und prüfen, was passiert ist (Treffer, Stürze, Aufsammeln).</li>
+        <li lang="en"><b>Draw:</b> paint the new picture.</li>
+        <li lang="de"><b>Malen:</b> das neue Bild malen.</li>
       </ol>
-      <p class="small muted">Then do it again. And again. Forever, until you close the game.</p>
+      <p class="small muted" lang="en">Then do it again. And again. Forever, until you close the game.</p>
+      <p class="small muted" lang="de">Dann wieder von vorn. Und wieder. Für immer, bis du das Spiel schließt.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="try-loop" data-lv="1">
-  <h2>Try it: slow the heart down</h2>
-  <p>This little runner has its own game loop. Pull the slider down to make fewer pictures per second, and watch the three steps light up.
+  <h2 lang="en">Try it: slow the heart down</h2>
+  <h2 lang="de">Probier es: Lass das Herz langsamer schlagen</h2>
+  <p lang="en">This little runner has its own game loop. Pull the slider down to make fewer pictures per second, and watch the three steps light up.
     Click the picture to jump: the runner only notices your click at the next <b>LISTEN</b>.</p>
+  <p lang="de">Dieser kleine Läufer hat seine eigene Spielschleife. Zieh den Regler runter, damit weniger Bilder pro Sekunde gemalt werden, und schau, wie die drei Schritte aufleuchten.
+    Klick ins Bild zum Springen: Der Läufer bemerkt deinen Klick erst beim nächsten <b>HÖREN</b>.</p>
   <div class="demo" data-demo="loop" data-mode="basic"></div>
-  <p class="small muted">At 60 pictures per second it looks smooth. Below about 15 it starts to stutter, and at 2 it becomes a slideshow. That is why games care so much about being fast.</p>
+  <p class="small muted" lang="en">At 60 pictures per second it looks smooth. Below about 15 it starts to stutter, and at 2 it becomes a slideshow. That is why games care so much about being fast.</p>
+  <p class="small muted" lang="de">Bei 60 Bildern pro Sekunde sieht es flüssig aus. Unter etwa 15 fängt es an zu ruckeln, und bei 2 wird es eine Diashow. Darum ist es Spielen so wichtig, schnell zu sein.</p>
 </section>
 
 <section class="slide" id="dt" data-lv="2">
-  <h2>The secret number: dt</h2>
+  <h2 lang="en">The secret number: dt</h2>
+  <h2 lang="de">Die geheime Zahl: dt</h2>
   <div class="cols wide-right">
     <div>
-      <p>Computers are not perfectly steady. Sometimes a frame takes 16 milliseconds, sometimes 30, on an old laptop maybe 50.</p>
-      <p>If the hero moved "4 pixels every frame", it would run slower on a slow computer. Not fair!</p>
-      <p>So each frame, the game measures how much time passed since the last one. That time is called <a class="w" href="words.html#dt"><code>dt</code></a> (for "delta time", the <i>difference</i> in time). Then:</p>
-      <pre><code>distance = speed × dt</code></pre>
-      <p>A slow frame has a bigger <code>dt</code>, so the hero takes a bigger step. Same speed on every computer.</p>
+      <p lang="en">Computers are not perfectly steady. Sometimes a frame takes 16 milliseconds, sometimes 30, on an old laptop maybe 50.</p>
+      <p lang="de">Computer sind nicht ganz gleichmäßig. Manchmal dauert ein Bild 16 Millisekunden, manchmal 30, auf einem alten Laptop vielleicht 50.</p>
+      <p lang="en">If the hero moved "4 pixels every frame", it would run slower on a slow computer. Not fair!</p>
+      <p lang="de">Würde sich der Held "4 Pixel pro Bild" bewegen, wäre er auf einem langsamen Computer langsamer. Unfair!</p>
+      <p lang="en">So each frame, the game measures how much time passed since the last one. That time is called <a class="w" href="words.html#dt"><code>dt</code></a> (for "delta time", the <i>difference</i> in time). Then:</p>
+      <p lang="de">Darum misst das Spiel bei jedem Bild, wie viel Zeit seit dem letzten vergangen ist. Diese Zeit heißt <a class="w" href="words.html#dt"><code>dt</code></a> (für "Delta-Zeit", den <i>Unterschied</i> in der Zeit). Dann gilt:</p>
+      <pre><code lang="en">distance = speed × dt</code> <code lang="de">Strecke = Tempo × dt</code></pre>
+      <p lang="en">A slow frame has a bigger <code>dt</code>, so the hero takes a bigger step. Same speed on every computer.</p>
+      <p lang="de">Ein langsames Bild hat ein größeres <code>dt</code>, also macht der Held einen größeren Schritt. Gleiches Tempo auf jedem Computer.</p>
     </div>
     <div>
       <div class="demo" data-demo="loop" data-mode="dt"></div>
-      <p class="small muted">Race them at 60 pictures per second: a tie. Now set 20 and restart.</p>
+      <p class="small muted" lang="en">Race them at 60 pictures per second: a tie. Now set 20 and restart.</p>
+      <p class="small muted" lang="de">Lass sie bei 60 Bildern pro Sekunde um die Wette laufen: unentschieden. Stell jetzt 20 ein und starte neu.</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="one-tick" data-lv="2">
-  <h2>One tick of Cube Crawler</h2>
-  <p>Here is what the real game does in one frame, in order. The order matters!</p>
+<section class="slide" id="one-tick" data-lv="2" data-src="src/main.js#frame">
+  <h2 lang="en">One tick of Cube Crawler</h2>
+  <h2 lang="de">Ein Takt von Cube Crawler</h2>
+  <p lang="en">Here is what the real game does in one frame, in order. The order matters!</p>
+  <p lang="de">Das macht das echte Spiel in einem Bild, in dieser Reihenfolge. Die Reihenfolge ist wichtig!</p>
   <div class="cols">
     <ol class="steps">
-      <li>Find out which monster is under the mouse.</li>
-      <li><b>Move the hero</b>: keys, mouse orders, sword swings, jumping, ladders, portals.</li>
-      <li><b>Move the monsters</b>: each one decides what to do and does it.</li>
-      <li>Pose the hero's body for this moment of the walk or swing animation.</li>
-      <li>Footsteps, sounds, sparks, floating damage numbers, loot.</li>
-      <li>Update the bars and the inventory on the screen.</li>
+      <li lang="en">Find out which monster is under the mouse.</li>
+      <li lang="de">Herausfinden, welches Monster unter der Maus ist.</li>
+      <li lang="en"><b>Move the hero</b>: keys, mouse orders, sword swings, jumping, ladders, portals.</li>
+      <li lang="de"><b>Den Helden bewegen</b>: Tasten, Mausbefehle, Schwerthiebe, Springen, Leitern, Portale.</li>
+      <li lang="en"><b>Move the monsters</b>: each one decides what to do and does it.</li>
+      <li lang="de"><b>Die Monster bewegen</b>: Jedes entscheidet, was es tun will, und tut es.</li>
+      <li lang="en">Pose the hero's body for this moment of the walk or swing animation.</li>
+      <li lang="de">Den Körper des Helden für diesen Moment der Lauf- oder Schlaganimation hinstellen.</li>
+      <li lang="en">Footsteps, sounds, sparks, floating damage numbers, loot.</li>
+      <li lang="de">Schritte, Geräusche, Funken, schwebende Schadenszahlen, Beute.</li>
+      <li lang="en">Update the bars and the inventory on the screen.</li>
+      <li lang="de">Die Balken und das Inventar auf dem Bildschirm aktualisieren.</li>
     </ol>
     <ol class="steps" start="7" style="counter-reset: s 6">
-      <li><b>Move the camera</b> so it follows the hero.</li>
-      <li><b>Cut away</b> walls that hide the hero (needs the camera first!).</li>
-      <li>Pick the 8 lamps nearest to you to light the scene.</li>
-      <li>Pick the music mood (calm, danger, fight, boss).</li>
-      <li><b>Draw everything.</b></li>
-      <li>Ask the browser to call us again for the next frame.</li>
+      <li lang="en"><b>Move the camera</b> so it follows the hero.</li>
+      <li lang="de"><b>Die Kamera bewegen</b>, damit sie dem Helden folgt.</li>
+      <li lang="en"><b>Cut away</b> walls that hide the hero (needs the camera first!).</li>
+      <li lang="de"><b>Wände wegschneiden</b>, die den Helden verdecken (dafür muss die Kamera schon stehen!).</li>
+      <li lang="en">Pick the 8 lamps nearest to you to light the scene.</li>
+      <li lang="de">Die 8 Lampen auswählen, die dir am nächsten sind, um die Szene zu beleuchten.</li>
+      <li lang="en">Pick the music mood (calm, danger, fight, boss).</li>
+      <li lang="de">Die Musikstimmung wählen (ruhig, Gefahr, Kampf, Boss).</li>
+      <li><b lang="en">Draw everything.</b> <b lang="de">Alles malen.</b></li>
+      <li lang="en">Ask the browser to call us again for the next frame.</li>
+      <li lang="de">Den Browser bitten, uns fürs nächste Bild wieder aufzurufen.</li>
     </ol>
   </div>
-  <div class="note think"><b>Think</b> Why must the camera move <i>before</i> the cut-away step? Because the cut-away looks for walls between the hero and the camera, so it needs to know where the camera is this frame.</div>
-  <a class="deeper" data-lv="3" href="#frame-code">See the real code</a>
+  <div class="note think" lang="en"><b>Think</b> Why must the camera move <i>before</i> the cut-away step? Because the cut-away looks for walls between the hero and the camera, so it needs to know where the camera is this frame.</div>
+  <div class="note think" lang="de"><b>Denk nach</b> Warum muss sich die Kamera <i>vor</i> dem Wegschneiden bewegen? Weil das Wegschneiden nach Wänden zwischen Held und Kamera sucht. Dafür muss es wissen, wo die Kamera in diesem Bild ist.</div>
+  <a class="deeper" data-lv="3" href="#frame-code" lang="en">See the real code</a>
+  <a class="deeper" data-lv="3" href="#frame-code" lang="de">Sieh dir den echten Code an</a>
 </section>
 
-<section class="slide" id="pause" data-lv="2">
-  <h2>Pause, slow motion and hiccups</h2>
-  <p>Because everything moves by <code>speed × dt</code>, a few tricks become very easy:</p>
+<section class="slide" id="pause" data-lv="2" data-src="src/main.js#frame src/game/juice.js#timeScale,enemyHitFx">
+  <h2 lang="en">Pause, slow motion and hiccups</h2>
+  <h2 lang="de">Pause, Zeitlupe und Schluckauf</h2>
+  <p lang="en">Because everything moves by <code>speed × dt</code>, a few tricks become very easy:</p>
+  <p lang="de">Weil sich alles mit <code>Tempo × dt</code> bewegt, werden ein paar Tricks ganz einfach:</p>
   <div class="cols3">
-    <div class="card"><h3>Pause</h3><p>When you open the inventory, the game sets <code>dt = 0</code>. Everything moves by "speed × 0", which is nothing. The whole world freezes, but it still gets drawn.</p></div>
-    <div class="card"><h3>Hit pause</h3><p>When your sword hits, time runs at only <b>3%</b> speed for about <b>0.05 seconds</b>. You barely notice it, but it makes hits feel heavy and strong.
+    <div class="card"><h3>Pause</h3><p lang="en">When you open the inventory, the game sets <code>dt = 0</code>. Everything moves by "speed × 0", which is nothing. The whole world freezes, but it still gets drawn.</p> <p lang="de">Wenn du das Inventar öffnest, setzt das Spiel <code>dt = 0</code>. Alles bewegt sich um "Tempo × 0", also gar nicht. Die ganze Welt friert ein, wird aber weiter gemalt.</p></div>
+    <div class="card"><h3 lang="en">Hit pause</h3> <h3 lang="de">Trefferpause</h3><p lang="en">When your sword hits, time runs at only <b>3%</b> speed for about <b>0.05 seconds</b>. You barely notice it, but it makes hits feel heavy and strong.
+      <a class="portal" href="combat.html#juice">Juice</a></p> <p lang="de">Wenn dein Schwert trifft, läuft die Zeit für etwa <b>0,05 Sekunden</b> nur mit <b>3%</b> Tempo. Du merkst es kaum, aber Treffer fühlen sich dadurch schwer und stark an.
       <a class="portal" href="combat.html#juice">Juice</a></p></div>
-    <div class="card"><h3>Hiccups</h3><p>If the computer freezes for a whole second, a huge <code>dt</code> could make the hero fly through a wall. So <code>dt</code> is never allowed to be bigger than 1/30 of a second.</p></div>
+    <div class="card"><h3 lang="en">Hiccups</h3> <h3 lang="de">Schluckauf</h3><p lang="en">If the computer freezes for a whole second, a huge <code>dt</code> could make the hero fly through a wall. So <code>dt</code> is never allowed to be bigger than 1/30 of a second.</p> <p lang="de">Wenn der Computer eine ganze Sekunde hängt, könnte ein riesiges <code>dt</code> den Helden durch eine Wand fliegen lassen. Darum darf <code>dt</code> nie größer als 1/30 Sekunde sein.</p></div>
   </div>
 </section>
 
 <section class="slide" id="frame-code" data-lv="3">
-  <h2>The real code: <code>frame()</code></h2>
+  <h2 lang="en">The real code: <code>frame()</code></h2>
+  <h2 lang="de">Der echte Code: <code>frame()</code></h2>
   <div class="cols wide-left">
-    <pre data-file="src/main.js (shortened)"><code>function frame() {
-  const elapsed = Math.min(clock.getDelta(), 1 / 30),
-        dt = state.inventoryOpen ? 0 : elapsed * timeScale(elapsed);
-  updatePointer();   // the enemy under the cursor
-  state.time += dt;
-  if (travelling()) updateTravel(dt);
-  else if (state.map) { updatePlayer(dt); updateEnemies(dt); }
-
-  animateCharacter(dt, state.time);
-  updateFootsteps(); updateSounds(dt);
-  updateLoot(dt, state.time);
-  tickParticles(dt);
-  updateHud(player, state.map, state.statusMsg);
-  updateCamera(dt);
-  updateCut(dt);     // after the camera: the cut depends on what the camera can see
-  updateLightPool(focusPoint(player.x, player.visY + 1, player.z));
-  updateMusic(elapsed);
-  renderer.render(scene, camera);
-  requestAnimationFrame(frame);
-}</code></pre>
+    <pre data-code="src/main.js#frame"></pre>
     <div>
-      <p><code>clock.getDelta()</code> measures the time since the last frame. <code>Math.min(..., 1 / 30)</code> is the hiccup guard.</p>
-      <p><code>state.inventoryOpen ? 0 : ...</code> means: "if the inventory is open, use 0, otherwise ...". That is the pause.</p>
-      <p><code>timeScale</code> comes from <code>src/game/juice.js</code>: it is 1 normally and 0.03 during a hit pause.</p>
-      <p>Notice that the music gets <code>elapsed</code>, not <code>dt</code>. Why? So the music keeps playing while the game is paused!</p>
-      <p><code>requestAnimationFrame(frame)</code> asks the browser to call <code>frame</code> again right before it shows the next picture.</p>
+      <p lang="en"><code>clock.getDelta()</code> measures the time since the last frame. <code>Math.min(..., 1 / 30)</code> is the hiccup guard.</p>
+      <p lang="de"><code>clock.getDelta()</code> misst die Zeit seit dem letzten Bild. <code>Math.min(..., 1 / 30)</code> ist der Schluckauf-Schutz.</p>
+      <p lang="en"><code>state.inventoryOpen ? 0 : ...</code> means: "if the inventory is open, use 0, otherwise ...". That is the pause.</p>
+      <p lang="de"><code>state.inventoryOpen ? 0 : ...</code> heißt: "Wenn das Inventar offen ist, nimm 0, sonst ...". Das ist die Pause.</p>
+      <p lang="en"><code>timeScale</code> comes from <code>src/game/juice.js</code>: it is 1 normally and 0.03 during a hit pause.</p>
+      <p lang="de"><code>timeScale</code> kommt aus <code>src/game/juice.js</code>: normalerweise 1, während einer Trefferpause 0,03.</p>
+      <p lang="en">Notice that the music gets <code>elapsed</code>, not <code>dt</code>. Why? So the music keeps playing while the game is paused!</p>
+      <p lang="de">Fällt dir auf, dass die Musik <code>elapsed</code> bekommt und nicht <code>dt</code>? Damit die Musik weiterspielt, während das Spiel pausiert!</p>
+      <p lang="en"><code>requestAnimationFrame(frame)</code> asks the browser to call <code>frame</code> again right before it shows the next picture.</p>
+      <p lang="de"><code>requestAnimationFrame(frame)</code> bittet den Browser, <code>frame</code> direkt vor dem nächsten Bild wieder aufzurufen.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="smoothing" data-lv="3">
-  <h2>Catching up, a little every frame</h2>
+  <h2 lang="en">Catching up, a little every frame</h2>
+  <h2 lang="de">Jedes Bild ein bisschen aufholen</h2>
   <div class="cols">
     <div>
-      <p>When the hero walks up a step, their body would jump up instantly. That looks jerky. So the game keeps two heights: where the hero <b>is</b> (<code>y</code>) and where we <b>draw</b> them (<code>visY</code>). Every frame the drawn one catches up a bit:</p>
-      <pre data-file="src/main.js"><code>player.visY += (player.y - player.visY) * Math.min(1, dt * 25);</code></pre>
-      <p>"Move a part of the remaining way." Far away: big steps. Close: tiny steps. It slows down smoothly as it arrives.</p>
-      <p>The camera turning (<kbd>Q</kbd> <kbd>E</kbd>), zooming and the colours changing as you go deeper all use the same trick.</p>
+      <p lang="en">When the hero walks up a step, their body would jump up instantly. That looks jerky. So the game keeps two heights: where the hero <b>is</b> (<code>y</code>) and where we <b>draw</b> them (<code>visY</code>). Every frame the drawn one catches up a bit:</p>
+      <p lang="de">Wenn der Held eine Stufe hochgeht, würde sein Körper sofort nach oben springen. Das sieht ruckelig aus. Darum merkt sich das Spiel zwei Höhen: wo der Held <b>ist</b> (<code>y</code>) und wo wir ihn <b>malen</b> (<code>visY</code>). Jedes Bild holt die gemalte ein Stück auf:</p>
+      <pre data-src="src/main.js#frame"><code>player.visY += (player.y - player.visY) * Math.min(1, dt * 25);</code></pre>
+      <p lang="en">"Move a part of the remaining way." Far away: big steps. Close: tiny steps. It slows down smoothly as it arrives.</p>
+      <p lang="de">"Geh einen Teil des restlichen Wegs." Weit weg: große Schritte. Nah dran: winzige Schritte. So wird es beim Ankommen sanft langsamer.</p>
+      <p lang="en">The camera turning (<kbd>Q</kbd> <kbd>E</kbd>), zooming and the colours changing as you go deeper all use the same trick.</p>
+      <p lang="de">Das Drehen der Kamera (<kbd>Q</kbd> <kbd>E</kbd>), das Zoomen und das Wechseln der Farben, wenn du tiefer gehst, benutzen alle denselben Trick.</p>
     </div>
     <div>
       <div class="demo" data-demo="loop" data-mode="follow"></div>
-      <p class="small muted">A high catch-up speed feels snappy, a low one feels floaty. Game makers tune numbers like this until it feels right.</p>
+      <p class="small muted" lang="en">A high catch-up speed feels snappy, a low one feels floaty. Game makers tune numbers like this until it feels right.</p>
+      <p class="small muted" lang="de">Ein hohes Aufholtempo fühlt sich zackig an, ein niedriges schwebend. Spielemacher drehen an solchen Zahlen, bis es sich richtig anfühlt.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: The Heartbeat</h2>
+  <h2 lang="en">Prompt quests: The Heartbeat</h2>
+  <h2 lang="de">Prompt-Aufgaben: Der Herzschlag</h2>
   <div class="quests">
-    <div class="prompt" data-title="EXPLAIN A FRAME" data-stars="1"><q>Explain what happens in one frame of this game, step by step, by reading the frame function in src/main.js. Use simple words.</q><span class="why">A great way to learn: let the agent walk you through real code.</span></div>
-    <div class="prompt" data-title="HEAVIER HITS" data-stars="1"><q>Make the hit pause when my sword hits an enemy twice as long, so hits feel heavier. Tell me which numbers you changed.</q><span class="why">Hint: look for hitstop in src/game/juice.js. Then play and feel the difference.</span></div>
-    <div class="prompt" data-title="SLOW MOTION KEY" data-stars="2"><q>Add a key (T) that toggles slow motion: the whole game runs at half speed until I press T again. Use the existing timeScale idea in src/game/juice.js and add the key to the help screen.</q><span class="why">Naming the file and the idea to reuse helps the agent do it the way the game already works.</span></div>
-    <div class="prompt" data-title="FLOATY CAMERA" data-stars="2"><q>The camera catches up with zoom and rotation using a smoothing number. Show me where, then make the rotation a bit slower so it feels more floaty.</q><span class="why">Small number changes, big feeling changes. Try a few values.</span></div>
+    <div class="prompt" data-title="EXPLAIN A FRAME" data-stars="1" data-de-data-title="EIN BILD ERKLÄRT"><q lang="en">Explain what happens in one frame of this game, step by step, by reading the code of the game loop. Use simple words.</q> <q lang="de">Erklär mir Schritt für Schritt, was in einem Bild dieses Spiels passiert. Lies dazu den Code der Spielschleife. Benutze einfache Wörter.</q><span class="why" lang="en">A great way to learn: let the agent walk you through real code.</span> <span class="why" lang="de">Ein toller Weg zu lernen: Lass dich vom Agenten durch echten Code führen.</span></div>
+    <div class="prompt" data-title="HEAVIER HITS" data-stars="1" data-de-data-title="SCHWERERE TREFFER"><q lang="en">Make the hit pause when my sword hits an enemy twice as long, so hits feel heavier. Tell me which numbers you changed.</q> <q lang="de">Mach die Trefferpause, wenn mein Schwert einen Gegner trifft, doppelt so lang, damit sich Treffer schwerer anfühlen. Sag mir, welche Zahlen du geändert hast.</q><span class="why" lang="en">Then play and feel the difference. "Tell me which numbers" shows you where they live, for next time.</span> <span class="why" lang="de">Dann spiel und spür den Unterschied. "Sag mir, welche Zahlen" zeigt dir, wo sie wohnen, fürs nächste Mal.</span></div>
+    <div class="prompt" data-title="SLOW MOTION KEY" data-stars="2" data-de-data-title="ZEITLUPEN-TASTE"><q lang="en">Add a key (T) that toggles slow motion: the whole game runs at half speed until I press T again. Reuse the way the hit pause already slows time down, and add the key to the help screen.</q> <q lang="de">Füge eine Taste (T) hinzu, die Zeitlupe an- und ausschaltet: Das ganze Spiel läuft mit halbem Tempo, bis ich wieder T drücke. Benutze dafür, wie die Trefferpause die Zeit schon verlangsamt, und trag die Taste in die Hilfe ein.</q><span class="why" lang="en">Naming an idea the game already has (the hit pause) helps the agent build it the way the game already works.</span> <span class="why" lang="de">Eine Idee zu nennen, die das Spiel schon hat (die Trefferpause), hilft dem Agenten, es so zu bauen, wie das Spiel schon funktioniert.</span></div>
+    <div class="prompt" data-title="FLOATY CAMERA" data-stars="2" data-de-data-title="SCHWEBENDE KAMERA"><q lang="en">The camera catches up with zoom and rotation using a smoothing number. Show me where, then make the rotation a bit slower so it feels more floaty.</q> <q lang="de">Die Kamera holt beim Zoomen und Drehen mit einer Glättungszahl auf. Zeig mir, wo, und mach das Drehen dann ein bisschen langsamer, damit es sich schwebender anfühlt.</q><span class="why" lang="en">Small number changes, big feeling changes. Try a few values.</span> <span class="why" lang="de">Kleine Zahlenänderungen, große Gefühlsänderungen. Probier ein paar Werte aus.</span></div>
   </div>
 </section>
 

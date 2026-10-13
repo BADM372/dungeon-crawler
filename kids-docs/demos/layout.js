@@ -3,15 +3,15 @@
 import { makeLayouts } from '../../src/world/layout.js';
 import { parse } from '../../src/world/coords.js';
 import { themeAt, MAX_DEPTH } from '../../src/themes/depth.js';
-import { canvas, html } from '../deck.js';
+import { canvas, html, t as tr, themeLabel } from '../deck.js';
 
 const AXES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 export default function mount(el) {
   const W = 640, H = 470, { g } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><label>seed <input type="number" class="seed" value="123"></label>
-    <label>depth <input type="range" class="depth" min="0" max="${MAX_DEPTH}" value="1"> <b class="dn"></b></label>
-    <button class="dice">New seed</button></div>`);
+  const row = html(el, `<div class="row"><label>Seed <input type="number" class="seed" value="123"></label>
+    <label>${tr('depth', 'Tiefe')} <input type="range" class="depth" min="0" max="${MAX_DEPTH}" value="1"> <b class="dn"></b></label>
+    <button class="dice">${tr('New seed', 'Neuer Seed')}</button></div>`);
   const out = html(el, '<div class="out"></div>');
   const seedIn = row.querySelector('.seed'), depthIn = row.querySelector('.depth');
   let layouts = null, seed = null;
@@ -20,7 +20,7 @@ export default function mount(el) {
     const s = +seedIn.value >>> 0, d = +depthIn.value;
     if (s !== seed) { seed = s; layouts = makeLayouts(seed); }
     const L = layouts(d);
-    row.querySelector('.dn').textContent = `${d} \u00B7 ${themeAt(d).name}`;
+    row.querySelector('.dn').textContent = `${d} \u00B7 ${themeLabel(themeAt(d))}`;
     const S = 50, ox = 30, oy = 10, R = 4;
     const cx = x => ox + (x + R) * S, cz = z => oy + (z + R) * S;
     g.clearRect(0, 0, W, H);
@@ -53,7 +53,7 @@ export default function mount(el) {
       g.fillStyle = '#fff';
       g.fillText(i >= 0 ? String(i + 1) : '+', cx(x) + S / 2, cz(z) + S / 2 + 5);
       if (L.sitePlans.get(k)?.length) { g.fillStyle = '#ffcf7a'; g.fillRect(cx(x) + S - 16, cz(z) + 8, 8, 7); }
-      if (role === 'town' || (d === 0 && i === 0)) { g.fillStyle = '#76ad50'; g.fillText('town', cx(x) + S / 2, cz(z) + S - 9); }
+      if (role === 'town' || (d === 0 && i === 0)) { g.fillStyle = '#76ad50'; g.fillText(tr('town', 'Stadt'), cx(x) + S / 2, cz(z) + S - 9); }
     }
     // the way in (ring up) and the way down (well)
     const ring = k => { const [a, b] = center(k); g.strokeStyle = '#5fd3ff'; g.lineWidth = 3; g.beginPath(); g.arc(a - 13, b - 12, 6, 0, 7); g.stroke(); };
@@ -62,11 +62,13 @@ export default function mount(el) {
     // legend
     g.textAlign = 'left'; g.font = '12px ui-monospace, monospace';
     const lx = ox + (2 * R + 1) * S + 14;
-    [['#ffc94a', 'the route'], ['#70d6aa', 'side room (+)'], ['#ff5ab4', 'side guardian'], ['#ffb000', 'descent guardian'], ['#5fd3ff', 'way in (ring up)'], ['#ffc94a', 'well down'], ['#ffcf7a', 'treasure site']]
+    [['#ffc94a', tr('the route', 'die Route')], ['#70d6aa', tr('side room (+)', 'Nebenraum (+)')], ['#ff5ab4', tr('side guardian', 'Torwächter')], ['#ffb000', tr('descent guardian', 'Brunnenwächter')], ['#5fd3ff', tr('way in (ring up)', 'Eingang (Ring)')], ['#ffc94a', tr('well down', 'Brunnen runter')], ['#ffcf7a', tr('treasure site', 'Schatzplatz')]]
       .forEach(([c, t], j) => { g.fillStyle = c; g.fillRect(lx, 20 + j * 22, 12, 12); g.fillStyle = '#aab3c2'; g.fillText(t, lx + 18, 31 + j * 22); });
     const sides = [...L.guardians.values()].filter(x => x.role === 'side').length;
-    out.innerHTML = `depth ${d}: <b>${spine.length}</b> rooms on the route, <b>${cells.length - spine.length}</b> side rooms, `
-      + (d < MAX_DEPTH ? `<b>${sides}</b> side guardian${sides === 1 ? '' : 's'} and a descent guardian at the well` : 'the core: no way further down');
+    out.innerHTML = tr(`depth ${d}: <b>${spine.length}</b> rooms on the route, <b>${cells.length - spine.length}</b> side rooms, `
+      + (d < MAX_DEPTH ? `<b>${sides}</b> side guardian${sides === 1 ? '' : 's'} and a descent guardian at the well` : 'the core: no way further down'),
+      `Tiefe ${d}: <b>${spine.length}</b> Räume auf der Route, <b>${cells.length - spine.length}</b> Nebenräume, `
+      + (d < MAX_DEPTH ? `<b>${sides}</b> Torwächter und ein Brunnenwächter am Brunnen` : 'der Kern: kein Weg weiter nach unten'));
   }
   seedIn.oninput = draw; depthIn.oninput = draw;
   row.querySelector('.dice').onclick = () => { seedIn.value = Math.floor(Math.random() * 99999); draw(); };

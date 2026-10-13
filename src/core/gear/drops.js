@@ -13,12 +13,14 @@ import { RARITY } from './rarities.js';
 import { rollWeapon } from './generate.js';
 import { HEALTH_POTION } from '../items.js';
 
+// kids-docs: loot.html#drops (see kids-docs/README.md)
 export const WEAPON_CHANCE = 0.05, POTION_CHANCE = 0.03;
 // how much more an enemy of base XP `xp` (level 1) drops than a plain one
 const worth = xp => Math.sqrt(Math.max(1, xp ?? 30) / 30);
 export const dropChance = xp => Math.min(0.15, WEAPON_CHANCE * worth(xp));
 export const potionChance = xp => Math.min(0.1, POTION_CHANCE * worth(xp));
 
+// kids-docs: loot.html#drops (see kids-docs/README.md)
 export function guardianDrops(role, level) {
   if (role === 'descent') return { count: 2, floor: RARITY[level >= 14 ? 'epic' : level >= 5 ? 'rare' : 'uncommon'].rank, luck: 0.2, ancient: true, potions: 2 };
   return { count: 1, floor: RARITY[level >= 10 ? 'rare' : 'uncommon'].rank, luck: 0.1, ancient: true, potions: 1 };

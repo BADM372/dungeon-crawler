@@ -2,191 +2,226 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Swords & Fighting · Kids' Guide to Cube Crawler</title>
+<title data-de="Schwerter &amp; Kämpfe · Kinderführer zu Cube Crawler">Swords &amp; Fighting · Kids' Guide to Cube Crawler</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
 </head>
 <body data-theme="swamp">
 <main class="deck">
 
 <section class="slide" id="fight" data-lv="1">
-  <h2>A sword fight, step by step</h2>
+  <h2 lang="en">A sword fight, step by step</h2>
+  <h2 lang="de">Ein Schwertkampf, Schritt für Schritt</h2>
   <div class="cols wide-right">
     <div>
-      <p class="lead">You click on a Stunder. Your hero walks up and swings. Thwack! Sparks fly, a number pops up, the Stunder staggers.</p>
-      <p>That took less than half a second. But the game had to answer four questions:</p>
+      <p class="lead" lang="en">You click on a Stunder. Your hero walks up and swings. Thwack! Sparks fly, a number pops up, the Stunder staggers.</p>
+      <p class="lead" lang="de">Du klickst auf einen Stunder. Dein Held läuft hin und schlägt zu. Zack! Funken fliegen, eine Zahl springt hoch, der Stunder taumelt.</p>
+      <p lang="en">That took less than half a second. But the game had to answer four questions:</p>
+      <p lang="de">Das hat weniger als eine halbe Sekunde gedauert. Aber das Spiel musste vier Fragen beantworten:</p>
       <ol class="steps">
-        <li><b>When</b> does the blade move, and when can it hurt?</li>
-        <li><b>Did it hit?</b> Was the monster close enough, in front, at the right height?</li>
-        <li><b>How much</b> does it hurt, and what does the monster do?</li>
-        <li><b>How does it feel?</b> Sparks, sounds, a tiny freeze.</li>
+        <li lang="en"><b>When</b> does the blade move, and when can it hurt?</li>
+        <li lang="de"><b>Wann</b> bewegt sich die Klinge, und wann kann sie wehtun?</li>
+        <li lang="en"><b>Did it hit?</b> Was the monster close enough, in front, at the right height?</li>
+        <li lang="de"><b>Getroffen?</b> War das Monster nah genug, vorne, auf der richtigen Höhe?</li>
+        <li lang="en"><b>How much</b> does it hurt, and what does the monster do?</li>
+        <li lang="de"><b>Wie sehr</b> tut es weh, und was macht das Monster?</li>
+        <li lang="en"><b>How does it feel?</b> Sparks, sounds, a tiny freeze.</li>
+        <li lang="de"><b>Wie fühlt es sich an?</b> Funken, Geräusche, ein winziges Einfrieren.</li>
       </ol>
     </div>
-    <figure><img class="shot" src="img/fight.jpg" alt="The hero swinging a sword at a tall green Stunder"><figcaption>Swinging at a Stunder. The bar over its head shows its health.</figcaption></figure>
+    <figure><img class="shot" src="img/fight.jpg" alt="The hero swinging a sword at a tall green Stunder" data-de-alt="Der Held schlägt mit dem Schwert nach einem großen grünen Stunder"><figcaption lang="en">Swinging at a Stunder. The bar over its head shows its health.</figcaption> <figcaption lang="de">Ein Hieb gegen einen Stunder. Der Balken über seinem Kopf zeigt seine Gesundheit.</figcaption></figure>
   </div>
 </section>
 
 <section class="slide" id="swing" data-lv="1">
-  <h2>Try it: the anatomy of a swing</h2>
-  <p>A swing has three parts. First the <b style="color:var(--lv2)">wind-up</b>: the arm pulls back. Then a short moment when the blade can <b style="color:var(--gold)">hit</b>.
+  <h2 lang="en">Try it: the anatomy of a swing</h2>
+  <h2 lang="de">Probier es: die Anatomie eines Hiebs</h2>
+  <p lang="en">A swing has three parts. First the <b style="color:var(--lv2)">wind-up</b>: the arm pulls back. Then a short moment when the blade can <b style="color:var(--gold)">hit</b>.
     Then the <b>recovery</b>: the arm comes back. Swing a few times, then try a different sword.</p>
+  <p lang="de">Ein Hieb hat drei Teile. Zuerst das <b style="color:var(--lv2)">Ausholen</b>: Der Arm geht zurück. Dann ein kurzer Moment, in dem die Klinge <b style="color:var(--gold)">treffen</b> kann.
+    Dann die <b>Erholung</b>: Der Arm kommt zurück. Schlag ein paarmal zu, dann probier ein anderes Schwert.</p>
   <div class="demo real" data-demo="swing"></div>
 </section>
 
-<section class="slide" id="chain" data-lv="2">
-  <h2>Chaining, cancelling, lunging</h2>
+<section class="slide" id="chain" data-lv="2" data-src="src/core/combat.js#SWORD src/core/items.js#WEAPONS src/game/update.js#lunge">
+  <h2 lang="en">Chaining, cancelling, lunging</h2>
+  <h2 lang="de">Verketten, abbrechen, nachsetzen</h2>
   <div class="cols">
     <div>
-      <p><b>Chaining.</b> You don't have to wait for the whole swing. From the pink line on, a new swing can start. That time is the sword's <i>attack speed</i>: 0.32 seconds for the short sword, 0.66 for the greatsword.</p>
-      <p><b>Remembering clicks.</b> If you click a bit too early, the game keeps your click for 0.3 seconds and swings as soon as it can. That makes fast clicking feel smooth, not ignored.</p>
-      <p><b>Cancelling.</b> From the green line on, walking away cuts the recovery short. Before that, your feet are planted: you have committed to the swing!</p>
+      <p lang="en"><b>Chaining.</b> You don't have to wait for the whole swing. From the pink line on, a new swing can start. That time is the sword's <i>attack speed</i>: 0.32 seconds for the short sword, 0.66 for the greatsword.</p>
+      <p lang="de"><b>Verketten.</b> Du musst nicht auf das Ende des Hiebs warten. Ab der rosa Linie kann ein neuer Hieb starten. Diese Zeit ist das <i>Angriffstempo</i> des Schwerts: 0,32 Sekunden beim Kurzschwert, 0,66 beim Zweihänder.</p>
+      <p lang="en"><b>Remembering clicks.</b> If you click a bit too early, the game keeps your click for 0.3 seconds and swings as soon as it can. That makes fast clicking feel smooth, not ignored.</p>
+      <p lang="de"><b>Klicks merken.</b> Wenn du ein bisschen zu früh klickst, merkt sich das Spiel deinen Klick 0,3 Sekunden lang und schlägt zu, sobald es geht. So fühlt sich schnelles Klicken flüssig an, statt ignoriert zu werden.</p>
+      <p lang="en"><b>Cancelling.</b> From the green line on, walking away cuts the recovery short. Before that, your feet are planted: you have committed to the swing!</p>
+      <p lang="de"><b>Abbrechen.</b> Ab der grünen Linie bricht Weggehen die Erholung ab. Vorher stehen deine Füße fest: Du hast dich für den Hieb entschieden!</p>
     </div>
     <div>
-      <p><b>Lunging.</b> If the monster is just a bit out of reach, your hero steps in towards it during the wind-up. You don't have to be pixel perfect.</p>
-      <p><b>Heavy and light.</b> All swords use the same animation, just played faster or slower. The heavy ones hit harder, reach further and sweep wider, but plant you longer. The light ones are quick.</p>
+      <p lang="en"><b>Lunging.</b> If the monster is just a bit out of reach, your hero steps in towards it during the wind-up. You don't have to be pixel perfect.</p>
+      <p lang="de"><b>Nachsetzen.</b> Wenn das Monster knapp außer Reichweite ist, macht dein Held beim Ausholen einen Schritt darauf zu. Du musst nicht pixelgenau sein.</p>
+      <p lang="en"><b>Heavy and light.</b> All swords use the same animation, just played faster or slower. The heavy ones hit harder, reach further and sweep wider, but plant you longer. The light ones are quick.</p>
+      <p lang="de"><b>Schwer und leicht.</b> Alle Schwerter benutzen dieselbe Animation, nur schneller oder langsamer abgespielt. Die schweren treffen härter, reichen weiter und schwingen breiter, aber halten dich länger fest. Die leichten sind flink.</p>
       <table>
-        <tr><th>SWORD</th><th>DAMAGE</th><th>SWING TIME</th><th>PER SECOND</th></tr>
-        <tr><td>Short</td><td>23</td><td>0.32 s</td><td>72</td></tr>
-        <tr><td>Medium</td><td>34</td><td>0.42 s</td><td>81</td></tr>
-        <tr><td>Long</td><td>39</td><td>0.48 s</td><td>81</td></tr>
-        <tr><td>Broadsword</td><td>46</td><td>0.54 s</td><td>85</td></tr>
-        <tr><td>Greatsword</td><td>60</td><td>0.66 s</td><td>91</td></tr>
+        <tr><th lang="en">SWORD</th> <th lang="de">SCHWERT</th><th lang="en">DAMAGE</th> <th lang="de">SCHADEN</th><th lang="en">SWING TIME</th> <th lang="de">HIEBZEIT</th><th lang="en">PER SECOND</th> <th lang="de">PRO SEKUNDE</th></tr>
+        <tr><td lang="en">Short</td> <td lang="de">Short (kurz)</td><td>23</td><td lang="en">0.32 s</td> <td lang="de">0,32 s</td><td>72</td></tr>
+        <tr><td lang="en">Medium</td> <td lang="de">Medium (mittel)</td><td>34</td><td lang="en">0.42 s</td> <td lang="de">0,42 s</td><td>81</td></tr>
+        <tr><td lang="en">Long</td> <td lang="de">Long (lang)</td><td>39</td><td lang="en">0.48 s</td> <td lang="de">0,48 s</td><td>81</td></tr>
+        <tr><td lang="en">Broadsword</td> <td lang="de">Broadsword (Breitschwert)</td><td>46</td><td lang="en">0.54 s</td> <td lang="de">0,54 s</td><td>85</td></tr>
+        <tr><td lang="en">Greatsword</td> <td lang="de">Greatsword (Zweihänder)</td><td>60</td><td lang="en">0.66 s</td> <td lang="de">0,66 s</td><td>91</td></tr>
       </table>
     </div>
   </div>
 </section>
 
-<section class="slide" id="hit-test" data-lv="1">
-  <h2>Try it: did the blade hit?</h2>
+<section class="slide" id="hit-test" data-lv="1" data-src="src/core/combat.js#inSwordArc">
+  <h2 lang="en">Try it: did the blade hit?</h2>
+  <h2 lang="de">Probier es: Hat die Klinge getroffen?</h2>
   <div class="cols wide-right">
     <div>
-      <p>There is no real sword hitting a real spider. There are just numbers. So the game asks three questions:</p>
+      <p lang="en">There is no real sword hitting a real spider. There are just numbers. So the game asks three questions:</p>
+      <p lang="de">Da trifft kein echtes Schwert eine echte Spinne. Da sind nur Zahlen. Also stellt das Spiel drei Fragen:</p>
       <ol class="steps">
-        <li><b>Close enough?</b> Is the distance smaller than the blade's reach plus the size of the monster's body?</li>
-        <li><b>In front?</b> Is the monster inside the arc the blade sweeps?</li>
-        <li><b>Right height?</b> The blade sweeps from your knees to your chest. A monster on a ledge above you, or below you, is safe.</li>
+        <li lang="en"><b>Close enough?</b> Is the distance smaller than the blade's reach plus the size of the monster's body?</li>
+        <li lang="de"><b>Nah genug?</b> Ist der Abstand kleiner als die Reichweite der Klinge plus die Größe des Monsterkörpers?</li>
+        <li lang="en"><b>In front?</b> Is the monster inside the arc the blade sweeps?</li>
+        <li lang="de"><b>Vorne?</b> Ist das Monster im Bogen, den die Klinge schwingt?</li>
+        <li lang="en"><b>Right height?</b> The blade sweeps from your knees to your chest. A monster on a ledge above you, or below you, is safe.</li>
+        <li lang="de"><b>Richtige Höhe?</b> Die Klinge schwingt von deinen Knien bis zur Brust. Ein Monster auf einem Felsvorsprung über dir oder unter dir ist sicher.</li>
       </ol>
-      <p>Drag the monster around. Turn the hero. Put the monster on a ledge with the slider.</p>
-      <p class="small muted">The game also checks that no wall is in between, and that each monster is hit at most once per swing.</p>
+      <p lang="en">Drag the monster around. Turn the hero. Put the monster on a ledge with the slider.</p>
+      <p lang="de">Zieh das Monster herum. Dreh den Helden. Stell das Monster mit dem Regler auf einen Vorsprung.</p>
+      <p class="small muted" lang="en">The game also checks that no wall is in between, and that each monster is hit at most once per swing.</p>
+      <p class="small muted" lang="de">Das Spiel prüft außerdem, dass keine Wand dazwischen ist und dass jedes Monster pro Hieb höchstens einmal getroffen wird.</p>
     </div>
     <div class="demo real" data-demo="arc"></div>
   </div>
 </section>
 
-<section class="slide" id="damage" data-lv="2">
-  <h2>How much does it hurt?</h2>
+<section class="slide" id="damage" data-lv="2" data-src="src/core/combat.js#damageEnemy src/core/gear/stats.js#CRIT_CHANCE,CRIT_DAMAGE src/core/progression.js#levelDamage">
+  <h2 lang="en">How much does it hurt?</h2>
+  <h2 lang="de">Wie sehr tut es weh?</h2>
   <div class="cols">
     <div>
-      <p>The Old Sword you start with does <b>30</b> damage. A level 1 spider has <b>32</b> health: two hits. A Stunder has 140: five hits.</p>
+      <p lang="en">The Old Sword you start with does <b data-val="src/core/combat.js#SWORD.damage">30</b> damage. A level 1 spider has <b data-val="src/core/enemies.js#SPIDER.hp">32</b> health: two hits. A Stunder has <b data-val="src/core/enemies.js#STUNDER.hp">140</b>: five hits.</p>
+      <p lang="de">Das Alte Schwert, mit dem du anfängst, macht <b data-val="src/core/combat.js#SWORD.damage">30</b> Schaden. Eine Spinne auf Stufe 1 hat <b data-val="src/core/enemies.js#SPIDER.hp">32</b> Gesundheit: zwei Treffer. Ein Stunder hat <b data-val="src/core/enemies.js#STUNDER.hp">140</b>: fünf Treffer.</p>
       <ul>
-        <li><b>Critical hits:</b> 5% of all hits (1 in 20) do 1.5 times the damage, shown as a bigger, golden number.</li>
-        <li><b>Your level:</b> every level makes your weapon 2% stronger.</li>
-        <li><b>Better swords:</b> rarer and deeper swords hit harder. <a class="portal" href="loot.html">Treasure</a></li>
-        <li><b>Knockback:</b> the monster gets pushed away from you a bit.</li>
+        <li lang="en"><b>Critical hits:</b> 5% of all hits (1 in 20) do 1.5 times the damage, shown as a bigger, golden number.</li>
+        <li lang="de"><b>Kritische Treffer:</b> 5% aller Treffer (1 von 20) machen 1,5-mal so viel Schaden und erscheinen als größere, goldene Zahl.</li>
+        <li lang="en"><b>Your level:</b> every level makes your weapon 2% stronger.</li>
+        <li lang="de"><b>Deine Stufe:</b> Jede Stufe macht deine Waffe 2% stärker.</li>
+        <li lang="en"><b>Better swords:</b> rarer and deeper swords hit harder. <a class="portal" href="loot.html">Treasure</a></li>
+        <li lang="de"><b>Bessere Schwerter:</b> Seltenere und tiefere Schwerter treffen härter. <a class="portal" href="loot.html">Schätze</a></li>
+        <li lang="en"><b>Knockback:</b> the monster gets pushed away from you a bit.</li>
+        <li lang="de"><b>Rückstoß:</b> Das Monster wird ein Stück von dir weggeschubst.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>Stagger and poise</h3>
-      <p>A hit <b>staggers</b> a monster: it stops its attack, is stunned for a moment, and cannot attack again for 0.45 seconds.</p>
-      <p>But if that was all, you could keep any monster stuck forever by hitting fast! So after a stagger, a monster is <b>poised</b> for a while: braced, like a boxer with the guard up. Light hits still hurt it, but don't stop it. It can hit back.</p>
-      <p>Spiders and snakes have no poise. A Stunder is poised for 1.5 seconds, guardians up to 2. A really big hit (a quarter of its health or more) staggers anyway.</p>
+      <h3 lang="en">Stagger and poise</h3>
+      <h3 lang="de">Taumeln und Standfestigkeit</h3>
+      <p lang="en">A hit <b>staggers</b> a monster: it stops its attack, is stunned for a moment, and cannot attack again for 0.45 seconds.</p>
+      <p lang="de">Ein Treffer bringt ein Monster ins <b>Taumeln</b>: Es bricht seinen Angriff ab, ist kurz betäubt und kann 0,45 Sekunden lang nicht wieder angreifen.</p>
+      <p lang="en">But if that was all, you could keep any monster stuck forever by hitting fast! So after a stagger, a monster is <b>poised</b> for a while: braced, like a boxer with the guard up. Light hits still hurt it, but don't stop it. It can hit back.</p>
+      <p lang="de">Aber wenn das alles wäre, könntest du jedes Monster für immer festhalten, indem du schnell zuschlägst! Darum ist ein Monster nach dem Taumeln eine Weile <b>standfest</b> (poise): gefasst, wie ein Boxer mit erhobener Deckung. Leichte Treffer tun ihm immer noch weh, halten es aber nicht auf. Es kann zurückschlagen.</p>
+      <p lang="en">Spiders and snakes have no poise. A Stunder is poised for 1.5 seconds, guardians up to 2. A really big hit (a quarter of its health or more) staggers anyway.</p>
+      <p lang="de">Spinnen und Schlangen sind nie standfest. Ein Stunder ist es 1,5 Sekunden lang, Wächter bis zu 2. Ein richtig großer Treffer (ein Viertel seiner Gesundheit oder mehr) bringt es trotzdem ins Taumeln.</p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="juice" data-lv="1">
-  <h2>Juice: why hits feel good</h2>
-  <p>Game makers call the extras that make actions feel great <a class="w" href="words.html#juice">juice</a>. They change nothing about the rules, but everything about the feeling.
+<section class="slide" id="juice" data-lv="1" data-src="src/game/juice.js#timeScale,enemyHitFx">
+  <h2 lang="en">Juice: why hits feel good</h2>
+  <h2 lang="de">Juice: Warum sich Treffer gut anfühlen</h2>
+  <p lang="en">Game makers call the extras that make actions feel great <a class="w" href="words.html#juice">juice</a>. They change nothing about the rules, but everything about the feeling.
     Hit the blob with everything on. Then turn things off one by one. Which one do you miss most?</p>
+  <p lang="de">Spielemacher nennen die Extras, durch die sich Aktionen toll anfühlen, <a class="w" href="words.html#juice">Juice</a> (Saft). Sie ändern nichts an den Regeln, aber alles am Gefühl.
+    Hau mit allem eingeschaltet auf den Klumpen. Dann schalte die Sachen eine nach der anderen aus. Was vermisst du am meisten?</p>
   <div class="demo" data-demo="juice"></div>
-  <p class="small muted">The <b>hit pause</b> is tiny: time slows to 3% for 0.055 seconds (0.09 on a kill). You can't really see it, but you can feel it. Turn it off and hits feel like hitting air.</p>
+  <p class="small muted" lang="en">The <b>hit pause</b> is tiny: time slows to 3% for 0.055 seconds (0.09 on a kill). You can't really see it, but you can feel it. Turn it off and hits feel like hitting air.</p>
+  <p class="small muted" lang="de">Die <b>Trefferpause</b> ist winzig: Die Zeit läuft 0,055 Sekunden lang nur mit 3% (0,09 bei einem Todesstoß). Sehen kannst du sie kaum, aber spüren. Schalte sie aus, und Treffer fühlen sich an wie Schläge in die Luft.</p>
 </section>
 
 <section class="slide" id="targets" data-lv="2">
-  <h2>Who do I hit? Picking a target</h2>
+  <h2 lang="en">Who do I hit? Picking a target</h2>
+  <h2 lang="de">Wen treffe ich? Ein Ziel wählen</h2>
   <div class="cols">
     <div>
-      <p>There are three ways to attack in Cube Crawler:</p>
+      <p lang="en">There are three ways to attack in Cube Crawler:</p>
+      <p lang="de">In Cube Crawler gibt es drei Arten anzugreifen:</p>
       <ul>
-        <li><b>Click a monster:</b> the hero walks up to it (finding a way around walls) and swings. Hold the button to keep attacking.</li>
-        <li><b>Hold <kbd>Shift</kbd>:</b> auto-attack. Swings at the best monster within reach, and never at thin air.</li>
-        <li>No weapon? No attacks at all. (You can drop all your swords!)</li>
+        <li lang="en"><b>Click a monster:</b> the hero walks up to it (finding a way around walls) and swings. Hold the button to keep attacking.</li>
+        <li lang="de"><b>Klick auf ein Monster:</b> Der Held läuft hin (und findet einen Weg um Wände herum) und schlägt zu. Halt die Taste gedrückt, um weiter anzugreifen.</li>
+        <li lang="en"><b>Hold <kbd>Shift</kbd>:</b> auto-attack. Swings at the best monster within reach, and never at thin air.</li>
+        <li lang="de"><b><kbd>Umschalt</kbd> halten:</b> Auto-Angriff. Schlägt nach dem besten Monster in Reichweite, und nie in die leere Luft.</li>
+        <li lang="en">No weapon? No attacks at all. (You can drop all your swords!)</li>
+        <li lang="de">Keine Waffe? Dann gar keine Angriffe. (Du kannst alle deine Schwerter fallen lassen!)</li>
       </ul>
     </div>
     <div class="card">
-      <h3>The "best" monster</h3>
-      <p>For auto-attack, every monster in reach gets a score: its distance, but a monster <b>behind</b> you counts as twice as far away as one right in front. The lowest score wins.</p>
-      <p>The one under your mouse pointer always wins first. That's how the game guesses what you <i>meant</i>.</p>
-      <pre data-file="src/core/combat.js"><code>const score = d * (1.5 - 0.5 * ahead);   // straight behind counts as twice as far</code></pre>
-      <p class="small muted"><code>ahead</code> is 1 straight in front, 0 to the side, -1 straight behind.</p>
+      <h3 lang="en">The "best" monster</h3>
+      <h3 lang="de">Das "beste" Monster</h3>
+      <p lang="en">For auto-attack, every monster in reach gets a score: its distance, but a monster <b>behind</b> you counts as twice as far away as one right in front. The lowest score wins.</p>
+      <p lang="de">Beim Auto-Angriff bekommt jedes Monster in Reichweite eine Punktzahl: seinen Abstand, aber ein Monster <b>hinter</b> dir zählt doppelt so weit weg wie eins direkt vor dir. Die niedrigste Punktzahl gewinnt.</p>
+      <p lang="en">The one under your mouse pointer always wins first. That's how the game guesses what you <i>meant</i>.</p>
+      <p lang="de">Das Monster unter deinem Mauszeiger gewinnt immer zuerst. So rät das Spiel, was du <i>gemeint</i> hast.</p>
+      <pre data-src="src/core/combat.js#softTarget"><code>const score = d * (1.5 - 0.5 * ahead);   // straight behind counts as twice as far</code></pre>
+      <p class="small muted" lang="en"><code>ahead</code> is 1 straight in front, 0 to the side, -1 straight behind.</p>
+      <p class="small muted" lang="de"><code>ahead</code> ist 1 direkt vor dir, 0 zur Seite, -1 direkt hinter dir.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="arc-code" data-lv="3">
-  <h2>The real code: the hit test</h2>
+  <h2 lang="en">The real code: the hit test</h2>
+  <h2 lang="de">Der echte Code: der Treffertest</h2>
   <div class="cols wide-left">
-    <pre data-file="src/core/combat.js"><code>export function inSwordArc(p, enemy) {
-  const s = p.sword, stats = s.stats || SWORD;
-  if (!s.active || s.t &lt; stats.activeStart || s.t > stats.activeEnd
-      || enemy.mode === 'dead' || s.hits.has(enemy)) return false;
-  const dx = enemy.x - p.x, dz = enemy.z - p.z, distance = Math.hypot(dx, dz);
-  if (distance > stats.range + enemy.profile.radius) return false;
-  if (distance > 0.01 &amp;&amp; Math.cos(Math.atan2(dx, dz) - s.yaw) &lt; Math.cos(stats.arc)) return false;
-  // A blade sweeps around knee-to-chest height, not through a floor below us.
-  const bottom = p.y + 0.08, top = p.y + 0.85;
-  return enemy.y + enemy.profile.bodyHeight > bottom &amp;&amp; enemy.y &lt; top;
-}</code></pre>
+    <pre data-code="src/core/combat.js#inSwordArc"></pre>
     <div>
-      <p>Line by line:</p>
+      <p lang="en">Line by line:</p>
+      <p lang="de">Zeile für Zeile:</p>
       <ol class="steps">
-        <li>Only during the hit window (<code>activeStart</code> to <code>activeEnd</code>), not a dead monster, and not one this swing already hit (<code>s.hits</code>).</li>
-        <li><code>Math.hypot</code>: the distance, by Pythagoras.</li>
-        <li><code>atan2</code> gives the direction to the monster. Subtract the way we face (<code>yaw</code>): if the cosine of that angle is smaller than the cosine of the arc, it's outside.</li>
-        <li>Do the heights overlap? The monster's body goes from its feet (<code>enemy.y</code>) up by <code>bodyHeight</code>.</li>
+        <li lang="en">Only during the hit window (<code>activeStart</code> to <code>activeEnd</code>), not a dead monster, and not one this swing already hit (<code>s.hits</code>).</li>
+        <li lang="de">Nur während des Trefferfensters (<code>activeStart</code> bis <code>activeEnd</code>), kein totes Monster, und keins, das dieser Hieb schon getroffen hat (<code>s.hits</code>).</li>
+        <li lang="en"><code>Math.hypot</code>: the distance, by Pythagoras.</li>
+        <li lang="de"><code>Math.hypot</code>: der Abstand, mit Pythagoras.</li>
+        <li lang="en"><code>atan2</code> gives the direction to the monster. Subtract the way we face (<code>yaw</code>): if the cosine of that angle is smaller than the cosine of the arc, it's outside.</li>
+        <li lang="de"><code>atan2</code> gibt die Richtung zum Monster. Zieh die Blickrichtung (<code>yaw</code>) ab: Ist der Kosinus dieses Winkels kleiner als der Kosinus des Bogens, ist es draußen.</li>
+        <li lang="en">Do the heights overlap? The monster's body goes from its feet (<code>enemy.y</code>) up by <code>bodyHeight</code>.</li>
+        <li lang="de">Überlappen sich die Höhen? Der Körper des Monsters geht von seinen Füßen (<code>enemy.y</code>) um <code>bodyHeight</code> nach oben.</li>
       </ol>
-      <p class="small">The demo two slides back calls exactly this function.</p>
+      <p class="small" lang="en">The demo two slides back calls exactly this function.</p>
+      <p class="small" lang="de">Die Demo zwei Folien vorher ruft genau diese Funktion auf.</p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="stagger-code" data-lv="3">
-  <h2>The real code: damage, stagger, poise</h2>
+  <h2 lang="en">The real code: damage, stagger, poise</h2>
+  <h2 lang="de">Der echte Code: Schaden, Taumeln, Standfestigkeit</h2>
   <div class="cols wide-left">
-    <pre data-file="src/core/combat.js"><code>export const HEAVY_HIT = 0.25;
-
-export function damageEnemy(enemy, amount) {
-  if (enemy.mode === 'dead') return false;
-  enemy.hp = Math.max(0, enemy.hp - amount);
-  enemy.hurtT = 0.22;
-  enemy.staggered = !enemy.hp || !(enemy.poised > 0) || amount >= HEAVY_HIT * enemy.profile.hp;
-  if (!enemy.hp) {
-    enemy.mode = 'dead'; enemy.deadT = 0; enemy.path = null; enemy.speed = 0;
-  } else if (enemy.staggered) {
-    enemy.mode = 'chase'; enemy.stun = enemy.profile.hitStun; enemy.speed = 0;
-    enemy.cool = Math.max(enemy.cool, 0.45);
-    enemy.think = 0;
-    enemy.poised = enemy.profile.poise ?? 0;
-  }
-  return true;
-}</code></pre>
+    <pre data-code="src/core/combat.js#HEAVY_HIT,damageEnemy"></pre>
     <div>
-      <p><code>Math.max(0, ...)</code> stops health from going below zero.</p>
-      <p><code>hurtT = 0.22</code>: the monster flashes for 0.22 seconds (the drawing code looks at this).</p>
-      <p>The <code>staggered</code> line reads: staggered if it died, <b>or</b> it is not poised, <b>or</b> the hit was heavy (<code>||</code> means "or", <code>!</code> means "not").</p>
-      <p>A stagger stuns it (<code>stun</code>), delays its next attack (<code>cool</code>), makes it think again right away (<code>think = 0</code>) and starts its poise timer.</p>
-      <p>Notice: no sparks, no sounds in here. Just rules. <a class="portal" href="start.html#rules-vs-pictures">Rules and pictures</a></p>
+      <p lang="en"><code>Math.max(0, ...)</code> stops health from going below zero.</p>
+      <p lang="de"><code>Math.max(0, ...)</code> verhindert, dass die Gesundheit unter null geht.</p>
+      <p lang="en"><code>hurtT = 0.22</code>: the monster flashes for 0.22 seconds (the drawing code looks at this).</p>
+      <p lang="de"><code>hurtT = 0.22</code>: Das Monster blinkt 0,22 Sekunden lang (der Malcode schaut darauf).</p>
+      <p lang="en">The <code>staggered</code> line reads: staggered if it died, <b>or</b> it is not poised, <b>or</b> the hit was heavy (<code>||</code> means "or", <code>!</code> means "not").</p>
+      <p lang="de">Die <code>staggered</code>-Zeile liest sich so: taumelt, wenn es gestorben ist, <b>oder</b> wenn es nicht standfest ist, <b>oder</b> wenn der Treffer schwer war (<code>||</code> heißt "oder", <code>!</code> heißt "nicht").</p>
+      <p lang="en">A stagger stuns it (<code>stun</code>), delays its next attack (<code>cool</code>), makes it think again right away (<code>think = 0</code>) and starts its poise timer.</p>
+      <p lang="de">Taumeln betäubt es (<code>stun</code>), verzögert seinen nächsten Angriff (<code>cool</code>), lässt es sofort neu nachdenken (<code>think = 0</code>) und startet seinen Standfestigkeits-Zeitmesser.</p>
+      <p lang="en">Notice: no sparks, no sounds in here. Just rules. <a class="portal" href="start.html#rules-vs-pictures">Rules and pictures</a></p>
+      <p lang="de">Fällt dir auf: Hier drin keine Funken, keine Geräusche. Nur Regeln. <a class="portal" href="start.html#rules-vs-pictures">Regeln und Bilder</a></p>
     </div>
   </div>
 </section>
 
 <section class="slide" id="quests" data-lv="1">
-  <h2>Prompt quests: Swords & Fighting</h2>
+  <h2 lang="en">Prompt quests: Swords &amp; Fighting</h2>
+  <h2 lang="de">Prompt-Aufgaben: Schwerter &amp; Kämpfe</h2>
   <div class="quests">
-    <div class="prompt" data-title="LUCKY STRIKES" data-stars="1"><q>Make critical hits happen 10% of the time instead of 5%, and make the critical damage number purple instead of golden.</q><span class="why">Two small changes in two places: the rule (src/core/gear/stats.js) and the look (src/game/juice.js).</span></div>
-    <div class="prompt" data-title="BIG FINISH" data-stars="1"><q>When an enemy dies, make the camera nudge and the sparks a bit bigger than now, so kills feel more powerful. Don't change any damage numbers.</q><span class="why">"Don't change X" is a useful fence: it keeps the agent from changing more than you want.</span></div>
-    <div class="prompt" data-title="SPIN ATTACK" data-stars="3"><q>Add a spin attack on the R key... wait, R is respawn. Find a free key first, then add a spin attack: a slower swing that hits all around me (a full circle) for 70% damage. Reuse the swing timing in src/core/combat.js and add tests for it like the existing ones in tests/combat.test.js.</q><span class="why">Ask the agent to check for clashes (like a key already in use), and to add tests.</span></div>
-    <div class="prompt" data-title="EXPLAIN POISE" data-stars="1"><q>Explain how stagger and poise work in this game, and why they were added. Look at docs/combat.md and docs/balance.md.</q><span class="why">The grown-up docs explain the "why". Point the agent at them!</span></div>
+    <div class="prompt" data-title="LUCKY STRIKES" data-stars="1" data-de-data-title="GLÜCKSTREFFER"><q lang="en">Make critical hits happen 10% of the time instead of 5%, and make the critical damage number purple instead of golden.</q> <q lang="de">Lass kritische Treffer in 10% statt 5% der Fälle passieren, und mach die Zahl bei kritischen Treffern lila statt golden.</q><span class="why" lang="en">Two small changes: a rule (how often) and a look (the colour). The agent finds both places by itself.</span> <span class="why" lang="de">Zwei kleine Änderungen: eine Regel (wie oft) und ein Aussehen (die Farbe). Beide Stellen findet der Agent selbst.</span></div>
+    <div class="prompt" data-title="BIG FINISH" data-stars="1" data-de-data-title="GROSSES FINALE"><q lang="en">When an enemy dies, make the camera nudge and the sparks a bit bigger than now, so kills feel more powerful. Don't change any damage numbers.</q> <q lang="de">Wenn ein Gegner stirbt, mach den Kamera-Schubs und die Funken etwas größer als jetzt, damit sich Todesstöße stärker anfühlen. Ändere keine Schadenszahlen.</q><span class="why" lang="en">"Don't change X" is a useful fence: it keeps the agent from changing more than you want.</span> <span class="why" lang="de">"Ändere nicht X" ist ein nützlicher Zaun: Er hält den Agenten davon ab, mehr zu ändern, als du willst.</span></div>
+    <div class="prompt" data-title="SPIN ATTACK" data-stars="3" data-de-data-title="WIRBELANGRIFF"><q lang="en">Add a spin attack on the R key... wait, R is respawn. Find a free key first, then add a spin attack: a slower swing that hits all around me (a full circle) for 70% damage. Reuse the timing of the normal swing and add tests for it like the ones that already exist.</q> <q lang="de">Füge einen Wirbelangriff auf der Taste R hinzu... halt, R ist Wiederbeleben. Such zuerst eine freie Taste, dann füge einen Wirbelangriff hinzu: ein langsamerer Hieb, der rundherum alles trifft (ein ganzer Kreis), mit 70% Schaden. Benutze das Timing des normalen Hiebs und schreib Tests dafür wie die, die es schon gibt.</q><span class="why" lang="en">Ask the agent to check for clashes (like a key already in use), and to add tests.</span> <span class="why" lang="de">Lass den Agenten auf Konflikte prüfen (wie eine schon belegte Taste) und Tests hinzufügen.</span></div>
+    <div class="prompt" data-title="EXPLAIN POISE" data-stars="1" data-de-data-title="STANDFESTIGKEIT ERKLÄRT"><q lang="en">Explain how stagger and poise work in this game, and why they were added.</q> <q lang="de">Erklär mir, wie Taumeln und Standfestigkeit (stagger und poise) in diesem Spiel funktionieren und warum sie eingebaut wurden.</q><span class="why" lang="en">Asking "why" makes the agent read the game's design notes, not just the code.</span> <span class="why" lang="de">Mit "warum" liest der Agent auch die Entwurfsnotizen des Spiels, nicht nur den Code.</span></div>
   </div>
 </section>
 

@@ -5,16 +5,17 @@ import { WFC } from '../../src/world/wfc.js';
 import { KIND_COLOR, layersOf } from '../../src/world/tiles.js';
 import { hashKey, step as stepKey } from '../../src/world/coords.js';
 import { themeAt } from '../../src/themes/depth.js';
-import { canvas, loop, html } from '../deck.js';
+import { canvas, loop, html, t as tr, themeLabel } from '../deck.js';
 
+const PLAY = () => tr('Play', 'Abspielen');
 const COLS = 9, ROWS = 6, SOCK = { L: '#6fae4f', H: '#a08052', W: '#3f8fd8' };
 
 export default function mount(el) {
   const W = 640, H = 430, { g, c, at } = canvas(el, W, H);
-  const row = html(el, `<div class="row"><button class="step">One step</button><button class="play">Play</button><button class="fill">Fill all</button>
-    <button class="reset">Start over</button><label>depth <select class="depth">${[1, 3, 4, 7, 9, 13].map(d => `<option value="${d}">${d} \u00B7 ${themeAt(d).name}</option>`).join('')}</select></label></div>
+  const row = html(el, `<div class="row"><button class="step">${tr('One step', 'Ein Schritt')}</button><button class="play">${PLAY()}</button><button class="fill">${tr('Fill all', 'Alles füllen')}</button>
+    <button class="reset">${tr('Start over', 'Neu anfangen')}</button><label>${tr('depth', 'Tiefe')} <select class="depth">${[1, 3, 4, 7, 9, 13].map(d => `<option value="${d}">${d} \u00B7 ${themeLabel(themeAt(d))}</option>`).join('')}</select></label></div>
     <div class="legend">${Object.entries(KIND_COLOR).map(([k, col]) => `<span><i style="background:${col}"></i>${k}</span>`).join('')}
-    <span>edges: <i style="background:${SOCK.L}"></i>L lowland <i style="background:${SOCK.H}"></i>H highland <i style="background:${SOCK.W}"></i>W river</span></div>`);
+    <span>${tr('edges', 'Kanten')}: <i style="background:${SOCK.L}"></i>L ${tr('lowland', 'Tiefland')} <i style="background:${SOCK.H}"></i>H ${tr('highland', 'Hochland')} <i style="background:${SOCK.W}"></i>W ${tr('river', 'Fluss')}</span></div>`);
   const out = html(el, '<div class="out"></div>');
   const $ = s => el.querySelector(s);
   let wfc, keys, Y, playing = false, acc = 0, lastPick = null, seed = 1, hover = null;
@@ -25,7 +26,7 @@ export default function mount(el) {
     wfc = new WFC(seed);
     keys = [];
     for (let z = 0; z < ROWS; z++) for (let x = 0; x < COLS; x++) keys.push(`${x},${Y},${z}`);
-    lastPick = null; playing = false; $('.play').textContent = 'Play';
+    lastPick = null; playing = false; $('.play').textContent = PLAY();
     draw();
   }
   const weight = () => { const m = themeAt(-Y).tiles; return t => t.weight * (m[t.kind] ?? 1); };
@@ -41,7 +42,7 @@ export default function mount(el) {
   }
   function step() {
     const n = next();
-    if (!n) { playing = false; $('.play').textContent = 'Play'; return false; }
+    if (!n) { playing = false; $('.play').textContent = PLAY(); return false; }
     const { k, dom } = n, R = wfc.rng(k), w = weight(), sum = dom.reduce((s, t) => s + w(t), 0);
     let r = R() * sum, tile = dom[dom.length - 1];
     for (const t of dom) if ((r -= w(t)) < 0) { tile = t; break; }
@@ -65,13 +66,13 @@ export default function mount(el) {
         t.sock.forEach((s, d) => { g.fillStyle = SOCK[s]; g.fillRect(...e[d]); g.strokeStyle = '#0008'; g.lineWidth = 1; g.strokeRect(...e[d]); });
         g.fillStyle = '#0b0d12'; g.font = 'bold 11px ui-monospace, monospace';
         g.fillText(t.kind, X + S / 2, Z + S / 2 + 1);
-        g.font = '10px ui-monospace, monospace'; g.fillText(`${t.K} layer${t.K > 1 ? 's' : ''}`, X + S / 2, Z + S / 2 + 14);
+        g.font = '10px ui-monospace, monospace'; g.fillText(tr(`${t.K} layer${t.K > 1 ? 's' : ''}`, `${t.K} Ebene${t.K > 1 ? 'n' : ''}`), X + S / 2, Z + S / 2 + 14);
       } else {
         const n = wfc.domain(k).length;
         g.fillStyle = '#161b24'; g.fillRect(X + 2, Z + 2, S - 4, S - 4);
         g.fillStyle = n < 30 ? '#ffcf7a' : '#5a6678'; g.font = 'bold 15px ui-monospace, monospace';
         g.fillText(String(n), X + S / 2, Z + S / 2 + 2);
-        g.font = '10px ui-monospace, monospace'; g.fillStyle = '#8a96a8'; g.fillText('options', X + S / 2, Z + S / 2 + 16);
+        g.font = '10px ui-monospace, monospace'; g.fillStyle = '#8a96a8'; g.fillText(tr('options', 'Optionen'), X + S / 2, Z + S / 2 + 16);
       }
       if (nx?.k === k) { g.strokeStyle = '#ffcf7a'; g.lineWidth = 3; g.strokeRect(X + 2, Z + 2, S - 4, S - 4); }
       if (lastPick?.k === k) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.strokeRect(X + 4, Z + 4, S - 8, S - 8); }
@@ -79,18 +80,19 @@ export default function mount(el) {
     g.textAlign = 'left';
     const done = keys.filter(k => wfc.tiles.has(k)).length;
     let text = lastPick
-      ? `The cube at ${lastPick.k.split(',')[0]},${lastPick.k.split(',')[2]} had <b>${lastPick.options}</b> pieces that fit, the fewest of all. The dice picked <b>${lastPick.tile.kind}</b> (edges ${lastPick.tile.sock.join(' ')}: east west south north).`
-      : 'Every empty cube shows how many puzzle pieces still fit there. Press "One step".';
-    if (done === keys.length) text += '\nDone! Every edge matches its neighbour. Start over for a new world.';
-    else if (nx) text += `\nNext: the gold-framed cube (${nx.dom.length} options).`;
-    if (hover && wfc.tiles.get(hover)) { const t = wfc.tiles.get(hover); text = `${hover}: ${t.kind}, edges ${t.sock.join(' ')}, ${t.K} layers`; }
+      ? tr(`The cube at ${lastPick.k.split(',')[0]},${lastPick.k.split(',')[2]} had <b>${lastPick.options}</b> pieces that fit, the fewest of all. The dice picked <b>${lastPick.tile.kind}</b> (edges ${lastPick.tile.sock.join(' ')}: east west south north).`,
+        `Der Würfel bei ${lastPick.k.split(',')[0]},${lastPick.k.split(',')[2]} hatte <b>${lastPick.options}</b> passende Teile, die wenigsten von allen. Die Würfel wählten <b>${lastPick.tile.kind}</b> (Kanten ${lastPick.tile.sock.join(' ')}: Ost West Süd Nord).`)
+      : tr('Every empty cube shows how many puzzle pieces still fit there. Press "One step".', 'Jeder leere Würfel zeigt, wie viele Puzzleteile dort noch passen. Drück "Ein Schritt".');
+    if (done === keys.length) text += tr('\nDone! Every edge matches its neighbour. Start over for a new world.', '\nFertig! Jede Kante passt zu ihrem Nachbarn. Fang neu an für eine neue Welt.');
+    else if (nx) text += tr(`\nNext: the gold-framed cube (${nx.dom.length} options).`, `\nAls Nächstes: der gold umrandete Würfel (${nx.dom.length} Optionen).`);
+    if (hover && wfc.tiles.get(hover)) { const t = wfc.tiles.get(hover); text = tr(`${hover}: ${t.kind}, edges ${t.sock.join(' ')}, ${t.K} layers`, `${hover}: ${t.kind}, Kanten ${t.sock.join(' ')}, ${t.K} Ebenen`); }
     out.innerHTML = text;
   }
   c.onpointermove = e => { const [x, y] = at(e), cx = Math.floor((x - ox) / S), cz = Math.floor((y - oy) / S);
     const k = cx >= 0 && cz >= 0 && cx < COLS && cz < ROWS ? `${cx},${Y},${cz}` : null; if (k !== hover) { hover = k; draw(); } };
   c.onpointerleave = () => { hover = null; draw(); };
   $('.step').onclick = () => { step(); draw(); };
-  $('.play').onclick = () => { playing = !playing; $('.play').textContent = playing ? 'Pause' : 'Play'; };
+  $('.play').onclick = () => { playing = !playing; $('.play').textContent = playing ? tr('Pause', 'Pause') : PLAY(); };
   $('.fill').onclick = () => { while (step()); draw(); };
   $('.reset').onclick = reset;
   $('.depth').onchange = reset;
