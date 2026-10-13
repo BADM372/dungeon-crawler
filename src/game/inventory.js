@@ -6,7 +6,8 @@
 // quick bar (game/quickbar.js); Use uses it (and closes the bag).
 import { player, state, setStatus } from './state.js';
 import { sfx } from '../audio/sfx.js';
-import { ITEMS, COINS, WEAPONS } from '../core/items.js';
+import { ITEMS, COINS, WEAPONS, WEAPON_KINDS } from '../core/items.js';
+import { BURST_SHARE } from '../core/shots.js';
 import { equippedItem, ownedItem, assignBar, barAllowed, barIndexOf } from '../core/inventory.js';
 import { xpProgress, levelDamage } from '../core/progression.js';
 import { RARITIES, rarityOf } from '../core/gear/rarities.js';
@@ -66,11 +67,15 @@ function swung(item) {
   const s = itemStats(item);
   return { ...s, damage: Math.round(s.damage * levelDamage(player.level || 1)), speed: 1 / s.interval };
 }
+const KIND_NAMES = { sword: 'Sword', bow: 'Bow · shoots arrows', crossbow: 'Crossbow · shoots bolts', staff: 'Staff · casts spells' };
 function weaponText(item) {
   const s = swung(item), r = rarityOf(item);
-  const lines = [`${r.name}${item.gen ? ` · item level ${item.gen.ilvl}` : ''}`,
+  const lines = [`${r.name}${item.gen ? ` · item level ${item.gen.ilvl}` : ''}`, KIND_NAMES[s.kind],
     `Damage ${s.damage} · ${s.speed.toFixed(2)} attacks per second`, `Damage per second ${Math.round(weaponDps(s))}`,
-    `Reach ${s.range.toFixed(2)} cells`, `Critical hits ${Math.round(s.crit * 100)}% for ×${s.critDamage.toFixed(2)}`];
+    s.ranged ? `Range ${s.range.toFixed(1)} cells` : `Reach ${s.range.toFixed(2)} cells`,
+    `Critical hits ${Math.round(s.crit * 100)}% for ×${s.critDamage.toFixed(2)}`];
+  if (s.pierce) lines.push(`Bolts pierce ${s.pierce} enem${s.pierce === 1 ? 'y' : 'ies'}`);
+  if (s.burst) lines.push(`Bursts for ${Math.round(BURST_SHARE * 100)}% damage within ${s.burst.toFixed(2)} cells`);
   return lines.join('\n');
 }
 function compareText(item) {
@@ -82,7 +87,7 @@ function compareText(item) {
   const parts = [diff('damage per second', Math.round(weaponDps(a)) - Math.round(weaponDps(b)), n => n),
     diff('damage', a.damage - b.damage, n => n),
     diff('attacks per second', Math.round(a.speed * 100) - Math.round(b.speed * 100), n => (n / 100).toFixed(2)),
-    diff('reach', Math.round(a.range * 100) - Math.round(b.range * 100), n => (n / 100).toFixed(2))].filter(Boolean);
+    diff(a.ranged ? 'range' : 'reach', Math.round(a.range * 100) - Math.round(b.range * 100), n => (n / 100).toFixed(2))].filter(Boolean);
   return `Compared with ${esc(displayName(eq))}:\n${parts.join('\n') || 'same damage, speed and reach'}`;
 }
 
@@ -211,7 +216,8 @@ $('inventory-take').addEventListener('click', take);
 $('inventory-use').addEventListener('click', use);
 $('inventory-drop').addEventListener('click', drop);
 
-$('dev-weapon').innerHTML = WEAPONS.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+$('dev-weapon').innerHTML = WEAPON_KINDS.map(k => `<optgroup label="${k[0].toUpperCase() + k.slice(1)}s">${
+  WEAPONS.filter(w => w.weapon.kind === k).map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</optgroup>`).join('');
 $('dev-rarity').innerHTML = RARITIES.map(r => `<option value="${r.id}"${r.id === 'rare' ? ' selected' : ''}>${r.name}</option>`).join('');
 const devRoll = () => [$('dev-weapon').value, $('dev-rarity').value, Number($('dev-level').value) || 1];
 $('dev-equip').addEventListener('click', async () => {

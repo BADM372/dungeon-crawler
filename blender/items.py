@@ -21,7 +21,7 @@ import sys
 
 import bmesh
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Quaternion, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import props
@@ -61,6 +61,36 @@ CHEST_CLIPS = {
     'Close': [(0, -108, 'AUTO_CLAMPED'), (4, -113, 'AUTO_CLAMPED'), (13, 0, 'VECTOR'),
               (15, -5, 'AUTO_CLAMPED'), (18, 0, 'AUTO_CLAMPED')],
 }
+
+
+# How each kind of weapon sits in the hand: the socket bone and the rotation (glTF space, x y z w)
+# taking the weapon's own axes into the bone's (bone +Y runs down the forearm out of the fist,
+# +Z is the knuckles: forward with the arm hanging, up with it held out in front). The game
+# reads these from the GLB extras (render/character.js); loadout.py previews them.
+#   sword:    the blade 60 degrees from the forearm
+#   bow:      in the left fist, limbs up and the belly forward with the arm held out
+#   crossbow: like a pistol, the stock along the forearm, its top over the knuckles
+#   staff:    straight through the fist, upright with the forearm held level
+MOUNTS = {
+    'sword': ('hand.R', (math.sin(math.pi / 6), 0, 0, math.cos(math.pi / 6))),
+    'bow': ('hand.L', (-0.1934, 0.2476, 0.5894, 0.7443)),
+    'crossbow': ('hand.R', (-0.3083, 0.3874, -0.3157, 0.8095)),
+    'staff': ('hand.R', (-0.0989, -0.6061, -0.7408, 0.2723)),
+}
+# the player's attack clip for each kind (character.py)
+CLIPS = {'sword': 'Slash', 'bow': 'Shoot', 'crossbow': 'CrossbowShot', 'staff': 'Cast'}
+
+
+def mount_matrix(kind):
+    """The weapon's own (Blender) space in its socket bone's head frame, from MOUNTS."""
+    x, y, z, w = MOUNTS[kind][1]
+    to_gltf = Matrix(((1, 0, 0), (0, 0, 1), (0, -1, 0)))
+    return (Quaternion((w, x, y, z)).to_matrix() @ to_gltf).to_4x4()
+
+
+def gltf(p):
+    """A Blender point in glTF (Y up) space, rounded."""
+    return [round(p[0], 4), round(p[2], 4), round(-p[1], 4) + 0.0]
 
 
 class Mesh(props.Mesh):
@@ -313,20 +343,88 @@ def sword(m, v):
     m.slot = 0
 
 
+# Bows: (name, half length, bend back towards the archer, recurve of the tips, limb radius at
+# the grip / the tips, wood, stripe down the back, grip wrap, tip caps)
+BOWS = [
+    ('short', .50, .11, 0, (.030, .014), '#9a7046', None, LEATHER, None),
+    ('hunting', .62, .14, .02, (.033, .016), BARK, CUT, '#4f6b3a', CREAM),
+    ('recurve', .68, .17, .07, (.036, .017), WOOD, CUT, LEATHER, GOLD),
+    ('long', .88, .17, 0, (.036, .016), '#c4955a', '#8a5a2e', LEATHER, CREAM),
+    ('war', .76, .20, .09, (.040, .018), '#4a3c36', '#2f2a2a', '#8c3b32', IRON),
+]
+STRING = '#efe6c8'
+
+
+def bow_limb(v):
+    """Upper limb points from the grip to the tip (lower: mirrored), radii and tip."""
+    _, length, bend, recurve, (r0, r1), *_ = BOWS[v]
+    points, radii = [], []
+    for i in range(9):
+        t = i / 8
+        flip = max(0, (t - .62) / .38) ** 2
+        points.append((-bend * t ** 1.8 + recurve * flip * 1.6, 0, length * t))
+        radii.append(r0 + (r1 - r0) * t ** .8)
+    return points, radii
+
+
+def bow_tips(v):
+    """(top tip, nock) in Blender space: the string runs tip - nock - mirrored tip."""
+    tip = bow_limb(v)[0][-1]
+    return tip, (tip[0], 0, 0)
+
+
 def bow(m, v=0):
-    # Recurve bow in XZ; +X is forward, grip remains exactly at origin.
-    half = [(0, 0, 0), (.075, 0, .15), (.155, 0, .28), (.20, 0, .40),
-            (.175, 0, .50), (.085, 0, .59), (-.015, 0, .64), (-.06, 0, .70)]
+    # In XZ; +X is forward (away from the archer), the grip exactly at the origin, the limbs
+    # bend back towards the archer and the string runs straight behind the grip. The string is
+    # its own part (`string`), so the game can hide it and draw it pulled.
+    name, length, bend, recurve, _, wood, stripe, wrap, tip_color = BOWS[v]
+    half, radii = bow_limb(v)
     points = [(x, y, -z) for x, y, z in reversed(half[1:])] + half
-    radii = [.018, .019, .022, .026, .031, .034, .037, .04, .037, .034, .031, .026, .022, .019, .018]
-    m.tube(points, radii, WOOD, n=6)
-    m.tube([(x + .018, y, z) for x, y, z in points[1:-1]], .009, CUT, n=4)
-    grip(m, .25, .045)
-    m.tube([points[0], (-.072, 0, 0), points[-1]], .007, CREAM, n=4)
-    m.slot = 1
-    for z in (-.63, .63):
-        m.lathe((.0, 0, z), [(-.012, .026), (.012, .026)], GOLD, n=6, jitter=0)
-    m.slot = 0
+    m.tube(points, list(reversed(radii[1:])) + radii, wood, n=6)
+    if stripe:
+        m.tube([(x + r * .75, y, z) for (x, y, z), r in zip(points, list(reversed(radii[1:])) + radii)][2:-2],
+               .008 + radii[0] * .15, stripe, n=4)
+    grip(m, .24 if v != 3 else .28, radii[0] + .012, wrap if v != 1 else LEATHER)
+    if v == 1:
+        # hunter's cloth tied above the grip, two loose ends and a pair of feathers
+        m.lathe((0, 0, .14), [(0, radii[0] + .018), (.035, radii[0] + .018)], wrap, n=6, jitter=0)
+        m.tube([(.03, .02, .15), (.06, .05, .08), (.07, .06, .0)], [.012, .01, .006], wrap, n=4)
+        m.leaf((.02, .03, .13), (.11, .08, .03), .022, CREAM)
+        m.leaf((.02, -.01, .13), (.09, .03, .0), .02, '#a35a3a')
+    tip = half[-1]
+    if tip_color:
+        m.slot = 1 if tip_color in (GOLD, IRON) else 0
+        for s in (-1, 1):
+            a, b = Vector(half[-2]), Vector(tip)
+            d = (b - a).normalized()
+            d.z *= s
+            end = (tip[0], 0, s * tip[2])
+            if v == 4:   # iron-shod, spiked tips
+                m.lathe(end, [(-.05, radii[-1] * 1.5), (0, radii[-1] * 1.6), (.06, 0)], tip_color, n=5, jitter=0, axis=d)
+            else:
+                m.lathe(end, [(-.03, radii[-1] * 1.45), (.015, radii[-1] * 1.35), (.03, radii[-1] * .6)],
+                        tip_color, n=6, jitter=0, axis=d)
+        m.slot = 0
+    if v == 4:
+        # iron bands up the limbs and a red tassel
+        m.slot = 1
+        for k in (3, 5):
+            for s in (-1, 1):
+                a, b = Vector(half[k - 1]), Vector(half[k + 1])
+                d = (b - a).normalized()
+                d.z *= s
+                c = (half[k][0], 0, s * half[k][2])
+                m.lathe(c, [(-.012, radii[k] * 1.25), (.012, radii[k] * 1.25)], IRON, n=6, jitter=0, axis=d)
+        m.slot = 0
+        m.tube([(.0, .0, -.15), (.03, .03, -.24), (.02, .05, -.33)], [.014, .012, .006], wrap, n=4)
+    if v == 2:
+        m.slot = 1
+        for s in (-1, 1):
+            m.lathe((0, 0, s * .135), [(-.008, radii[0] + .016), (.008, radii[0] + .016)], GOLD, n=8, jitter=0)
+        m.slot = 0
+    string = Mesh(m.rng.randrange(1 << 30))
+    string.tube([tip, (tip[0], 0, 0), (tip[0], 0, -tip[2])], .0065, STRING, n=4)
+    m.parts.append(('string', string, (0, 0, 0)))
 
 
 def arrow(m, v=0):
@@ -347,23 +445,179 @@ def arrow(m, v=0):
     m.tube([(.014, 0, 0), (.014, 0, .026)], .009, LEATHER, n=4)
 
 
+def bolt(m, v=0):
+    # Crossbow bolt: nock pivot, +Z runs towards the head; short, thick, two stiff vanes.
+    m.lathe((0, 0, 0), [(0, .015), (.44, .015)], WOOD, n=6, jitter=0)
+    m.slot = 1
+    m.lathe((0, 0, 0), [(.42, .022), (.47, .024), (.56, 0)], IRON, n=4, jitter=0, phase=math.pi / 4)
+    m.slot = 0
+    for angle in (0, math.pi):
+        start = len(m.vertices)
+        m.box((.03, 0, .1), (.04, .006, .14), LEATHER)
+        for i in range(start, len(m.vertices)):
+            x, y, z = m.vertices[i]
+            m.vertices[i] = (x * math.cos(angle) - y * math.sin(angle), x * math.sin(angle) + y * math.cos(angle), z)
+    m.lathe((0, 0, 0), [(0, .018), (.025, .018)], CUT, n=6, jitter=0)
+
+
+# Crossbows: forward is +Z, the top (where the bolt lies) is -Y, the prod spans X. The fist holds
+# the pistol grip at the origin; the stock runs above it. (name, stock behind / in front of the
+# grip, prod half width, prod sweep, prod colour, stock colour)
+CROSSBOWS = [
+    ('hand', .14, .30, .21, .05, WOOD, '#9a7046'),
+    ('light', .30, .40, .29, .07, WOOD, WOOD),
+    ('repeating', .26, .44, .26, .06, BARK, '#7a5634'),
+    ('heavy', .36, .50, .34, .09, IRON, BARK),
+    ('arbalest', .44, .58, .40, .11, STEEL, '#5b4030'),
+]
+STOCK_Y = -.165   # the stock's centre line, above the fist
+LATCH_Z = -.02    # the nut holding the drawn string, above the grip
+
+
+def crossbow_string(v):
+    """(tip, rest, latch) in Blender space; the other tip mirrors x."""
+    _, back, front, width, sweep, *_ = CROSSBOWS[v]
+    y = STOCK_Y - .045
+    tip = (width, y, front - .05 - sweep)
+    return tip, (0, y, front - .05 - sweep * .35), (0, y, LATCH_Z)
+
+
+def crossbow(m, v=0):
+    name, back, front, width, sweep, prod, stock = CROSSBOWS[v]
+    y = STOCK_Y
+    # stock: a long tiller with a deeper butt at the back
+    m.box((0, y, (front - back) / 2), (.065, .075, front + back), stock)
+    m.box((0, y - .04, (front - .05 + LATCH_Z) / 2 + .02), (.022, .008, front - .05 - LATCH_Z), '#5d4128')   # groove
+    if back > .2:
+        m.box((0, y + .03, -back + .1), (.075, .13, .2), stock)
+    # pistol grip through the fist and a long iron trigger lever under the stock
+    m.tube([(0, .07, -.03), (0, 0, 0), (0, y + .03, .02)], [.038, .042, .04], LEATHER, n=6)
+    m.slot = 1
+    m.tube([(0, y + .04, -.06), (0, y + .1, -.13), (0, y + .13, -.2)], [.012, .011, .009], IRON, n=4)
+    m.box((0, y - .03, LATCH_Z), (.05, .035, .04), IRON)   # the nut
+    m.slot = 0
+    # prod, swept back at its tips, lashed to the front of the stock
+    zf = front - .05
+    tip, rest, latch = crossbow_string(v)
+    m.slot = 1 if prod in (IRON, STEEL) else 0
+    m.tube([(-width, y, zf - sweep), (-width * .6, y, zf - sweep * .25), (0, y, zf),
+            (width * .6, y, zf - sweep * .25), (width, y, zf - sweep)],
+           [.016, .024, .03, .024, .016], prod, n=6)
+    m.slot = 0
+    m.box((0, y, zf), (.085, .09, .06), LEATHER)
+    if v >= 3:   # stirrup at the front to brace it with a foot
+        m.slot = 1
+        m.ring((0, y + .02, front + .07), .06, .012, IRON, n=8, section=4, vertical=True)
+        m.slot = 0
+    if v == 2:   # the bolt magazine and its cocking lever on top
+        m.box((0, y - .11, .16), (.07, .13, .3), '#5d4128')
+        m.box((0, y - .18, .16), (.08, .02, .32), stock)
+        m.slot = 1
+        m.tube([(.05, y - .05, -.12), (.06, y - .16, .02), (.05, y - .19, .3)], .011, IRON, n=4)
+        m.slot = 0
+    if v == 4:   # windlass at the butt
+        m.slot = 1
+        m.lathe((-.07, y, -back + .07), [(0, .03), (.14, .03)], IRON, n=6, jitter=0, axis=(1, 0, 0))
+        for s in (-1, 1):
+            m.tube([(s * .08, y, -back + .07), (s * .09, y + .08, -back + .02), (s * .1, y + .1, -back - .02)], .01, IRON, n=4)
+        m.slot = 0
+    if v == 0:   # brass furniture on the little one
+        m.slot = 1
+        m.box((0, y + .01, -back + .01), (.07, .085, .02), GOLD)
+        m.slot = 0
+    # the string (drawn, as found) and the loaded bolt are their own parts
+    string = Mesh(m.rng.randrange(1 << 30))
+    string.tube([tip, latch, (-tip[0], tip[1], tip[2])], .007, STRING, n=4)
+    m.parts.append(('string', string, (0, 0, 0)))
+    loaded = Mesh(m.rng.randrange(1 << 30))
+    bolt(loaded)
+    loaded.vertices = [(x, y + STOCK_Y - .053, z + LATCH_Z + .005) for x, y, z in loaded.vertices]
+    m.parts.append(('bolt', loaded, (0, 0, 0)))
+
+
+# Staffs: along +Z, the grip at the origin, the foot near the floor when held upright at the hip.
+# (name, gem colour index or None, the colour its spell glows in)
+STAFFS = [('gnarled', 2), ('oak', 3), ('ember', 0), ('crystal', 1), ('arcane', 4)]
+
+
+def staff_head(v):
+    """Where the spell leaves the staff (Blender space)."""
+    return [(0, 0, 1.12), (0, 0, 1.24), (0, 0, 1.3), (0, 0, 1.32), (.012, 0, 1.2)][v]
+
+
 def staff(m, v=0):
-    m.tube([(0, 0, -.78), (-.023, 0, -.35), (0, 0, 0), (.025, 0, .55), (.02, 0, 1.08)],
-           [.043, .039, .042, .045, .06], BARK, n=8)
-    grip(m, .38, .05)
-    m.slot = 1
-    for z in (-.74, -.24, .24, .94):
-        m.lathe((0, 0, z), [(0, .055), (.045, .055)], GOLD, n=8, jitter=0)
-    m.slot = 0
-    for side in (-1, 1):
-        m.tube([(.02, 0, 1.0), (side * .14, 0, 1.12), (side * .17, 0, 1.33),
-                (side * .12, 0, 1.50)], [.059, .047, .035, .013], WOOD, n=6)
-    gem(m, 4, (.012, 0, 1.08), .86)
-    m.slot = 1
-    m.ring((.01, 0, 1.12), .10, .015, GOLD, n=8, section=4)
-    m.slot = 0
-    m.tube([(-.02, .04, .91), (-.18, .025, .78), (-.20, .02, .63)], .012, LEATHER, n=5)
-    gem(m, 3, (-.20, .02, .56), .22)
+    if v == 0:
+        # a crooked branch with a curled knot holding a little green stone
+        m.tube([(0, 0, -.92), (.03, 0, -.5), (-.02, .01, -.1), (.02, 0, .3), (-.01, -.01, .7),
+                (.04, 0, .98), (.12, 0, 1.08), (.13, 0, 1.18), (.06, 0, 1.22)],
+               [.035, .038, .04, .041, .044, .05, .045, .036, .024], BARK, n=7)
+        m.tube([(-.01, .01, .6), (-.09, .02, .74), (-.12, .01, .85)], [.022, .016, .008], BARK, n=5)
+        grip(m, .3, .048)
+        gem(m, 2, (.05, 0, 1.08), .3)
+        m.ring((.02, 0, .94), .052, .01, CUT, n=7, section=3)
+    elif v == 1:
+        # straight oak, brass bands, three prongs cupping a blue orb
+        m.tube([(0, 0, -.92), (0, 0, 0), (0, 0, 1.05)], [.038, .042, .046], WOOD, n=8)
+        grip(m, .34, .05)
+        m.slot = 1
+        for z in (-.88, -.3, .3, .98):
+            m.lathe((0, 0, z), [(0, .052), (.04, .052)], GOLD, n=8, jitter=0)
+        for i in range(3):
+            a = math.tau * i / 3
+            c, s = math.cos(a), math.sin(a)
+            m.tube([(0, 0, 1.0), (c * .1, s * .1, 1.14), (c * .09, s * .09, 1.3), (c * .04, s * .04, 1.36)],
+                   [.018, .016, .013, .007], GOLD, n=5)
+        m.slot = 2
+        m.lathe((0, 0, 1.11), [(0, 0), (.03, .07), (.13, .09), (.23, .06), (.26, 0)], GEMS[3][0], n=8, jitter=0,
+                colors=[GEMS[3][0], GEMS[3][1], GEMS[3][0]])
+        m.slot = 0
+    elif v == 2:
+        # dark wood in iron, a ruby flame cupped by brass tongues
+        m.tube([(0, 0, -.92), (.015, 0, -.4), (0, 0, 0), (-.015, 0, .5), (0, 0, 1.06)],
+               [.037, .04, .043, .045, .05], '#4a3428', n=7)
+        grip(m, .34, .05, '#6b2f2a')
+        m.slot = 1
+        for z in (-.9, .62, 1.0):
+            m.lathe((0, 0, z), [(0, .058), (.05, .058)], IRON, n=7, jitter=0)
+        for i in range(5):
+            a = math.tau * i / 5
+            m.leaf((math.cos(a) * .04, math.sin(a) * .04, 1.04), (math.cos(a) * .12, math.sin(a) * .12, 1.3), .035, GOLD)
+        m.slot = 2
+        m.lathe((0, 0, 1.06), [(0, .03), (.08, .075), (.18, .06), (.34, 0)], GEMS[0][0], n=6, jitter=0,
+                colors=[GEMS[0][0], GEMS[0][1], GEMS[0][0]])
+        m.slot = 0
+    elif v == 3:
+        # pale birch bound in silver, crowned with a cluster of clear shards
+        m.tube([(0, 0, -.92), (0, 0, 0), (.01, 0, .6), (0, 0, 1.08)], [.036, .04, .042, .05], '#d8cfb8', n=8)
+        m.tube([(.03, -.02, -.5), (.035, -.025, .1), (.03, -.02, .7)], .006, '#9c927b', n=4)   # bark streak
+        grip(m, .34, .05, '#5a6a82')
+        m.slot = 1
+        for z in (-.88, .34, 1.02):
+            m.lathe((0, 0, z), [(0, .053), (.045, .053)], SILVER, n=8, jitter=0)
+        m.slot = 2
+        m.shard((0, 0, 1.04), .07, .34, GEMS[1][0])
+        for i in range(4):
+            a = math.tau * i / 4 + .4
+            m.shard((math.cos(a) * .06, math.sin(a) * .06, 1.03), .035, .16 + .03 * (i % 2), GEMS[1][1])
+        m.slot = 0
+    else:
+        # the forked staff: brass collars and an amethyst held in a ring
+        m.tube([(0, 0, -.92), (-.023, 0, -.35), (0, 0, 0), (.025, 0, .55), (.02, 0, 1.08)],
+               [.043, .039, .042, .045, .06], BARK, n=8)
+        grip(m, .38, .05)
+        m.slot = 1
+        for z in (-.88, -.24, .24, .94):
+            m.lathe((0, 0, z), [(0, .055), (.045, .055)], GOLD, n=8, jitter=0)
+        m.slot = 0
+        for side in (-1, 1):
+            m.tube([(.02, 0, 1.0), (side * .14, 0, 1.12), (side * .17, 0, 1.33),
+                    (side * .12, 0, 1.50)], [.059, .047, .035, .013], WOOD, n=6)
+        gem(m, 4, (.012, 0, 1.08), .86)
+        m.slot = 1
+        m.ring((.01, 0, 1.12), .10, .015, GOLD, n=8, section=4)
+        m.slot = 0
+        m.tube([(-.02, .04, .91), (-.18, .025, .78), (-.20, .02, .63)], .012, LEATHER, n=5)
+        gem(m, 3, (-.20, .02, .56), .22)
 
 
 def potion(m, v):
@@ -544,9 +798,11 @@ SPECS = [(f'item_stick_{s}', stick, i, 'resource', 'ground')
     for i, s in enumerate(('ruby', 'diamond', 'emerald', 'sapphire', 'amethyst'))] + [
     (f'weapon_sword_{s}', sword, i, 'weapon', 'hand')
     for i, s in enumerate(('short', 'medium', 'long', 'broad', 'greatsword'))] + [
-    ('weapon_bow', bow, 0, 'weapon', 'hand'),
+    (f'weapon_bow_{b[0]}', bow, i, 'weapon', 'hand') for i, b in enumerate(BOWS)] + [
+    (f'weapon_crossbow_{c[0]}', crossbow, i, 'weapon', 'hand') for i, c in enumerate(CROSSBOWS)] + [
+    (f'weapon_staff_{s[0]}', staff, i, 'weapon', 'hand') for i, s in enumerate(STAFFS)] + [
     ('weapon_arrow', arrow, 0, 'ammunition', 'nock'),
-    ('weapon_staff', staff, 0, 'weapon', 'hand'),
+    ('weapon_bolt', bolt, 0, 'ammunition', 'nock'),
     ('item_potion_health', potion, 0, 'consumable', 'ground'),
     ('item_potion_mana', potion, 1, 'consumable', 'ground'),
     ('item_potion_stamina', potion, 2, 'consumable', 'ground'),
@@ -568,15 +824,24 @@ def build(scene=None):
                 'units': 'character_rig' if attach != 'ground' else 'cells',
                 'game_scale': .55 if attach != 'ground' else 1.0, 'front': '+Z'}
         if category == 'weapon':
-            kind = 'sword' if builder == sword else 'bow' if builder == bow else 'staff'
-            info.update(weapon=kind, socket='hand.L' if builder == bow else 'hand.R',
+            kind = {sword: 'sword', bow: 'bow', crossbow: 'crossbow', staff: 'staff'}[builder]
+            socket, quat = MOUNTS[kind]
+            info.update(weapon=kind, socket=socket, mount_quat_gltf=[round(c, 6) for c in quat],
                         grip_angle_blender=-math.pi / 6 if builder == sword else 0,
-                        axis_gltf='+Y', axis_blender='+Z')
+                        axis_gltf='+Y', axis_blender='+Z', attack_clip=CLIPS[kind])
             if builder == sword:
-                info.update(attack_clip='Slash', blade_tip=[.64, .9, 1.2, .92, 1.47][v])
+                info.update(blade_tip=[.64, .9, 1.2, .92, 1.47][v])
             if builder == bow:
-                info.update(forward_gltf='+X', nock_gltf=[-.072, 0, 0])
-        if builder == arrow:
+                tip, nock = bow_tips(v)
+                info.update(forward_gltf='+X', nock_gltf=gltf(nock), string_tip_gltf=gltf(tip), parts='string')
+            if builder == crossbow:
+                tip, rest, latch = crossbow_string(v)
+                info.update(forward_gltf='+Y', top_gltf='+Z', string_tip_gltf=gltf(tip), string_rest_gltf=gltf(rest),
+                            string_latch_gltf=gltf(latch), muzzle_gltf=gltf((0, STOCK_Y - .053, CROSSBOWS[v][2] + .06)),
+                            parts='string,bolt')
+            if builder == staff:
+                info.update(head_gltf=gltf(staff_head(v)))
+        if builder in (arrow, bolt):
             info.update(axis_gltf='+Y', axis_blender='+Z')
         if builder == potion:
             info['potion_type'] = ['health', 'mana', 'stamina'][v]
@@ -593,7 +858,7 @@ def build(scene=None):
 
 
 def validate(objects):
-    assert len(objects) == len(SPECS) == 24
+    assert len(objects) == len(SPECS) == 38
     assert {o.name for o in objects} == {s[0] for s in SPECS}
     report = []
     for obj in objects:
@@ -650,13 +915,17 @@ def setup_preview(scene, objects):
         preview.objects.link(obj)
         return obj
 
-    # Each item has its own plinth; all meshes retain their authoring scale.
-    groups = [objects[11:19], objects[:3] + objects[19:22] + objects[22:], objects[3:11]]
+    # Each item has its own plinth; all meshes retain their authoring scale. A row per weapon
+    # family, then the rest.
+    groups = [[o for o in objects if o.name.startswith(p + '_')]
+              for p in ('weapon_sword', 'weapon_bow', 'weapon_crossbow', 'weapon_staff')]
+    rest = [o for o in objects if not any(o in g for g in groups)]
+    groups += [rest[:9], rest[9:]]
     labels = {'weapon_sword_greatsword': 'GREATSWORD', 'treasure_chest': 'CHEST',
               'item_town_portal': 'TOWN PORTAL'}
     for row, group in enumerate(groups):
         for i, obj in enumerate(group):
-            x, y = (i - 3.5) * 1.6, (1 - row) * 2.4
+            x, y = (i - (len(group) - 1) / 2) * 1.6, (2.5 - row) * 3.1
             low = min(v.co.z for v in obj.data.vertices)
             obj.location = (x, y, .085 - low)
             platform = bpy.data.meshes.new('ItemPlinth')
@@ -678,7 +947,7 @@ def setup_preview(scene, objects):
     cam = link('ItemsCamera', bpy.data.cameras.new('ItemsCamera'))
     cam.location = (3, -12, 14)
     town.aim(cam, (0, 0, .35))
-    cam.data.type, cam.data.ortho_scale = 'ORTHO', 15.4
+    cam.data.type, cam.data.ortho_scale = 'ORTHO', 21
     scene.camera = cam
     for name, pos, power, size in [('ItemsKey', (-3, -5, 10), 1500, 7),
                                   ('ItemsFill', (7, -1, 8), 900, 6), ('ItemsRim', (0, 6, 9), 1100, 5)]:
@@ -693,7 +962,7 @@ def setup_preview(scene, objects):
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = 32
     scene.cycles.use_denoising = True
-    scene.render.resolution_x, scene.render.resolution_y, scene.render.resolution_percentage = 1920, 1200, 100
+    scene.render.resolution_x, scene.render.resolution_y, scene.render.resolution_percentage = 1920, 1600, 100
     scene.render.image_settings.file_format = 'PNG'
     scene.view_settings.view_transform = 'AgX'
     for screen in bpy.data.screens:
@@ -752,7 +1021,7 @@ def render_previews(scene, objects, preview, directory, overview=True, previews=
             obj.hide_render = False
         floor.location = floor_location
         cam.location, cam.rotation_euler, cam.data.ortho_scale = saved
-        scene.render.resolution_x, scene.render.resolution_y = 1920, 1200
+        scene.render.resolution_x, scene.render.resolution_y = 1920, 1600
         scene.render.filepath = str(overview_path)
 
 

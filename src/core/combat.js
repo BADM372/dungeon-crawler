@@ -1,15 +1,23 @@
-// Pure sword rules. Jumping / body contact never call damageEnemy.
-// A swing is a quick wind-up, a short contact window and a recovery that a new swing
-// (chaining) or movement can cut short. The Slash clip in character.glb is retimed to fit
-// (swingClipTime): its own frames are SLASH_CLIP.
-// A weapon's `interval` is the time from one swing to the next when chaining (its attack
-// speed); every other swing time scales with it.
+// Pure attack rules. Jumping / body contact never call damageEnemy.
+// An attack (a sword swing, a bow or crossbow shot, a spell) is a quick wind-up, a short active
+// window and a recovery that a new attack (chaining) or movement can cut short. Swords hit in
+// the active window (inSwordArc); the ranged kinds let their shot go at its start (shotDue,
+// core/shots.js). Each kind has its clip in character.glb, retimed to fit (swingClipTime): their
+// own frames are the *_CLIP below.
+// A weapon's `interval` is the time from one attack to the next when chaining (its attack
+// speed); every other attack time scales with it.
 import { OLD_SWORD, ITEMS } from './items.js';
 import { equippedItem } from './inventory.js';
 import { levelDamage } from './progression.js';
 import { itemStats } from './gear/stats.js';
 
+// the clips' own timing (s): character.glb extras (blender/character.py)
 export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
+// the bow is drawn and loosed at activeStart; a chained shot starts at `redraw`, the bow still up
+export const SHOOT_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 18 / 30, activeEnd: 20 / 30, redraw: 7 / 30 });
+// the bolt flies at activeStart, the crossbow is drawn and loaded again at `reloaded`
+export const CROSSBOW_CLIP = Object.freeze({ duration: 36 / 30, activeStart: 9 / 30, activeEnd: 11 / 30, reloaded: 26 / 30 });
+export const CAST_CLIP = Object.freeze({ duration: 28 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 });
 // game time (s) for the basic sword (the Old Sword's timing)
 // learn: checks.html#try-test, combat.html#chain #damage (see learn/README.md)
 export const SWORD = Object.freeze({
@@ -18,38 +26,70 @@ export const SWORD = Object.freeze({
   moveCancel: 0.3, chain: 0.42,         // walk out of the recovery / swing again from here
   duration: 0.62,
 });
+// the ranged kinds at the interval of a middling one: activeStart is when the shot leaves
+export const BOW = Object.freeze({ activeStart: 0.36, activeEnd: 0.4, moveCancel: 0.44, chain: 0.62, duration: 0.78 });
+export const CROSSBOW = Object.freeze({ activeStart: 0.2, activeEnd: 0.24, moveCancel: 0.3, chain: 0.84, duration: 0.95 });
+export const STAFF = Object.freeze({ activeStart: 0.28, activeEnd: 0.32, moveCancel: 0.38, chain: 0.62, duration: 0.72 });
+// how each kind of weapon attacks: its timing, its clip, and what it shoots (core/shots.js SHOTS)
+// learn: combat.html#shoot (see learn/README.md)
+export const KINDS = Object.freeze({
+  sword: Object.freeze({ timing: SWORD, clip: SLASH_CLIP, shot: null, verb: 'Sword slash' }),
+  bow: Object.freeze({ timing: BOW, clip: SHOOT_CLIP, shot: 'arrow', verb: 'Bow shot' }),
+  crossbow: Object.freeze({ timing: CROSSBOW, clip: CROSSBOW_CLIP, shot: 'bolt', verb: 'Crossbow shot' }),
+  staff: Object.freeze({ timing: STAFF, clip: CAST_CLIP, shot: 'spell', verb: 'Spell cast' }),
+});
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
+// how far above and below their feet the ranged kinds can aim (a sword sweeps knee to chest)
+export const AIM_BAND = Object.freeze({ below: 2.2, above: 2.6 });
 // a blow taking at least this share of an enemy's health staggers it even while it is poised
 // learn: combat.html#stagger-code (see learn/README.md)
 export const HEAVY_HIT = 0.25;
 // how far beyond blade reach the wind-up steps in towards a target (game/update.js)
 export const LUNGE_REACH = 0.6;
+// The player's attack, whatever the weapon (named for the sword it once was).
 // requested: an attack is queued (buffer: for how much longer); target: what it aims at
-// (an enemy, a point {x, z} or null for straight ahead)
+// (an enemy, a point {x, z} or null for straight ahead); fired: the shot of this attack left;
+// chained: it started while the one before was still going
 export const swordState = () => ({ active: false, requested: false, buffer: 0, target: null,
-  t: 0, cool: 0, serial: 0, yaw: 0, stats: null, hits: new Set() });
+  t: 0, cool: 0, serial: 0, yaw: 0, stats: null, hits: new Set(), fired: false, chained: false });
 // the equipped weapon instance (a bag slot), and its base type; a player without an
 // inventory (tests) holds a plain Old Sword
 export const equippedInstance = p => p.inventory ? equippedItem(p.inventory) : { itemId: OLD_SWORD.id, count: 1 };
 export const equippedWeapon = p => ITEMS[equippedInstance(p)?.itemId] || null;
+// the kind of weapon p fights with (what loot leans towards, core/gear/bases.js), or null
+export const favoredKind = p => equippedWeapon(p)?.weapon?.kind ?? null;
 export const canChangeWeapon = p => !p.sword.active && !p.ragdoll && !p.climb && !p.swimming && p.stun <= 0 && p.hp > 0;
 // null without a weapon: no attacks at all
 export function combatStats(p) {
   const weapon = itemStats(equippedInstance(p));
   if (!weapon) return null;
-  const speed = weapon.interval / SWORD.chain;
+  const T = KINDS[weapon.kind].timing, speed = weapon.interval / T.chain;
   return { ...SWORD, ...weapon, damage: Math.round(weapon.damage * levelDamage(p.level || 1)),
-    ...Object.fromEntries(TIMES.map(k => [k, SWORD[k] * speed])) };
+    ...Object.fromEntries(TIMES.map(k => [k, T[k] * speed])), chain: weapon.interval };
 }
 
-// the Slash clip's time for swing time t: wind-up, contact and recovery are each mapped
-// onto the clip's own parts, so the blade connects on the clip's contact frames
-export function swingClipTime(stats, t) {
-  const C = SLASH_CLIP, s = stats || SWORD;
-  const seg = (t0, t1, c0, c1) => c0 + (c1 - c0) * Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
-  if (t < s.activeStart) return seg(0, s.activeStart, 0, C.activeStart);
+// the attack clip's time for attack time t: wind-up, active window and recovery are each
+// mapped onto the clip's own parts, so the blade connects (the shot leaves) on the clip's
+// frames for it. from: where in the clip the wind-up starts (a chained bow shot: redraw)
+export function swingClipTime(stats, t, from = 0) {
+  const s = stats || SWORD, C = KINDS[s.kind ?? 'sword'].clip;
+  const seg = (t0, t1, c0, c1) => c0 + (c1 - c0) * (t1 > t0 ? Math.min(1, Math.max(0, (t - t0) / (t1 - t0))) : 1);
+  if (t < s.activeStart) return seg(0, s.activeStart, from, C.activeStart);
   if (t < s.activeEnd) return seg(s.activeStart, s.activeEnd, C.activeStart, C.activeEnd);
   return seg(s.activeEnd, s.duration, C.activeEnd, C.duration);
+}
+// where the clip of the attack p is making starts (a chained bow shot skips raising the bow)
+export const swingClipFrom = s => s.chained && s.stats?.kind === 'bow' ? SHOOT_CLIP.redraw : 0;
+// the attack time at which a crossbow is loaded again (its clip's `reloaded`, retimed)
+export function reloadTime(stats) {
+  const C = CROSSBOW_CLIP;
+  return stats.activeEnd + (C.reloaded - C.activeEnd) / (C.duration - C.activeEnd) * (stats.duration - stats.activeEnd);
+}
+// is a bolt lying on p's crossbow? Not from the shot until the reload lays the next one, even
+// when moving cut the reload short (then once the shot's cooldown says so)
+export function crossbowLoaded(p) {
+  const s = p.sword, stats = s.stats;
+  return !s.fired || stats?.kind !== 'crossbow' || s.cool <= 0 || stats.chain - s.cool >= reloadTime(stats);
 }
 
 export function cancelSwing(p, resetCooldown = false) {
@@ -63,10 +103,12 @@ export function startSwing(p, yaw = p.yaw) {
   const s = p.sword, stats = combatStats(p);
   if (!stats || s.cool > 0 || p.ragdoll || p.swimming || p.climb || p.stun > 0 || p.hp <= 0) return false;
   // Snapshot this swing: a level-up or later equipment change cannot alter a hit midway.
-  Object.assign(s, { active: true, t: 0, cool: stats.chain, yaw, serial: s.serial + 1, stats });
+  Object.assign(s, { chained: s.active, active: true, t: 0, cool: stats.chain, yaw, serial: s.serial + 1, stats, fired: false });
   s.hits.clear();
   return true;
 }
+// the ranged kinds: has the attack reached the moment its shot leaves (and not shot yet)?
+export const shotDue = p => p.sword.active && !!p.sword.stats?.ranged && !p.sword.fired && p.sword.t >= p.sword.stats.activeStart;
 // movement may cut the swing short once the blade has gone through
 export const canMoveCancel = p => p.sword.active && p.sword.t >= (p.sword.stats || SWORD).moveCancel;
 export function advanceSwing(p, dt) {
@@ -81,7 +123,7 @@ export function advanceSwing(p, dt) {
 // learn: combat.html#arc-code #hit-test (see learn/README.md)
 export function inSwordArc(p, enemy) {
   const s = p.sword, stats = s.stats || SWORD;
-  if (!s.active || s.t < stats.activeStart || s.t > stats.activeEnd
+  if (!s.active || stats.ranged || s.t < stats.activeStart || s.t > stats.activeEnd
       || enemy.mode === 'dead' || s.hits.has(enemy)) return false;
   const dx = enemy.x - p.x, dz = enemy.z - p.z, distance = Math.hypot(dx, dz);
   if (distance > stats.range + enemy.profile.radius) return false;
@@ -90,15 +132,20 @@ export function inSwordArc(p, enemy) {
   const bottom = p.y + 0.08, top = p.y + 0.85;
   return enemy.y + enemy.profile.bodyHeight > bottom && enemy.y < top;
 }
+// can the weapon of `stats` reach enemy e's height? A blade sweeps the band inSwordArc checks;
+// shots fly up or down to the ranged kinds' AIM_BAND
+export function inReachBand(p, e, stats) {
+  if (stats?.ranged) return e.y + e.profile.bodyHeight > p.y - AIM_BAND.below && e.y < p.y + AIM_BAND.above;
+  return e.y + e.profile.bodyHeight > p.y + 0.08 && e.y < p.y + 0.85;
+}
 // Keyboard soft-targeting, like Diablo's controller scheme: the closest living enemy within
-// blade reach plus `extra`, preferring those ahead along `yaw`.
+// the weapon's reach plus `extra`, preferring those ahead along `yaw`.
 // visible(e): line of sight, checked only for the candidates that would win.
 export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra = 0) {
-  const range = (combatStats(p) || SWORD).range;
+  const stats = combatStats(p) || SWORD, range = stats.range;
   let best = null, bestScore = Infinity;
   for (const e of enemies) {
-    // the same height band the blade sweeps (inSwordArc)
-    if (e.mode === 'dead' || e.y + e.profile.bodyHeight <= p.y + 0.08 || e.y >= p.y + 0.85) continue;
+    if (e.mode === 'dead' || !inReachBand(p, e, stats)) continue;
     const dx = e.x - p.x, dz = e.z - p.z, d = Math.hypot(dx, dz);
     if (d > range + e.profile.radius + extra) continue;
     const ahead = d > 0.01 ? Math.cos(Math.atan2(dx, dz) - yaw) : 1;
@@ -132,8 +179,14 @@ export function damageEnemy(enemy, amount) {
 export function swordHit(p, enemy, roll = Math.random()) {
   if (!inSwordArc(p, enemy)) return false;
   p.sword.hits.add(enemy);
-  const stats = p.sword.stats || SWORD, crit = roll < (stats.crit ?? 0);
-  const damage = crit ? Math.round(stats.damage * (stats.critDamage ?? 1.5)) : stats.damage;
+  return weaponHit(p, p.sword.stats || SWORD, enemy, roll);
+}
+// any weapon's hit on enemy with the attack stats `stats` (a swing's, or a shot's snapshot of
+// them), for `share` of its damage (a spell's burst: less): { damage, crit } or false
+// learn: code.html#whole (see learn/README.md)
+export function weaponHit(p, stats, enemy, roll = Math.random(), share = 1) {
+  const crit = roll < (stats.crit ?? 0);
+  const damage = Math.max(1, Math.round(stats.damage * share * (crit ? stats.critDamage ?? 1.5 : 1)));
   if (!damageEnemy(enemy, damage)) return false;
   if (stats.leech && p.hp > 0) p.hp = Math.min(p.maxHp ?? Infinity, p.hp + stats.leech);
   return { damage, crit };

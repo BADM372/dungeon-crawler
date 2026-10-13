@@ -1,12 +1,13 @@
 // Mouse orders, Diablo style: click the floor to walk there, click an enemy to go and hit
-// it, click an item on the floor (or its label) to go and pick it up, click a treasure chest to
+// it (with a bow, crossbow or staff: until it is in range and in sight, then shoot), click an item on the floor (or its label) to go and pick it up, click a treasure chest to
 // go and open it. Holding the button
 // keeps walking towards the cursor / keeps attacking. WASD cancels.
 // Orders steer only; the speed (run, or walk with Ctrl) is up to update.js.
 // Walks follow the floor graph where there is one (to the reachable floor closest to the
 // target), cutting corners where the way is clear, else head straight for the target.
 import { CHAR_H, CHAR_R, N } from '../core/constants.js';
-import { combatStats } from '../core/combat.js';
+import { combatStats, inReachBand } from '../core/combat.js';
+import { lineOfFire } from './shots.js';
 import { walkable, neighbors, groundY } from '../physics/enemynav.js';
 import { containsXZ } from '../core/blockers.js';
 import { player, state } from './state.js';
@@ -123,8 +124,10 @@ export function followOrder(dt) {
   if (order.kind === 'attack') {
     const e = order.enemy;
     if (!e || e.mode === 'dead') { clearOrder(); return null; }
-    const reach = (combatStats(player)?.range ?? 0.85) + e.profile.radius - 0.08;
-    if (Math.hypot(e.x - player.x, e.z - player.z) <= reach && Math.abs(e.y - player.y) < 0.7) {
+    // a blade needs the enemy in reach at about our height; a shot, in range and in sight
+    const stats = combatStats(player), reach = (stats?.range ?? 0.85) + e.profile.radius - 0.08;
+    const near = Math.hypot(e.x - player.x, e.z - player.z) <= reach;
+    if (near && (stats?.ranged ? inReachBand(player, e, stats) && lineOfFire(player, e, stats) : Math.abs(e.y - player.y) < 0.7)) {
       queueAttack(e);
       if (!pointer.down) clearOrder();   // a click is one swing; holding keeps swinging
       return { dx: 0, dz: 0 };

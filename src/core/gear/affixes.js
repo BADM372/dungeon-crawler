@@ -3,7 +3,8 @@
 // picks the tier (affixTier), rarer items reach above it (RARITIES tierBonus).
 // Values are kept as shown: whole numbers for flat stats and percentages, cells for reach.
 // To add an affix: an entry here (stat must be one core/gear/stats.js applies), and tests
-// check every tier is valid. `tags`: the bases it may roll on (core/gear/bases.js).
+// check every tier is valid. `tags`: the bases it may roll on (core/gear/bases.js): melee
+// (swords), ranged (bows, crossbows, staffs) or both.
 export const MAX_PREFIXES = 3, MAX_SUFFIXES = 3;
 // the item level each tier starts at; tiers 6 and 7 come only from tierBonus
 // learn: loot.html#affixes (see learn/README.md)
@@ -11,8 +12,9 @@ export const TIER_LEVELS = Object.freeze([1, 4, 8, 13, 19]);
 export const MAX_TIER = 7;
 export const affixTier = ilvl => TIER_LEVELS.filter(l => ilvl >= l).length;
 
-const affix = (id, kind, name, stat, op, tiers, text, decimals = 0) =>
-  Object.freeze({ id, kind, name, stat, op, tiers: Object.freeze(tiers.map(t => Object.freeze(t))), text, decimals, tags: Object.freeze(['sword']) });
+const ANY = ['melee', 'ranged'];
+const affix = (id, kind, name, stat, op, tiers, text, decimals = 0, tags = ANY) =>
+  Object.freeze({ id, kind, name, stat, op, tiers: Object.freeze(tiers.map(t => Object.freeze(t))), text, decimals, tags: Object.freeze(tags) });
 
 // learn: loot.html#affixes (see learn/README.md)
 export const AFFIXES = Object.freeze([
@@ -23,12 +25,14 @@ export const AFFIXES = Object.freeze([
   affix('swift', 'prefix', 'Swift', 'speed', 'pct',
     [[3, 6], [6, 9], [9, 12], [12, 15], [15, 18], [18, 21], [21, 25]], v => `${v}% faster attacks`),
   affix('sweeping', 'prefix', 'Sweeping', 'arc', 'pct',
-    [[8, 15], [15, 22], [22, 30], [30, 38], [38, 46], [46, 55], [55, 65]], v => `+${v}% swing arc`),
+    [[8, 15], [15, 22], [22, 30], [30, 38], [38, 46], [46, 55], [55, 65]], v => `+${v}% swing arc`, 0, ['melee']),
   affix('vicious', 'prefix', 'Vicious', 'crit', 'add',
     [[3, 5], [5, 7], [7, 9], [9, 12], [12, 15], [15, 18], [18, 22]], v => `+${v}% critical chance`),
   affix('reach', 'suffix', 'of Reach', 'range', 'add',
     [[0.05, 0.08], [0.08, 0.12], [0.12, 0.16], [0.16, 0.2], [0.2, 0.25], [0.25, 0.3], [0.3, 0.36]],
-    v => `+${v.toFixed(2)} reach`, 2),
+    v => `+${v.toFixed(2)} reach`, 2, ['melee']),
+  affix('distance', 'suffix', 'of Distance', 'range', 'pct',
+    [[5, 9], [9, 14], [14, 19], [19, 25], [25, 31], [31, 38], [38, 46]], v => `+${v}% range`, 0, ['ranged']),
   affix('leech', 'suffix', 'of the Leech', 'leech', 'add',
     [[1, 2], [2, 3], [3, 5], [5, 7], [7, 10], [10, 13], [13, 17]], v => `+${v} life on hit`),
   affix('force', 'suffix', 'of Force', 'knockback', 'pct',

@@ -1,10 +1,11 @@
 // A weapon instance's stats: its base type's, grown by its item level and scaled by rarity, then
 // changed by its affixes. Combat (core/combat.js) only ever reads these, never the base type.
+//   kind: sword, bow, crossbow or staff; ranged: it shoots (core/shots.js) rather than swings
 //   damage: (base × item level growth × rarity + flat) × (1 + percent), rounded
-//   interval: the time between swings, shortened by `speed` percent (every swing time with it)
-//   range: + reach in cells; arc: the base's × (1 + percent)
+//   interval: the time between attacks, shortened by `speed` percent (every attack time with it)
+//   range: (+ reach in cells) × (1 + percent); arc: the base's × (1 + percent)
 //   crit / critDamage: chance (0..1, CRIT_CHANCE without affixes) and multiplier; leech: life on
-//   hit; knockback: multiplier
+//   hit; knockback: multiplier; pierce / burst / color: the base's (core/items.js)
 import { ITEMS } from '../items.js';
 import { AFFIX, describeAffix } from './affixes.js';
 import { rarityOf } from './rarities.js';
@@ -27,20 +28,23 @@ export const ilvlDamage = ilvl => 1 + ILVL_DAMAGE * (Math.max(1, ilvl || 1) - 1)
 export function itemStats(item) {
   const def = ITEMS[item?.itemId], w = def?.weapon;
   if (!w) return null;
-  const sum = { damage: 0, damagePct: 0, speed: 0, arc: 0, crit: 0, critDamage: 0, range: 0, leech: 0, knockback: 0 };
+  const sum = { damage: 0, damagePct: 0, speed: 0, arc: 0, crit: 0, critDamage: 0, range: 0, rangePct: 0, leech: 0, knockback: 0 };
   for (const a of item.gen?.affixes ?? []) {
     const { stat, op } = AFFIX[a.id];
-    sum[stat === 'damage' && op === 'pct' ? 'damagePct' : stat] += a.value;
+    sum[op === 'pct' && (stat === 'damage' || stat === 'range') ? stat + 'Pct' : stat] += a.value;
   }
+  const kind = w.kind ?? 'sword';
   return {
+    kind, ranged: kind !== 'sword',
     damage: Math.max(1, Math.round((w.damage * ilvlDamage(item.gen?.ilvl) * rarityOf(item).damage + sum.damage) * (1 + sum.damagePct / 100))),
     interval: Math.round(w.interval * (1 - sum.speed / 100) * 1000) / 1000,
-    range: Math.round((w.range + sum.range) * 100) / 100,
+    range: Math.round((w.range + sum.range) * (1 + sum.rangePct / 100) * 100) / 100,
     arc: ARC * w.arc * (1 + sum.arc / 100),
     crit: CRIT_CHANCE + sum.crit / 100,
     critDamage: CRIT_DAMAGE + sum.critDamage / 100,
     leech: sum.leech,
     knockback: 1 + sum.knockback / 100,
+    pierce: w.pierce ?? 0, burst: w.burst ?? 0, ...(w.color && { color: w.color }),
   };
 }
 

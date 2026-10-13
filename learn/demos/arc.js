@@ -1,9 +1,11 @@
 // Did the blade hit? The game's real test, inSwordArc (src/core/combat.js), with a player and a
 // spider you can drag around: close enough, inside the arc, and at the right height.
 import { SWORD, inSwordArc } from '../../src/core/combat.js';
-import { WEAPONS } from '../../src/core/items.js';
+import { WEAPONS as ALL } from '../../src/core/items.js';
 import { SPIDER, STUNDER } from '../../src/core/enemies.js';
 import { canvas, loop, html, t as tr } from '../deck.js';
+
+const WEAPONS = ALL.filter(w => w.weapon.kind === 'sword');   // the swords: they swing
 
 export default function mount(el) {
   const W = 640, H = 320, PX = 120, { g, c, at } = canvas(el, W, H);

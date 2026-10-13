@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { assets } from './paths.js';
-import { SLASH_CLIP } from '../src/core/combat.js';
+import { SLASH_CLIP, SHOOT_CLIP, CROSSBOW_CLIP, CAST_CLIP, KINDS } from '../src/core/combat.js';
+import { MUZZLES } from '../src/core/shots.js';
+import { WEAPONS } from '../src/core/items.js';
 import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
@@ -36,6 +38,38 @@ test('player is unarmed, retains both hand sockets and exports only its own clip
   assert.equal(slash.extras.active_start, SLASH_CLIP.activeStart);
   assert.equal(slash.extras.active_end, SLASH_CLIP.activeEnd);
   assert.equal(j.images?.length || 0, 0);
+});
+test('the bow, crossbow and staff clips match the attack timing, shoot from the profile muzzles and come with hold poses', () => {
+  const { json: j, duration } = glb('character');
+  const clip = name => j.animations.find(a => a.name === name);
+  for (const [kind, name, C] of [['bow', 'Shoot', SHOOT_CLIP], ['crossbow', 'CrossbowShot', CROSSBOW_CLIP], ['staff', 'Cast', CAST_CLIP]]) {
+    const a = clip(name);
+    assert.ok(a, name); assert.equal(KINDS[kind].clip, C);
+    assert.ok(Math.abs(duration(a) - C.duration) < 1e-5, name);
+    for (const [k, extra] of [['activeStart', 'active_start'], ['activeEnd', 'active_end'], ['redraw', 'redraw'], ['reloaded', 'reloaded']])
+      if (C[k] !== undefined) assert.ok(Math.abs(a.extras[extra] - C[k]) < 1e-9, `${name} ${extra}`);
+    assert.deepEqual(a.extras.muzzle, [...MUZZLES[kind]], `${name} muzzle`);
+    const hold = clip('Hold' + kind[0].toUpperCase() + kind.slice(1));
+    assert.equal(hold.extras.weapon, kind);
+    const bones = hold.extras.arm_bones.split(',');
+    assert.equal(bones.length, 2);
+    for (const b of bones) assert.ok(hold.channels.some(c => j.nodes[c.target.node].name === b && c.target.path === 'rotation'), b);
+  }
+});
+test('every weapon model says which socket it goes in, how it sits there and which clip it attacks with', () => {
+  const names = { sword: 'Slash', bow: 'Shoot', crossbow: 'CrossbowShot', staff: 'Cast' };
+  for (const w of WEAPONS.filter(w => !w.model.endsWith('sword.glb'))) {
+    const { json: j } = glb(w.model.replace(/^assets\//, '').replace(/\.glb$/, ''));
+    const node = j.nodes.find(n => n.name === w.id), e = node.extras;
+    assert.equal(e.weapon, w.weapon.kind, w.id);
+    assert.equal(e.attack_clip, names[w.weapon.kind]);
+    assert.equal(e.socket, w.weapon.kind === 'bow' ? 'hand.L' : 'hand.R');
+    assert.ok(Math.abs(Math.hypot(...e.mount_quat_gltf) - 1) < 1e-3, w.id);
+    const parts = (node.children ?? []).map(c => j.nodes[c].name).sort();
+    const want = { bow: ['string'], crossbow: ['bolt', 'string'] }[w.weapon.kind] ?? [];
+    assert.deepEqual(parts, want.map(p => `${w.id}_${p}`), w.id);
+  }
+  for (const name of ['items/weapon_arrow', 'items/weapon_bolt']) assert.ok(glb(name).json.meshes.length, name);
 });
 test('player climbing is a seamless in-place loop covering two ladder rungs', () => {
   const { json: j, floats, duration } = glb('character');

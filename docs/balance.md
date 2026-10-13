@@ -76,7 +76,12 @@ held it in place for good, guardians included.
 time between chained swings (the attack speed); every swing time scales with it. Every weapon
 crits 5% of the time for ×1.5 before affixes. Damage per second rises a little with weight
 (short 72, medium 81, long 81, broad 85, greatsword 91 at item level 1), while heavier bases
-reach further or sweep wider but plant you longer, and only drop deeper down.
+reach further or sweep wider but plant you longer, and only drop deeper down. Bows, crossbows
+and staffs shoot from afar, which is safer, so they deal less per second (47 to 69 at item level
+1, see [progression.md](progression.md#bows-crossbows-and-staffs)); spells' bursts and bolts'
+piercing make some of that back in packs. Drops lean towards the kind the player fights with
+(smart loot, [loot.md](loot.md)); the simulation fights with swords, which now arrive about 6%
+behind where they were when swords were all that dropped.
 
 **Drops** (`src/core/gear/drops.js`, `src/core/chests.js`): ordinary enemies drop a weapon 5%
 and a potion 3% of the time, × √(their kind's XP / 30), so tougher kinds drop more. Side

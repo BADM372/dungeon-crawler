@@ -92,16 +92,16 @@
   </div>
 </section>
 
-<section class="slide" id="unit" data-lv="2" data-src="src/game/sword.js#hitWithSword">
+<section class="slide" id="unit" data-lv="2" data-src="src/game/sword.js#hitEnemy">
   <h2 lang="en">Try it: just the direction</h2>
   <h2 lang="de">Probier es: nur die Richtung</h2>
   <div class="cols wide-right">
     <div>
-      <p lang="en">Sometimes you only want to know <i>which way</i>, not how far. When your sword hits a spider, it gets pushed away from you. The push should be the same strength, whether the spider was close or a bit further away.</p>
-      <p lang="de">Manchmal willst du nur wissen, <i>in welche Richtung</i>, nicht wie weit. Wenn dein Schwert eine Spinne trifft, wird sie von dir weggestoßen. Der Stoß soll gleich stark sein, egal ob die Spinne nah war oder etwas weiter weg.</p>
+      <p lang="en">Sometimes you only want to know <i>which way</i>, not how far. When your sword (or your arrow) hits a spider, it gets pushed away from you. The push should be the same strength, whether the spider was close or a bit further away.</p>
+      <p lang="de">Manchmal willst du nur wissen, <i>in welche Richtung</i>, nicht wie weit. Wenn dein Schwert (oder dein Pfeil) eine Spinne trifft, wird sie von dir weggestoßen. Der Stoß soll gleich stark sein, egal ob die Spinne nah war oder etwas weiter weg.</p>
       <p lang="en">So the game divides the arrow by its own length. The new arrow points the same way, but is exactly 1 long. Then it multiplies by how hard to push:</p>
       <p lang="de">Also teilt das Spiel den Pfeil durch seine eigene Länge. Der neue Pfeil zeigt in dieselbe Richtung, ist aber genau 1 lang. Dann nimmt es ihn mal, wie fest gestoßen werden soll:</p>
-      <pre data-src="src/game/sword.js#hitWithSword"><code>const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1;
+      <pre data-src="src/game/sword.js#hitEnemy"><code>const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1;
 const push = ...;   // how hard: harder when it dies, less for heavy monsters
 e.kbx = dx / l * push; e.kbz = dz / l * push;</code></pre>
       <p class="small muted" lang="en"><code>|| 1</code> is a safety net: if the spider stood exactly on you, the length would be 0, and dividing by 0 breaks maths.</p>

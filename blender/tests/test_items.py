@@ -59,12 +59,17 @@ def check_glb(path, reports):
     parts = [gltf['nodes'][c] for n in nodes for c in n.get('children', [])]
     assert len(nodes) + len(parts) == len(gltf['nodes']) and len(nodes) == len(reports)
     # Only the chest moves: its lid, a child on the hinge, carries the Open and Close clips.
+    # Bows and crossbows have still parts the game poses itself: their string, a crossbow's bolt.
     animated = [n for n in nodes if n['extras'].get('clips')]
     clips = {a['name']: a for a in gltf.get('animations', [])}
     assert set(clips) == ({'Open', 'Close'} if animated else set()), (path, set(clips))
+    for node in nodes:
+        children = [gltf['nodes'][c]['name'] for c in node.get('children', [])]
+        named = [node['name'] + '_' + n for n in node['extras']['parts'].split(',')] if node['extras'].get('parts') else []
+        assert sorted(children) == sorted([node['extras']['lid']] if node['extras'].get('clips') else named), (node['name'], children)
     for node in animated:
         lid = gltf['nodes'][node['children'][0]]
-        assert [p['name'] for p in parts] == [node['extras']['lid']] == [lid['name']]
+        assert [node['extras']['lid']] == [lid['name']]
         assert all(abs(a - b) < 1e-6 for a, b in zip(lid['translation'], node['extras']['hinge_gltf']))
         for clip in clips.values():
             assert [c['target'] for c in clip['channels']] == [{'node': node['children'][0], 'path': 'rotation'}]
@@ -89,11 +94,17 @@ def check_glb(path, reports):
         if report['category'] == 'weapon':
             assert extra['socket'] in ('hand.L', 'hand.R')
             assert extra['axis_gltf'] == '+Y'
+            assert (extra['socket'], extra['attack_clip']) == (items.MOUNTS[extra['weapon']][0], items.CLIPS[extra['weapon']])
+            assert abs(sum(c * c for c in extra['mount_quat_gltf']) - 1) < 1e-3, node['name']
             if extra['weapon'] == 'sword':
                 assert extra['attack_clip'] == 'Slash'
+            if extra['weapon'] in ('bow', 'crossbow'):
+                assert len(extra['string_tip_gltf']) == 3, node['name']
+            if extra['weapon'] == 'staff':
+                assert len(extra['head_gltf']) == 3, node['name']
         triangles = 0
         low, high = [float('inf')] * 3, [-float('inf')] * 3
-        meshes = [(node['mesh'], [0, 0, 0])] + [(gltf['nodes'][c]['mesh'], gltf['nodes'][c]['translation'])
+        meshes = [(node['mesh'], [0, 0, 0])] + [(gltf['nodes'][c]['mesh'], gltf['nodes'][c].get('translation', [0, 0, 0]))
                                                 for c in node.get('children', [])]
         for mesh, offset in meshes:
             for primitive in gltf['meshes'][mesh]['primitives']:
@@ -154,8 +165,8 @@ def main():
             assert states == [(tuple(o.location), o.hide_get(), o.hide_viewport, o.select_get()) for o in objects]
             assert bpy.context.view_layer.objects.active == objects[2]
         print(f"PASS: {len(objects)} deterministic assets, {sum(r['triangles'] for r in reports)} triangles; "
-              '25 GLBs validated for pivots, Y-up bounds, flat normals, colours, extras and export state restoration')
-        return {'assets': len(objects), 'triangles': sum(r['triangles'] for r in reports), 'glbs_checked': 25}
+              f'{len(objects) + 1} GLBs validated for pivots, Y-up bounds, flat normals, colours, extras and export state restoration')
+        return {'assets': len(objects), 'triangles': sum(r['triangles'] for r in reports), 'glbs_checked': len(objects) + 1}
     finally:
         if previous:
             bpy.context.window.scene = previous

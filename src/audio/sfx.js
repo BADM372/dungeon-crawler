@@ -1,4 +1,5 @@
-// Generated sound effects (Web Audio, no sample files): a sword whoosh, hits, kills,
+// Generated sound effects (Web Audio, no sample files): a sword whoosh, a bow's draw and twang,
+// a crossbow's shot and reload, a spell's cast and burst, shots striking walls, hits, kills,
 // getting hurt, pickups, thrown fireballs / punches and burning, the player's body (jumps,
 // falls, knock-downs, fluid deaths), travel, items and the bag, and the enemies' voices
 // (voices.js). Footsteps are footsteps.js, the continuous sounds loops.js. The audio context
@@ -59,6 +60,43 @@ const SOUNDS = {
     f.frequency.exponentialRampToValueAtTime(2600 * p, t + 0.07);
     f.frequency.exponentialRampToValueAtTime(800 * p, t + 0.21);
     noise(t, 0.24, f);
+  },
+  draw(t, out, p) {    // a bow being drawn: a creak of wood and a string stretching
+    tone('sawtooth', 110 * p, 150 * p, t, 0.22, filter('bandpass', 700 * p, 6, amp(t, 0.06, 0.12, 0.18, out)));
+    noise(t, 0.2, filter('bandpass', 2400 * p, 4, amp(t, 0.08, 0.1, 0.12, out)));
+  },
+  twang(t, out, p) {   // a bowstring let go: a plucked low note and the arrow's hiss leaving
+    tone('triangle', 196 * p, 180 * p, t, 0.25, amp(t, 0.001, 0.55, 0.25, out));
+    tone('sine', 392 * p, 370 * p, t, 0.15, amp(t, 0.001, 0.2, 0.15, out));
+    sweep(t + 0.01, 0.18, 3000 * p, 4200 * p, 1800 * p, 1.5, 0.35, out, 0.01);
+  },
+  crossbow(t, out, p) {   // a crossbow shot: the nut's click, a heavy snap of the prod, the bolt's hiss
+    tone('square', 2400 * p, 1800 * p, t, 0.015, amp(t, 0.001, 0.15, 0.015, out));
+    tone('sine', 150 * p, 70 * p, t + 0.01, 0.14, amp(t + 0.01, 0.001, 0.8, 0.14, out));
+    noise(t + 0.01, 0.06, filter('bandpass', 900 * p, 1.5, amp(t + 0.01, 0.001, 0.6, 0.06, out)));
+    sweep(t + 0.02, 0.14, 3500 * p, 5000 * p, 2200 * p, 1.5, 0.3, out, 0.01);
+  },
+  reload(t, out, p) {     // the string drawn back to the nut and a bolt laid in: a ratchet and a click
+    for (let i = 0; i < 4; i++)
+      tone('square', 1500 * p, 1300 * p, t + i * 0.05, 0.012, filter('bandpass', 1800, 3, amp(t + i * 0.05, 0.001, 0.12, 0.012, out)));
+    tone('triangle', 900 * p, 700 * p, t + 0.24, 0.05, amp(t + 0.24, 0.001, 0.3, 0.05, out));
+    noise(t + 0.24, 0.04, filter('lowpass', 1500, 0.7, amp(t + 0.24, 0.001, 0.25, 0.04, out)));
+  },
+  spell(t, out, p) {      // a spell leaving the staff: a rising shimmer over a soft whoosh
+    sweep(t, 0.3, 400 * p, 1800 * p, 900 * p, 1.2, 0.45, out, 0.04);
+    for (const [i, hz] of [660, 880, 1320].entries())
+      tone('sine', hz * p, hz * p * 1.5, t + i * 0.03, 0.25, amp(t + i * 0.03, 0.01, 0.12, 0.25, out));
+  },
+  thunk(t, out, p) {      // an arrow or bolt striking wood or stone: a short knock and a rattle
+    tone('sine', 300 * p, 120 * p, t, 0.06, amp(t, 0.001, 0.6, 0.06, out));
+    noise(t, 0.05, filter('bandpass', 1800 * p, 2, amp(t, 0.001, 0.4, 0.05, out)));
+    tone('triangle', 420 * p, 380 * p, t + 0.01, 0.12, amp(t + 0.01, 0.002, 0.12, 0.12, out));
+  },
+  burst(t, out, p) {      // a spell bursting: a bright pop that fizzes out
+    tone('sine', 520 * p, 130 * p, t, 0.18, amp(t, 0.002, 0.6, 0.18, out));
+    noise(t, 0.3, filter('bandpass', 2600 * p, 0.8, amp(t, 0.004, 0.45, 0.28, out)));
+    for (const [i, hz] of [1568, 2093, 2637].entries())
+      tone('sine', hz * p, hz * p * 0.9, t + 0.02 + i * 0.03, 0.2, amp(t + 0.02 + i * 0.03, 0.002, 0.07, 0.2, out));
   },
   hit(t, out, p) {     // a thump, a body of noise and a bright crack
     tone('sine', 180 * p, 50 * p, t, 0.12, amp(t, 0.002, 0.8, 0.12, out));

@@ -419,30 +419,394 @@
       "glb": "items/weapon_sword_greatsword.glb"
     },
     {
-      "name": "weapon_bow",
-      "triangles": 536,
+      "name": "weapon_bow_short",
+      "triangles": 420,
       "size": [
-        0.3099,
-        0.0963,
-        1.4216
+        0.168,
+        0.0899,
+        1.0099
       ],
       "bounds_blender": [
         [
-          -0.07899999618530273,
-          -0.04814999923110008,
-          -0.7107999920845032
+          -0.12310416996479034,
+          -0.04493999853730202,
+          -0.5049275159835815
         ],
         [
-          0.23087269067764282,
-          0.04814999923110008,
-          0.7107999920845032
+          0.04493999853730202,
+          0.04493999853730202,
+          0.5049275159835815
         ]
       ],
       "attach": "hand",
       "category": "weapon",
       "units": "character_rig",
       "game_scale": 0.55,
-      "glb": "items/weapon_bow.glb"
+      "glb": "items/weapon_bow_short.glb"
+    },
+    {
+      "name": "weapon_bow_hunting",
+      "triangles": 640,
+      "size": [
+        0.2417,
+        0.1281,
+        1.3023
+      ],
+      "bounds_blender": [
+        [
+          -0.13168728351593018,
+          -0.04814999923110008,
+          -0.6511352062225342
+        ],
+        [
+          0.10999999940395355,
+          0.07999999821186066,
+          0.6511352062225342
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_bow_hunting.glb"
+    },
+    {
+      "name": "weapon_bow_recurve",
+      "triangles": 640,
+      "size": [
+        0.161,
+        0.104,
+        1.4233
+      ],
+      "bounds_blender": [
+        [
+          -0.10904794931411743,
+          -0.052000001072883606,
+          -0.7116624712944031
+        ],
+        [
+          0.052000001072883606,
+          0.052000001072883606,
+          0.7116624712944031
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_bow_recurve.glb"
+    },
+    {
+      "name": "weapon_bow_long",
+      "triangles": 584,
+      "size": [
+        0.2466,
+        0.1027,
+        1.823
+      ],
+      "bounds_blender": [
+        [
+          -0.1952139288187027,
+          -0.05135999992489815,
+          -0.9114972352981567
+        ],
+        [
+          0.05135999992489815,
+          0.05135999992489815,
+          0.9114972352981567
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_bow_long.glb"
+    },
+    {
+      "name": "weapon_bow_war",
+      "triangles": 656,
+      "size": [
+        0.1805,
+        0.1113,
+        1.632
+      ],
+      "bounds_blender": [
+        [
+          -0.12481862306594849,
+          -0.055640000849962234,
+          -0.8160231709480286
+        ],
+        [
+          0.055640000849962234,
+          0.055640000849962234,
+          0.8160231709480286
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_bow_war.glb"
+    },
+    {
+      "name": "weapon_crossbow_hand",
+      "triangles": 266,
+      "size": [
+        0.433,
+        0.3179,
+        0.7485
+      ],
+      "bounds_blender": [
+        [
+          -0.21652241051197052,
+          -0.2349705547094345,
+          -0.20354527235031128
+        ],
+        [
+          0.21652241051197052,
+          0.0829634740948677,
+          0.5450000166893005
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_crossbow_hand.glb"
+    },
+    {
+      "name": "weapon_crossbow_light",
+      "triangles": 266,
+      "size": [
+        0.5932,
+        0.3179,
+        0.845
+      ],
+      "bounds_blender": [
+        [
+          -0.2965971529483795,
+          -0.2349705547094345,
+          -0.30000001192092896
+        ],
+        [
+          0.2965971529483795,
+          0.0829634740948677,
+          0.5450000166893005
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_crossbow_light.glb"
+    },
+    {
+      "name": "weapon_crossbow_repeating",
+      "triangles": 310,
+      "size": [
+        0.5327,
+        0.4489,
+        0.805
+      ],
+      "bounds_blender": [
+        [
+          -0.2663537859916687,
+          -0.3659374415874481,
+          -0.25999999046325684
+        ],
+        [
+          0.2663537859916687,
+          0.0829634740948677,
+          0.5450000166893005
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_crossbow_repeating.glb"
+    },
+    {
+      "name": "weapon_crossbow_heavy",
+      "triangles": 330,
+      "size": [
+        0.6942,
+        0.3179,
+        1.002
+      ],
+      "bounds_blender": [
+        [
+          -0.3471132218837738,
+          -0.2349705547094345,
+          -0.36000001430511475
+        ],
+        [
+          0.3471132516860962,
+          0.0829634740948677,
+          0.6419999599456787
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_crossbow_heavy.glb"
+    },
+    {
+      "name": "weapon_crossbow_arbalest",
+      "triangles": 390,
+      "size": [
+        0.8147,
+        0.3179,
+        1.1864
+      ],
+      "bounds_blender": [
+        [
+          -0.4073326289653778,
+          -0.2349705547094345,
+          -0.46436434984207153
+        ],
+        [
+          0.4073326289653778,
+          0.0829634740948677,
+          0.722000002861023
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_crossbow_arbalest.glb"
+    },
+    {
+      "name": "weapon_staff_gnarled",
+      "triangles": 450,
+      "size": [
+        0.2894,
+        0.1209,
+        2.1633
+      ],
+      "bounds_blender": [
+        [
+          -0.12630030512809753,
+          -0.06044553220272064,
+          -0.9224936366081238
+        ],
+        [
+          0.16308921575546265,
+          0.06044553220272064,
+          1.240837812423706
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_staff_gnarled.glb"
+    },
+    {
+      "name": "weapon_staff_oak",
+      "triangles": 512,
+      "size": [
+        0.2053,
+        0.2029,
+        2.29
+      ],
+      "bounds_blender": [
+        [
+          -0.09000000357627869,
+          -0.10142841935157776,
+          -0.9200000166893005
+        ],
+        [
+          0.11532521992921829,
+          0.10142841935157776,
+          1.3700000047683716
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_staff_oak.glb"
+    },
+    {
+      "name": "weapon_staff_ember",
+      "triangles": 412,
+      "size": [
+        0.2171,
+        0.2283,
+        2.3211
+      ],
+      "bounds_blender": [
+        [
+          -0.09708204120397568,
+          -0.1141267791390419,
+          -0.9210668802261353
+        ],
+        [
+          0.11999999731779099,
+          0.1141267791390419,
+          1.399999976158142
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_staff_ember.glb"
+    },
+    {
+      "name": "weapon_staff_crystal",
+      "triangles": 534,
+      "size": [
+        0.1872,
+        0.1732,
+        2.3
+      ],
+      "bounds_blender": [
+        [
+          -0.09198002517223358,
+          -0.08705876767635345,
+          -0.9200000166893005
+        ],
+        [
+          0.09526676684617996,
+          0.08609558641910553,
+          1.3799999952316284
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_staff_crystal.glb"
+    },
+    {
+      "name": "weapon_staff_arcane",
+      "triangles": 628,
+      "size": [
+        0.431,
+        0.23,
+        2.4254
+      ],
+      "bounds_blender": [
+        [
+          -0.2260311096906662,
+          -0.11500000208616257,
+          -0.9217336773872375
+        ],
+        [
+          0.20495162904262543,
+          0.11500000208616257,
+          1.503668189048767
+        ]
+      ],
+      "attach": "hand",
+      "category": "weapon",
+      "units": "character_rig",
+      "game_scale": 0.55,
+      "glb": "items/weapon_staff_arcane.glb"
     },
     {
       "name": "weapon_arrow",
@@ -471,30 +835,30 @@
       "glb": "items/weapon_arrow.glb"
     },
     {
-      "name": "weapon_staff",
-      "triangles": 628,
+      "name": "weapon_bolt",
+      "triangles": 78,
       "size": [
-        0.431,
-        0.23,
-        2.286
+        0.1,
+        0.0339,
+        0.56
       ],
       "bounds_blender": [
         [
-          -0.2260311096906662,
-          -0.11500000208616257,
-          -0.7822967171669006
+          -0.05000000074505806,
+          -0.0169705618172884,
+          0.0
         ],
         [
-          0.20495162904262543,
-          0.11500000208616257,
-          1.503668189048767
+          0.05000000074505806,
+          0.0169705618172884,
+          0.5600000023841858
         ]
       ],
-      "attach": "hand",
-      "category": "weapon",
+      "attach": "nock",
+      "category": "ammunition",
       "units": "character_rig",
       "game_scale": 0.55,
-      "glb": "items/weapon_staff.glb"
+      "glb": "items/weapon_bolt.glb"
     },
     {
       "name": "item_potion_health",

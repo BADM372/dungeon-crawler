@@ -1,6 +1,6 @@
 # Loot and player equipment
 
-![24-asset overview](../../blender/previews/items-preview.png)
+![38-asset overview](../../blender/previews/items-preview.png)
 
 Built and inspected through Blender MCP. Matches the existing flat-faceted,
 texture-free clay style: warm timber, leather wraps, muted brass and steel,
@@ -15,14 +15,17 @@ one animated asset.
 | Coins | `item_coin_gold`, `item_coin_silver`, `item_coin_copper` |
 | Crystals | `item_crystal_ruby`, `item_crystal_diamond`, `item_crystal_emerald`, `item_crystal_sapphire`, `item_crystal_amethyst` |
 | Swords | `weapon_sword_short`, `weapon_sword_medium`, `weapon_sword_long`, `weapon_sword_broad`, `weapon_sword_greatsword` |
-| Ranged equipment | `weapon_bow`, `weapon_arrow` |
-| Staff | `weapon_staff` (forked wood, brass collars, amethyst head) |
+| Bows | `weapon_bow_short` (plain self bow), `weapon_bow_hunting` (bark, green cloth and feathers), `weapon_bow_recurve` (brass tips), `weapon_bow_long` (pale yew, horn nocks), `weapon_bow_war` (dark horn, iron bands and spikes, red wrap) |
+| Crossbows | `weapon_crossbow_hand` (small, brass), `weapon_crossbow_light`, `weapon_crossbow_repeating` (bolt magazine and lever), `weapon_crossbow_heavy` (iron prod, stirrup), `weapon_crossbow_arbalest` (steel prod, stirrup, windlass) |
+| Staffs | `weapon_staff_gnarled` (crooked branch, green stone), `weapon_staff_oak` (brass prongs, blue orb), `weapon_staff_ember` (dark wood, ruby flame), `weapon_staff_crystal` (birch and silver, clear shards), `weapon_staff_arcane` (forked wood, brass collars, amethyst head) |
+| Ammunition | `weapon_arrow`, `weapon_bolt` (what bows and crossbows shoot in the game) |
 | Potions | `item_potion_health` (red, round), `item_potion_mana` (blue, tall), `item_potion_stamina` (green, square) |
 | Treasure chest | `treasure_chest` (empty, lid on a hinge, `Open` / `Close` clips) |
 | Tools | `item_town_portal` (parchment scroll on two rollers, violet portal sigil, wax seal) |
 
-**24 assets / 8,138 triangles total.** Sticks vary in length and branching; gemstones have
-distinct cuts; swords vary in blade length, width, guard and grip, not just scale.
+**38 assets / 14,090 triangles total.** Sticks vary in length and branching; gemstones have
+distinct cuts; swords vary in blade length, width, guard and grip, not just scale; bows in
+length, bend and recurve; crossbows in stock, prod and fittings; staffs in their heads.
 
 ## Treasure chest
 
@@ -52,9 +55,10 @@ The town portal scroll only renders its icon; the game never puts tools on the f
 - `blender/previews/items-preview.png`: overview render.
 - `blender/tests/test_items.py`: geometry, repeatability and actual binary GLB validation.
 
-Every asset is one flat-shaded Blender mesh (the chest: two, body and lid), with vertex
-colours, baked geometry, and no textures, UVs, rigs, modifiers or external dependencies.
-Only the chest lid is animated.
+Every asset is one flat-shaded Blender mesh (the chest: two, body and lid; bows: two, with
+the string; crossbows: three, with the string and the loaded bolt), with vertex colours, baked
+geometry, and no textures, UVs, rigs, modifiers or external dependencies. Only the chest lid
+is animated.
 There are up to three material primitives (clay, metal, gemstone/glass); a glTF
 loader may expose a root group with multiple mesh children. Keep that root when
 instancing or attaching equipment. Preview plinths, labels, lights and floor
@@ -69,13 +73,22 @@ Export is **Y up**, with Blender `(x, y, z)` mapped to glTF `(x, z, -y)`.
 - **Weapons and arrow:** use the same unscaled rig units as `character.py` /
   `sword.py`. `game_scale=.55` when placed directly in the game world. When
   attached under the already-scaled character, keep local scale **1**, not .55.
-- **Swords/staff/bow:** origins are grip centres. Sword blade / staff length
-  runs along glTF +Y (Blender +Z). Swords match the existing `hand.R` / `Slash`
-  attachment convention, including the -π/6 grip rotation about X.
-- **Bow:** `hand.L` grip socket; lies in XY after export, with +X forward.
-  Its string-centre nock point is `[-.072, 0, 0]` in exported local space.
-  Aim orientation needs to be set by the game, not inferred from global +Z.
-- **Arrow:** origin is the nock, not a grip; glTF +Y points towards its head.
+- **Weapons:** origins are grip centres (where the fist holds them). Every weapon's extras say
+  its `socket` (`hand.L` for bows, `hand.R` for the rest), `mount_quat_gltf` (its rotation in
+  the socket bone, glTF x y z w; `MOUNTS` in `blender/items.py`, solved by
+  `blender/loadout.py --mounts`) and `attack_clip` (Slash, Shoot, CrossbowShot, Cast).
+- **Swords / staffs:** blade / staff length runs along glTF +Y (Blender +Z). Swords sit at the
+  -π/6 grip rotation about X (60 degrees from the forearm). Staffs carry `head_gltf`, where
+  their spell leaves.
+- **Bows:** lie in XY after export, with +X forward (the belly) and the limbs along ±Y; the
+  string runs straight behind the grip from `string_tip_gltf` to `nock_gltf` and on to the
+  tip mirrored in Y. The string is its own part (`<name>_string`, `parts` extra), so the game
+  can hide it and draw it pulled.
+- **Crossbows:** forward is glTF +Y, the top (where the bolt lies) +Z, the prod across X. The
+  string runs from `string_tip_gltf` (mirrored in X for the other tip) to the nut
+  (`string_latch_gltf`) when drawn, to `string_rest_gltf` when shot; `muzzle_gltf` is the
+  loaded bolt's tip. The string and the loaded bolt are parts (`_string`, `_bolt`).
+- **Arrow / bolt:** origin is the nock, not a grip; glTF +Y points towards its head.
   Rotate to match the shot direction when placing on the bow or firing.
 - Blender bone parenting is bone-tail-relative: when attaching directly to the
   rig in Blender, apply the same tail compensation as `sword.attach()`.
@@ -86,14 +99,14 @@ and grip hints. Potions add `potion_type`; the chest adds `clips`, `lid`, `hinge
 `contents_gltf` and `contents_size_gltf`. These are metadata,
 not implemented inventory effects, collision or combat rules.
 
-All five swords are base types for generated weapons, alongside the Old Sword the run starts
-with (`assets/sword.glb`). The game mounts them on `hand.R` and switches combat stats with
-equipment; on the floor they lie flat, glowing by rarity (see `docs/loot.md`).
-With `?dev=1`, open inventory (`I`) to roll and equip any sword. Coin types and
+All twenty weapons are base types for generated weapons, alongside the Old Sword the run
+starts with (`assets/sword.glb`). The game mounts them in their socket and switches combat
+stats with equipment; on the floor they lie flat, glowing by rarity (see `docs/loot.md`). The
+arrow and bolt are what bows and crossbows shoot (`render/shots.js`; a nocked arrow also lies on
+a drawn bow). With `?dev=1`, open inventory (`I`) to roll and equip any weapon. Coin types and
 stackable potions/sticks/crystals have inventory definitions and preview icons;
-coins normalize automatically. Potions/materials have no use actions yet. Bows,
-staffs and arrows remain visual assets without gameplay behavior; reward sites place the
-chest (`docs/loot.md`).
+coins normalize automatically. Potions/materials have no use actions yet; reward sites place
+the chest (`docs/loot.md`). How the player holds and uses each kind: `docs/combat.md`.
 See `docs/progression.md` for inventory and balance rules.
 
 ## Rebuild / validate
@@ -113,7 +126,8 @@ importlib.reload(items)
 items.main(render=False)  # saves .blend and combined + individual GLBs
 ```
 
-Default `main()` also renders the overview and 24 individual previews. Tests
+Default `main()` also renders the overview and 38 individual previews (`main(render=False)`
+skips them, e.g. after changing only extras such as `MOUNTS`). Tests
 run in an isolated Blender process and export only into a temporary directory.
 They check deterministic geometry/colours, triangle budgets, flat normals,
 nondegenerate triangles, ground/grip/nock pivots, Y-up bounds, named roots,

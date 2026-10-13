@@ -11,6 +11,7 @@ import { stepEnemies } from './enemyai.js';
 import { removeEnemyViews } from '../render/enemies.js';
 import { updateProjectiles, drawAllProjectiles, clearProjectiles } from './projectiles.js';
 import { hitWithSword } from './sword.js';
+import { updateShots, drawAllShots, clearShots } from './shots.js';
 import { animateEnemies } from '../render/enemies.js';
 import { player, state, setStatus } from './state.js';
 import { awardKill } from '../core/progression.js';
@@ -34,7 +35,7 @@ export function addEnemies(list) { spawned.push(...list); }
 
 export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats, ...spawned];
 export function resetEnemies() {
-  resetEnemyCombat(); clearProjectiles();
+  resetEnemyCombat(); clearProjectiles(); clearShots();
   removeEnemyViews(spawned); spawned = [];
   state.enemyGrace = ENTRY_GRACE;
   resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats();
@@ -47,6 +48,7 @@ export function updateEnemies(dt) {
   state.enemyGrace = Math.max(0, state.enemyGrace - dt);
   const list = allEnemies();
   hitWithSword(list); // a connecting sword strike can interrupt an enemy's wind-up
+  updateShots(dt, list);   // and so can the player's arrows, bolts and spells
   let xp = 0, levels = 0, killed = 0, unlocked = false;
   for (const e of list) {
     const reward = awardKill(player, state.run, e);
@@ -69,11 +71,11 @@ export function updateEnemies(dt) {
   updateProjectiles(dt); updateBurning(dt);
   contactEnemies(allEnemies(), dt);
 }
-export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); }
+export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); drawAllShots(dt, off); }
 function detachSpawned() { const list = spawned; spawned = []; return list; }
-// projectiles in flight do not travel along
+// projectiles and shots in flight do not travel along
 export function detachEnemies() {
-  clearProjectiles();
+  clearProjectiles(); clearShots();
   return [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts(),
     ...detachFireFaces(), ...detachTriangles(), ...detachFireCats(), ...detachSpawned()];
 }

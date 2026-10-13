@@ -1,4 +1,7 @@
-# Sword combat and enemies
+# Combat and enemies
+
+Four kinds of weapon: swords swing (most of this page), bows, crossbows and staffs shoot (see
+[Bows, crossbows and staffs](#bows-crossbows-and-staffs)). The controls are the same for all.
 
 - **Mouse (Diablo style):** click the floor to walk there (pathing over the floor
   graph, to the closest reachable floor if the spot cannot be reached), click an enemy
@@ -103,6 +106,61 @@
   release their skeletons, mixers and instance materials. Portals detach /
   slide / dispose both species, rather than leaving enemies in the old cube.
 
+## Bows, crossbows and staffs
+
+The ranged kinds (`kind` in `core/items.js`, five bases each; stats in
+[progression.md](progression.md#weapons)) attack like swords do: a planted wind-up, an active
+moment, a recovery that movement or the next attack cuts short, every time scaled by the
+weapon's `interval`. Each kind has its timing in `core/combat.js` (`KINDS`: `BOW`, `CROSSBOW`,
+`STAFF` at a middling interval) and its clip in `character.glb`, retimed the same way as Slash
+(`swingClipTime`). Instead of a blade arc, the attack lets a shot go at `activeStart`
+(`shotDue`, `game/sword.js`):
+
+- **Shots** (`core/shots.js`, `game/shots.js`, `render/shots.js`): an arrow, a bolt or a spell
+  flies straight at the middle of what it was aimed at, where that was when it left (the drawing
+  player keeps turning to the target until then, so a moving enemy is tracked during the wind-up
+  but can step out of the shot's line afterwards). It flies from the middle of the body at the
+  height the weapon lets go (`MUZZLES`, the clips' `extras.muzzle`), so an enemy pressed up
+  against you is hit too; the renderer draws it from the weapon and lets it catch up. It hits
+  every enemy body it passes once: an arrow stops at the first, a bolt goes through `pierce`
+  more, a spell stops at the first and bursts (`burst` cells, `BURST_SHARE` = half its damage
+  to everything else there). Walls, props and its `range` stop it (a spell bursts there too).
+  Damage, crits, life on hit, knockback (along the flight) and staggering are the sword's
+  (`weaponHit`). Travel and level resets clear shots in flight.
+- **Targeting**: clicking an enemy walks until it is in range *and* in sight (a clear line from
+  where the shot leaves to its body, `lineOfFire`), then shoots without walking further;
+  holding keeps shooting. Shift auto-attack picks enemies within the range that are in sight.
+  Shots reach enemies up to 2.6 cells above and 2.2 below your feet (`AIM_BAND`), so ledges
+  are fair game. There is no lunge.
+- **Bow** (left fist): turn side-on, raise the bow, draw to the cheek, loose. A chained shot
+  starts the clip at `redraw` with the bow still up, and the two attacks cross-fade (every
+  kind's attack clip is played on alternating actions for this, `render/animator.js`). The
+  string is drawn by the right fist and an arrow lies on the bow from the moment the fist takes
+  the string until the arrow leaves (`render/held.js`).
+- **Crossbow** (right fist, like a pistol): raise to the chest, shoot with a kick, then lower
+  it to the belly where the left hand draws the string and lays the next bolt. It shows empty
+  (string forward, no bolt) from the shot until the reload (`crossbowLoaded`, at the clip's
+  `reloaded`), also when walking cut the reload short; a ratchet and click sound just before.
+- **Staff** (right fist): lift it beside the shoulder, then thrust it so its head points at the
+  target as the spell leaves, the left palm pushing along. The stone glows in the spell's
+  colour (`color` per staff) as it gathers, with sparks at the head.
+- **Carrying**: the ranged kinds are carried in a hold pose (`HoldBow`, `HoldCrossbow`,
+  `HoldStaff`: one arm's two bones, laid over idle, walk, run and jumps by the animator, a
+  little looser while running): a bow upright at the left hip, a crossbow pointing ahead at
+  the right, a staff upright beside you. Their attack clips start and end in it.
+- **Mounting**: every weapon GLB says in its extras which fist it goes in and how it sits there
+  (`socket`, `mount_quat_gltf`, from `MOUNTS` in `blender/items.py`); bows and crossbows have
+  their string (and a crossbow its loaded bolt) as separate parts that the game poses. `blender/
+  loadout.py` renders the player with each kind at the clips' key frames and solves the mounts
+  (`--mounts`): the bow upright at the loose, the crossbow level at the shot, the staff upright
+  in the hold.
+
+![The bow's Shoot clip, from the hold to the loose](../blender/previews/loadout-bow-front.png)
+
+The other kinds: [sword](../blender/previews/loadout-sword-front.png),
+[crossbow](../blender/previews/loadout-crossbow-front.png),
+[staff](../blender/previews/loadout-staff-front.png).
+
 ## Fluids and falls
 
 - Walking/running stops at edges facing water, lava or acid; jumps, knockbacks and
@@ -143,10 +201,10 @@ point them at a different checkout).
 
 Use `--assets-root /path/to/repo` to override asset location. The player GLB
 is unarmed: just the skinned body, clips and empty `hand.L` / `hand.R` sockets.
-The game separately loads `assets/sword.glb` and mounts it on `hand.R` at
-runtime. Gameplay equipment uses `game/equipment.js`: it loads a weapon first,
+The game separately loads the equipped weapon's GLB and mounts it in the socket its extras
+name (the Old Sword, `assets/sword.glb`, on `hand.R`). Gameplay equipment uses `game/equipment.js`: it loads a weapon first,
 then atomically updates inventory equipment and the hand-held model. `?dev=1`
-adds a sword roller (base, rarity, item level) to inventory. `render/character.js` also
+adds a weapon roller (base, rarity, item level) to inventory. `render/character.js` also
 exposes low-level `loadSword(url)` / `equipSword(null)` for renderer tests only;
 these do not change inventory or combat stats. Swimming / climbing hides the prop.
 `Climb` is an in-place IK loop covering two ladder rungs (0.56 game units);
@@ -169,6 +227,7 @@ await checks.runNewEnemyChecks(); // snake bite, Octonaut slap / spin kick, thei
 await checks.runFireChecks(); // fireball + burning, Triangle punch / dodge / walls, Fire-cat chase and pounce
 await checks.runClimbChecks(); // ladder controller, reverse / hold / exits, dynamic weapon
 await checks.runGetUpChecks(); // knockdown -> ragdoll -> GetUpFront / GetUpBack, move time, idle pose
+await checks.runRangedChecks(); // bow / crossbow / staff: sockets, hold pose, drawn string and arrow, range and walking up, pierce, reload, burst
 await checks.runTravelCheck(); // real portal; leaves the player in the next cube
 const water = await import('./tests/browser/water.js');
 await water.runWaterChecks(); // all fluids: edge guard, jumps/high falls, ragdolls, effects, dry respawn

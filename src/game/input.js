@@ -1,5 +1,5 @@
 // Keyboard, mouse and wheel. Modal input never enters the game queue.
-// The player always runs; holding Ctrl walks. Holding Shift auto-attacks enemies the blade
+// The player always runs; holding Ctrl walks. Holding Shift auto-attacks enemies the weapon
 // can reach (and does nothing without one). Space jumps.
 // Mouse: click the floor to walk there, click an enemy to attack it (hold for more), click an
 // item on the floor to pick it up, click a treasure chest to open it. V: the floor panel (game/inventory.js); X: item labels.
@@ -16,7 +16,8 @@ import { pointer, pickFloor, aimPoint, hoveredEnemy } from './pointer.js';
 import { orderMove, orderAttack, orderPickup, orderChest } from './orders.js';
 import { hoveredPickup, hoveredChest, toggleLabels } from './lootlabels.js';
 import { queueAttack } from './sword.js';
-import { softTarget } from '../core/combat.js';
+import { softTarget, combatStats } from '../core/combat.js';
+import { lineOfFire } from './shots.js';
 import { clearLine } from '../physics/enemynav.js';
 import { allEnemies } from './enemies.js';
 import { toggleMusic } from '../audio/music.js';
@@ -66,15 +67,17 @@ addEventListener('keyup', e => keys.delete(e.code));
 addEventListener('blur', clearInput);
 // Ctrl+click is a right click on macOS: no context menu over the game
 addEventListener('contextmenu', e => { if (e.target.tagName === 'CANVAS') e.preventDefault(); });
-// Auto-attack (Shift): swing at the best enemy the blade can reach, the hovered one first,
-// else the closest, preferring those ahead of the movement keys or the facing. Never at the
-// air and never walking up: without an enemy that close it does nothing. AUTO_REACH: the
-// wind-up's step-in still connects a little beyond blade reach. Mouse orders carry on.
+// Auto-attack (Shift): attack the best enemy the weapon can reach (a blade's reach, a shot's
+// range), the hovered one first, else the closest, preferring those ahead of the movement keys
+// or the facing. Never at the air and never walking up: without an enemy that close (and, for
+// a shot, in sight) it does nothing. AUTO_REACH: the wind-up's step-in still connects a little
+// beyond blade reach. Mouse orders carry on.
 const AUTO_REACH = 0.15;
-const visible = e => clearLine(player.x, player.y + 0.4, player.z, e.x,
+const bladeSees = e => clearLine(player.x, player.y + 0.4, player.z, e.x,
   Math.max(e.y + 0.1, Math.min(player.y + 0.4, e.y + e.profile.bodyHeight - 0.05)), e.z);
 export function autoAttack() {
-  const hovered = hoveredEnemy(), [dx, dz] = inputDir();
+  const hovered = hoveredEnemy(), [dx, dz] = inputDir(), stats = combatStats(player);
+  const visible = stats?.ranged ? e => lineOfFire(player, e, stats) : bladeSees;
   const yaw = dx || dz ? Math.atan2(dx, dz) : player.yaw;
   const target = (hovered && softTarget(player, [hovered], yaw, visible, AUTO_REACH))
     || softTarget(player, allEnemies(), yaw, visible, AUTO_REACH);

@@ -2,7 +2,8 @@
 
 Enemies drop coins, now and then a weapon or a health potion; guardians always drop weapons and
 potions; treasure chests at reward sites hold all three. Weapons are generated: each one is an
-instance of a base sword with its own rarity, item level, affixes and name. The generator lives
+instance of a base weapon (a sword, bow, crossbow or staff) with its own rarity, item level,
+affixes and name. The generator lives
 in `src/core/gear/` and is pure and seeded; the floor, pickup and inventory code in
 `src/game/loot.js`, `src/game/lootlabels.js`, `src/game/inventory.js` and `src/render/loot.js`;
 chests in `src/core/chests.js` and `src/game/chests.js`. How much of it there is and why:
@@ -50,7 +51,8 @@ into the stats combat reads; nothing else looks at base weapon stats. A weapon w
 ## Generation
 
 `rollWeapon(rng, ilvl, opts)` in `core/gear/generate.js`: rarity, then base, then affixes,
-then name, each from a table.
+then name, each from a table. `opts.favor` (the kind of weapon the player has equipped) makes
+the base lean towards that kind.
 
 | Rarity | Weight | Min. item level | Affixes | Base damage | Floor glow |
 |---|---:|---:|---:|---:|---|
@@ -69,14 +71,24 @@ drops are Epic, 3% Legendary and under 1% Mythic. A rarity floor (guardians, che
 the item level allows comes down to the best it does allow. `node tools/loot-table.mjs [n]`
 prints the odds per level and per guardian (and `n` sample weapons per rarity).
 
-**Bases** (`core/gear/bases.js`): short and medium swords from item level 1, long from 2,
-broadsword from 4, greatsword from 6. The Old Sword never drops. Their stats are in
-[progression.md](progression.md#swords): the light ones are quick, the heavy ones hit harder,
-further and wider. A base's damage grows **5% per item level** (`ILVL_DAMAGE`), so a weapon from
-ten depths further down hits half again as hard as the same one from the top.
+**Bases** (`core/gear/bases.js`): five of each kind, a light one or two from item level 1 and
+heavier ones further down (swords: short and medium from 1, long 2, broad 4, greatsword 6;
+bows: short and hunting 1, recurve 3, longbow 5, war bow 7; crossbows: hand 1, light 2, heavy
+4, repeating 6, arbalest 8; staffs: gnarled 1, oak 2, ember 4, crystal 6, arcane 8). The Old
+Sword never drops. Their stats are in [progression.md](progression.md#weapons). A base's damage
+grows **5% per item level** (`ILVL_DAMAGE`), so a weapon from ten depths further down hits half
+again as hard as the same one from the top.
+
+**Smart loot**: every base weighs the same, except that bases of the kind the player has
+equipped when the loot rolls weigh `FAVOR` (3) times as much: once every kind drops, about half
+of the weapons are of your kind and the rest spread over the other three. So whatever you fight
+with keeps finding upgrades and you still see the others. A sword player arrives at each depth
+with about 6% less damage per second than when swords were all there was
+(`node tools/balance.mjs`).
 
 **Affixes** (`core/gear/affixes.js`), each at most once per item, at most three prefixes and
-three suffixes. The item level picks the tier (1: 1–3, 2: 4–7, 3: 8–12, 4: 13–18, 5: 19+);
+three suffixes. Sweeping and of Reach roll only on swords (`melee`), of Distance only on bows,
+crossbows and staffs (`ranged`), the rest on all. The item level picks the tier (1: 1–3, 2: 4–7, 3: 8–12, 4: 13–18, 5: 19+);
 Mythic and Ancient reach one or two tiers above (up to 7).
 
 | Affix | Kind | Stat | Tier 1 | Tier 7 |
@@ -87,6 +99,7 @@ Mythic and Ancient reach one or two tiers above (up to 7).
 | Sweeping | prefix | + % swing arc | 8–15 | 55–65 |
 | Vicious | prefix | + % critical chance | 3–5 | 18–22 |
 | of Reach | suffix | + reach (cells) | 0.05–0.08 | 0.30–0.36 |
+| of Distance | suffix | + % range (shots) | 5–9 | 38–46 |
 | of the Leech | suffix | + life on hit | 1–2 | 13–17 |
 | of Force | suffix | + % knockback | 15–30 | 125–150 |
 | of Precision | suffix | + % critical damage (base ×1.5) | 10–20 | 85–100 |
@@ -104,9 +117,10 @@ a compound and an epithet. The base type shows under the name where the name doe
 
 ## Drops
 
-`enemyDrops(enemy, worldSeed)` in `core/gear/drops.js` (`weaponDrops` and `potionDrops`), seeded
-by the world seed and the enemy id: the same enemy always drops the same thing (also after a
-death brings it back, like its coins). The item level is the enemy's level.
+`enemyDrops(enemy, worldSeed, favor)` in `core/gear/drops.js` (`weaponDrops` and `potionDrops`),
+seeded by the world seed and the enemy id: the same enemy always drops the same thing (also
+after a death brings it back, like its coins) as long as you fight with the same kind of weapon
+(`favor`, see smart loot). The item level is the enemy's level.
 
 - Ordinary enemies: a weapon 5% and a health potion 3% of the time, both × √(the kind's
   level-1 XP / 30): a spider 4% / 2.5%, a Stunder 8% / 5%, a Triangle 10% / 6%.
@@ -119,7 +133,8 @@ death brings it back, like its coins). The item level is the enemy's level.
 
 Every stratum budgets four reward sites, each with a treasure chest ([world.md](world.md)):
 two basic, one uncommon and one rare (now and then exceptional). `chestLoot(site, depth, seed)`
-in `core/chests.js` decides what one holds, seeded by the site; `CHESTS` is the table:
+in `core/chests.js` decides what one holds, seeded by the site (its weapons lean towards your
+kind like drops do); `CHESTS` is the table:
 
 | Site | Item level | Copper at level 1 | Potions | Weapons |
 |---|---|---|---|---|
@@ -139,14 +154,17 @@ back.
   colour, glow). The tests check the ordering.
 - A new affix: an entry in `AFFIXES` whose `stat` `itemStats` applies (add the stat there and
   in combat if it is new). Every tier is validated by `tests/gear.test.js`.
-- A new dropping weapon: the item in `core/items.js` (model, icon, base stats), then a row in
-  `BASES` with its item level and tags. Affixes roll on bases whose tags they list.
+- A new dropping weapon: the item in `core/items.js` (model, icon, kind, base stats), then a
+  row in `BASES` with its item level; its tags (its kind, melee or ranged) come from its kind.
+  Affixes roll on bases whose tags they list. A new kind also needs its timing and clip
+  (`KINDS` in `core/combat.js`), a hold pose and mount (`blender/character.py`,
+  `blender/items.py`) and, if it shoots, a shot (`core/shots.js`).
 - Uniques or other item kinds can come in as further `rollWeapon` options or another
   generator writing the same `{ itemId, count, gen }` shape.
 
 ## Dev tools
 
-With `?dev=1` the inventory's developer box rolls a weapon of any base, rarity and item level:
+With `?dev=1` the inventory's developer box rolls a weapon of any base (grouped by kind), rarity and item level:
 **Grant & equip** puts it in the bag and equips it, **Drop at feet** lays it on the floor.
 `__game.devDropWeapon(itemId, rarity, ilvl)` does the same from the console.
 

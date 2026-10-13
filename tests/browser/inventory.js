@@ -32,11 +32,15 @@ async function settleEquipment() {
   check(!state.equipping, 'Weapon load timed out');
   updateInventory();
 }
+// in its socket: bows in the left fist, everything else in the right
 function correctModel(w) {
   return equippedItem(player.inventory)?.itemId === w.id
-    && character.sword.parent === character.bones['hand.R']
+    && character.sword.parent === character.bones[w.weapon.kind === 'bow' ? 'hand.L' : 'hand.R']
     && !!character.sword.getObjectByName(w.id === 'weapon_sword_old' ? 'Sword' : w.id);
 }
+// every sword and the first of each other kind (all of them would fill the bag)
+const SAMPLE = [...WEAPONS.filter(w => w.weapon.kind === 'sword'),
+  ...['bow', 'crossbow', 'staff'].map(k => WEAPONS.find(w => w.weapon.kind === k))];
 
 export async function runInventoryChecks() {
   const results = [];
@@ -58,7 +62,7 @@ export async function runInventoryChecks() {
     check(!player.sword.requested && !player.sword.active, 'UI input must not queue a slash');
     results.push('I opens / 24 slots / currency / simulation pause / input isolation');
 
-    for (const w of WEAPONS) {
+    for (const w of SAMPLE) {
       if (state.dev) {
         $('dev-weapon').value = w.id; $('dev-equip').click();
       } else {
@@ -72,7 +76,7 @@ export async function runInventoryChecks() {
     const basicIndex = player.inventory.slots.findIndex(s => s?.itemId === WEAPONS[0].id);
     document.querySelector(`[data-slot="${basicIndex}"]`).click(); $('inventory-equip').click();
     await settleEquipment(); check(correctModel(WEAPONS[0]), 'Owned slot Equip action must work');
-    results.push('all six swords load at hand.R / dev grants / ordinary slot equipment');
+    results.push('all six swords and a bow, crossbow and staff load in their sockets / dev grants / ordinary slot equipment');
 
     addItem(player.inventory, 'item_potion_health', 150); addCopper(player.inventory, 1237); updateInventory();
     check(JSON.stringify(player.inventory.currency.map(s=>s.count)) === '[1,23,7]', 'Coin denominations must roll up');

@@ -20,13 +20,14 @@ export const CHESTS = Object.freeze({
   exceptional: { level: 2, copper: [180, 280], potions: [2, 2], weapons: [{ floor: 'epic', luck: 0.45 }, { floor: 'rare', luck: 0.45 }] },
 });
 
-// site: a reward site ({ id, prestige }); { copper, items: [{ itemId, count, gen? }] }
-export function chestLoot(site, depth, seed = 0) {
+// site: a reward site ({ id, prestige }); { copper, items: [{ itemId, count, gen? }] }; favor:
+// the kind of weapon the player fights with (weapons lean towards it, gear/bases.js)
+export function chestLoot(site, depth, seed = 0, favor = null) {
   const t = CHESTS[site.prestige] ?? CHESTS.basic, level = depthLevel(depth) + t.level;
   const R = mulberry32(hash32(hashString(String(site.id)) ^ Math.imul(seed >>> 0, 0x85ebca6b) ^ 0xc4e57));
   const range = ([lo, hi]) => lo + Math.floor(R() * (hi - lo + 1));
   const copper = range(t.copper.map(c => Math.round(grown(c, GROWTH.coins, level))));
-  const items = t.weapons.map(w => rollWeapon(R, level, { floor: RARITY[w.floor].rank, luck: w.luck }));
+  const items = t.weapons.map(w => rollWeapon(R, level, { floor: RARITY[w.floor].rank, luck: w.luck, favor }));
   const potions = range(t.potions);
   if (potions) items.push({ itemId: HEALTH_POTION.id, count: potions });
   return { copper, items };

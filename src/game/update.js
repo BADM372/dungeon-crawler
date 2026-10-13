@@ -18,7 +18,7 @@ import { tickCast, cancelCast } from './townportal.js';
 // learn: combat.html#chain (see learn/README.md)
 function lunge(s) {
   const e = s.target, stats = s.stats;
-  if (!e?.profile || e.mode === 'dead' || s.t >= stats.activeStart) return [0, 0];
+  if (!e?.profile || stats.ranged || e.mode === 'dead' || s.t >= stats.activeStart) return [0, 0];
   const d = Math.hypot(e.x - player.x, e.z - player.z);
   return d > (stats.range + e.profile.radius) * 0.7 && d < stats.range + e.profile.radius + LUNGE_REACH
     ? [Math.sin(s.yaw), Math.cos(s.yaw)] : [0, 0];
@@ -45,7 +45,8 @@ export function updatePlayer(dt) {
   const jump = takeJump();
   tickCast(dt, len > 0 || jump);   // reading the town portal scroll: moving interrupts it
   if (climb(dt, dx, dz, jump)) { cancelSword(); clearOrder(); return; }   // on a ladder
-  // Slash is a planted swing: no walking until the blade went through, then moving cuts it short
+  // Attacks plant you: no walking until the blade went through (the shot left), then moving
+  // cuts the rest short
   const s = player.sword;
   if (s.active) {
     if ((dx || dz) && canMoveCancel(player)) cancelSwing(player);

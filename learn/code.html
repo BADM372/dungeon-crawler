@@ -227,21 +227,23 @@
       <p class="small muted" lang="de"><code>xp += reward.xp</code> ist kurz für <code>xp = xp + reward.xp</code>: zu dem dazuzählen, was schon da ist. <code>killed++</code> zählt eins dazu.</p>
     </div>
     <div>
-      <p lang="en">Sometimes you just want to count. A guardian drops several swords:</p>
-      <p lang="de">Manchmal willst du einfach zählen. Ein Wächter lässt mehrere Schwerter fallen:</p>
-      <pre data-src="src/core/gear/drops.js#weaponDrops"><code>for (let i = 0; i &lt; g.count; i++) out.push(rollWeapon(R, level, g));</code></pre>
+      <p lang="en">Sometimes you just want to count. A guardian drops several weapons:</p>
+      <p lang="de">Manchmal willst du einfach zählen. Ein Wächter lässt mehrere Waffen fallen:</p>
+      <pre data-src="src/core/gear/drops.js#weaponDrops"><code>for (let i = 0; i &lt; g.count; i++) out.push(rollWeapon(R, level, { ...g, favor }));</code></pre>
       <p lang="en">This one has three parts, separated by <code>;</code>:</p>
       <p lang="de">Diese hat drei Teile, getrennt durch <code>;</code>:</p>
       <ol class="steps">
         <li lang="en"><code>let i = 0</code>: start counting at 0,</li>
         <li lang="de"><code>let i = 0</code>: bei 0 anfangen zu zählen,</li>
-        <li lang="en"><code>i &lt; g.count</code>: keep going while <code>i</code> is less than the number of swords,</li>
-        <li lang="de"><code>i &lt; g.count</code>: weitermachen, solange <code>i</code> kleiner ist als die Zahl der Schwerter,</li>
+        <li lang="en"><code>i &lt; g.count</code>: keep going while <code>i</code> is less than the number of weapons,</li>
+        <li lang="de"><code>i &lt; g.count</code>: weitermachen, solange <code>i</code> kleiner ist als die Zahl der Waffen,</li>
         <li lang="en"><code>i++</code>: after each round, add one.</li>
         <li lang="de"><code>i++</code>: nach jeder Runde eins dazuzählen.</li>
       </ol>
-      <p lang="en">Each round, <code>out.push(...)</code> rolls a new sword and adds it to the end of the list <code>out</code>.</p>
-      <p lang="de">In jeder Runde würfelt <code>out.push(...)</code> ein neues Schwert und hängt es hinten an die Liste <code>out</code> an.</p>
+      <p lang="en">Each round, <code>out.push(...)</code> rolls a new weapon and adds it to the end of the list <code>out</code>.</p>
+      <p lang="de">In jeder Runde würfelt <code>out.push(...)</code> eine neue Waffe und hängt sie hinten an die Liste <code>out</code> an.</p>
+      <p class="small muted" lang="en"><code>{ ...g, favor }</code> is a new object with everything from <code>g</code> in it, and also <code>favor</code>: the kind of weapon you fight with, so the machine rolls more of those.</p>
+      <p class="small muted" lang="de"><code>{ ...g, favor }</code> ist ein neues Objekt mit allem aus <code>g</code> darin und dazu <code>favor</code>: die Art Waffe, mit der du kämpfst, damit die Maschine mehr davon würfelt.</p>
     </div>
   </div>
 </section>
@@ -296,11 +298,11 @@ import { fixedWeapon } from './gear/generate.js';</code></pre>
   </div>
 </section>
 
-<section class="slide" id="whole" data-lv="3" data-src="src/core/combat.js#swordHit">
+<section class="slide" id="whole" data-lv="3" data-src="src/core/combat.js#swordHit,weaponHit">
   <h2 lang="en">The real code: one sword hit, line by line</h2>
   <h2 lang="de">Der echte Code: ein Schwerttreffer, Zeile für Zeile</h2>
   <div class="cols wide-left">
-    <pre data-code="src/core/combat.js#swordHit"></pre>
+    <pre data-code="src/core/combat.js#swordHit,weaponHit"></pre>
     <div>
       <p lang="en">This is the rule from the sword journey. You can read all of it now:</p>
       <p lang="de">Das ist die Regel aus der Reise des Schwerthiebs. Du kannst sie jetzt ganz lesen:</p>
@@ -311,10 +313,14 @@ import { fixedWeapon } from './gear/generate.js';</code></pre>
         <li lang="de"><code>if (!inSwordArc(p, enemy)) return false;</code>: Nicht vor der Klinge? Dann kein Treffer. Stopp.</li>
         <li lang="en"><code>p.sword.hits.add(enemy)</code>: remember this monster, so one swing can't hit it twice.</li>
         <li lang="de"><code>p.sword.hits.add(enemy)</code>: Merk dir dieses Monster, damit ein Hieb es nicht zweimal trifft.</li>
+        <li lang="en"><code>weaponHit(...)</code>: the rest is its own function, because arrows, bolts and spells use it too. <code>p.sword.stats || SWORD</code>: the weapon's numbers, or the Old Sword's if there are none.</li>
+        <li lang="de"><code>weaponHit(...)</code>: Der Rest ist eine eigene Funktion, weil Pfeile, Bolzen und Zauber sie auch benutzen. <code>p.sword.stats || SWORD</code>: die Zahlen der Waffe, oder die des Alten Schwerts, wenn es keine gibt.</li>
         <li lang="en"><code>stats.crit ?? 0</code>: the sword's chance of a critical hit, or 0 if it has none (<code>??</code> means "if that's missing, use this").</li>
         <li lang="de"><code>stats.crit ?? 0</code>: die Chance des Schwerts auf einen kritischen Treffer, oder 0, wenn es keine hat (<code>??</code> heißt "wenn das fehlt, nimm das").</li>
-        <li lang="en"><code>crit ? A : B</code>: a short <code>if</code>. If <code>crit</code> is true, use A (bigger damage), otherwise B.</li>
-        <li lang="de"><code>crit ? A : B</code>: ein kurzes <code>if</code>. Wenn <code>crit</code> wahr ist, nimm A (mehr Schaden), sonst B.</li>
+        <li lang="en"><code>crit ? A : B</code>: a short <code>if</code>. If <code>crit</code> is true, use A (multiply by 1.5 or more: bigger damage), otherwise B (multiply by 1: the same).</li>
+        <li lang="de"><code>crit ? A : B</code>: ein kurzes <code>if</code>. Wenn <code>crit</code> wahr ist, nimm A (mal 1,5 oder mehr: mehr Schaden), sonst B (mal 1: gleich viel).</li>
+        <li lang="en"><code>Math.max(1, Math.round(...))</code>: round to a whole number, but never less than 1. (<code>share</code> is 1 for a full hit; a spell's burst only does half to the monsters around it.)</li>
+        <li lang="de"><code>Math.max(1, Math.round(...))</code>: auf eine ganze Zahl runden, aber nie weniger als 1. (<code>share</code> ist 1 bei einem vollen Treffer; die Explosion eines Zaubers macht bei den Monstern drumherum nur die Hälfte.)</li>
         <li lang="en"><code>damageEnemy(...)</code>: another machine takes the health off.</li>
         <li lang="de"><code>damageEnemy(...)</code>: eine andere Maschine zieht die Gesundheit ab.</li>
         <li lang="en"><code>return { damage, crit }</code>: the answer is a small object, so the game knows what number to show, and if it should be golden.</li>

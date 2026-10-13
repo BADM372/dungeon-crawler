@@ -3,8 +3,10 @@
 // can hit, recovery, the point where walking cuts it short, and the point where the next
 // swing may start. Clicks are kept for 0.3 s, so a click a little early still chains.
 import { SWORD } from '../../src/core/combat.js';
-import { WEAPONS } from '../../src/core/items.js';
+import { WEAPONS as ALL } from '../../src/core/items.js';
 import { canvas, loop, html, t as tr } from '../deck.js';
+
+const WEAPONS = ALL.filter(w => w.weapon.kind === 'sword');   // the swords: they swing
 
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
 

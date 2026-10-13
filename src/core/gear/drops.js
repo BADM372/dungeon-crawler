@@ -8,6 +8,7 @@
 //   descent guardians: two weapons, at least Uncommon (Rare from level 5, Epic from 14), and two
 //     potions
 // Guardians also roll with luck (rarer results) and are the only source of Ancient items.
+// favor: the kind of weapon the player fights with; drops lean towards it (gear/bases.js).
 import { mulberry32, hash32 } from '../util.js';
 import { RARITY } from './rarities.js';
 import { rollWeapon } from './generate.js';
@@ -35,12 +36,12 @@ const stream = (enemy, seed, salt) => mulberry32(hash32(hashString(String(enemy.
 
 // enemy: { id, level, kind? (its level-1 profile), guardian?, guardianRole? }; seed: the world's
 // learn: code.html#loops (see learn/README.md)
-export function weaponDrops(enemy, seed = 0) {
+export function weaponDrops(enemy, seed = 0, favor = null) {
   const R = stream(enemy, seed, 0x10075);
   const level = Math.max(1, enemy.level || 1);
-  if (!enemy.guardian) return R() < dropChance(enemy.kind?.xp) ? [rollWeapon(R, level)] : [];
+  if (!enemy.guardian) return R() < dropChance(enemy.kind?.xp) ? [rollWeapon(R, level, { favor })] : [];
   const g = guardianDrops(enemy.guardianRole ?? 'descent', level), out = [];
-  for (let i = 0; i < g.count; i++) out.push(rollWeapon(R, level, g));
+  for (let i = 0; i < g.count; i++) out.push(rollWeapon(R, level, { ...g, favor }));
   return out;
 }
 // health potions, on a stream of their own (so weapon drops do not depend on them)
@@ -50,4 +51,4 @@ export function potionDrops(enemy, seed = 0) {
   return n ? [{ itemId: HEALTH_POTION.id, count: n }] : [];
 }
 // everything but the coins
-export const enemyDrops = (enemy, seed = 0) => [...weaponDrops(enemy, seed), ...potionDrops(enemy, seed)];
+export const enemyDrops = (enemy, seed = 0, favor = null) => [...weaponDrops(enemy, seed, favor), ...potionDrops(enemy, seed)];

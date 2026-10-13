@@ -18,8 +18,8 @@ function weaponCard(item) {
   return `<div class="weapon" style="--rarity:${r.css}"><img src="${icon(item)}" alt="">
       <div><h4>${esc(displayName(item))}</h4><div class="base">${r.name} \u00B7 ${tr('item level', 'Stufe')} ${item.gen.ilvl}${baseLine(item) ? ' \u00B7 ' + baseLine(item) : ''}</div>
       <div class="stats">${tr(`${s.damage} damage \u00B7 ${(1 / s.interval).toFixed(2)} attacks per second \u00B7 ${Math.round(weaponDps(s))} damage per second
-reach ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical hits`, `${s.damage} Schaden \u00B7 ${(1 / s.interval).toFixed(2)} Hiebe pro Sekunde \u00B7 ${Math.round(weaponDps(s))} Schaden pro Sekunde
-Reichweite ${s.range.toFixed(2)} Felder \u00B7 ${Math.round(s.crit * 100)}% kritische Treffer`)}</div>
+${s.ranged ? 'range' : 'reach'} ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical hits`, `${s.damage} Schaden \u00B7 ${(1 / s.interval).toFixed(2)} Angriffe pro Sekunde \u00B7 ${Math.round(weaponDps(s))} Schaden pro Sekunde
+${s.ranged ? 'Schussweite' : 'Reichweite'} ${s.range.toFixed(2)} Felder \u00B7 ${Math.round(s.crit * 100)}% kritische Treffer`)}</div>
       <ul>${affixLines(item).map((t, i) => `<li>${t} <span style="color:#5a6678">(${AFFIX[item.gen.affixes[i].id].name}, ${tr('tier', 'Stufe')} ${item.gen.affixes[i].tier})</span></li>`).join('')}</ul></div></div>`;
 }
 

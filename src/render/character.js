@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CHAR_SCALE } from '../core/constants.js';
 import { scene } from './scene.js';
+import { prepareHeld } from './held.js';
 
 const URL = 'assets/character.glb';
 const SWORD_URL = 'assets/sword.glb';
@@ -13,16 +14,25 @@ export const character = { ready: false };
 const weapons = new Map();
 let loadRequest = 0;
 
-// Weapons are separate props. The character GLB contains only the body and hand sockets.
+// the GLB node of a weapon model that carries its extras (blender/items.py, sword.py)
+const itemNode = weapon => { let n = null; weapon.traverse(o => { if (!n && o.userData.weapon) n = o; }); return n; };
+
+// Weapons are separate props. The character GLB contains only the body and hand sockets. A
+// weapon says in its extras which socket it goes in and how it sits there (mount_quat_gltf);
+// the Old Sword (assets/sword.glb) predates that and sits like the other swords.
 export function equipSword(weapon) {
   loadRequest++;
   if (character.sword) character.sword.removeFromParent();
   character.sword = weapon;
+  character.held = null;
   if (!weapon) return;
-  character.bones['hand.R'].add(weapon);
+  const item = itemNode(weapon), d = item?.userData ?? {};
+  character.bones[d.socket ?? 'hand.R'].add(weapon);
   weapon.position.set(0, 0, 0);   // glTF bone origins are socket heads, not Blender tails
-  weapon.rotation.set(Math.PI / 3, 0, 0);   // +Y blade axis -> 60 degrees from forearm
+  if (d.mount_quat_gltf) weapon.quaternion.fromArray(d.mount_quat_gltf);
+  else weapon.rotation.set(Math.PI / 3, 0, 0);   // +Y blade axis -> 60 degrees from forearm
   weapon.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  character.held = prepareHeld(weapon, item);
 }
 
 export async function prepareSword(url = SWORD_URL) {
@@ -77,7 +87,6 @@ function setup(gltf) {
   const defs = {
     idle: part(J, 'Idle', 0, 2),          // the neutral standing pose
     walk: clips.Walk, run: clips.Run,
-    slash: clips.Slash,
     swim: clips.Swim, swimIdle: clips.SwimIdle,   // authored for floating chest deep
     climb: clips.Climb,   // in-place ladder grips and steps
     jump: part(J, 'JumpUp', 15, 27),      // push-off into the rising pose
@@ -93,6 +102,25 @@ function setup(gltf) {
     const a = mixer.clipAction(clip);
     a.play(); a.timeScale = 0; a.setEffectiveWeight(k === 'idle' ? 1 : 0);
     actions[k] = a;
+  }
+  // each kind of weapon's attack clip, twice: a chained attack cross-fades from one to the other
+  const attacks = {};
+  for (const [kind, name] of [['sword', 'Slash'], ['bow', 'Shoot'], ['crossbow', 'CrossbowShot'], ['staff', 'Cast']]) {
+    attacks[kind] = [clips[name], clips[name].clone()].map(clip => {
+      const a = mixer.clipAction(clip);
+      a.play(); a.timeScale = 0; a.setEffectiveWeight(0);
+      return a;
+    });
+  }
+  // how the ranged kinds are carried: their Hold clips' arm bones and rotations, laid over the
+  // other clips by the animator
+  const holds = {};
+  for (const clip of gltf.animations.filter(c => extras(c.name).weapon)) {
+    const names = extras(clip.name).arm_bones.split(',');
+    holds[extras(clip.name).weapon] = names.map(n => {
+      const bone = bones[n], track = clip.tracks.find(t => t.name === `${bone.name}.quaternion`);
+      return [bone, new THREE.Quaternion().fromArray(track.values, 0)];
+    });
   }
   // ground covered per animation cycle, so foot speed can match the actual speed
   const stride = name => extras(name).speed * clips[name].duration * CHAR_SCALE;
@@ -113,8 +141,8 @@ function setup(gltf) {
   mixer.update(0);
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
-    ready: true, group, model, mesh, bones, mixer, actions, standing, light, getUps, footfalls,
-    sword: null, swordWeight: 0, getUpWeight: 0,
+    ready: true, group, model, mesh, bones, mixer, actions, attacks, holds, standing, light, getUps, footfalls,
+    sword: null, held: null, swordWeight: 0, holdWeight: 0, getUpWeight: 0,
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
     climbStride: extras('Climb').distance * CHAR_SCALE,
   });

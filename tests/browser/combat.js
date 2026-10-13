@@ -4,7 +4,12 @@
 import * as THREE from 'three';
 import { N, DIRS, WALK_SPEED, RUN_SPEED, RUN_RAMP } from '../../src/core/constants.js';
 import { player, state } from '../../src/game/state.js';
-import { SWORD, cancelSwing, startSwing, damageEnemy } from '../../src/core/combat.js';
+import { SWORD, cancelSwing, startSwing, damageEnemy, combatStats, reloadTime } from '../../src/core/combat.js';
+import { ITEMS } from '../../src/core/items.js';
+import { addItem, equipItem } from '../../src/core/inventory.js';
+import { BURST_SHARE } from '../../src/core/shots.js';
+import { shots, clearShots } from '../../src/game/shots.js';
+import { shotModelsReady } from '../../src/render/shots.js';
 import { createPlayerStats, createRun } from '../../src/core/progression.js';
 import { resetEnemies, allEnemies, updateEnemies, drawEnemies } from '../../src/game/enemies.js';
 import { spiders } from '../../src/game/spiders.js';
@@ -22,7 +27,7 @@ import { updatePlayer } from '../../src/game/update.js';
 import { knockDown } from '../../src/game/ragdoll.js';
 import { climb } from '../../src/physics/climb.js';
 import { W, resetMode } from '../../src/render/blendtree.js';
-import { character, equipSword, loadSword } from '../../src/render/character.js';
+import { character, equipSword, loadSword, prepareSword } from '../../src/render/character.js';
 import { animateCharacter } from '../../src/render/animator.js';
 import { scene } from '../../src/render/scene.js';
 import { stunderModel } from '../../src/render/stundermodel.js';
@@ -204,6 +209,77 @@ export async function runCombatChecks() {
       state.map = originalMap; state.run = savedRun;
       Object.assign(player, saved); cancelSwing(player, true); equipSword(savedWeapon);
       resetEnemies();
+    }
+  });
+}
+
+// Bows, crossbows and staffs: each mounted in its socket and carried in its hold pose; a click
+// on an enemy in range shoots without walking (out of range: walks until it is), the shot
+// flies and hits for exactly the weapon's damage; the bow is drawn with an arrow on it, the
+// crossbow is empty until its reload, a bolt pierces, a spell bursts.
+export async function runRangedChecks() {
+  check(character.ready && stunderModel.ready && spiderModel.ready, 'Wait for the character / enemy assets to load');
+  check(!state.transitioning && !state.inventoryOpen, 'Close inventory and wait for portal travel to finish');
+  await shotModelsReady();
+  return paused(async () => {
+    const originalMap = state.map, saved = { ...player }, savedRun = state.run, savedWeapon = character.sword, results = [];
+    const arm = async id => {
+      hero(); addItem(player.inventory, id);
+      equipItem(player.inventory, player.inventory.slots.find(s => s?.itemId === id).instanceId);
+      equipSword(await prepareSword(ITEMS[id].model));
+    };
+    const until = (f, n = 240) => { for (let i = 0; i < n && !f(); i++) tick(1); return f(); };
+    const shot = kind => player.sword.stats?.kind === kind && player.sword.fired;   // this weapon's shot left
+    try {
+      state.run = createRun(); state.map = arena(); resetEnemies();
+      for (const e of allEnemies()) place(e, 1.5, 14.5);
+      const [a, b] = stunders, spider = spiders[0];
+
+      await arm('weapon_bow_recurve');
+      const bow = combatStats(player);
+      check(character.sword.parent === character.bones['hand.L'], 'A bow goes in the left fist');
+      resetMode(); tick(60);
+      check(character.holdWeight > 0.95, 'Bows are carried in their hold pose');
+      place(a, 6.5, 6.5 + bow.range - 1);
+      clickOn(a);
+      check(until(() => character.held.arrow?.visible), 'An arrow lies on the drawn bow');
+      check(character.held.nock.distanceTo(character.held.rest) > 0.2, 'The string is drawn back to the fist');
+      check(Math.hypot(player.x - 6.5, player.z - 6.5) < 0.01, 'In range: it shoots where it stands');
+      check(until(() => shots.length > 0) && !character.held.arrow.visible, 'The arrow leaves the bow');
+      check(until(() => a.hp < STUNDER.hp) && a.hp === STUNDER.hp - bow.damage && !shots.length, 'The arrow hits for the bow\'s damage: ' + a.hp);
+      results.push('bow: left fist, hold pose, drawn string with an arrow, shot in range hits for its damage');
+
+      await arm('weapon_bow_recurve'); place(a, 6.5, 15.4); a.hp = STUNDER.hp;   // out of range, inside the arena
+      clickOn(a);
+      check(until(() => a.hp < STUNDER.hp, 600), 'Out of range: walks up and shoots');
+      check(Math.hypot(a.x - player.x, a.z - player.z) <= bow.range + a.profile.radius + 0.05
+        && Math.hypot(a.x - player.x, a.z - player.z) > bow.range - 1, 'Walks only until it is in range');
+      results.push('walks into range, no further');
+
+      await arm('weapon_crossbow_light');
+      const xbow = combatStats(player);
+      check(character.sword.parent === character.bones['hand.R'] && character.held.bolt.visible, 'A crossbow comes loaded');
+      place(a, 6.5, 8.5); place(b, 6.5, 9.7); a.hp = b.hp = STUNDER.hp;
+      clickOn(a);
+      check(until(() => shot('crossbow')) && !character.held.bolt.visible, 'The bolt leaves the crossbow');
+      check(until(() => !shots.length) && a.hp === STUNDER.hp - xbow.damage && b.hp === STUNDER.hp - xbow.damage, 'A light crossbow bolt pierces one enemy');
+      check(until(() => character.held.bolt.visible) && player.sword.t >= reloadTime(xbow) - 0.02, 'Loaded again by the reload');
+      results.push('crossbow: loaded, empties on the shot, pierces, reloads');
+
+      await arm('weapon_staff_ember');
+      const staff = combatStats(player);
+      place(a, 6.5, 9.5); place(b, 1.5, 14.5); place(spider, 7.05, 9.2); a.hp = STUNDER.hp; spider.hp = SPIDER.hp;
+      clickOn(a);
+      check(until(() => character.held.glow > 0.5), 'The staff\'s stone glows as the spell gathers');
+      check(until(() => shot('staff')) && until(() => !shots.length), 'The spell flies and bursts');
+      check(a.hp === STUNDER.hp - staff.damage, 'The spell hits for the staff\'s damage');
+      check(spider.hp === Math.max(0, SPIDER.hp - Math.round(staff.damage * BURST_SHARE)), 'Its burst hurts what stands next to its target: ' + spider.hp);
+      results.push('staff: glow, spell hits its target, burst hurts a neighbour');
+      return results;
+    } finally {
+      state.map = originalMap; state.run = savedRun;
+      Object.assign(player, saved); cancelSwing(player, true); equipSword(savedWeapon);
+      clearShots(); resetEnemies();
     }
   });
 }

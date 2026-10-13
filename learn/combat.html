@@ -57,8 +57,8 @@
       <p lang="de"><b>Abbrechen.</b> Ab der grünen Linie bricht Weggehen die Erholung ab. Vorher stehen deine Füße fest: Du hast dich für den Hieb entschieden!</p>
     </div>
     <div>
-      <p lang="en"><b>Lunging.</b> If the monster is just a bit out of reach, your hero steps in towards it during the wind-up. You don't have to be pixel perfect.</p>
-      <p lang="de"><b>Nachsetzen.</b> Wenn das Monster knapp außer Reichweite ist, macht dein Held beim Ausholen einen Schritt darauf zu. Du musst nicht pixelgenau sein.</p>
+      <p lang="en"><b>Lunging.</b> If the monster is just a bit out of reach, your hero steps in towards it during the wind-up. You don't have to be pixel perfect. (Only with a sword: a bow, crossbow or staff shoots from where you stand.)</p>
+      <p lang="de"><b>Nachsetzen.</b> Wenn das Monster knapp außer Reichweite ist, macht dein Held beim Ausholen einen Schritt darauf zu. Du musst nicht pixelgenau sein. (Nur mit einem Schwert: Ein Bogen, eine Armbrust oder ein Stab schießt von da, wo du stehst.)</p>
       <p lang="en"><b>Heavy and light.</b> All swords use the same animation, just played faster or slower. The heavy ones hit harder, reach further and sweep wider, but plant you longer. The light ones are quick.</p>
       <p lang="de"><b>Schwer und leicht.</b> Alle Schwerter benutzen dieselbe Animation, nur schneller oder langsamer abgespielt. Die schweren treffen härter, reichen weiter und schwingen breiter, aber halten dich länger fest. Die leichten sind flink.</p>
       <table>
@@ -92,8 +92,34 @@
       <p lang="de">Zieh das Monster herum. Dreh den Helden. Stell das Monster mit dem Regler auf einen Vorsprung.</p>
       <p class="small muted" lang="en">The game also checks that no wall is in between, and that each monster is hit at most once per swing.</p>
       <p class="small muted" lang="de">Das Spiel prüft außerdem, dass keine Wand dazwischen ist und dass jedes Monster pro Hieb höchstens einmal getroffen wird.</p>
+      <p class="small muted" lang="en">This test is only for blades. Arrows, bolts and spells ask their own question while they fly: the next slide.</p>
+      <p class="small muted" lang="de">Diese Prüfung gibt es nur für Klingen. Pfeile, Bolzen und Zauber stellen ihre eigene Frage, während sie fliegen: die nächste Folie.</p>
     </div>
     <div class="demo real" data-demo="arc"></div>
+  </div>
+</section>
+
+<section class="slide" id="shoot" data-lv="1" data-src="src/core/combat.js#KINDS src/core/shots.js#stepShot">
+  <h2 lang="en">Bows, crossbows and staffs</h2>
+  <h2 lang="de">Bögen, Armbrüste und Stäbe</h2>
+  <div class="cols wide-right">
+    <div>
+      <p class="lead" lang="en">Not every hero likes to get close. Monsters also drop bows, crossbows and staffs, and you fight with them just like with a sword: click, and your hero does the rest.</p>
+      <p class="lead" lang="de">Nicht jeder Held geht gern nah ran. Monster lassen auch Bögen, Armbrüste und Stäbe fallen, und du kämpfst mit ihnen genau wie mit einem Schwert: klicken, und dein Held macht den Rest.</p>
+      <ul>
+        <li lang="en"><b>Bow:</b> quick, and it shoots furthest. Your hero turns sideways, pulls the string back to the cheek and lets go.</li>
+        <li lang="de"><b>Bogen:</b> schnell, und er schießt am weitesten. Dein Held dreht sich seitlich, zieht die Sehne bis zur Wange und lässt los.</li>
+        <li lang="en"><b>Crossbow:</b> hits hard, and its bolt can fly right through a monster into the next one. After every shot, your hero pulls the string back and lays in a new bolt.</li>
+        <li lang="de"><b>Armbrust:</b> trifft hart, und ihr Bolzen kann durch ein Monster hindurch ins nächste fliegen. Nach jedem Schuss spannt dein Held die Sehne neu und legt einen neuen Bolzen ein.</li>
+        <li lang="en"><b>Staff:</b> slow, but its spell bursts where it hits, and hurts everything around it a little too.</li>
+        <li lang="de"><b>Stab:</b> langsam, aber sein Zauber platzt da, wo er trifft, und tut allem drumherum auch ein bisschen weh.</li>
+      </ul>
+      <p lang="en">The attack still has a wind-up, a moment and a recovery. But at that moment, nothing sweeps: something <b>flies</b>. Every frame, the game moves it a bit and asks: does it touch a monster's body? A wall? Has it flown as far as it can?</p>
+      <p lang="de">Der Angriff hat immer noch Ausholen, Moment und Erholung. Aber in dem Moment schwingt nichts: Etwas <b>fliegt</b>. In jedem Bild bewegt das Spiel es ein Stück und fragt: Berührt es den Körper eines Monsters? Eine Wand? Ist es so weit geflogen, wie es kann?</p>
+      <p class="small muted" lang="en">Shooting from far away is safer, so these hit a bit less hard than swords. And the weapon machine knows what you like: fight with a bow, and about half of the weapons you find are bows.</p>
+      <p class="small muted" lang="de">Aus der Ferne zu schießen ist sicherer, darum treffen sie etwas weniger hart als Schwerter. Und die Waffenmaschine weiß, was du magst: Kämpfst du mit einem Bogen, ist ungefähr die Hälfte der Waffen, die du findest, ein Bogen.</p>
+    </div>
+    <figure><img class="shot" src="img/bow.jpg" alt="The hero with a bow; an arrow flies towards a big green Stunder" data-de-alt="Der Held mit einem Bogen; ein Pfeil fliegt auf einen großen grünen Stunder zu"><figcaption lang="en">The arrow is on its way. The Stunder doesn't know yet.</figcaption> <figcaption lang="de">Der Pfeil ist unterwegs. Der Stunder weiß es noch nicht.</figcaption></figure>
   </div>
 </section>
 
@@ -150,8 +176,8 @@
       <p lang="en">Line by line:</p>
       <p lang="de">Zeile für Zeile:</p>
       <ol class="steps">
-        <li lang="en">Only during the hit window (<code>activeStart</code> to <code>activeEnd</code>), not a dead monster, and not one this swing already hit (<code>s.hits</code>).</li>
-        <li lang="de">Nur während des Trefferfensters (<code>activeStart</code> bis <code>activeEnd</code>), kein totes Monster, und keins, das dieser Hieb schon getroffen hat (<code>s.hits</code>).</li>
+        <li lang="en">Only during the hit window (<code>activeStart</code> to <code>activeEnd</code>), only for a blade (not <code>stats.ranged</code>: bows, crossbows and staffs shoot instead), not a dead monster, and not one this swing already hit (<code>s.hits</code>).</li>
+        <li lang="de">Nur während des Trefferfensters (<code>activeStart</code> bis <code>activeEnd</code>), nur für eine Klinge (nicht <code>stats.ranged</code>: Bögen, Armbrüste und Stäbe schießen stattdessen), kein totes Monster, und keins, das dieser Hieb schon getroffen hat (<code>s.hits</code>).</li>
         <li lang="en"><code>Math.hypot</code>: the distance, by Pythagoras.</li>
         <li lang="de"><code>Math.hypot</code>: der Abstand, mit Pythagoras.</li>
         <li lang="en"><code>atan2</code> gives the direction to the monster. Subtract the way we face (<code>yaw</code>): if the cosine of that angle is smaller than the cosine of the arc, it's outside.</li>

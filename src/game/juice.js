@@ -48,7 +48,38 @@ export function enemyHitFx(e, dmg, killed, dx, dz, crit = false) {
   sfx(killed ? 'kill' : 'hit', { at: e, pitch: e.profile.pitch ?? 1.1 });
 }
 
-export function swingFx() { sfx('swing', { at: player, pitch: 0.9 + 0.2 * Math.random() }); }
+// an attack starts: a sword's whoosh, a bow's draw, a staff's wind-up (a crossbow is quiet until
+// it shoots)
+export function swingFx(kind = 'sword') {
+  if (kind === 'sword') sfx('swing', { at: player, pitch: 0.9 + 0.2 * Math.random() });
+  else if (kind === 'bow') sfx('draw', { at: player, volume: 0.8 });
+  else if (kind === 'staff') sfx('swing', { at: player, pitch: 0.6, volume: 0.5 });
+}
+
+// the player's shot (core/shots.js) left ('launch'), or ended: 'hit' (an enemy stopped it),
+// 'blocked' (the level), 'spent' (its range). Arrows and bolts knock into walls; spells burst
+// in their colour wherever they end. A crossbow's reload: 'reload'
+export function shotFx(shot, what) {
+  const { x, y, z } = shot, spell = shot.kind === 'spell', color = shot.stats.color ?? '#c48cff';
+  if (what === 'launch') { sfx(spell ? 'spell' : shot.kind === 'bolt' ? 'crossbow' : 'twang', { at: player }); return; }
+  if (what === 'reload') { sfx('reload', { at: player, volume: 0.8 }); return; }
+  if (spell) {
+    const r = Math.max(0.4, shot.stats.burst ?? 0.5), n = what === 'spent' ? 10 : 22;
+    emit(glow, x, y, z, { life: 0.22, size: r * 1.6, grow: 1.2, color, alpha: 0.85 });
+    for (let i = 0; i < n; i++) {
+      const a = rand(0, Math.PI * 2), s = rand(1.5, 3.5) * r;
+      emit(glow, x, y, z, { v: [Math.cos(a) * s, rand(0.3, 2.2), Math.sin(a) * s], life: rand(0.25, 0.5), size: rand(0.06, 0.13),
+        color: i % 3 ? color : '#ffffff', gravity: 2, drag: 3 });
+    }
+    sfx('burst', { at: shot, volume: what === 'spent' ? 0.5 : 0.8 });
+    return;
+  }
+  if (what !== 'blocked') return;
+  for (let i = 0; i < 7; i++)   // splinters and grit off the wall
+    emit(soft, x, y, z, { v: [-shot.vx * 0.06 + rand(-1, 1), rand(0.5, 2), -shot.vz * 0.06 + rand(-1, 1)], life: rand(0.25, 0.45),
+      size: rand(0.04, 0.08), color: i % 2 ? '#c9b48a' : '#8a7a62', alpha: 0.9, gravity: 9 });
+  sfx('thunk', { at: shot, volume: 0.7 });
+}
 
 // the player took dmg from something at (fx, fz)
 export function playerHurtFx(dmg, fx, fz) {

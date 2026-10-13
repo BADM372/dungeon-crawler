@@ -1,10 +1,13 @@
-// Sword input/timing and geometry-gated damage. Jumping is never an attack.
-// Attacks are queued with a target (an enemy, a point, or null for straight ahead) and stay
-// queued for a moment, so a click during a swing chains into the next one.
+// Attack input/timing and geometry-gated damage, for every kind of weapon. Jumping is never an
+// attack. Attacks are queued with a target (an enemy, a point, or null for straight ahead) and
+// stay queued for a moment, so a click during an attack chains into the next one. Swords hit
+// what is in the blade's arc (hitWithSword); bows, crossbows and staffs turn to their target
+// while they draw and let a shot go (game/shots.js).
 import { player, state, setStatus } from './state.js';
-import { startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, combatStats } from '../core/combat.js';
+import { startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, combatStats, shotDue, reloadTime, KINDS } from '../core/combat.js';
 import { clearLine } from '../physics/enemynav.js';
-import { enemyHitFx, swingFx } from './juice.js';
+import { enemyHitFx, swingFx, shotFx } from './juice.js';
+import { fireShot } from './shots.js';
 
 const BUFFER = 0.3;   // s a queued attack waits for the current swing to allow the next
 // the critical-hit roll of each blade hit, in 0..1 (browser checks pin it to keep numbers exact)
@@ -27,17 +30,34 @@ export function updateSword(dt) {
   if (state.transitioning) { cancelSwing(player); return; }
   advanceSwing(player, dt);
   const s = player.sword;
+  // a drawn shot follows its target until it goes, then flies
+  if (s.active && s.stats?.ranged && !s.fired && s.target?.profile && s.target.mode !== 'dead') s.yaw = aimYaw(s.target);
+  if (shotDue(player)) { s.fired = true; s.reloading = s.stats.kind === 'crossbow'; fireShot(player, s.stats, s.target, s.yaw); }
+  // a crossbow's string ratchets back and a bolt clicks in a moment before it is loaded again
+  if (s.reloading && s.stats.chain - s.cool >= reloadTime(s.stats) - 0.25) { s.reloading = false; shotFx({ stats: s.stats }, 'reload'); }
   if (!s.requested) return;
   if ((s.buffer -= dt) < 0) { s.requested = false; return; }
   const target = s.target;
   if (!combatStats(player)) { s.requested = false; setStatus('No weapon equipped'); return; }
   if (!startSwing(player, aimYaw(target))) return;
   s.requested = false; s.target = target;
-  setStatus('Sword slash');
-  swingFx();
+  setStatus(KINDS[s.stats.kind].verb);
+  swingFx(s.stats.kind);
 }
 
-// learn: architecture.html#swing-journey, space.html#unit (see learn/README.md)
+// enemy e took `hit` ({ damage, crit }) from a blow or shot along (dx, dz): it is knocked back
+// along it, heavier bodies less (knockback affixes push harder; a poised enemy that shrugs the
+// blow off barely moves), with the hit's effects. `before`: its health before the hit
+// learn: space.html#unit (see learn/README.md)
+export function hitEnemy(e, hit, before, dx, dz, knockback = 1) {
+  state.enemyGrace = 0;   // you started it
+  const l = Math.hypot(dx, dz) || 1;
+  const push = (e.hp ? e.staggered ? 2.6 : 0.6 : 3.6) * knockback / e.profile.mass;
+  e.kbx = dx / l * push; e.kbz = dz / l * push;
+  enemyHitFx(e, before - e.hp, !e.hp, dx, dz, hit.crit);
+}
+
+// learn: architecture.html#swing-journey (see learn/README.md)
 export function hitWithSword(list) {
   const p = player;
   if (state.inventoryOpen || state.transitioning || p.ragdoll || p.stun > 0 || p.hp <= 0) return;
@@ -47,13 +67,7 @@ export function hitWithSword(list) {
     if (!clearLine(p.x, p.y + 0.4, p.z, e.x, y, e.z)) continue;
     const before = e.hp, hit = swordHit(p, e, rolls.crit());
     if (!hit) continue;
-    state.enemyGrace = 0;   // you started it
-    // knocked back along the blow, heavier bodies less (knockback affixes push harder); a
-    // poised enemy that shrugs the blow off barely moves
-    const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1;
-    const push = (e.hp ? e.staggered ? 2.6 : 0.6 : 3.6) * (p.sword.stats?.knockback ?? 1) / e.profile.mass;
-    e.kbx = dx / l * push; e.kbz = dz / l * push;
-    enemyHitFx(e, before - e.hp, !e.hp, dx, dz, hit.crit);
+    hitEnemy(e, hit, before, e.x - p.x, e.z - p.z, p.sword.stats?.knockback ?? 1);
     if (e.hp) setStatus(`Slashed Lv ${e.level} ${e.profile.label} (${e.hp}/${e.profile.hp})`);
   }
 }

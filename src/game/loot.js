@@ -12,6 +12,7 @@ import { addItem, addInstance, takeItem, isBound, formatCoins, autoBar } from '.
 import { ITEMS } from '../core/items.js';
 import { RARITY, rarityOf } from '../core/gear/rarities.js';
 import { enemyDrops } from '../core/gear/drops.js';
+import { favoredKind } from '../core/combat.js';
 import { displayName } from '../core/gear/stats.js';
 import { groundAt } from '../physics/collide.js';
 import { inFluid } from '../physics/fluid.js';
@@ -55,7 +56,7 @@ function place(item, at, from, extra = {}) {
 }
 
 // what enemy e leaves behind: its coins and its seeded weapon and potion drops (core/gear/drops.js)
-export function dropLoot(e, copper) { spill(e, copper, enemyDrops(e, state.map?.seed ?? 0)); }
+export function dropLoot(e, copper) { spill(e, copper, enemyDrops(e, state.map?.seed ?? 0, favoredKind(player))); }
 // coins and items bursting out of a body (or a chest: `from`) and landing around `at`; extra:
 // what every pickup carries; delay: seconds before the first one comes out (hidden till then)
 export function spill(at, copper, items, extra = {}, from = { x: at.x, y: at.y + 0.4, z: at.z }, delay = 0) {

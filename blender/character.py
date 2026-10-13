@@ -87,7 +87,8 @@ SOLE_R = figure.LIMB_R - figure.SOLE_ROUND   # radius of the flat sole disc
 WALK_FRAMES, WALK_SPEED = 28, 0.95
 RUN_FRAMES, RUN_SPEED = 20, 2.4
 CLIMB_FRAMES = 36
-CLIMB_DISTANCE = 2 * 0.28 / 0.55   # two game ladder rungs, in rig units
+GAME_SCALE = 0.55                  # rig units -> game units (CHAR_SCALE)
+CLIMB_DISTANCE = 2 * 0.28 / GAME_SCALE   # two game ladder rungs, in rig units
 
 
 # ============================================================================
@@ -435,11 +436,42 @@ def arm_target(spec, side_sign):
     """Arm spec -> (upper arm direction in chest rest axes, elbow bend).
 
     spec is either (swing, abduct, bend) or (dx, dy, dz, bend) with an
-    explicit direction in the chest frame (x = character's left, -y = forward).
+    explicit direction in the chest frame (x = character's left, -y = forward),
+    or an IK spec (see IK): its first four are such a direction and bend.
     """
-    if len(spec) == 4:
+    if len(spec) >= 4:
         return Vector(spec[:3]).normalized(), spec[3]
     return arm_dir(spec[0], spec[1], side_sign), spec[2]
+
+
+def IK(hand, pole, w=1.0, fk=None, side_sign=1):
+    """Arm spec reaching the fist (the hand socket) for `hand` (armature space), the elbow
+    bending towards `pole` (chest axes).  w blends from the plain spec `fk` (neutral by
+    default) to the reach, so a key can fade an arm in and out of a grip.  The springs
+    still carry the arm, so it lags a little behind fast reaches."""
+    fk = Vector(fk) if fk is not None else A(0.0, D(6), D(15), side_sign)
+    return Vector((*fk[:4], *hand, *pole, w))
+
+
+def reach(spec):
+    """(hand, pole, weight) of an IK spec, or None."""
+    if len(spec) == 11 and spec[10] > 1e-4:
+        return Vector(spec[4:7]), Vector(spec[7:10]), min(1.0, spec[10])
+    return None
+
+
+def ik_keys(*keys):
+    """keyframes() over arm specs that mix plain and IK keys: plain keys take the reach of
+    their nearest IK key with weight 0, so the hand target never sweeps through the body
+    while an arm fades into or out of a reach."""
+    reaches = [(t, s) for t, s in keys if len(s) == 11]
+    out = []
+    for t, s in keys:
+        if len(s) != 11:
+            near = min(reaches, key=lambda r: abs(r[0] - t))[1]
+            s = Vector((*s[:4], *near[4:10], 0.0))
+        out.append((t, s))
+    return keyframes(*out)
 
 
 def A(swing, abduct, bend, side_sign):
@@ -526,28 +558,48 @@ def solve_motion(skel, params, n_frames, arm_k, arm_zeta, fore_k, fore_zeta, env
         twist_fn=lambda f: P[f]["head_twist"],
         collide=(figure.HEAD_Z - HEAD_BONE_Z[0], figure.HEAD_R),
     )
+    def upper_target(f, side, s):
+        spec = P[f]["arms"][side]
+        chest = skel.frame_rot("spine", poses[f])
+        d = chest @ arm_target(spec, s)[0]
+        r = reach(spec)
+        if r:   # aim the upper arm where a two-bone reach puts the elbow
+            hand, pole, w = r
+            shoulder = skel.base(f"upper_arm.{side}", poses[f]).translation
+            elbow, _ = two_bone_ik(shoulder, hand, figure.UPPER_ARM_LEN, figure.FOREARM_LEN, chest @ pole)
+            d = d.lerp((elbow - shoulder).normalized(), w).normalized()
+        return d
+
     for side, s in sides:
         run_spring(
             f"upper_arm.{side}",
             lambda f, side=side: skel.base(f"upper_arm.{side}", poses[f]).translation,
-            lambda f, side=side, s=s: skel.frame_rot("spine", poses[f])
-            @ arm_target(P[f]["arms"][side], s)[0],
+            lambda f, side=side, s=s: upper_target(f, side, s),
             figure.UPPER_ARM_LEN * 0.6, arm_k[side], arm_zeta[side],
             collide=(figure.UPPER_ARM_LEN, figure.LIMB_R),
         )
 
-    # level 3: forearms bend forward about the chest's side axis
+    # level 3: forearms bend forward about the chest's side axis (or point at their reach
+    # from wherever the elbow got to); "fore_twist" rolls them about their own axis
     for side, s in sides:
         def fore_target(f, side=side, s=s):
+            spec = P[f]["arms"][side]
             chest = skel.frame_rot("spine", poses[f])
             upper = poses[f][f"upper_arm.{side}"].col[1].xyz.normalized()
             axis = chest @ Vector((1, 0, 0))
-            return Quaternion(axis, -arm_target(P[f]["arms"][side], s)[1]) @ upper
+            d = Quaternion(axis, -arm_target(spec, s)[1]) @ upper
+            r = reach(spec)
+            if r:
+                hand, _, w = r
+                elbow = skel.base(f"forearm.{side}", poses[f]).translation
+                d = d.lerp((hand - elbow).normalized(), w).normalized()
+            return d
         run_spring(
             f"forearm.{side}",
             lambda f, side=side: skel.base(f"forearm.{side}", poses[f]).translation,
             fore_target,
             figure.FOREARM_LEN * 0.6, fore_k[side], fore_zeta[side],
+            twist_fn=lambda f, side=side: P[f].get("fore_twist", {}).get(side, 0.0),
             collide=(figure.FOREARM_LEN, figure.LIMB_R),
         )
     return bases
@@ -926,6 +978,139 @@ def slash_params():
     return one_shot(1.05, fn)
 
 
+# ----------------------------------------------------------------------------
+# ranged weapons and staffs.  How a weapon sits in the fist is items.MOUNTS; the
+# game plays these clips like Slash, retimed to the weapon's attack speed
+# (core/combat.js).  Each starts and ends in its weapon's hold pose (HOLDS: the
+# right arm only; the game lays it over idle / walk / run, render/animator.js),
+# so cross-fades in and out of them do not pop.
+# ----------------------------------------------------------------------------
+HOLDS = {   # kind: (side, arm spec, forearm twist)
+    # forearm level in front of the hip: the bow stands upright at the left, the crossbow points
+    # ahead, the staff stands upright
+    "bow": ("L", A(D(8), D(16), D(78), 1), D(62)),
+    "crossbow": ("R", A(D(14), D(16), D(74), -1), 0.0),
+    "staff": ("R", A(D(8), D(18), D(80), -1), 0.0),
+}
+# frames the game needs: when the shot leaves, and when a chained shot or a reload is done
+SHOOT_FRAMES = {"duration": 32, "active_start": 18, "active_end": 20, "redraw": 7}
+CROSSBOW_FRAMES = {"duration": 36, "active_start": 9, "active_end": 11, "reloaded": 26}
+CAST_FRAMES = {"duration": 28, "active_start": 12, "active_end": 14}
+
+
+def hold_params(kind):
+    """The resting grip on a weapon, as a still clip (Hold<Kind>)."""
+    arms = neutral_arms()
+    side, spec, twist = HOLDS[kind]
+    arms[side] = spec
+    return one_shot(2 / FPS, lambda t: pose_params(arms=arms, fore_twist={side: twist}))
+
+
+def shoot_params():
+    """Bow (in the left fist): turn side-on, raise the bow, draw the string to the cheek,
+    loose, follow through, lower.  The arrow leaves at active_start; a chained shot starts
+    at `redraw`, with the bow already up."""
+    F = {k: v / FPS for k, v in SHOOT_FRAMES.items()}
+    na = neutral_arms()
+    _, hold, hold_twist = HOLDS["bow"]
+    tr, td, tl, tf, th, te = F["redraw"], 0.47, F["active_start"], 0.70, 0.80, F["duration"]
+    bow = Vector((0.03, -0.95, 1.38))           # the bow fist, held out at shoulder height
+    bow_pole = Vector((1, 0.3, 0.1))            # elbow out to the side: the forearm level
+    arm_l = ik_keys((0.02, hold), (tr, IK(bow, bow_pole, 1, hold)),
+                    (th, IK(bow, bow_pole, 1, hold)), (te, hold))
+    pull = Vector((-1, 0.4, 0.6))               # the drawing elbow: out, back and up
+    string = Vector((-0.12, -0.40, 1.40))       # reaching for the string
+    cheek = Vector((-0.21, -0.08, 1.45))        # full draw
+    loose = Vector((-0.27, -0.02, 1.47))        # the fingers fly back past the ear
+    arm_r = ik_keys((0.02, na["R"]), (tr, IK(string, pull, 1, side_sign=-1)),
+                    (td, IK(cheek, pull, 1, side_sign=-1)), (tl, IK(cheek, pull, 1, side_sign=-1)),
+                    (tf, IK(loose, pull, 1, side_sign=-1)), (th, IK(loose, pull, 0.85, side_sign=-1)),
+                    (te, na["R"]))
+    yaw = keyframes((0.02, 0.0), (tr, D(-25)), (th, D(-25)), (te, 0.0))
+    twist = keyframes((0.02, 0.0), (tr, D(-24)), (td, D(-30)), (tl, D(-30)), (tf, D(-33)), (th, D(-30)), (te, 0.0))
+    lean = keyframes((0.02, 0.0), (tr, D(3)), (tl, D(3)), (tf, D(-2)), (th, D(1)), (te, 0.0))
+    hz = keyframes((0.02, STAND_Z), (tr, STAND_Z - 0.035), (th, STAND_Z - 0.035), (te, STAND_Z))
+    roll = keyframes((0.02, hold_twist), (tr, 0.0), (th, 0.0), (te, hold_twist))
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((0, 0, hz(t))), hips_rot=(0.0, 0.0, yaw(t)),
+            spine_lean=lean(t), spine_twist=twist(t),
+            head_pitch=-lean(t) * 0.7, head_twist=-(twist(t) + yaw(t)) * 0.85,
+            arms={"L": arm_l(t), "R": arm_r(t)}, fore_twist={"L": roll(t)},
+        )
+    return one_shot(te, fn)
+
+
+def crossbow_params():
+    """Crossbow (in the right fist): raise it to the chest, shoot, kick up, lower it to the
+    belly where the left hand draws the string and lays a bolt (`reloaded`), back to the hold."""
+    F = {k: v / FPS for k, v in CROSSBOW_FRAMES.items()}
+    na = neutral_arms()
+    hold = HOLDS["crossbow"][1]   # (no twist)
+    ta, tk, tk2, tlow, tg, tp, tb, tr2, te = (0.21, F["active_start"] + 0.05, 0.42, 0.56, 0.64, 0.76,
+                                              F["reloaded"], 1.0, F["duration"])
+    aim = Vector((-0.40, -0.48, 1.16))
+    kick = Vector((-0.40, -0.40, 1.27))
+    belly = Vector((-0.20, -0.40, 0.98))
+    out = Vector((-1, 0.3, -0.5))
+    arm_r = ik_keys((0.02, hold), (ta, IK(aim, out, 1, hold)), (F["active_start"], IK(aim, out, 1, hold)),
+                    (tk, IK(kick, out, 1, hold)), (tk2, IK(aim, out, 1, hold)),
+                    (tlow, IK(belly, out, 1, hold)), (tb + 0.04, IK(belly, out, 1, hold)), (tr2, hold), (te, hold))
+    grab = Vector((-0.05, -0.47, 1.0))          # the string, at the front of the stock
+    drawn = Vector((0.0, -0.36, 1.08))          # drawn back to the nut
+    bolt = Vector((-0.06, -0.44, 1.06))         # a bolt laid in the groove
+    low = Vector((1, 0, -1))
+    brace = A(D(22), D(8), D(45), 1)
+    arm_l = ik_keys((0.02, na["L"]), (ta, brace), (tk2, brace), (tg, IK(grab, low, 1, brace)),
+                    (tp, IK(drawn, low, 1, brace)), (tb, IK(bolt, low, 1, brace)), (tr2, na["L"]), (te, na["L"]))
+    lean = keyframes((0.02, 0.0), (ta, D(5)), (F["active_start"], D(5)), (tk, D(-3)), (tk2, D(3)),
+                     (tlow, D(12)), (tb, D(12)), (tr2, D(2)), (te, 0.0))
+    twist = keyframes((0.02, 0.0), (ta, D(8)), (tk2, D(8)), (tlow, D(18)), (tb, D(16)), (tr2, D(3)), (te, 0.0))
+    hz = keyframes((0.02, STAND_Z), (ta, STAND_Z - 0.04), (tk, STAND_Z - 0.03), (tlow, STAND_Z - 0.06),
+                   (tb, STAND_Z - 0.06), (tr2, STAND_Z - 0.01), (te, STAND_Z))
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((0, 0, hz(t))), hips_rot=(0.0, 0.0, 0.0),
+            spine_lean=lean(t), spine_twist=twist(t),
+            head_pitch=-lean(t) * 0.6, head_twist=-twist(t) * 0.7,
+            arms={"L": arm_l(t), "R": arm_r(t)},
+        )
+    return one_shot(te, fn)
+
+
+def cast_params():
+    """Staff (in the right fist): lift it up beside the shoulder, then thrust it forward so its
+    head points at the target as the spell leaves (active_start), the left palm pushing
+    along, and settle back to the hold."""
+    F = {k: v / FPS for k, v in CAST_FRAMES.items()}
+    na = neutral_arms()
+    hold = HOLDS["staff"][1]   # (no twist)
+    tw, tc, th, te = 0.25, F["active_start"], 0.56, F["duration"]
+    lift = Vector((-0.50, -0.16, 1.22))
+    thrust = Vector((-0.34, -0.56, 1.20))
+    arm_r = ik_keys((0.02, hold), (tw, IK(lift, Vector((-1, 0.5, -0.4)), 1, hold)),
+                    (tc, IK(thrust, Vector((-0.3, 0.2, 1)), 1, hold)), (th, IK(thrust, Vector((-0.3, 0.2, 1)), 1, hold)),
+                    (te, hold))
+    palm = Vector((0.16, -0.58, 1.24))
+    arm_l = ik_keys((0.02, na["L"]), (tw, A(D(40), D(22), D(70), 1)), (tc, IK(palm, Vector((1, 0, -0.5)), 1)),
+                    (th, IK(palm, Vector((1, 0, -0.5)), 1)), (te, na["L"]))
+    lean = keyframes((0.02, 0.0), (tw, D(-5)), (tc, D(10)), (th, D(9)), (te, 0.0))
+    twist = keyframes((0.02, 0.0), (tw, D(-14)), (tc, D(14)), (th, D(12)), (te, 0.0))
+    hz = keyframes((0.02, STAND_Z), (tw, STAND_Z - 0.01), (tc, STAND_Z - 0.06), (th, STAND_Z - 0.05), (te, STAND_Z))
+    roll = keyframes((0.02, 0.0), (tw, D(30)), (tc, D(90)), (th, D(90)), (te, 0.0))   # the head swings forward
+
+    def fn(t):
+        return pose_params(
+            hips_pos=Vector((0, 0, hz(t))), hips_rot=(0.0, 0.0, twist(t) * 0.3),
+            spine_lean=lean(t), spine_twist=twist(t) * 0.7,
+            head_pitch=-lean(t) * 0.7, head_twist=-twist(t) * 0.8,
+            arms={"L": arm_l(t), "R": arm_r(t)}, fore_twist={"R": roll(t)},
+        )
+    return one_shot(te, fn)
+
+
 ROLL_RADIUS = 0.40   # the tucked body rolls like a ball of this radius
 
 
@@ -1137,6 +1322,14 @@ def flex_pose(skel):
 # ============================================================================
 # baking to actions
 # ============================================================================
+def muzzle(rig, act, frame, bone, point):
+    """`point` (in `bone`'s head frame) at `frame` of `act`, in game units: [x, up, forward]."""
+    rig.animation_data.action = act
+    bpy.context.scene.frame_set(frame)
+    m = rig.matrix_world @ rig.pose.bones[bone].matrix @ point
+    return [round(m.x * GAME_SCALE, 3), round(m.z * GAME_SCALE, 3), round(-m.y * GAME_SCALE, 3)]
+
+
 def bake_action(rig, name, frames, cyclic, props=None, loc_bones=("hips",)):
     act = bpy.data.actions.get(name)
     if act is not None:
@@ -1294,6 +1487,23 @@ def make_animations(rig, ob):
         {"L": 300.0, "R": 650.0}, {"L": 0.45, "R": 0.55},
         {"weapon_socket": "hand.R", "contact_frame": 16, "hit_time": 16 / FPS,
          "active_start": 15 / FPS, "active_end": 21 / FPS})
+    timing = lambda frames: {k: v / FPS for k, v in frames.items()}   # seconds
+    stiff = ({"L": 420.0, "R": 520.0}, {"L": 0.6, "R": 0.6}, {"L": 560.0, "R": 700.0}, {"L": 0.6, "R": 0.62})
+    one("Shoot", shoot_params(), *stiff, {"weapon_socket": "hand.L", **timing(SHOOT_FRAMES)})
+    one("CrossbowShot", crossbow_params(), *stiff, {"weapon_socket": "hand.R", **timing(CROSSBOW_FRAMES)})
+    one("Cast", cast_params(), *stiff, {"weapon_socket": "hand.R", **timing(CAST_FRAMES)})
+    # where each shot leaves at its active_start: the bow fist, the bolt's tip, the staff's head
+    import items
+    for clip, frames, bone, kind, point in (
+            ("Shoot", SHOOT_FRAMES, "hand.L", None, Vector()),
+            ("CrossbowShot", CROSSBOW_FRAMES, "hand.R", "crossbow", Vector((0, items.STOCK_Y - .053, .46))),
+            ("Cast", CAST_FRAMES, "hand.R", "staff", Vector(items.staff_head(1)))):
+        act = bpy.data.actions[clip]
+        act["muzzle"] = muzzle(rig, act, frames["active_start"], bone,
+                               items.mount_matrix(kind) @ point if kind else point)
+    for kind, (side, *_) in HOLDS.items():
+        one("Hold" + kind.capitalize(), hold_params(kind), *stiff,
+            {"weapon": kind, "arm_bones": f"upper_arm.{side},forearm.{side}"})
     one("Roll", roll_params(), 900.0, 0.7, 1100.0, 0.7, {"distance": round(2 * math.pi * ROLL_RADIUS, 3)},
         contact="always")
     one("JumpLandSit", jump_land_sit_params(), 200.0, 0.35, 260.0, 0.4)
@@ -1331,7 +1541,8 @@ def main(scene=None, export_path=None, active_action="Walk"):
 
     make_animations(rig, ob)
     register_actions(rig, ("Walk", "Run", "Swim", "SwimIdle", "Climb", "Jump", "JumpLandSit",
-                           "GetUpBack", "GetUpFront", "Kick", "Punch", "Slash", "Roll", "Flex"))
+                           "GetUpBack", "GetUpFront", "Kick", "Punch", "Slash", "Shoot", "CrossbowShot",
+                           "Cast", "HoldBow", "HoldCrossbow", "HoldStaff", "Roll", "Flex"))
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act
     scene.frame_start = int(act.frame_start)

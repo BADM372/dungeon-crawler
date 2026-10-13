@@ -1,14 +1,16 @@
 // Drives the character from the controller state: places and turns the model, runs the
-// blend trees (render/blendtree.js), poses the ragdoll, and plays the get-up clip
-// (GetUpBack / GetUpFront), morphing from the ragdoll pose into it.
+// blend trees (render/blendtree.js), plays the attack clip of the weapon in hand (Slash, Shoot,
+// CrossbowShot, Cast) and lays its Hold pose over the rest, poses the ragdoll, and plays the
+// get-up clip (GetUpBack / GetUpFront), morphing from the ragdoll pose into it.
 import * as THREE from 'three';
 import { clamp } from '../core/util.js';
 import { DIRS } from '../core/constants.js';
 import { player } from '../game/state.js';
-import { SWORD, swingClipTime } from '../core/combat.js';
+import { SWORD, swingClipTime, swingClipFrom } from '../core/combat.js';
 import { character } from './character.js';
 import { applyRagdollPose } from './ragdollpose.js';
 import { stretchStride } from './stride.js';
+import { updateHeld } from './held.js';
 import { W, blend, updateBlend, resetMode } from './blendtree.js';
 
 // learn: animation.html#getup (see learn/README.md)
@@ -18,6 +20,10 @@ let clean = null;        // [bone, quaternion, position]: the pose the mixer pro
 let getUp = null;        // the player.getUp being played
 let upAction = null;     // ... and its clip (kept while it fades out)
 let morph = null;        // { t, list, quats, hips }: the ragdoll pose (world space)
+// the attack being played: its serial, its action and the one before it (a chained attack
+// cross-fades from that one over CHAIN_FADE), f: how far the cross-fade got, from: clip start
+const attack = { serial: -1, cur: null, prev: null, f: 1, from: 0 };
+const CHAIN_FADE = 0.1;
 
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const angleTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
@@ -79,8 +85,11 @@ export function animateCharacter(dt, time) {
   ch.group.updateMatrixWorld(true);
 
   updateBlend(dt, speed, time);
-  const slash = ch.actions.slash, duration = (p.sword.stats || SWORD).duration;
-  const target = p.sword.active ? Math.min(1, p.sword.t / 0.04, (duration - p.sword.t) / 0.12) : 0;
+  const s = p.sword, duration = (s.stats || SWORD).duration;
+  if (s.active && s.serial !== attack.serial) startAttack(s);
+  attack.f = Math.min(1, attack.f + dt / CHAIN_FADE);
+  // a chained attack takes over at once (the cross-fade smooths it), a fresh one fades in
+  const target = s.active ? Math.min(1, attack.f < 1 ? 1 : s.t / 0.04, (duration - s.t) / 0.12) : 0;
   ch.swordWeight += (Math.max(0, target) - ch.swordWeight) * Math.min(1, dt * 22);
   if (!getUp) ch.getUpWeight = Math.max(0, ch.getUpWeight - dt * GET_UP_OUT);
   const sw = ch.swordWeight, gw = upAction ? ch.getUpWeight : 0, rest = (1 - sw) * (1 - gw);
@@ -90,14 +99,47 @@ export function animateCharacter(dt, time) {
     upAction.setEffectiveWeight(gw * (1 - sw));
     if (gw <= 0) upAction = null;
   }
-  slash.time = swingClipTime(p.sword.stats, p.sword.t); slash.setEffectiveWeight(sw);
-  if (ch.sword) ch.sword.visible = !p.swimming && !p.climb;
+  if (attack.cur) { attack.cur.time = swingClipTime(s.stats, s.t, attack.from); attack.cur.setEffectiveWeight(sw * attack.f); }
+  if (attack.prev) {
+    attack.prev.setEffectiveWeight(sw * (1 - attack.f));
+    if (attack.f >= 1) attack.prev = null;
+  }
+  const shown = !p.swimming && !p.climb;
+  if (ch.sword) ch.sword.visible = shown;
   ch.mixer.update(0);
   keepPose();
   stretchStride(blend.stretch, (W.walk + W.run) * rest);
   // breathing on top of the idle pose
   ch.bones.spine.rotateX(Math.sin(time * 2.2) * 0.025 * W.idle * rest);
+  holdWeapon(dt, shown && !getUp, rest);
   if (morph) applyMorph(dt);
+  if (ch.held && ch.sword?.visible) {
+    ch.group.updateMatrixWorld(true);
+    updateHeld(ch.held, p, { L: ch.bones['hand.L'], R: ch.bones['hand.R'] }, dt);
+  }
+}
+
+// a new attack: its kind's clip, on the action of the pair the last one did not use; when the
+// last one is still showing, cross-fade from it
+function startAttack(s) {
+  const pair = character.attacks[s.stats?.kind ?? 'sword'], next = pair[0] === attack.cur ? pair[1] : pair[0];
+  for (const a of [attack.prev, attack.cur]) if (a && a !== next) a.setEffectiveWeight(0);
+  const fade = attack.cur && attack.cur !== next && character.swordWeight > 0.05;
+  attack.prev = fade ? attack.cur : null;
+  attack.cur = next; attack.f = fade ? 0 : 1; attack.serial = s.serial; attack.from = swingClipFrom(s);
+}
+
+// bows, crossbows and staffs are carried in their Hold pose (its arm, over idle, walk, run and
+// the jumps); an arm swings a little with the stride. `rest`: what the other clips still get
+// (attack clips start and end in the hold pose themselves)
+function holdWeapon(dt, shown, rest) {
+  const ch = character, kind = shown && ch.held?.kind, hold = kind && ch.holds[kind];
+  if (hold) ch.holdKind = kind;
+  ch.holdWeight += ((hold ? 1 : 0) - ch.holdWeight) * Math.min(1, dt * 10);
+  const bones = ch.holds[ch.holdKind];
+  if (!bones || ch.holdWeight < 1e-3) return;
+  const w = ch.holdWeight * rest * (1 - 0.25 * (W.walk + W.run));
+  for (const [bone, q] of bones) bone.quaternion.slerp(q, w);
 }
 
 export const characterYaw = () => player.yaw;

@@ -15,7 +15,7 @@ const { enemyDrops } = await import('../src/core/gear/drops.js');
 const { chestLoot } = await import('../src/core/chests.js');
 const { weaponDps } = await import('../src/core/gear/stats.js');
 const P = await import('../src/core/progression.js');
-const { combatStats, swordState } = await import('../src/core/combat.js');
+const { combatStats, swordState, favoredKind } = await import('../src/core/combat.js');
 const { addInstance, equipItem, takeItem, equippedItem } = await import('../src/core/inventory.js');
 const { mulberry32, hash32 } = await import('../src/core/util.js');
 
@@ -47,14 +47,14 @@ for (let seed = 1; seed <= SEEDS; seed++) {
     const before = p.xp;
     P.awardKill(p, run, e);
     row.xpShare += (p.xp - before) / e.profile.xp; row.kills++;
-    take(enemyDrops(e, seed), extra.guardian ? 'guardian' : 'enemy');
+    take(enemyDrops(e, seed, favoredKind(p)), extra.guardian ? 'guardian' : 'enemy');
   };
   for (let depth = 0; depth <= 20; depth++) {
     const L = layouts(depth), s = combatStats(p);
     row = rows[depth] ??= { depth, n: 0, level: 0, hp: 0, hit: 0, dps: 0, interval: 0, kills: 0, xp: 0, xpShare: 0, potions: 0, chests: 0,
       upgrades: { enemy: 0, guardian: 0, chest: 0 }, weapons: new Map(), kinds: new Map(), guards: { side: [], descent: [] } };
     row.n++; row.level += p.level; row.hp += p.maxHp; row.hit += s.damage; row.dps += dps(p); row.interval += s.interval;
-    const w = equippedItem(p.inventory), wl = `${w.gen.rarity} ${w.itemId.replace('weapon_sword_', '')} i${w.gen.ilvl}`;
+    const w = equippedItem(p.inventory), wl = `${w.gen.rarity} ${w.itemId.replace('weapon_', '').replace('_', ' ')} i${w.gen.ilvl}`;
     row.weapons.set(wl, (row.weapons.get(wl) || 0) + 1);
     const xp0 = p.xp, potions0 = potions;
     const cubes = [...L.route.map(k => ({ k, share: L.guardians.has(k) ? 1 : SHARE })),
@@ -77,7 +77,7 @@ for (let seed = 1; seed <= SEEDS; seed++) {
           blows: p.maxHp / attackDamage(prof), brawl: threat(prof) * ttk / p.maxHp, hits: prof.hp / hit });
         kill(kind, level, { guardian: true, guardianRole: g.role });
       }
-      for (const site of L.sitePlans.get(k) || []) { const c = chestLoot(site, depth, seed); take(c.items, 'chest'); copper += c.copper; row.chests++; }
+      for (const site of L.sitePlans.get(k) || []) { const c = chestLoot(site, depth, seed, favoredKind(p)); take(c.items, 'chest'); copper += c.copper; row.chests++; }
     }
     row.xp += p.xp - xp0; row.potions += potions - potions0;
   }

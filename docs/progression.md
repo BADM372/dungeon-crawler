@@ -8,14 +8,15 @@
   Held/queued input is cleared on opening and closing; keyboard focus stays inside.
 - **V** opens the same paused panel with a Floor column, to move items between the floor and
   the bag (see [loot.md](loot.md)).
-- Select a bag slot to inspect it: a weapon shows its rarity, item level, damage, attacks per
-  second, damage per second, reach, crits and affixes, and how it compares with the equipped
-  one (damage per second first). **Equip** switches to an owned sword, **Drop** puts an item
+- Select a bag slot to inspect it: a weapon shows its rarity, item level, kind, damage, attacks
+  per second, damage per second, reach (a sword's) or range (a shot's), crits, piercing or
+  bursts, and affixes, and how it compares with the equipped one (damage per second first).
+  **Equip** switches to an owned weapon, **Drop** puts an item
   down at your feet, **Use** uses a usable item (and closes the panel). Bag slots of Uncommon
   and better weapons are framed in their colour.
 - **1**–**6** use the quick bar (see below). With the panel open they put the selected bag
   item on that slot instead.
-- With **`?dev=1`**, inventory has a sword, rarity and item level selector with **Grant &
+- With **`?dev=1`**, inventory has a weapon (grouped by kind), rarity and item level selector with **Grant &
   equip** and **Drop at feet** buttons that roll such a weapon. Without that exact flag, the
   controls are hidden and the dev grant API refuses the operation.
 - Equipment changes are blocked during attacks, travel, knockdown, stun, swimming
@@ -116,11 +117,14 @@ to pick up ([loot.md](loot.md)). The run remembers defeated enemy IDs, so revisi
 or rebuilding a cube cannot resurrect them or duplicate rewards. Surviving
 monsters currently reset on re-entry; their levels/drop rolls remain unchanged.
 
-## Swords
+## Weapons
 
-These are the base types. A weapon instance scales the damage by its rarity and changes its
-stats with its affixes ([loot.md](loot.md)); combat reads only the instance's stats
-(`core/gear/stats.js`).
+These are the base types (`core/items.js`), five of each kind besides the Old Sword. A weapon
+instance scales the damage by its rarity and changes its stats with its affixes
+([loot.md](loot.md)); combat reads only the instance's stats (`core/gear/stats.js`). How the
+ranged kinds attack: [combat.md](combat.md#bows-crossbows-and-staffs).
+
+### Swords
 
 | Sword | Damage | Interval, seconds | Damage per second | Reach, cells | Arc | Drops from item level |
 |---|---:|---:|---:|---:|---:|---:|
@@ -139,10 +143,45 @@ leveling up during a sweep cannot change its remaining hits. Blade arc, vertical
 overlap, line-of-sight and one-hit-per-target rules still apply. The greatsword
 currently uses the same one-handed prototype animation, not a new moveset.
 
+### Bows, crossbows and staffs
+
+Shooting from afar is safer, so these deal less per second than swords of the same weight;
+the range is how far a shot flies. Bows are quick and reach furthest, crossbows hit hard and
+slowly and their bolts pierce, staffs are slow and their spells burst over a radius (half the
+damage to everything else there).
+
+| Bow | Damage | Interval | Per second | Range | Drops from |
+|---|---:|---:|---:|---:|---:|
+| Short Bow | 22 | .44 | 50 | 5 | 1 |
+| Hunting Bow | 30 | .56 | 54 | 6 | 1 |
+| Recurve Bow | 35 | .62 | 56 | 6.5 | 3 |
+| Longbow | 44 | .74 | 59 | 8 | 5 |
+| War Bow | 54 | .84 | 64 | 7 | 7 |
+
+| Crossbow | Damage | Interval | Per second | Range | Pierces | Drops from |
+|---|---:|---:|---:|---:|---:|---:|
+| Hand Crossbow | 34 | .66 | 52 | 4.5 | 0 | 1 |
+| Light Crossbow | 46 | .84 | 55 | 5.5 | 1 | 2 |
+| Heavy Crossbow | 64 | 1.04 | 62 | 6 | 1 | 4 |
+| Repeating Crossbow | 27 | .45 | 60 | 5 | 0 | 6 |
+| Arbalest | 86 | 1.28 | 67 | 7 | 2 | 8 |
+
+| Staff | Damage | Interval | Per second | Range | Burst, cells | Spell | Drops from |
+|---|---:|---:|---:|---:|---:|---|---:|
+| Gnarled Staff | 27 | .58 | 47 | 4.5 | .5 | green | 1 |
+| Oak Staff | 33 | .62 | 53 | 5 | .6 | blue | 2 |
+| Ember Staff | 41 | .70 | 59 | 5 | .85 | orange | 4 |
+| Crystal Staff | 47 | .74 | 64 | 5.5 | .7 | ice | 6 |
+| Arcane Staff | 58 | .84 | 69 | 6 | 1 | violet | 8 |
+
+Each kind plays its own clip (Shoot, CrossbowShot, Cast), scaled in time like Slash, and is
+carried in its own hold pose.
+
 `game/equipment.js` prepares/caches assets and then commits ownership selection
 and visual attachment together. Failed or stale asynchronous requests cannot
-replace the current weapon or cross a new-run reset. Swords mount at unit local
-scale under the already-scaled `hand.R`; swimming/climbing hides them. The Old Sword never
+replace the current weapon or cross a new-run reset. Weapons mount at unit local
+scale under the already-scaled fist their extras name (bows `hand.L`, the rest `hand.R`);
+swimming/climbing hides them. The Old Sword never
 drops; the others drop as generated weapons ([loot.md](loot.md)). Dropping every weapon is
 allowed and leaves you unable to attack. No shops, durability or armor are implemented.
 
@@ -151,7 +190,7 @@ allowed and leaves you unable to attack. No shops, durability or armor are imple
 `npm test` covers stacking/capacity/instance identity, the quick bar's references, the bound
 scroll, potions on the bar, conversion and
 change, integer validation, XP thresholds, XP scaling and multi-level gains, scaled enemy
-profiles, deterministic rewards, exactly-once deaths, regeneration, potions, every sword's
+profiles, deterministic rewards, exactly-once deaths, regeneration, potions, every weapon's
 assets/stats/timing and swing snapshots.
 
 In the game console:
@@ -162,7 +201,7 @@ await checks.runInventoryChecks();
 ```
 
 This resets to a seed-3 run before and after checking the real modal, input pause,
-icons/counts, all six mounted swords, dev gating, ordinary slot equipment, death
+icons/counts, all six swords and a bow, crossbow and staff mounted in their sockets, dev gating, ordinary slot equipment, death
 rewards, cube revisits, max-HP respawn, new-run reset and asynchronous race handling.
 The existing combat/climbing/travel browser checks remain available; see
 [combat.md](combat.md).

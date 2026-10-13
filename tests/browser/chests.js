@@ -6,6 +6,7 @@ import { paused } from './combat.js';
 import { state, player } from '../../src/game/state.js';
 import { createRun, createPlayerStats } from '../../src/core/progression.js';
 import { chestLoot } from '../../src/core/chests.js';
+import { favoredKind } from '../../src/core/combat.js';
 import { HEALTH_POTION } from '../../src/core/items.js';
 import { barEntry, copperTotal } from '../../src/core/inventory.js';
 import { enterCube, spawnAt, hurt } from '../../src/game/flow.js';
@@ -67,7 +68,7 @@ export async function runChestChecks() {
       results.push('hover / label / click opens / Open clip');
 
       for (let i = 0; i < 90; i++) updateLoot(1 / 60, i / 60);
-      const want = chestLoot(site, state.map.depth, state.map.seed), here = lootHere().filter(p => p.kept);
+      const want = chestLoot(site, state.map.depth, state.map.seed, favoredKind(player)), here = lootHere().filter(p => p.kept);
       const names = list => list.filter(i => i.gen).map(i => i.gen.name).sort().join();
       check(names(here) === names(want.items) && here.every(p => p.toss === 1), 'the chest spills its seeded weapons');
       check(copperTotal(player.inventory) === copper + want.copper, 'and coins (the magnet takes them in front of the chest)');

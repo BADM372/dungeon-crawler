@@ -1,28 +1,53 @@
-// Item definitions are data, not renderer objects. Equipment uses rig units on hand.R.
+// Item definitions are data, not renderer objects. Equipment uses rig units in the hand sockets.
 // These are the base types; a weapon in the bag or on the floor is an instance of one, with its
 // own rolled rarity, affixes and name in `gen` (core/gear/). Its stats: core/gear/stats.js.
 const icon = name => `assets/items/${name}.png`;
 const model = name => `assets/items/${name}.glb`;
 // Base weapon stats at item level 1 (core/gear/stats.js grows the damage with item level):
-//   damage per hit; interval: seconds from one swing to the next (the attack speed; every swing
-//   time scales with it, see core/combat.js); range: reach in cells; arc: × the basic swing arc.
-// The light ones are quick and nimble, the heavy ones hit harder, wider and further but plant
-// you for longer; damage per second rises a little with weight, and the heavier bases only
-// drop deeper down (core/gear/bases.js).
-const weapon = (id, name, damage, interval, range, arc = 1, old = false) => Object.freeze({
+//   kind: sword, bow, crossbow or staff (how it attacks: core/combat.js KINDS); damage per hit;
+//   interval: seconds from one attack to the next (the attack speed; every attack time scales
+//   with it, see core/combat.js); range: reach in cells (how far a shot flies for the ranged
+//   kinds); arc: × the basic swing arc (swords); pierce: how many enemies a bolt goes through
+//   before it stops; burst: the radius (cells) a spell bursts over where it hits, hurting
+//   everything else there for BURST_SHARE of its damage (core/shots.js); color: the spell's.
+// Swords: the light ones are quick and nimble, the heavy ones hit harder, wider and further but
+// plant you for longer; damage per second rises a little with weight, and the heavier bases only
+// drop deeper down (core/gear/bases.js). Shooting from afar is safer, so the ranged kinds deal
+// less per second than swords of the same weight: bows are quick and reach far, crossbows hit
+// hard and slowly and pierce, staffs are slow and burst.
+const weapon = (id, name, kind, damage, interval, range, more = {}) => Object.freeze({
   id, name, category: 'weapon', stackLimit: 1,
-  icon: icon(old ? 'weapon_sword_medium' : id), model: old ? 'assets/sword.glb' : model(id),
-  weapon: Object.freeze({ damage, interval, range, arc }),
+  icon: icon(more.old ? 'weapon_sword_medium' : id), model: more.old ? 'assets/sword.glb' : model(id),
+  weapon: Object.freeze({ kind, damage, interval, range, arc: more.arc ?? 1, pierce: more.pierce ?? 0,
+    burst: more.burst ?? 0, ...(more.color && { color: more.color }) }),
 });
+const sword = (id, name, damage, interval, range, arc = 1, old = false) => weapon(id, name, 'sword', damage, interval, range, { arc, old });
 // learn: combat.html#chain (see learn/README.md)
 export const WEAPONS = Object.freeze([
-  weapon('weapon_sword_old', 'Old Sword', 30, .42, .85, 1, true),   //  71 damage per second
-  weapon('weapon_sword_short', 'Short Sword', 23, .32, .72),         //  72, the fastest
-  weapon('weapon_sword_medium', 'Medium Sword', 34, .42, .85),       //  81
-  weapon('weapon_sword_long', 'Long Sword', 39, .48, 1.05),          //  81, long reach
-  weapon('weapon_sword_broad', 'Broadsword', 46, .54, .88, 1.25),    //  85, a wide sweep
-  weapon('weapon_sword_greatsword', 'Greatsword', 60, .66, 1.15, 1.3), // 91, wide and long
+  sword('weapon_sword_old', 'Old Sword', 30, .42, .85, 1, true),   //  71 damage per second
+  sword('weapon_sword_short', 'Short Sword', 23, .32, .72),         //  72, the fastest
+  sword('weapon_sword_medium', 'Medium Sword', 34, .42, .85),       //  81
+  sword('weapon_sword_long', 'Long Sword', 39, .48, 1.05),          //  81, long reach
+  sword('weapon_sword_broad', 'Broadsword', 46, .54, .88, 1.25),    //  85, a wide sweep
+  sword('weapon_sword_greatsword', 'Greatsword', 60, .66, 1.15, 1.3), // 91, wide and long
+  weapon('weapon_bow_short', 'Short Bow', 'bow', 22, .44, 5),             // 50, the quickest
+  weapon('weapon_bow_hunting', 'Hunting Bow', 'bow', 30, .56, 6),         // 54
+  weapon('weapon_bow_recurve', 'Recurve Bow', 'bow', 35, .62, 6.5),       // 56
+  weapon('weapon_bow_long', 'Longbow', 'bow', 44, .74, 8),                // 59, the furthest
+  weapon('weapon_bow_war', 'War Bow', 'bow', 54, .84, 7),                 // 64
+  weapon('weapon_crossbow_hand', 'Hand Crossbow', 'crossbow', 34, .66, 4.5),                // 52
+  weapon('weapon_crossbow_light', 'Light Crossbow', 'crossbow', 46, .84, 5.5, { pierce: 1 }), // 55
+  weapon('weapon_crossbow_repeating', 'Repeating Crossbow', 'crossbow', 27, .45, 5),       // 60, rapid
+  weapon('weapon_crossbow_heavy', 'Heavy Crossbow', 'crossbow', 64, 1.04, 6, { pierce: 1 }), // 62
+  weapon('weapon_crossbow_arbalest', 'Arbalest', 'crossbow', 86, 1.28, 7, { pierce: 2 }),  // 67
+  weapon('weapon_staff_gnarled', 'Gnarled Staff', 'staff', 27, .58, 4.5, { burst: .5, color: '#8fe07a' }),   // 47
+  weapon('weapon_staff_oak', 'Oak Staff', 'staff', 33, .62, 5, { burst: .6, color: '#7fb4ff' }),            // 53
+  weapon('weapon_staff_ember', 'Ember Staff', 'staff', 41, .70, 5, { burst: .85, color: '#ff8a3a' }),       // 59
+  weapon('weapon_staff_crystal', 'Crystal Staff', 'staff', 47, .74, 5.5, { burst: .7, color: '#bdf3ff' }),  // 64
+  weapon('weapon_staff_arcane', 'Arcane Staff', 'staff', 58, .84, 6, { burst: 1, color: '#c48cff' }),       // 69
 ]);
+// the kinds of weapon, in the order the UI lists them
+export const WEAPON_KINDS = Object.freeze(['sword', 'bow', 'crossbow', 'staff']);
 // learn: code.html#lists (see learn/README.md)
 export const COINS = Object.freeze([
   { id: 'item_coin_gold', name: 'Gold', value: 1000, suffix: 'g' },

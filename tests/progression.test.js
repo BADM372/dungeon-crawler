@@ -11,7 +11,7 @@ import { createPlayerStats, createRun, xpForLevel, xpToNext, levelFromXP, xpProg
   drinkPotion, levelDamage, maxHealth, START_POTIONS } from '../src/core/progression.js';
 import { SPIDER, STUNDER, enemyProfile, enemyRoll, makeEnemy, coinRange, depthLevel } from '../src/core/enemies.js';
 import { itemStats } from '../src/core/gear/stats.js';
-import { swordState, combatStats, startSwing, advanceSwing, swordHit, cancelSwing, damageEnemy, canChangeWeapon } from '../src/core/combat.js';
+import { swordState, combatStats, startSwing, advanceSwing, swordHit, cancelSwing, damageEnemy, canChangeWeapon, shotDue, KINDS } from '../src/core/combat.js';
 
 const assetPath = url => resolve(assetsRoot, url);
 const hero = () => ({ ...createPlayerStats(), x: 0, y: 0, z: 0, yaw: 0, stun: 0, sword: swordState() });
@@ -230,15 +230,26 @@ test('health regeneration waits five hit-free seconds and restores a share of th
   regenerate(p, 99, 21); assert.equal(p.hp, 110);
   takeDamage(p, 1000, 22); regenerate(p, 99, 30); assert.equal(p.hp, 0);
 });
-test('every sword has real assets, damage, reach and synchronized attack timing', () => {
+test('every weapon has real assets, damage, reach and synchronized attack timing', () => {
   for (const w of WEAPONS) {
     assert.ok(existsSync(assetPath(w.model)));
     assert.ok(existsSync(assetPath(w.icon)));
     const p = hero(); equip(p, w.id); awardXP(p, xpForLevel(5));
-    const stats = combatStats(p);
+    const stats = combatStats(p), T = KINDS[w.weapon.kind].timing;
+    assert.equal(stats.kind, w.weapon.kind); assert.equal(stats.ranged, w.weapon.kind !== 'sword');
     assert.equal(stats.damage, Math.round(w.weapon.damage * levelDamage(5))); assert.equal(stats.range, w.weapon.range);
-    assert.equal(stats.chain, w.weapon.interval, 'swings chain at the weapon interval');
-    assert.ok(Math.abs(stats.activeStart / stats.duration - .16 / .62) < 1e-9, 'every swing time scales with it');
+    assert.equal(stats.chain, w.weapon.interval, 'attacks chain at the weapon interval');
+    assert.ok(Math.abs(stats.activeStart / stats.duration - T.activeStart / T.duration) < 1e-9, 'every attack time scales with it');
+    if (stats.ranged) {
+      // a shot leaves once, at activeStart, and the blade rules never apply
+      assert.ok(startSwing(p));
+      const e = makeEnemy({ x: 0, y: 0, z: .5 }, STUNDER);
+      advanceSwing(p, stats.activeStart - .01); assert.equal(shotDue(p), false);
+      advanceSwing(p, .02); assert.equal(shotDue(p), true); assert.equal(swordHit(p, e, 1), false);
+      p.sword.fired = true; assert.equal(shotDue(p), false);
+      advanceSwing(p, stats.duration); assert.equal(p.sword.active, false);
+      continue;
+    }
     assert.ok(startSwing(p));
     const e = makeEnemy({ x: 0, y: 0, z: w.weapon.range + SPIDER.radius - .01 }, STUNDER);
     assert.equal(swordHit(p, e, 1), false);

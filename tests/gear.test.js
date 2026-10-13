@@ -4,7 +4,7 @@ import { mulberry32 } from '../src/core/util.js';
 import { ITEMS, OLD_SWORD, WEAPONS } from '../src/core/items.js';
 import { RARITIES, RARITY, rarityOdds, rollRarity } from '../src/core/gear/rarities.js';
 import { AFFIXES, AFFIX, MAX_PREFIXES, MAX_SUFFIXES, MAX_TIER, affixTier, describeAffix } from '../src/core/gear/affixes.js';
-import { BASES } from '../src/core/gear/bases.js';
+import { BASES, FAVOR } from '../src/core/gear/bases.js';
 import { rollWeapon, fixedWeapon, GEN_VERSION } from '../src/core/gear/generate.js';
 import { weaponDrops, potionDrops, enemyDrops, dropChance, potionChance, guardianDrops } from '../src/core/gear/drops.js';
 import { itemStats, displayName, baseLine, affixLines, weaponDps, ilvlDamage, ARC, CRIT_CHANCE, CRIT_DAMAGE } from '../src/core/gear/stats.js';
@@ -104,7 +104,8 @@ test('names: generated for every rarity, the base under it unless the name says 
 test('stats: item level grows base damage, rarity scales it, affixes add on top', () => {
   const old = fixedWeapon(OLD_SWORD.id);
   assert.deepEqual(old.gen, { v: GEN_VERSION, rarity: 'common', ilvl: 1, affixes: [], name: 'Old Sword' });
-  assert.deepEqual(itemStats(old), { damage: 30, interval: 0.42, range: 0.85, arc: ARC, crit: CRIT_CHANCE, critDamage: CRIT_DAMAGE, leech: 0, knockback: 1 });
+  assert.deepEqual(itemStats(old), { kind: 'sword', ranged: false, damage: 30, interval: 0.42, range: 0.85, arc: ARC, crit: CRIT_CHANCE,
+    critDamage: CRIT_DAMAGE, leech: 0, knockback: 1, pierce: 0, burst: 0 });
   assert.deepEqual(itemStats({ itemId: OLD_SWORD.id }), itemStats(old), 'a weapon without gen is common');
   const gen = (rarity, affixes, ilvl = 10, itemId = 'weapon_sword_long') => ({ itemId, count: 1, gen: { v: 1, rarity, ilvl, affixes, name: 'x' } });
   assert.equal(ilvlDamage(1), 1); assert.equal(ilvlDamage(11), 1.5);
@@ -121,13 +122,51 @@ test('stats: item level grows base damage, rarity scales it, affixes add on top'
   assert.deepEqual([t.crit, t.critDamage, t.leech, t.knockback, t.arc], [CRIT_CHANCE + 0.06, 1.75, 3, 1.4, ARC * 1.2]);
   // the heavy bases sweep wider; their damage per second rises a little with weight
   assert.equal(itemStats(gen('common', [], 1, 'weapon_sword_broad')).arc, ARC * 1.25);
-  const dps = WEAPONS.slice(1).map(w => weaponDps(itemStats(gen('common', [], 1, w.id))));
-  for (let i = 1; i < dps.length; i++) assert.ok(dps[i] >= dps[i - 1] - 1, `${WEAPONS[i + 1].id}`);
+  const swords = WEAPONS.slice(1).filter(w => w.weapon.kind === 'sword');
+  const dps = swords.map(w => weaponDps(itemStats(gen('common', [], 1, w.id))));
+  for (let i = 1; i < dps.length; i++) assert.ok(dps[i] >= dps[i - 1] - 1, `${swords[i].id}`);
   assert.ok(dps.at(-1) / dps[0] < 1.3, 'no base outclasses the others');
   const fast = WEAPONS.find(w => w.id === 'weapon_sword_short').weapon, slow = WEAPONS.find(w => w.id === 'weapon_sword_greatsword').weapon;
   assert.ok(fast.interval < 0.35 && slow.interval > 0.6 && slow.range > fast.range + 0.4);
   assert.deepEqual(affixLines(gen('rare', [{ id: 'reach', tier: 1, value: 0.06 }])), ['+0.06 reach']);
   assert.equal(itemStats({ itemId: 'item_potion_health', count: 1 }), null);
+});
+
+test('bows, crossbows and staffs: five bases each, ranged, weaker per second than swords of their weight', () => {
+  const gen = (itemId, affixes = [], ilvl = 1) => ({ itemId, count: 1, gen: { v: 1, rarity: 'common', ilvl, affixes, name: 'x' } });
+  const dpsOf = id => weaponDps(itemStats(gen(id)));
+  const swordDps = WEAPONS.filter(w => w.weapon.kind === 'sword' && w.id !== OLD_SWORD.id).map(w => dpsOf(w.id));
+  for (const kind of ['bow', 'crossbow', 'staff']) {
+    const list = WEAPONS.filter(w => w.weapon.kind === kind);
+    assert.equal(list.length, 5, kind);
+    assert.equal(BASES.filter(b => ITEMS[b.itemId].weapon.kind === kind).length, 5, `every ${kind} drops`);
+    assert.ok(BASES.some(b => ITEMS[b.itemId].weapon.kind === kind && b.minLevel === 1), `a ${kind} from item level 1`);
+    for (const w of list) {
+      const s = itemStats(gen(w.id));
+      assert.ok(s.ranged && s.kind === kind && s.range >= 4, w.id);
+      assert.ok(dpsOf(w.id) < Math.max(...swordDps), `${w.id} does less per second than the heaviest sword`);
+      if (kind === 'staff') assert.ok(s.burst > 0 && /^#[0-9a-f]{6}$/.test(s.color), w.id);
+      if (kind !== 'crossbow') assert.equal(s.pierce, 0, w.id);
+    }
+    const dps = list.map(w => dpsOf(w.id)).sort((a, b) => a - b);
+    assert.ok(dps.at(-1) / dps[0] < 1.5, `no ${kind} outclasses the others`);
+  }
+  assert.ok(WEAPONS.some(w => w.weapon.pierce > 0), 'some crossbows pierce');
+  // melee-only affixes never roll on ranged bases and the other way round; Distance stretches range
+  const R = mulberry32(21);
+  for (let k = 0; k < 400; k++) {
+    const item = rollWeapon(R, 20, { rarity: 'ancient' }), ranged = ITEMS[item.itemId].weapon.kind !== 'sword';
+    for (const a of item.gen.affixes) assert.ok(AFFIX[a.id].tags.includes(ranged ? 'ranged' : 'melee'), `${a.id} on ${item.itemId}`);
+  }
+  // drops lean towards the kind you fight with: about half of them once every kind drops
+  const share = (favor, n = 8000) => { const R2 = mulberry32(5); let k = 0;
+    for (let i = 0; i < n; i++) if (ITEMS[rollWeapon(R2, 12, { favor }).itemId].weapon.kind === (favor ?? 'bow')) k++;
+    return k / n; };
+  assert.ok(Math.abs(share(null) - 0.25) < 0.02 && Math.abs(share('bow') - FAVOR / (FAVOR + 3)) < 0.02, `${share(null)} ${share('bow')}`);
+  assert.deepEqual(weaponDrops({ id: 'g', level: 9, guardian: true, guardianRole: 'side' }, 4, 'staff'),
+    weaponDrops({ id: 'g', level: 9, guardian: true, guardianRole: 'side' }, 4, 'staff'), 'still seeded');
+  assert.equal(itemStats(gen('weapon_bow_long', [{ id: 'distance', tier: 3, value: 25 }])).range, 10);
+  assert.deepEqual(affixLines(gen('weapon_bow_long', [{ id: 'distance', tier: 3, value: 25 }])), ['+25% range']);
 });
 
 test('drops: seeded per enemy and world, likelier from tougher kinds, guardians always drop', () => {
