@@ -6,14 +6,15 @@ import { toGeometry } from './builder.js';
 import { fluidMaterial } from './materials.js';
 import { cutMaterial } from './section.js';
 
-// returns the fluid meshes (animated every frame)
-export function layerMeshes(geo, group) {
+// returns the fluid meshes (animated every frame); shadowless: the kinds ('terrain' | 'stone' |
+// 'wood') that cast no shadow (inside houses the walls, which get cut away)
+export function layerMeshes(geo, group, shadowless = []) {
   const fluidMeshes = [];
   for (const L of geo) {
-    for (const [a, cap] of [[L.terrain, 'rock'], [L.stone, 'stone'], [L.wood, 'wood']]) {
+    for (const [a, cap, kind] of [[L.terrain, 'rock', 'terrain'], [L.stone, 'stone', 'stone'], [L.wood, 'wood', 'wood']]) {
       if (!a) continue;
       const mesh = new THREE.Mesh(toGeometry(a), cutMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }), cap));
-      mesh.castShadow = mesh.receiveShadow = true;
+      mesh.castShadow = !shadowless.includes(kind); mesh.receiveShadow = true;
       group.add(mesh);
     }
     for (const t of FLUIDS) {

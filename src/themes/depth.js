@@ -4,7 +4,8 @@ import { THEMES } from './index.js';
 import { parse } from '../world/coords.js';
 
 export const MAX_DEPTH = 20;
-export const depthOf = k => -parse(k)[1];
+// house interiors (keys off the grid, world/town.js interiorKey) are at the surface
+export const depthOf = k => k.includes(',') ? -parse(k)[1] : 0;
 
 export function themeAt(depth) {
   let t = THEMES[0];

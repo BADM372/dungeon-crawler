@@ -12,7 +12,8 @@ import { C, gradient } from './palette.js';
 import { themeAt } from '../themes/depth.js';
 import { buildOf } from '../themes/builds.js';
 import { scene, camera, renderer } from './scene.js';
-import { U, inject, turnShape } from './cutshader.js';
+import { U, inject, turnShape, CUT_KINDS } from './cutshader.js';
+import { WALL_CUT, CUT_HEIGHT } from './interior.js';
 
 const RADIUS = 2.8;   // world units around the character
 
@@ -41,7 +42,7 @@ export function cutMaterial(mat, caps = false, ghost = !!caps) {
       }
       #include <opaque_fragment>`);
     return fs;
-  }, caps ? 'cut-caps-' + caps : 'cut');
+  }, caps ? 'cut-caps-' + caps : 'cut', caps ? CUT_KINDS[caps] : 3);
 }
 
 // fluid caps: a flat quad at the cut height for every fluid cell it passes through, drawn
@@ -70,10 +71,17 @@ export function setCut(y, map, px, py, pz) {
   const on = y < CUBE_H;
   turnShape(performance.now() / 1000);
   U.uCutY.value = on ? y : 1e3;
-  // cave walls on the camera's side come down to a little over the character
-  const cx = camera.position.x - N / 2, cz = camera.position.z - N / 2, cave = !!map?.cave;
-  U.uFront.value.set(cave && cx > 6 ? 1 : 0, cave && cx < -6 ? 1 : 0, cave && cz > 6 ? 1 : 0, cave && cz < -6 ? 1 : 0);
-  U.uWallY.value = py + 1;
+  // cave walls (and the walls of a house, inside) on the camera's side come down to a little
+  // over the character
+  // inside a house they go entirely, down to the floor, with what hangs on them (not the door)
+  const inside = map?.interior, room = inside?.room, t = inside?.wall ?? 0;
+  // (only the walls' own mesh there: not the floors, the stair or the railing beside them)
+  if (room) { U.uWallBox.value.set(room.x0 - t, room.x1 + t, room.z0 - t, room.z1 + t); U.uWallBand.value = t + WALL_CUT; U.uFrontKinds.value.set(0, 1, 0, 0); }
+  else { U.uWallBox.value.set(0, N, 0, N); U.uWallBand.value = 2.2; U.uFrontKinds.value.set(1, 1, 1, 1); }
+  const box = U.uWallBox.value, walled = !!map?.cave || !!room;
+  const cx = camera.position.x - (box.x + box.y) / 2, cz = camera.position.z - (box.z + box.w) / 2;
+  U.uFront.value.set(walled && cx > 6 ? 1 : 0, walled && cx < -6 ? 1 : 0, walled && cz > 6 ? 1 : 0, walled && cz < -6 ? 1 : 0);
+  U.uWallY.value = inside ? inside.door.y + CUT_HEIGHT : py + 1;
   camera.updateMatrixWorld();
   renderer.getDrawingBufferSize(U.uRes.value);
   U.uAspect.value = camera.aspect;

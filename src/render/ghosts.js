@@ -3,16 +3,17 @@
 // cutaway. Twins render after everything opaque and write no depth, so the character and the
 // section caps show through. One glass material per cube (fading patches it per cube).
 import * as THREE from 'three';
-import { inject } from './cutshader.js';
+import { inject, CUT_KINDS } from './cutshader.js';
 
 function glassMaterial() {
   const mat = new THREE.MeshStandardMaterial({ color: 0xdcecff, transparent: true, opacity: 0.08, roughness: 0.2, metalness: 0, depthWrite: false });
   return inject(mat, fs => fs
-    .replace('#include <clipping_planes_fragment>', 'if (cutRegion(true) < 0.5) discard;\n#include <clipping_planes_fragment>')
+    // walls already cut down for the camera (caves, houses) leave no glass either
+    .replace('#include <clipping_planes_fragment>', 'if (cutRegion(true) < 0.5 || frontWall()) discard;\n#include <clipping_planes_fragment>')
     // a little more opaque where the surface turns away (outlines the shapes)
     .replace('#include <dithering_fragment>', `#include <dithering_fragment>
       float rim = 1.0 - abs(dot(normalize(normal), normalize(vViewPosition)));
-      gl_FragColor.a = mix(0.1, 0.4, rim * rim);`), 'cut-glass');
+      gl_FragColor.a = mix(0.1, 0.4, rim * rim);`), 'cut-glass', CUT_KINDS.stone);
 }
 
 export function addGhosts(group) {

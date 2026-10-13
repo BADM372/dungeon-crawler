@@ -14,6 +14,12 @@ export const isClearing = (k, seed) => isTown(k) || isMerchantCamp(k, seed);
 export const enemyFreeAt = k => { const [x, y, z] = parse(k); return y === 0 && Math.max(Math.abs(x), Math.abs(z)) <= 1; };
 export const townExitPosition = d => d === 0 || d === 3 ? 8 : 7;
 const exitYaw = [-Math.PI / 2, Math.PI / 2, Math.PI, 0];
+// The inside of a house is a map of its own (cubegen/interior.js), outside the cube grid.
+const INTERIOR = 'interior:';
+export const interiorKey = name => INTERIOR + name;
+export const isInterior = k => typeof k === 'string' && k.startsWith(INTERIOR);
+// Buildings stand on quarter turns only: snap cos/sin so their boxes stay exact.
+const snap = v => Math.abs(v - Math.round(v)) < 1e-9 ? Math.round(v) : v;
 
 export function rotateTownPoint(x, z, yaw) {
   const dx = x - N / 2, dz = z - N / 2, c = Math.cos(yaw), s = Math.sin(yaw);
@@ -21,19 +27,58 @@ export function rotateTownPoint(x, z, yaw) {
 }
 
 // Full exported footprint bounds in glTF X/Z, INCLUDING attached porches/props.
-// Tests compare these to assets/town/*.glb. The asymmetric plan faces the clearing,
-// not a street grid; individual yaws are deliberately not quarter turns.
+// Tests compare these to assets/town/*.glb. Buildings stand on the cube grid (quarter
+// turns), like the rest of the world, around an asymmetric clearing.
+//
+// Houses with a door also list:
+//   parts: their colliders in the same frame (front +Z): { box: [x0, z0, x1, z1] } or
+//     { circle: [x, z, r] }, up to `top`; `solid: false` only hides the player (porch roofs)
+//     from `bottom` up. The walls stop at the door's face, so you can walk up to it.
+//   door: the door's centre `x` on the front, the `z` of its face and its width `w`.
+//   body: the walled part (centre `x`, width `w`, depth `d`); the interior has its proportions.
+//   upper: the floor above inside, 'gallery' (a real storey) or 'loft' (under the gable).
+// Buildings without parts collide with their whole bounds.
 export const BUILDINGS = [
-  { name: 'town_inn_a', x: 3.5, z: 3.3, yaw: -.18, bounds: [-2.310, -1.764, 2.074, 2.459], height: 4.790 },
-  { name: 'town_stable_a', x: 12.3, z: 3.9, yaw: .25, bounds: [-2.440, -1.564, 2.224, 2.142], height: 3.293 },
-  { name: 'town_blacksmith_a', x: 3.1, z: 10.9, yaw: 1.32, bounds: [-2.446, -1.564, 2.578, 1.731], height: 3.376 },
-  { name: 'town_pet_shop_a', x: 11.5, z: 12.6, yaw: -2.65, bounds: [-1.771, -1.489, 2.494, 2.122], height: 3.333 },
+  { name: 'town_inn_a', x: 3.78, z: 3.4, yaw: 0, bounds: [-2.310, -1.764, 2.074, 2.459], height: 4.790,
+    door: { x: -.28, z: 1.6, w: .8 }, body: { x: 0, w: 3.55, d: 2.9 }, upper: 'gallery',
+    parts: [
+      { box: [-1.84, -1.52, 1.84, 1.6], top: 4.79 },
+      { box: [.62, 1.7, 1.62, 2.18], top: .75 },                       // bench
+      { circle: [-.93, 2.24, .09], top: 1.7 }, { circle: [.37, 2.24, .09], top: 1.7 },   // porch posts
+      { circle: [-2.055, -.43, .25], top: .6 },                          // barrel
+      { box: [-1.1, 1.27, .54, 2.38], bottom: 1.6, top: 2.1, solid: false },   // porch roof
+    ] },
+  { name: 'town_stable_a', x: 12.3, z: 3.6, yaw: 0, bounds: [-2.440, -1.564, 2.224, 2.142], height: 3.293 },
+  { name: 'town_blacksmith_a', x: 3.0, z: 11.2, yaw: Math.PI / 2, bounds: [-2.446, -1.564, 2.578, 1.731], height: 3.376,
+    door: { x: -1.3, z: 1.42, w: .65 }, body: { x: -.75, w: 2.5, d: 2.5 }, upper: 'loft',
+    parts: [
+      { box: [-2.07, -1.32, .57, 1.42], top: 3.38 },
+      { box: [.5, -1.32, 2.56, -.35], top: 3.38 },                     // forge, bellows and chimney
+      { circle: [2.47, .35, .1], top: 1.75 },                            // lean-to post
+      { circle: [1.25, .76, .3], top: .75 },                             // anvil
+      { circle: [2.17, .45, .26], top: .55 },                            // quench tub
+      { box: [-2.45, -.89, -1.99, -.43], top: .46 },                    // crate
+      { box: [.5, -1.32, 2.6, .4], bottom: 1.6, top: 2.05, solid: false },     // lean-to roof
+    ] },
+  { name: 'town_pet_shop_a', x: 12.6, z: 12.03, yaw: -Math.PI / 2, bounds: [-1.771, -1.489, 2.494, 2.122], height: 3.333,
+    door: { x: -.53, z: 1.33, w: .63 }, body: { x: 0, w: 2.6, d: 2.35 }, upper: 'loft',
+    parts: [
+      { box: [-1.36, -1.24, 1.36, 1.33], top: 3.33 },
+      { circle: [-1.4, 2.025, .07], top: 1.71 }, { circle: [1.4, 2.025, .07], top: 1.71 },   // porch posts
+      { box: [1.47, -.97, 2.21, .69], top: 1 },                         // kennels
+      { circle: [1.82, .75, .16], top: .55 },                            // cat
+      { box: [.14, 1.33, 1.41, 2.12], top: .6 },                        // rabbit pen
+      { circle: [-1.52, -.14, .1], top: 1.6 },                           // bird perch
+      { box: [-1.47, 1.2, 1.47, 2.06], bottom: 1.6, top: 1.95, solid: false },  // canvas porch
+    ] },
 ];
 export const MERCHANTS = [
-  { name: 'town_merchant_a', x: 4.0, z: 11.2, yaw: 1.35, bounds: [-1.551, -1.276, 1.786, 1.628], height: 2.630 },
-  { name: 'town_merchant_b', x: 12.0, z: 8.0, yaw: -1.75, bounds: [-1.701, -1.276, 1.612, 1.644], height: 2.697 },
-  { name: 'town_merchant_c', x: 4.6, z: 3.8, yaw: .85, bounds: [-1.671, -1.276, 1.801, 1.637], height: 2.757 },
+  { name: 'town_merchant_a', x: 4.0, z: 11.2, yaw: Math.PI / 2, bounds: [-1.551, -1.276, 1.786, 1.628], height: 2.630 },
+  { name: 'town_merchant_b', x: 12.0, z: 8.0, yaw: -Math.PI / 2, bounds: [-1.701, -1.276, 1.612, 1.644], height: 2.697 },
+  { name: 'town_merchant_c', x: 4.6, z: 3.8, yaw: Math.PI / 2, bounds: [-1.671, -1.276, 1.801, 1.637], height: 2.757 },
 ];
+// how far in front of a door (or a frontage) its doorstep is
+export const DOORSTEP = .75;
 const TREES = [
   { name: 'town_tree_oak_a', height: 6.8, radius: 1.30, trunk: .334, canopy: 4.01 },
   { name: 'town_tree_elm_a', height: 7.1, radius: 1.05, trunk: .276, canopy: 4.19 },
@@ -59,7 +104,7 @@ function clearingPlan(exit, seed, buildings, gates) {
   const yaw = exitYaw[exit];
   if (yaw === undefined) throw new Error('Clearing needs a side exit');
   const y = TOWN_LEVEL * LH, R = mulberry32(hash32(seed ^ 0x70a11));
-  const placements = [], colliders = [], occluders = [], frontages = [], paths = [];
+  const placements = [], colliders = [], occluders = [], frontages = [], paths = [], doors = [];
   const footprints = [], clutter = [];
   const add = (name, x, z, localYaw = 0, s = 1) => {
     const [rx, rz] = rotateTownPoint(x, z, yaw);
@@ -67,28 +112,39 @@ function clearingPlan(exit, seed, buildings, gates) {
     placements.push(p); return p;
   };
   for (const b of buildings) {
-    const p = add(b.name, b.x, b.z, b.yaw), [x0, z0, x1, z1] = b.bounds;
-    const c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+    const p = add(b.name, b.x, b.z, b.yaw);
+    const c = snap(Math.cos(p.yaw)), s = snap(Math.sin(p.yaw));
+    const turn = (x, z) => [p.x + x * c + z * s, p.z - x * s + z * c];
+    const aabb = ([x0, z0, x1, z1]) => {
+      const points = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].map(([x, z]) => turn(x, z));
+      return { x0: Math.min(...points.map(p => p[0])), x1: Math.max(...points.map(p => p[0])),
+        z0: Math.min(...points.map(p => p[1])), z1: Math.max(...points.map(p => p[1])) };
+    };
     footprints.push({ x: p.x, z: p.z, c, s, bounds: b.bounds });
-    const points = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].map(([x, z]) => [p.x + x * c + z * s, p.z - x * s + z * c]);
-    const box = { shape: 'box', name: b.name, x0: Math.min(...points.map(p => p[0])), x1: Math.max(...points.map(p => p[0])),
-      z0: Math.min(...points.map(p => p[1])), z1: Math.max(...points.map(p => p[1])), bottom: y, top: y + b.height };
-    colliders.push(box); occluders.push(box);
-    // Frontage must clear the conservative axis-aligned envelope as well as the mesh.
-    const dx = Math.sin(p.yaw), dz = Math.cos(p.yaw);
+    for (const part of b.parts || [{ box: b.bounds, top: b.height }]) {
+      let body;
+      if (part.box) body = { shape: 'box', name: b.name, ...aabb(part.box), bottom: y + (part.bottom ?? 0), top: y + part.top };
+      else { const [x, z] = turn(part.circle[0], part.circle[1]); body = { name: b.name, x, z, r: part.circle[2], bottom: y, top: y + part.top }; }
+      if (part.solid !== false) colliders.push(body);
+      occluders.push(body);
+    }
+    // In front of the door; else in front of the whole footprint, on its centre line.
+    const dx = s, dz = c;
+    if (b.door) {
+      const [x, z] = turn(b.door.x, b.door.z);
+      doors.push({ id: b.name, building: b.name, to: interiorKey(b.name), x, z, nx: dx, nz: dz, w: b.door.w, y });
+      frontages.push({ name: b.name, x: x + dx * DOORSTEP, z: z + dz * DOORSTEP });
+      continue;
+    }
+    const box = aabb(b.bounds);
     const tx = Math.abs(dx) < 1e-6 ? Infinity : ((dx > 0 ? box.x1 : box.x0) - p.x) / dx;
     const tz = Math.abs(dz) < 1e-6 ? Infinity : ((dz > 0 ? box.z1 : box.z0) - p.z) / dz;
-    const distance = Math.min(tx, tz) + 1.1;
+    const distance = Math.min(tx, tz) + DOORSTEP;
     frontages.push({ name: b.name, x: p.x + dx * distance, z: p.z + dz * distance });
   }
-  // Quadratic curves sampled in world coordinates, independent of the floor grid.
-  const path = (from, via, to, width = .75) => {
-    const points = Array.from({ length: 25 }, (_, i) => {
-      const t = i / 24, u = 1 - t;
-      return rotateTownPoint(u * u * from[0] + 2 * u * t * via[0] + t * t * to[0],
-        u * u * from[1] + 2 * u * t * via[1] + t * t * to[1], yaw);
-    });
-    paths.push({ points, width });
+  // Straight runs between town-local corner points, so paths follow the grid like the houses.
+  const path = (points, width = .75) => {
+    paths.push({ points: points.map(([x, z]) => rotateTownPoint(x, z, yaw)), width });
   };
   const tree = (i, x, z) => {
     const t = TREES[i % TREES.length], scale = .94 + R() * .08;
@@ -100,7 +156,7 @@ function clearingPlan(exit, seed, buildings, gates) {
       top: y + t.height * scale, bottom: y + t.canopy * scale });
   };
   const [sx, sz] = rotateTownPoint(8.5, 8.5, yaw);
-  const plan = { placements, colliders, occluders, frontages, paths, pond: [], yaw,
+  const plan = { placements, colliders, occluders, frontages, paths, doors, pond: [], yaw,
     spawn: [Math.floor(sx), Math.floor(sz)] };
   // Solid clutter keeps away from gates, the spawn plaza and doorsteps, so every
   // generated route, gate cell and frontage stays walkable.
@@ -174,11 +230,10 @@ function clearingPlan(exit, seed, buildings, gates) {
   return { plan, add, path, tree, put, group, scatter, shore, R };
 }
 
-function frontagePaths(plan, path, via) {
-  plan.frontages.forEach((p, i) => {
-    const to = rotateTownPoint(p.x, p.z, -plan.yaw);
-    path([8.5, 8.5], via[i], to, .65);
-  });
+// a path from the corner points `via` (town-local) to frontage i
+function leadTo(plan, path, i, via, width = .65) {
+  const f = plan.frontages[i];
+  path([...via, rotateTownPoint(f.x, f.z, -plan.yaw)], width);
 }
 
 // Meadow ground cover shared by both clearings, after the authored set pieces.
@@ -213,28 +268,31 @@ export function townPlan(exit, seed) {
   plan.pond = [[6, 3], [7, 3], [6, 4], [7, 4], [7, 5]].map(([x, z]) => {
     const [rx, rz] = rotateTownPoint(x + .5, z + .5, plan.yaw); return Math.floor(rz) * N + Math.floor(rx);
   });
-  path([8.5, 8.5], [9.3, 5.8], [8.8, 2.6]);
-  path([8.8, 2.6], [8.7, 1.2], [8.5, 0]);
-  frontagePaths(plan, path, [[5.6, 7.2], [10.7, 8.2], [7.0, 9.6], [9.8, 8.2]]);
+  // One street from the gate past the plaza; the houses branch off it at right angles.
+  path([[8.5, 0], [8.5, 12.5]]);
+  leadTo(plan, path, 0, [[8.5, 7], [3.5, 7]]);
+  leadTo(plan, path, 1, [[8.5, 7], [12.3, 7]]);
+  leadTo(plan, path, 2, [[8.5, 12.5]]);
+  leadTo(plan, path, 3, [[8.5, 11.5]]);
 
   // Set pieces: a waymark at the gate, lamps on the plaza, and each trade's leftovers.
   put('relics_signpost_a', [[7.3, 1.3], [7.4, 2.0], [9.9, 1.4]], { yaw: Math.PI / 2 + .3, s: 1 });
   put('mines_lantern_a', [[10.3, 9.9], [10.6, 10.3]], { s: 1, unlit: true });
-  put('mines_lantern_b', [[6.6, 7.3], [6.4, 6.9]], { s: 1, unlit: true });
+  put('mines_lantern_b', [[6.6, 7.9], [6.2, 8.0]], { s: 1, unlit: true });
   put('mines_lantern_a', [[9.9, 4.2], [9.8, 5.0], [7.7, 6.4]], { s: 1, unlit: true });
   // Inn: deliveries by the side door, a cask by the porch.
   group([[6.2, 1.8]], ['mines_barrel_a', 'mines_barrel_b', 'mines_crate_a', 'mines_sacks_a'], .7);
   group([[1.2, 6.8]], ['mines_barrel_b', 'mines_crate_b'], .5);
   // Stable: feed sacks along the wall and a barrow by the paddock.
-  group([[11.2, 6.6]], ['mines_sacks_a', 'mines_sacks_b', 'mines_crate_a'], .8);
+  group([[14.6, 6.3], [9.6, 6.0]], ['mines_sacks_a', 'mines_sacks_b', 'mines_crate_a'], .7);
   put('mines_wheelbarrow_a', [[14.6, 7.3], [14.4, 6.8], [15.0, 9.8]], { yaw: -.6 });
   // Blacksmith: timber and fuel for the forge, a coal spill, a finished cart wheel.
   group([[7.4, 14.1], [6.6, 13.4]], ['mines_plank_stack_a', 'mines_barrel_a', 'mines_crate_b', 'mines_sacks_b'], .8);
-  put('mines_coal_scatter_a', [[5.6, 12.6], [6.0, 13.0], [5.5, 13.3]]);
+  put('mines_coal_scatter_a', [[5.4, 13.6], [5.9, 13.9], [5.5, 9.4]]);
   put('badlands_broken_wagon_wheel_a', [[1.0, 9.9], [0.7, 10.5], [7.9, 12.4]]);
   put('meadow_stump_a', [[0.6, 7.6], [1.6, 15.0], [9.2, 14.9]]);
   // Pet shop: feed sacks and a crate by the doorstep.
-  group([[11.0, 9.6], [8.0, 11.5]], ['mines_sacks_a', 'mines_crate_a', 'mines_sacks_b'], .6);
+  group([[10.0, 13.6], [9.8, 10.2]], ['mines_sacks_a', 'mines_crate_a', 'mines_sacks_b'], .6);
   // Pond: reeds and stones on its banks, lily pads on the water.
   const banks = shore();
   for (const name of ['meadow_cattails_a', 'meadow_cattails_b', 'any_shore_stones_a', 'any_shore_stones_b', 'meadow_cattails_a'])
@@ -252,9 +310,10 @@ export function merchantCampPlan(exit, seed) {
     .forEach(([x, z], i) => tree(i, x, z));
   for (const [x, z] of [[2.0, 5.0], [13.9, 4.7], [1.5, 12.5], [11.4, 14.5]])
     put('meadow_bush_a', [[x, z]], { s: 1.1 });
-  path([8.5, 16], [10.0, 12.0], [8.5, 8.5], .85);
-  path([8.5, 8.5], [7.8, 4.1], [8.5, 0], .85);
-  frontagePaths(plan, path, [[7.9, 10.5], [9.0, 8.0], [7.6, 6.5]]);
+  path([[8.5, 16], [8.5, 0]], .85);
+  leadTo(plan, path, 0, [[8.5, 11.2]]);
+  leadTo(plan, path, 1, [[8.5, 8]]);
+  leadTo(plan, path, 2, [[8.5, 3.8]]);
 
   // Waymarks at both ends and lamps where the traders set up.
   put('relics_signpost_b', [[7.2, 1.2], [9.8, 1.4]], { yaw: Math.PI / 2 - .2, s: 1 });

@@ -9,7 +9,8 @@ import { decideFaces, LAYER_BASE } from './faces.js';
 import { themeAt } from '../themes/depth.js';
 import { makeLayouts } from './layout.js';
 import { voidAllowed, fallMask } from './voids.js';
-import { isTown, isMerchantCamp, isClearing, enemyFreeAt } from './town.js';
+import { isTown, isMerchantCamp, isClearing, enemyFreeAt, isInterior } from './town.js';
+import { generateInterior } from '../cubegen/interior.js';
 
 // how much each WFC kind leans towards an archetype (times the theme's weights)
 const LEAN = { highland: { mesa: 2, spire: 2, archipelago: 0.3 }, lake: { archipelago: 3, crater: 2 }, gorge: { chasm: 3 },
@@ -69,9 +70,16 @@ export class World {
     };
   }
 
-  // the generated cube (built on first use)
+  // the generated cube (built on first use); house interiors are not part of the grid
   cube(k) {
     let c = this.cubes.get(k);
+    if (!c && isInterior(k)) {
+      // turned the way the house stands in town (the town turns with its exit)
+      const door = this.cube(this.start).map.doors.find(d => d.to === k);
+      if (!door) throw new Error('No door leads to ' + k);
+      c = { key: k, map: generateInterior({ key: k, seed: hash32(this.seed ^ hashKey(k)) }, [door.nx, door.nz]), visits: 0 };
+      this.cubes.set(k, c);
+    }
     if (!c) {
       this.prepare(k);
       c = { key: k, map: generate(this.spec(k)), visits: 0 };

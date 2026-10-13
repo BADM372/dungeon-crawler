@@ -7,6 +7,7 @@ import { BEDROCK, usePalette } from './palette.js';
 import { themeAt } from '../themes/depth.js';
 import { buildFloors } from './floors.js';
 import { buildStructures } from './structures.js';
+import { buildInteriorWalls } from './interior.js';
 
 export function buildCubeGeometry(m) {
   usePalette(themeAt(m.depth ?? 0));
@@ -15,12 +16,14 @@ export function buildCubeGeometry(m) {
     fluids: Object.fromEntries(FLUIDS.map(t => [t, new GeoBuilder()])),
   }));
   // bedrock under every column that is not open to the depth below
-  const solid = (x, z) => x >= 0 && z >= 0 && x < N && z < N && m.cols[z * N + x].some(f => f.layer === 0 || f.merged && f.bottom === 0);
+  // (inside houses the floors reach down themselves, render/interior.js)
+  const solid = (x, z) => !m.interior && x >= 0 && z >= 0 && x < N && z < N && m.cols[z * N + x].some(f => f.layer === 0 || f.merged && f.bottom === 0);
   for (let z = 0; z < N; z++) for (let x = 0; x < N; x++) if (solid(x, z))
     layers[0].terrain.box(x, -BASE, z, x + 1, 0, z + 1, BEDROCK[0], BEDROCK[1],
       { py: true, px: solid(x + 1, z), nx: solid(x - 1, z), pz: solid(x, z + 1), nz: solid(x, z - 1) });
   buildFloors(m, layers);
   buildStructures(m, layers);
+  if (m.interior) buildInteriorWalls(m, layers);
   const arr = b => b.pos.length ? b.arrays() : null;
   return layers.map(L => ({
     terrain: arr(L.terrain), stone: arr(L.stone), wood: arr(L.wood),

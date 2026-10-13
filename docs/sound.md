@@ -28,6 +28,7 @@ click.
 | `dizzy` | a landing hard enough to sit you down (`game/update.js`) |
 | `death` | any death, with a shimmer for coming back at the entry (`game/flow.js`) |
 | `gate`, `wellDown`, `ringUp`, `cloud` | portal travel (`game/travel.js`); the town portal keeps `portal` |
+| `door` | through a house door (`game/doors.js`): a wooden creak and the latch |
 | `castStart`, `fizzle` | reading the scroll, a broken cast or charge (`game/townportal.js`, `game/ambience.js`) |
 | `equip`, `bagOpen`, `bagClose`, `use` | equipping, the inventory, quick bar slots |
 | `drink`, `chest` | drinking a health potion (`game/quickbar.js`), opening a treasure chest (`game/chests.js`) |

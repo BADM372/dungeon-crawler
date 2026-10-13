@@ -52,6 +52,10 @@ export function generateClearing(spec) {
     throw new Error('Clearing layout blocks spawn or a gate');
   const frontageCells = plan.frontages.map(p => Math.floor(p.z) * N + Math.floor(p.x));
   if (frontageCells.some(c => !prev.has(c))) throw new Error('Clearing layout blocks a building frontage');
+  // a door's doorstep: the body fits in front of it, right up to its face
+  for (const d of plan.doors) for (const t of [.25, .5, .75, 1])
+    if (!clearAt(d.x + d.nx * (CHAR_R + .05 + t * .5), d.z + d.nz * (CHAR_R + .05 + t * .5)))
+      throw new Error('Clearing layout blocks the door of ' + d.building);
   // the town portal's spot: dry, reachable and clear of every body
   const portal = plan.portal && { x: plan.portal.x, y: TOWN_LEVEL * LH, z: plan.portal.z };
   if (portal && (!prev.has(Math.floor(portal.z) * N + Math.floor(portal.x))
@@ -68,7 +72,7 @@ export function generateClearing(spec) {
   const moves = paths.flatMap(path => path.slice(1).map((to, i) => ({ kind: 'walk', from: path[i], to,
     d: DIRS.findIndex(([dx, dz]) => path[i].x + dx === to.x && path[i].z + dz === to.z), cells: [], cost: 1 })));
   ctx.stats.layers = 1; ctx.stats.mode = camp ? 'merchant camp' : 'town'; ctx.stats.fluids = camp ? [] : ['town pond'];
-  const clearing = { placements: plan.placements, frontages: plan.frontages, pond: plan.pond, yaw: plan.yaw, paths: plan.paths,
+  const clearing = { placements: plan.placements, frontages: plan.frontages, doors: plan.doors, pond: plan.pond, yaw: plan.yaw, paths: plan.paths,
     ...(portal ? { portal } : {}) };
   return { seed: spec.seed, attempts: 1, K: 1, B: [0], cols: ctx.cols, floors,
     pieces: Array.from({ length: N * N }, () => []), runs: [], falls: [], ladders: [],
@@ -76,7 +80,7 @@ export function generateClearing(spec) {
     routeIndex: spec.routeIndex, route: spec.route, gateKeys: spec.gateKeys,
     safe: Uint8Array.from(floors, f => prev.has(f.c) ? 1 : 0),
     kind: 'meadow', archetype: 'plain', key: spec.key, depth: 0, cave: false, enemyFree: true,
-    staticBlockers, blockers: staticBlockers, occluders: plan.occluders, authoredProps: plan.placements,
+    staticBlockers, blockers: staticBlockers, occluders: plan.occluders, authoredProps: plan.placements, doors: plan.doors,
     ...(camp ? { merchantCamp: clearing } : { town: clearing }),
     routes: paths.map(path => path.map(f => ({ x: f.x + .5, y: TOWN_LEVEL * LH + .12, z: f.z + .5 }))),
   };

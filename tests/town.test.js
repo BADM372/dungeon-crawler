@@ -22,14 +22,16 @@ const overlaps = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.z0 < b.z1 && a.z1 > b
 const signature = m => ({ clearing: m.town || m.merchantCamp, portals: m.portals.map(p => [p.kind, p.dir, p.x, p.z]),
   ground: m.floors.map(f => [f.top, f.fluid, f.cs]), routes: m.routes });
 
-function checkCurvedPaths(m) {
+const quarterTurn = yaw => Math.abs(Math.sin(yaw * 2)) < 1e-9;
+
+function checkStraightPaths(m) {
   const plan = m.town || m.merchantCamp;
   for (const path of plan.paths) for (const [i, b] of path.points.slice(1).entries()) {
     const a = path.points[i];
+    assert.ok(Math.abs(a[0] - b[0]) < 1e-9 || Math.abs(a[1] - b[1]) < 1e-9, 'paths run along the grid');
     for (let t = 0; t <= 1; t += .1) {
       const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
-      assert.ok(!m.occluders.filter(b => b.shape !== 'ellipsoid').some(b => containsXZ(b, x, z, CHAR_R + .03)), 'curved path must clear bodies, not just look connected');
-      assert.ok(!new Set(m.staticBlockers.flat()).values().some(b => containsXZ(b, x, z, CHAR_R + .03)), 'curved path must clear clutter');
+      assert.ok(!new Set(m.staticBlockers.flat()).values().some(b => containsXZ(b, x, z, CHAR_R + .03)), 'path must clear bodies and clutter, not just look connected');
       const c = Math.min(N - 1, Math.max(0, Math.floor(z))) * N + Math.min(N - 1, Math.max(0, Math.floor(x)));
       assert.equal(m.cols[c][0].fluid, 0);
     }
@@ -68,27 +70,27 @@ test('town is flat, has water, four permanent buildings, varied tall trees, and 
       else { assert.ok(f.top < f.surf && f.surf < TOWN_LEVEL); assert.ok(f.x > 0 && f.x < N - 1 && f.z > 0 && f.z < N - 1); }
     }
     const boxes = m.occluders.filter(b => b.shape === 'box');
-    assert.deepEqual(boxes.map(b => b.name).sort(), BUILDINGS.map(b => b.name).sort());
+    assert.deepEqual([...new Set(boxes.map(b => b.name))].sort(), BUILDINGS.map(b => b.name).sort());
     assert.equal(m.authoredProps, m.town.placements);
     assert.equal(m.authoredProps.some(p => p.name.startsWith('town_merchant_')), false);
     for (const b of BUILDINGS) {
       const p = m.authoredProps.find(p => p.name === b.name);
-      assert.ok(Math.abs(Math.sin(p.yaw * 2)) > .2, 'houses must not align with a street grid');
+      assert.ok(quarterTurn(p.yaw), 'houses stand on the grid');
     }
-    checkWalkingRoutes(m); checkCurvedPaths(m);
+    checkWalkingRoutes(m); checkStraightPaths(m);
     assert.equal(m.town.placements.filter(p => p.name.startsWith('town_tree_')).length, 16);
     assert.equal(new Set(m.town.placements.filter(p => p.name.startsWith('town_tree_')).map(p => p.name)).size, 3);
     assert.ok(m.occluders.filter(b => b.shape === 'ellipsoid').every(b => b.top > TOWN_LEVEL * LH + 4.8));
     for (const box of boxes) {
       assert.ok(box.x0 > 0 && box.z0 > 0 && box.x1 < N && box.z1 < N);
-      for (const other of boxes) if (box !== other) assert.equal(overlaps(box, other), false, `${box.name}/${other.name}`);
+      for (const other of boxes) if (box.name !== other.name) assert.equal(overlaps(box, other), false, `${box.name}/${other.name}`);
       for (const c of m.town.pond) assert.equal(containsXZ(box, c % N + .5, Math.floor(c / N) + .5), false);
     }
     assert.equal(m.safe[spawn.floor.id], 1); assert.equal(m.safe[exit.floor.id], 1);
     for (const p of m.town.frontages) assert.equal(m.safe[Math.floor(p.z) * N + Math.floor(p.x)], 1, p.name);
     for (const route of m.routes) for (const p of route) {
       assert.equal(m.cols[Math.floor(p.z) * N + Math.floor(p.x)][0].fluid, 0);
-      assert.ok(!m.occluders.filter(b => b.shape !== 'ellipsoid').some(b => containsXZ(b, p.x, p.z, CHAR_R + .02)));
+      assert.ok(!m.staticBlockers.flat().some(b => containsXZ(b, p.x, p.z, CHAR_R + .02)));
     }
     for (const p of ENEMY_PROFILES) assert.deepEqual(enemySpots(m, p), []);
     assert.deepEqual(signature(m), signature(new World(seed).cube(w.start).map));
@@ -164,7 +166,9 @@ test('the three tents form a safe roadside camp exactly one cube in front of tow
     const route = m.routes[0], entry = m.portals.find(p => p.dir !== m.exit), exit = m.portals.find(p => p.dir === m.exit);
     assert.deepEqual([route[0].x, route[0].z], [entry.x + .5, entry.z + .5]);
     assert.deepEqual([route.at(-1).x, route.at(-1).z], [exit.x + .5, exit.z + .5]);
-    checkWalkingRoutes(m); checkCurvedPaths(m);
+    for (const b of MERCHANTS) assert.ok(quarterTurn(m.authoredProps.find(p => p.name === b.name).yaw), 'tents stand on the grid');
+    assert.deepEqual(m.doors, [], 'tents have no doors');
+    checkWalkingRoutes(m); checkStraightPaths(m);
     for (const p of ENEMY_PROFILES) assert.deepEqual(enemySpots(m, p), []);
     assert.deepEqual(signature(m), signature(new World(seed).cube(k).map));
     assert.deepEqual(signature(m), signature(structuredClone(m)), 'worker clone preserves authored placements');
@@ -227,7 +231,7 @@ test('both clearings are dressed with varied clutter that stays off paths, water
   }
 });
 
-test('authored paths curve and connect each frontage instead of outlining rectangular streets', () => {
+test('authored paths run straight along the grid and connect each frontage', () => {
   for (let seed = 0; seed < 4; seed++) {
     const w = new World(seed), town = w.cube(w.start).map, camp = w.cube(step(w.start, town.exit)).map;
     for (const m of [town, camp]) {
@@ -235,19 +239,21 @@ test('authored paths curve and connect each frontage instead of outlining rectan
       for (const p of plan.frontages) assert.ok(plan.paths.some(path => {
         const end = path.points.at(-1); return Math.hypot(end[0] - p.x, end[1] - p.z) < 1e-6;
       }));
-      assert.ok(plan.paths.every(p => p.points.length > 2));
+      // the street: one straight run from the gate (town-local x = 8.5)
       const road = plan.paths[0].points.map(([x, z]) => rotateTownPoint(x, z, -plan.yaw));
-      assert.ok(new Set(road.map(([x]) => x.toFixed(2))).size > 5);
+      assert.equal(road.length, 2);
+      assert.ok(road.every(([x]) => Math.abs(x - 8.5) < 1e-6));
+      assert.ok(road.some(([, z]) => Math.abs(z) < 1e-6), 'starts at the gate');
     }
   }
 });
 
-test('path ribbons have curved non-grid edges, stay inside the cube, and never pave over the pond', () => {
+test('path ribbons are grid-aligned rectangles, stay inside the cube, and never pave over the pond', () => {
   for (let seed = 0; seed < 4; seed++) {
     const w = new World(seed), town = w.cube(w.start).map, camp = w.cube(step(w.start, town.exit)).map;
     for (const m of [town, camp]) {
       const { pos, nor } = buildCubeGeometry(m)[0].terrain;
-      let pathVertices = 0, offGrid = 0;
+      let pathVertices = 0;
       for (let i = 0; i < pos.length; i += 9) {
         if (Math.abs(pos[i + 1] - (TOWN_LEVEL * LH + .012)) > 1e-5) continue;
         pathVertices += 3;
@@ -255,12 +261,15 @@ test('path ribbons have curved non-grid edges, stay inside the cube, and never p
           assert.ok(pos[j] >= 0 && pos[j] <= N && pos[j + 2] >= 0 && pos[j + 2] <= N);
           assert.ok(Number.isFinite(pos[j]) && Number.isFinite(pos[j + 2]));
           assert.equal(nor[j + 1], 1);
-          if (Math.abs(pos[j] - Math.round(pos[j])) > .1) offGrid++;
         }
+        // every edge of every triangle runs along x, along z or is the quad's diagonal
+        const xs = new Set([pos[i], pos[i + 3], pos[i + 6]].map(v => v.toFixed(4)));
+        const zs = new Set([pos[i + 2], pos[i + 5], pos[i + 8]].map(v => v.toFixed(4)));
+        assert.ok(xs.size <= 2 && zs.size <= 2, 'path quads are axis-aligned');
         const x = (pos[i] + pos[i + 3] + pos[i + 6]) / 3, z = (pos[i + 2] + pos[i + 5] + pos[i + 8]) / 3;
         assert.equal(m.cols[Math.min(N - 1, Math.floor(z)) * N + Math.min(N - 1, Math.floor(x))][0].fluid, 0);
       }
-      assert.ok(pathVertices > 100); assert.ok(offGrid > pathVertices / 2);
+      assert.ok(pathVertices >= 6 * 4);
     }
   }
 });

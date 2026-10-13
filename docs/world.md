@@ -18,19 +18,21 @@ near them, and stay around after that.
 
 The spawn cube `(0,0,0)` is an authored clearing, rotated to match its **single
 outgoing side portal**. It contains the four permanent `assets/town.glb`
-buildings: inn, stable, pet shop and blacksmith. Their staggered positions and
-individual oblique rotations form an asymmetric clearing, not a street grid.
-They are non-interactive, with conservative axis-aligned envelopes of their
-rotated footprints, including attached props. Spawn is in the central clearing;
-branching curved paths connect the frontages and lead through the grove's opening.
-Paths are rendered as continuous ribbons rather than whole-cell paving. No well,
+buildings: inn, stable, pet shop and blacksmith. They stand on the cube grid (quarter
+turns, like the rest of the world) at staggered positions around an asymmetric clearing.
+The inn, the blacksmith and the pet shop have doors and colliders that follow their walls
+and attached props (`parts` in `world/town.js`), so you can walk right up to the door and
+in (see House interiors below); the stable, without a door, collides with its whole
+footprint. Spawn is in the central clearing; one straight street runs from the grove's
+opening past the plaza, and straight paths branch off it at right angles to each doorstep
+or frontage. Paths are rendered as grid-aligned ribbons rather than whole-cell paving. No well,
 voids or extra exits exist inside town. East of the plaza a spot is kept free for the town
 portal's other end (see Travel below). The walkability flood fill also requires the way between
 two cell centres to be clear, not just the centres, so a crate cannot pinch a route shut.
 
 All three merchant tents are in a separate **merchant camp one cube in front of
-town**, along its outgoing road: `step(TOWN_KEY, seed % 4)`. They flank a winding
-through-path at different offsets and angles. The camp has two side portals, one
+town**, along its outgoing road: `step(TOWN_KEY, seed % 4)`. They face a straight
+through-road from both sides, on the grid like the houses. Tents have no doors. The camp has two side portals, one
 back to town and one onward; it has no spawn portal, pond or permanent houses.
 Authored prop placements are shared by worker metadata and rendering without
 marking the camp as town. Both gates and every building/tent frontage are validated
@@ -78,11 +80,50 @@ independent of download timing; rendering cannot accidentally remove them.
 orientations: flat dry ground, guaranteed town pond, four houses inside town and
 three tents only in the adjacent road cube, non-overlapping assets, dry reachable
 gates/frontages using actual movement probes, generation-order-independent
-boundaries, curved path geometry, clutter placement and colliders,
+boundaries, grid-aligned buildings and straight path geometry, clutter placement and colliders,
 safe-buffer spawns/revisits, box/trunk collision,
 canopy occlusion, and matching Blender exports. For real worker/asset/render checks,
 run `await (await import('./tests/browser/town.js')).runTownChecks()` from
 `index.html`'s devtools.
+
+## House interiors (`cubegen/interior.js`, `game/doors.js`, `render/interior.js`)
+
+The houses with a door (inn, blacksmith, pet shop) each have an inside: a map of its own
+under the key `interior:<building>` (`world/town.js interiorKey`), outside the cube grid.
+It has no WFC tile, faces, neighbours, glass box, minimap cell or enemies, counts as town
+(depth 0, the town song, no town portal casting) and is generated in the worker on first
+use, like a cube.
+
+- **Proportions:** the room is the house's walled body (`body` in `BUILDINGS`) at one shared
+  scale (`INTERIOR_SCALE`, 3.8 cells per model unit), so the inn (13 × 11) stays bigger than
+  the blacksmith (10 × 10) and the pet shop (10 × 9). Storeys fit the 1.1-unit character
+  instead of the models' scale: the inn's ground storey is 3 units, the others' 2.5.
+- **Orientation:** the room stands the way the house does in town, which turns with the
+  exit. The front wall faces where the house's front faces and holds the door where the
+  model has it along the front, so walking in keeps your direction.
+- **Upstairs:** the inn has a gallery along its back wall (its real upper storey), the
+  others a loft under the gable. A wooden stair climbs the house's right-hand wall to it;
+  a railing runs along the open edge and invisible rails line the stair.
+- **Walls all round:** box colliders just outside the floor, with a stone footing and
+  plaster in a timber frame, windows on the back (upstairs) and right (downstairs) walls.
+  There is no floor outside them, but no way to get there: you cannot fall out.
+- **Doors:** walking into a door (`core/doors.js atDoor`: on its side, within its width,
+  against its face, pushing towards it) takes you through at once, with a fade and a creak
+  (`door` sound). You arrive on the other door's doorstep (`DOORSTEP`, 0.75), facing the way
+  you walked. Each arrival starts a visit. Town doors lead in (`map.doors`, `to` the
+  interior); the door inside leads back to its house. The interiors behind a cube's doors
+  are prefetched.
+- **Cutaway:** the walls on the camera's side come away entirely, down to the floor, with
+  everything mounted on them (`uWallBox`/`uFrontKinds` in `render/cutshader.js`: inside
+  houses only the walls' own `stone` mesh, not the floors, stair or railing). The door
+  stands in front of that band, so it stays. Walls cast no shadows. No two faces in the
+  interior share a plane, so nothing z-fights, also not in the cut.
+
+`npm test` covers which houses have interiors, walking into every town door for all four
+exits, proportions, orientation matching the outside, running into every wall, the stair
+and both doors (`tests/interior.test.js`). From the browser's devtools,
+`await (await import('./tests/browser/interior.js')).runInteriorChecks()` walks in and out
+of every house over four seeds and checks the cut walls.
 
 ## Wave function collapse (`world/tiles.js`, `world/wfc.js`)
 

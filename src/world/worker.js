@@ -4,11 +4,13 @@
 // object graph) plus what the minimap needs to know about its tile and faces.
 import { World } from './world.js';
 import { faceKey } from './coords.js';
+import { isInterior } from './town.js';
 import { buildCubeGeometry, buffers } from '../render/cubegeo.js';
 
 let world = null;
 
 function info(k) {
+  if (isInterior(k)) return { kind: 'interior', sock: null, K: world.cube(k).map.K, faces: [null, null, null, null, null, null] };
   const t = world.wfc.tiles.get(k);
   const faces = [0, 1, 2, 3, 4, 5].map(d => {
     const f = world.faces.get(faceKey(k, d));

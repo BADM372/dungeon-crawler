@@ -25,6 +25,7 @@ import { clearInput } from './inputstate.js';
 import { lootMark, forgetLoot } from './loot.js';
 import { townPadIn } from '../core/townportal.js';
 import { cancelCast } from './townportal.js';
+import { isInterior } from '../world/town.js';
 
 export function spawnAt(x, y, z) {
   cancelSword(true); cancelCast();
@@ -120,7 +121,7 @@ export function discover(c) {
 
 function openDiscoveredFaces() {
   const before = state.openedFaces.size, cubes = state.cubes.cubes;
-  for (const c of cubes.values()) for (const f of discoveredFaces(cubes, c, state.run)) state.openedFaces.add(f);
+  for (const c of cubes.values()) if (!isInterior(c.key)) for (const f of discoveredFaces(cubes, c, state.run)) state.openedFaces.add(f);
   return state.openedFaces.size !== before;
 }
 
@@ -174,13 +175,14 @@ export function settleIn(neighbors = true) {
   drawMinimap();
   if (neighbors) showNeighbors(visitedNeighbors(state.cubeKey));
   if (gateLocked(state.map, state.run)) setStatus(guardianLockMessage(state.map));
-  // get the cubes behind our portals ready in the background
-  state.cubes.prefetch(c.map.portals.filter(p => p.kind !== 'spawn').map(p => step(state.cubeKey, p.dir)));
+  // get the cubes behind our portals (and doors) ready in the background
+  state.cubes.prefetch([...c.map.portals.filter(p => p.kind !== 'spawn').map(p => step(state.cubeKey, p.dir)),
+    ...(c.map.doors || []).map(d => d.to)]);
 }
 
 // Discovered cubes within the render budget, on the active stratum only.
 export function visitedNeighbors(k) {
-  if (!state.showNeighbors) return [];
+  if (!state.showNeighbors || isInterior(k)) return [];   // inside a house: nothing around
   return discoveredCubes(state.cubes.cubes, k)
     .map(c => ({ ...c, open: openedSides(state.openedFaces, c.key) }));
 }

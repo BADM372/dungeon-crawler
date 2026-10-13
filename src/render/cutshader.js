@@ -10,6 +10,10 @@ export const U = {
   uCutY: { value: 1e3 }, uCenter: { value: new THREE.Vector2() }, uRadius: { value: 1 },
   uAspect: { value: 1 }, uDepth: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
   uFront: { value: new THREE.Vector4() }, uWallY: { value: 1e3 },
+  // the walls that come down: within uWallBand inside the box (x0, x1, z0, z1)
+  uWallBox: { value: new THREE.Vector4(0, 16, 0, 16) }, uWallBand: { value: 2.2 },
+  // which kinds of material come down with them: rock, stone, wood, the rest (see inject)
+  uFrontKinds: { value: new THREE.Vector4(1, 1, 1, 1) },
   // section cap colours (section.js)
   uCapRock: { value: new THREE.Color() }, uCapStone: { value: new THREE.Color() }, uCapWood: { value: new THREE.Color() },
   uPoly: { value: Array.from({ length: CORNERS }, () => new THREE.Vector2()) },
@@ -36,21 +40,25 @@ const REGION = `
     vec2 ndc = gl_FragCoord.xy / uRes * 2.0 - 1.0;
     return inPoly((ndc - uCenter) * vec2(uAspect, 1.0) / uRadius) ? 1.0 : 0.0;
   }
-  // caves: the walls on the faces towards the camera are cut down (+x, -x, +z, -z flags)
+  // caves and house interiors: the walls on the sides towards the camera are cut down
+  // (+x, -x, +z, -z flags)
   bool frontWall() {
-    if (vCutW.y <= uWallY) return false;
-    vec4 d = vec4(16.0 - vCutW.x, vCutW.x, 16.0 - vCutW.z, vCutW.z);
-    return any(bvec4(d.x < 2.2 && uFront.x > 0.5, d.y < 2.2 && uFront.y > 0.5, d.z < 2.2 && uFront.z > 0.5, d.w < 2.2 && uFront.w > 0.5));
+    if (vCutW.y <= uWallY || uFrontKinds[CUT_KIND] < 0.5) return false;
+    vec4 d = vec4(uWallBox.y - vCutW.x, vCutW.x - uWallBox.x, uWallBox.w - vCutW.z, vCutW.z - uWallBox.z);
+    float b = uWallBand;
+    return any(bvec4(d.x < b && uFront.x > 0.5, d.y < b && uFront.y > 0.5, d.z < b && uFront.z > 0.5, d.w < b && uFront.w > 0.5));
   }`;
 
 // patch a built-in material: world position / view depth varyings, uniforms, region test;
-// fragCode edits the fragment shader (where to discard)
-export function inject(mat, fragCode, key) {
+// fragCode edits the fragment shader (where to discard); kind: the material's kind for
+// uFrontKinds (0 rock, 1 stone, 2 wood, 3 anything else)
+export const CUT_KINDS = { rock: 0, stone: 1, wood: 2 };
+export function inject(mat, fragCode, key, kind = 3) {
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = 'varying vec3 vCutW;\nvarying float vCutZ;\n' + sh.vertexShader.replace('#include <project_vertex>',
       '#include <project_vertex>\n#ifdef USE_INSTANCING\n  vCutW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;\n#else\n  vCutW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#endif\n  vCutZ = -mvPosition.z;');
-    sh.fragmentShader = `varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth, uWallY;\nuniform vec2 uCenter, uRes;\nuniform vec4 uFront;\nuniform vec3 uCapRock, uCapStone, uCapWood;\nuniform vec2 uPoly[${CORNERS}];\n`
+    sh.fragmentShader = `varying vec3 vCutW;\nvarying float vCutZ;\nuniform float uCutY, uRadius, uAspect, uDepth, uWallY, uWallBand;\nuniform vec2 uCenter, uRes;\nuniform vec4 uFront, uWallBox, uFrontKinds;\n#define CUT_KIND ${kind}\nuniform vec3 uCapRock, uCapStone, uCapWood;\nuniform vec2 uPoly[${CORNERS}];\n`
       + REGION + '\n' + fragCode(sh.fragmentShader);
   };
   mat.customProgramCacheKey = () => key;

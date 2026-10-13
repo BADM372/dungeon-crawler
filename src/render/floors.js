@@ -3,6 +3,7 @@ import { N, LH, DIRS, OPP, DIRV, EDGE_CORNERS, edgePts } from '../core/constants
 import { idx, inb, hash32 } from '../core/util.js';
 import { C, gradient, TOP_STOPS, UNDERSIDE, fluidBed, fluidBank } from './palette.js';
 import { cliffWall } from './walls.js';
+import { buildInteriorFloors } from './interior.js';
 
 const shade = (x, z) => ((x + z) & 1 ? 1.0 : 0.95) * (0.97 + (hash32(x * 31 + z * 977) % 100) / 1600);
 
@@ -54,6 +55,7 @@ function fluidVolume(m, f, b) {
 }
 
 export function buildFloors(m, layers) {
+  if (m.interior) return buildInteriorFloors(m, layers);
   for (const f of m.floors) {
     const L = layers[f.layer], x = f.x, z = f.z, cs = f.cs;
     const P = [[x, cs[0], z], [x + 1, cs[1], z], [x, cs[2], z + 1], [x + 1, cs[3], z + 1]];
@@ -73,20 +75,17 @@ export function buildFloors(m, layers) {
   if (clearing) buildClearingPaths(m, clearing.paths, layers[0].terrain);
 }
 
-// Flat clearings use narrow curved ribbons, not whole-cell paving. These are baked
-// into the worker's terrain mesh, so cutaways, shadows and neighbour proxies agree.
+// Flat clearings use narrow straight ribbons along the grid, not whole-cell paving. Each run
+// is a rectangle reaching `width` to either side and past both ends, so corners close up.
+// These are baked into the worker's terrain mesh, so cutaways, shadows and neighbour proxies agree.
 function buildClearingPaths(m, paths, builder) {
   const y = m.floors[0].top * LH + .012, color = C('#b3a58a');
   const bounded = v => Math.max(0, Math.min(N, v));
-  for (const { points, width } of paths) {
-    const edges = points.map(([x, z], i) => {
-      const a = points[Math.max(0, i - 1)], b = points[Math.min(points.length - 1, i + 1)];
-      const dx = b[0] - a[0], dz = b[1] - a[1], scale = width / Math.hypot(dx, dz);
-      return [[bounded(x - dz * scale), y, bounded(z + dx * scale)],
-        [bounded(x + dz * scale), y, bounded(z - dx * scale)]];
-    });
-    for (let i = 1; i < edges.length; i++)
-      builder.quad(edges[i - 1][0], edges[i - 1][1], edges[i][1], edges[i][0], [0, 1, 0], color);
+  for (const { points, width } of paths) for (let i = 1; i < points.length; i++) {
+    const [ax, az] = points[i - 1], [bx, bz] = points[i], len = Math.hypot(bx - ax, bz - az);
+    if (len < 1e-6) continue;
+    const ux = (bx - ax) / len * width, uz = (bz - az) / len * width;
+    const corner = (x, z, side) => [bounded(x - uz * side), y, bounded(z + ux * side)];
+    builder.quad(corner(ax - ux, az - uz, 1), corner(ax - ux, az - uz, -1), corner(bx + ux, bz + uz, -1), corner(bx + ux, bz + uz, 1), [0, 1, 0], color);
   }
 }
-

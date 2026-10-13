@@ -5,7 +5,7 @@
 // it, and both ends close. Casting again moves the portal; a new world closes it.
 import { N, STEP } from '../core/constants.js';
 import { CAST_TIME, PAD_RADIUS } from '../core/townportal.js';
-import { TOWN_KEY, isTown } from '../world/town.js';
+import { TOWN_KEY, isTown, isInterior } from '../world/town.js';
 import { groundAt, blockedAt } from '../physics/collide.js';
 import { respawnPoint, supportedPoint } from '../physics/respawn.js';
 import { setTownPortal } from '../render/world.js';
@@ -30,7 +30,7 @@ function say(message) {
 function castBlocked() {
   const p = player;
   if (!state.map || state.transitioning) return 'Not now';
-  if (isTown(state.cubeKey)) return 'You are already in town';
+  if (isTown(state.cubeKey) || isInterior(state.cubeKey)) return 'You are already in town';
   if (state.fallFrom || p.hp <= 0 || p.ragdoll || p.getUp || p.climb || p.swimming || !p.grounded) return 'You need firm ground to open a portal';
   if (p.stun > 0 || p.sword.active) return 'Finish your current action first';
   return null;

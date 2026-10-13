@@ -35,10 +35,15 @@ test('terrain goes by theme and height, banks are mud', () => {
 test('town paths are dirt, the rest of the town grass', () => {
   const w = new World(5), m = w.cube(w.start).map, theme = themeAt(m.depth).props;
   const f = m.floors.find(g => !g.fluid && !g.link.some(h => h?.fluid));
-  const [x, z] = m.town.paths[0].points[12];
-  assert.equal(surfaceAt(f, m, theme, x, z), 'dirt');
-  const far = m.floors.find(g => !g.fluid && !g.link.some(h => h?.fluid)
-    && m.town.paths.every(p => p.points.every(([px, pz]) => Math.hypot(px - g.x - 0.5, pz - g.z - 0.5) > 2.5)));
+  const [[ax, az], [bx, bz]] = m.town.paths[0].points;
+  assert.equal(surfaceAt(f, m, theme, (ax + bx) / 2, (az + bz) / 2), 'dirt');
+  // far from every point along every path
+  const near = (g, d) => m.town.paths.some(p => p.points.slice(1).some(([qx, qz], i) => {
+    const [px, pz] = p.points[i];
+    for (let t = 0; t <= 1; t += 0.05) if (Math.hypot(px + (qx - px) * t - g.x - 0.5, pz + (qz - pz) * t - g.z - 0.5) <= d) return true;
+    return false;
+  }));
+  const far = m.floors.find(g => !g.fluid && !g.link.some(h => h?.fluid) && !near(g, 2.5));
   assert.equal(surfaceAt(far, m, theme, far.x + 0.5, far.z + 0.5), 'grass');
 });
 

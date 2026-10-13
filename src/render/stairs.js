@@ -1,7 +1,7 @@
 // Stair flights and stone landings.
 import { N } from '../core/constants.js';
 import { clamp } from '../core/util.js';
-import { STONE, STONE2, CHEEK, CAP, SOFFIT, PIER } from './palette.js';
+import { STONE, STONE2, CHEEK, CAP, SOFFIT, PIER, WOOD, WOOD2, BEAM, POST } from './palette.js';
 import { runFrame, slab } from './runframe.js';
 
 export const pillarBox = (b, q, col) => {
@@ -21,20 +21,22 @@ export function buildLanding(r, L) {
   for (const q of r.pillars || []) pillarBox(S, q, PIER);
 }
 
-// uniform steps over the whole flight, side walls, solid where the flight rests on ground
+// uniform steps over the whole flight, side walls, solid where the flight rests on ground;
+// stone, or wood for `r.wood` (inside houses)
 export function buildStair(r, L) {
-  const S = L.stone, F = runFrame(r), k = r.k;
+  const F = runFrame(r), k = r.k, S = r.wood ? L.wood : L.stone;
+  const [STEP_A, STEP_B, SIDE, RIM, UNDER] = r.wood ? [WOOD, WOOD2, BEAM, POST, BEAM] : [STONE, STONE2, CHEEK, CAP, SOFFIT];
   const rise = r.y1 - r.y0, n = Math.max(2, Math.round(Math.abs(rise) / 0.2)), half = Math.abs(rise) / n / 2;
   for (let i = 0; i < n; i++) {
     const s0 = i * k / n, s1 = (i + 1) * k / n, top = r.y0 + rise * (i + 0.5) / n;
     const p = r.pieces[clamp(Math.floor((s0 + s1) / 2), 0, k - 1)];
     const bot = p.supported ? p.base : top - 0.16;
-    slab(S, F, s0, s1, -0.4, 0.4, bot, top, bot, top, i & 1 ? STONE : STONE2, CHEEK);
+    slab(S, F, s0, s1, -0.4, 0.4, bot, top, bot, top, i & 1 ? STEP_A : STEP_B, SIDE);
   }
   for (let j = 0; j < k; j++) {
     const p = r.pieces[j], ya = F.Y(j), yb = F.Y(j + 1);
     const ba = p.supported ? p.base : ya - 0.4, bb = p.supported ? p.base : yb - 0.4;
-    for (const [w0, w1] of [[-0.5, -0.4], [0.4, 0.5]]) slab(S, F, j, j + 1, w0, w1, ba, ya + half + 0.14, bb, yb + half + 0.14, CAP, CHEEK);
-    if (!p.supported) slab(S, F, j, j + 1, -0.4, 0.4, ya - 0.36, ya - half - 0.1, yb - 0.36, yb - half - 0.1, SOFFIT, SOFFIT);
+    for (const [w0, w1] of [[-0.5, -0.4], [0.4, 0.5]]) slab(S, F, j, j + 1, w0, w1, ba, ya + half + 0.14, bb, yb + half + 0.14, RIM, SIDE);
+    if (!p.supported) slab(S, F, j, j + 1, -0.4, 0.4, ya - 0.36, ya - half - 0.1, yb - 0.36, yb - half - 0.1, UNDER, UNDER);
   }
 }

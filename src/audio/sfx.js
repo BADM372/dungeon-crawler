@@ -221,6 +221,14 @@ const SOUNDS = {
       tone('sine', hz, hz, at, 0.15, amp(at, 0.004, 0.06, 0.15, out));
     }
   },
+  door(t, out, p) {      // a house door: a short wooden creak, then the latch clunks shut
+    const f = filter('bandpass', 520 * p, 6, amp(t, 0.04, 0.35, 0.26, out));
+    f.frequency.setValueAtTime(520 * p, t); f.frequency.exponentialRampToValueAtTime(980 * p, t + 0.25);
+    noise(t, 0.3, f);
+    tone('sawtooth', 190 * p, 240 * p, t, 0.25, filter('bandpass', 900, 4, amp(t, 0.03, 0.08, 0.22, out)));
+    tone('sine', 120 * p, 60 * p, t + 0.3, 0.12, amp(t + 0.3, 0.002, 0.7, 0.12, out));
+    noise(t + 0.3, 0.06, filter('lowpass', 1200, 0.7, amp(t + 0.3, 0.002, 0.45, 0.06, out)));
+  },
   cloud(t, out, p) {     // the cloud bridge puffing out of the gate
     noise(t, 0.6, filter('lowpass', 900 * p, 0.7, amp(t, 0.08, 0.45, 0.5, out)));
   },

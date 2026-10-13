@@ -41,8 +41,11 @@ Large pitched roofs and raised pictogram signs keep services readable at game sc
 
 These are **exterior visual assets only**. The game places the four permanent
 buildings in an asymmetric starting town and the three merchant tents in the
-next cube along its outgoing road. Both clearings use non-interactive footprint
-box colliders and reserved curved walking paths. Sleeping/healing, trading, pet ownership and horse interactions are not
+next cube along its outgoing road, all on the grid (quarter turns). Both clearings
+reserve straight walking paths. The inn, blacksmith and pet shop have colliders that
+follow their walls and props (`parts` in `src/world/town.js`) and a door that leads to
+an empty interior in the house's proportions (`docs/world.md`, House interiors); the stable
+and tents collide with their whole footprint. Sleeping/healing, trading, pet ownership and horse interactions are not
 implemented. Animals are static decoration joined into the buildings.
 Buildings are wider than the one-cell scatter props; they are placed explicitly,
 not randomly through the decoration generator. `radius` is a spacing hint, not a collider.

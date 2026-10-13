@@ -1,13 +1,14 @@
 // Overview of the cubes visited at the current depth, centred on the current cube. Cubes are
 // coloured by their WFC tile; edges show rivers (blue) and portals (gold: leads somewhere new,
-// cyan: explored); triangles are wells / rings; a violet dot is the open town portal.
+// cyan: explored); triangles are wells / rings; a violet dot is the open town portal. Inside a
+// house it shows the cube outside, with the house's door marked.
 import { KIND_COLOR } from '../world/tiles.js';
 import { key, parse, step } from '../world/coords.js';
 import { state } from './state.js';
 import { isFaceOpen } from '../core/boundaries.js';
 import { gateLocked, portalLocked } from '../core/guardians.js';
 import { N } from '../core/constants.js';
-import { TOWN_KEY } from '../world/town.js';
+import { TOWN_KEY, isInterior } from '../world/town.js';
 
 const R = 3, CELL = 24, PAD = 6, SIZE = (2 * R + 1) * CELL + PAD * 2;
 const canvas = Object.assign(document.createElement('canvas'), { id: 'minimap', width: SIZE, height: SIZE + 28 });
@@ -23,7 +24,7 @@ function tri(x, y, up, color) {
 }
 
 export function drawMinimap() {
-  const W = state.cubes, [X0, Y, Z0] = parse(state.cubeKey);
+  const inside = state.map?.interior, W = state.cubes, [X0, Y, Z0] = parse(inside ? inside.outside : state.cubeKey);
   const visited = k => !!W.cubes.get(k)?.visits;
   g.clearRect(0, 0, canvas.width, canvas.height);
   g.fillStyle = '#0b0d1266'; g.fillRect(0, 0, canvas.width, canvas.height);
@@ -60,7 +61,10 @@ export function drawMinimap() {
   }
   const c = PAD + R * CELL;
   g.strokeStyle = '#fff'; g.lineWidth = 2; g.strokeRect(c, c, CELL, CELL);
+  const door = inside && W.cubes.get(inside.outside)?.map.doors?.find(d => d.building === inside.building);
+  if (door) { g.fillStyle = '#fff'; g.fillRect(c + door.x / N * CELL - 2, c + door.z / N * CELL - 2, 4, 4); }
   g.fillStyle = '#aab3c2'; g.font = '11px ui-monospace, monospace';
-  g.fillText(`depth ${-Y}   ${[...W.cubes.values()].filter(c => c.visits).length} cubes visited`, PAD, SIZE + 10);
+  const count = [...W.cubes.values()].filter(c => c.visits && !isInterior(c.key)).length;
+  g.fillText(`depth ${-Y}   ${count} cubes visited${inside ? '   (inside)' : ''}`, PAD, SIZE + 10);
   if (tp) { g.fillStyle = '#c9a8ff'; g.fillText(`portal open: depth ${tp.depth}`, PAD, SIZE + 24); }
 }

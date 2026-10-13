@@ -28,7 +28,7 @@ export function disposeWorld(world) {
 // of the reward sites whose chests are open (run.chests)
 export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open = [], locked = !!m.guardian, townPad = null, opened = null) {
   const group = new THREE.Group();
-  const fluidMeshes = layerMeshes(geo, group);
+  const fluidMeshes = layerMeshes(geo, group, m.interior ? ['stone'] : []);
   const { splashes, lights } = buildFalls(m, group);
   lavaLights(m, group, lights);
   const markers = buildMarkers(m, group, showPath, seen, open, locked);
@@ -38,6 +38,7 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open =
   buildProps(placed.out.map(q => opened?.has(q.site) ? openedChest(q) : q), group);
   addGhosts(group);
   const glass = makeGlass(1, open);
+  glass.visible = !m.interior;   // inside a house: walls, no glass box
   group.add(glass);
   adoptLights(group);
   makeFadable(group);

@@ -8,6 +8,7 @@ import { portalLocked, guardianLockMessage } from '../core/guardians.js';
 import { startTravel } from './travel.js';
 import { townPadIn, onPad, TOWN_PORTAL_CHARGE } from '../core/townportal.js';
 import { takeTownPortal } from './townportal.js';
+import { checkDoors } from './doors.js';
 
 export const PORTAL_CHARGE = 1.5;
 export const portalChargeDuration = kind => kind === 'town' ? TOWN_PORTAL_CHARGE : kind === 'down' ? PORTAL_CHARGE / 2 : PORTAL_CHARGE;
@@ -34,6 +35,7 @@ export function checkPortals(dx = 0, dz = 0, dt = 0, charge = state.portalCharge
     startTravel(state.map.portals.find(q => q.kind === 'side' && q.dir === d) || { kind: 'side', dir: d });
     return true;
   }
+  if (checkDoors(dx, dz)) return true;   // house doors (game/doors.js)
   for (const q of state.map.portals) {
     if (q.kind === 'spawn' || q.kind === 'side' && isFaceOpen(state.openedFaces, state.cubeKey, q.dir)) continue;
     const at = inside(q);

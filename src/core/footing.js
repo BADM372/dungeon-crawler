@@ -40,8 +40,9 @@ export function surfaceAt(support, map, props, x, z) {
   if (!support) return null;
   if (support.run) {
     const r = support.run;
-    return r.kind === 'bridge' ? BRIDGES[r.style] ?? 'wood' : 'stone';   // stairs and landings
+    return r.kind === 'bridge' ? BRIDGES[r.style] ?? 'wood' : r.wood ? 'wood' : 'stone';   // stairs and landings
   }
+  if (map?.interior) return 'wood';   // plank floors inside houses
   const paths = (map?.town ?? map?.merchantCamp)?.paths;
   // a path ribbon reaches `width` to either side (render/floors.js buildClearingPaths)
   if (paths?.some(p => polylineDistance(p.points, x, z) <= p.width)) return 'dirt';
