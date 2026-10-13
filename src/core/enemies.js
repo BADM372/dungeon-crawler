@@ -175,7 +175,32 @@ export const SHRAPS = Object.freeze({
   hide: FIRE_HEAD, style: 'brute',
   seedSalt: 0x5a7a95, spacing: 4,
 });
-export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS]);
+// Rolls about on two wheels (the game spins them by the distance covered, `wheel` being their
+// radius) and fights from afar with a laser. An attack's `retreat` backs it off by `dist` cells
+// between `from` and `to` of the attack (eased like a lunge): before it fires it rolls
+// backwards, swaying. A `beam` is a ranged attack that is not thrown: from the muzzle (the
+// clip's extras.muzzle, between the eyes) it shines for `time` seconds, ending at the hit frame,
+// at a point that starts on the player and follows them at `track` cells/s, and on through it
+// until the level stops it (core/beams.js). Then it bursts: within `radius` of the beam the
+// player is hit. Sidestepping it dodges it, and staggering the Spicy puts it out.
+export const SPICY = Object.freeze({
+  type: 'spicy', species: 'spicy', label: 'Spicy', hp: 100, damage: 26, knock: 4,
+  xp: 72, coins: Object.freeze([16, 30]),
+  radius: 0.4, height: 1.35, bodyHeight: 1.05, mass: 1.6, wheel: 0.15,
+  aggro: 5.5, giveUp: 9, chase: 1.9, wander: 0.6, homeSpeed: 0.9,
+  reach: 4.5, hitReach: 0, hitAt: 45 / 30, trackUntil: 0.9, attackTime: 1.9, cooldown: 1.7,
+  arc: 0.5, knockDown: false, hop: 3.2, reason: 'Blasted by a Spicy!', ichor: Object.freeze(['#c6ff5a', '#4f8f12']), pitch: 1.15,
+  retreat: Object.freeze({ from: 0.05, to: 0.75, dist: 0.7 }),
+  beam: Object.freeze({ kind: 'laser', time: 0.6, track: 0.8, radius: 0.28, range: 8, color: '#7dff3a',
+    muzzle: Object.freeze([0, 1.279, 0.06]) }),
+  poise: 0.6, hitStun: 0.2, deathTime: 2, corpseTime: 4,
+  parts: Object.freeze({ body: ['SpicyBody', 'SpicyClaw'], glow: ['SpicyTips_glow'], wheels: ['SpicyTire', 'SpicyHub'], eyes: ['SpicyEyes_glow'] }),
+  style: 'ranged', keep: Object.freeze([2.4, 4.2]),
+  seedSalt: 0x5b1c7e3, spacing: 4,
+});
+export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, SPICY]);
+// what a ranged attack sends out: its projectile or its beam (null for a blow)
+export const shotOf = a => a.projectile ?? a.beam ?? null;
 
 // Enemy kinds: a species' base profile with its own name, colours and strength, drawn with
 // the species' model.
@@ -194,9 +219,9 @@ export function enemyKind(base, { mods = {}, attacks = base.attacks, ...spec }) 
   const { hp = 1, damage = 1, speed = 1, size = 1 } = mods, xp = mods.xp ?? Math.sqrt(hp * damage);
   const reach = a => a.hitReach * size;
   const thrown = p => Object.freeze({ ...p, muzzle: Object.freeze(p.muzzle.map(v => v * size)) });
-  // a melee attack's own reach grows with the body; a throw's stays
-  const sized = a => Object.freeze({ ...a, hitReach: reach(a), ...(a.reach !== undefined && !a.projectile && { reach: a.reach * size }),
-    ...(a.projectile && { projectile: thrown(a.projectile) }) });
+  // a melee attack's own reach grows with the body; a throw's (or a beam's) stays
+  const sized = a => Object.freeze({ ...a, hitReach: reach(a), ...(a.reach !== undefined && !shotOf(a) && { reach: a.reach * size }),
+    ...(a.projectile && { projectile: thrown(a.projectile) }), ...(a.beam && { beam: thrown(a.beam) }) });
   const list = attacks && Object.freeze(attacks.map(sized));
   const own = list?.some(a => a.reach !== undefined);
   return Object.freeze({
@@ -205,9 +230,11 @@ export function enemyKind(base, { mods = {}, attacks = base.attacks, ...spec }) 
     xp: times(base.xp, xp), coins: Object.freeze(base.coins.map(c => times(c, xp))),
     chase: base.chase * speed, wander: base.wander * speed, homeSpeed: base.homeSpeed * speed,
     size: (base.size ?? 1) * size, radius: base.radius * size, height: base.height * size, bodyHeight: base.bodyHeight * size,
-    reach: own ? Math.max(...list.map(a => a.reach ?? 0)) : base.projectile ? base.reach : base.reach * size, hitReach: reach(base),
+    reach: own ? Math.max(...list.map(a => a.reach ?? 0)) : shotOf(base) ? base.reach : base.reach * size, hitReach: reach(base),
     ...(list && { attacks: list }),
     ...(base.projectile && { projectile: thrown(base.projectile) }),
+    ...(base.beam && { beam: thrown(base.beam) }),
+    ...(base.wheel && { wheel: base.wheel * size }),
     ...spec,
   });
 }
@@ -360,20 +387,24 @@ export function pickAttack(profile, r = Math.random(), allowed = null) {
   for (const i of from) if ((w -= list[i].weight) < 0) return i;
   return from[from.length - 1];
 }
-// does the profile throw anything (with any of its attacks)?
-export const isRanged = profile => !!(profile.projectile || profile.attacks?.some(a => a.projectile));
+// does the profile throw or shine anything (with any of its attacks)?
+export const isRanged = profile => !!(shotOf(profile) || profile.attacks?.some(shotOf));
 // which attacks (indices; [0] for a species with one) can start against a target d away
 // across the floor and dy above or below: within the attack's reach (else the profile's) and
-// beyond its minReach; a throw allows more height, a blow enough for the next step of a stair
-// or a ramp. A clear line for throws is the caller's.
+// beyond its minReach; a throw (or a beam) allows more height, a blow enough for the next step
+// of a stair or a ramp. A clear line for throws is the caller's.
 export function attacksInReach(profile, d, dy) {
   const list = profile.attacks ?? [profile], out = [];
   list.forEach((a, i) => {
-    if (d < (a.reach ?? profile.reach) && d >= (a.minReach ?? 0) && dy < (a.projectile ? 1.5 : 0.75)) out.push(i);
+    if (d < (a.reach ?? profile.reach) && d >= (a.minReach ?? 0) && dy < (shotOf(a) ? 1.5 : 0.75)) out.push(i);
   });
   return out;
 }
 
+// how far a retreat has backed the enemy off by attack time t
+export const retreatAt = (retreat, t) => lungeAt(retreat, t) * retreat.dist;
+// when an attack's shot leaves: a beam shines for its time up to the hit frame
+export const fireAt = a => a.beam ? a.hitAt - a.beam.time : a.hitAt;
 // how far a pouncing attack carries the enemy towards a target d away
 export const lungeDistance = (lunge, d) => Math.max(0, Math.min(lunge.max, d - lunge.stop));
 // the share of the lunge covered at attack time t (eased in and out)

@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { flatMap } from './fixtures.js';
 import { toOklch, fromOklch, parseColor, recolorFn, recolorTable, toHex, toLinear } from '../src/core/oklch.js';
-import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, SHRAPS, enemyKind, enemyRoll, makeEnemy, GROWTH } from '../src/core/enemies.js';
+import { ENEMY_KINDS, ENEMY_PROFILES, SNAKE, SAND_VIPER, BLOOD_VIPER, SHADOW_MAMBA, OCTONAUT, SHRAPS, SPICY, enemyKind, enemyRoll, makeEnemy, GROWTH } from '../src/core/enemies.js';
 import { DEPTH_SPAWNS } from '../src/core/spawns.js';
 import { enemySpots, pickKind } from '../src/game/enemyspawn.js';
 
@@ -106,6 +106,10 @@ test('a kind scales its body, reach and attacks with its size', () => {
   near(pinch.reach, SHRAPS.attacks[0].reach * 1.5, 1e-9); assert.equal(toss.reach, SHRAPS.attacks[1].reach);
   assert.equal(crab.reach, toss.reach);
   toss.projectile.muzzle.forEach((v, i) => near(v, SHRAPS.attacks[1].projectile.muzzle[i] * 1.5, 1e-9));
+  // a beam's muzzle moves with the model too, its reach stays, and bigger wheels roll further per turn
+  const bot = enemyKind(SPICY, { type: 'bigspicy', label: 'Big spicy', mods: { size: 1.5 } });
+  bot.beam.muzzle.forEach((v, i) => near(v, SPICY.beam.muzzle[i] * 1.5, 1e-9));
+  assert.equal(bot.reach, SPICY.reach); near(bot.wheel, SPICY.wheel * 1.5, 1e-9);
   const e = makeEnemy({ f: null, x: 0, y: 0, z: 0, level: 3 }, BLOOD_VIPER);
   assert.equal(e.type, 'bloodviper'); assert.equal(e.profile.species, 'snake');
   assert.equal(e.hp, Math.round(BLOOD_VIPER.hp * (1 + 2 * GROWTH.hp)), 'a kind grows at the same rate as its species');

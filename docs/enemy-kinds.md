@@ -115,6 +115,7 @@ ice and the swamp snakes of their own.
 The Fire shraps swaps the Shraps' ice head for a burning one (`hide`), throws fireballs that
 burn instead of ice balls that chill (`attacks`) and glows like the fire species (`fx`).
 
-Fire-face and Fire-cat have `parts` (flame, fur, eyes) but no kinds yet. A blue-fire kind
+Fire-face, Fire-cat and Spicy have `parts` (flame, fur, eyes; the Spicy's body, glow, wheels and
+eyes) but no kinds yet. A Spicy kind can give its laser a colour of its own with `beamColor`. A blue-fire kind
 would also need its embers, its light and its fireball trail recoloured through `sparks`
 and `light`.

@@ -117,6 +117,19 @@ Four kinds of weapon: swords swing (most of this page), bows, crossbows and staf
 - Fire shraps: a kind of the Shraps (`docs/enemy-kinds.md`), red, with a head of flames in
   place of the ice block, that throws the Fire-face's burning fireball. The one model carries
   both heads (and both balls in the claw); each kind hides the other's materials (`hide`).
+- Spicy (`blender/spicy.py`): a toxic green, curved bar of a body with four glowing stalks,
+  red eyes floating above it and two thin legs on wheels, from which three-fingered arms
+  branch off. It rolls: `render/enemies.js` spins the wheel bones by the distance the body
+  covers along its heading (`profile.wheel` is their radius), so its clips leave them still,
+  and a corpse's wheels spin down. It fights from afar (`style: 'ranged'`, 2.4–4.2 cells). To
+  attack it rolls backwards, swaying, for 0.7 cells (`retreat`: the AI backs it off between
+  0.05 s and 0.75 s of the attack, eased like a lunge), braces, and at 0.9 s shines a green
+  laser from both eyes (`beam`, `game/beams.js`, `core/beams.js`). The beam aims at the
+  player's chest and follows them at 0.8 cells/s, runs on until a wall or the player's body
+  stops it, and after 0.6 s bursts (clip frame 45): a player within 0.28 cells of it (body
+  radius included) takes the hit. Walking or running across the beam gets out of it in time;
+  standing still or backing straight off does not. A stagger or death of the Spicy puts the
+  beam out before it bursts.
 - The glow lives in `render/enemies.js`: each of the three (and the Fire shraps) carries a light from the
   shared light pool (`trackLight`), bones named `flame*` keep flickering over any clip,
   the Triangle's emissive materials pulse with its hover beat, fire sheds embers, and
@@ -155,7 +168,7 @@ times a second (0.2 s, jittered so a pack does not decide in lockstep) and acts 
   - `skirmish` (spiders, snakes, Fire-cats): backs off after a blow, circles at `circle` cells
     (spiders scuttle sideways facing you, `strafe`; the others walk round), switching sides
     when blocked and now and then, and darts in once the cooldown is over.
-  - `ranged` (Fire-face, Triangle): backs away while closer than `keep[0]`, sidesteps while the
+  - `ranged` (Fire-face, Triangle, Spicy): backs away while closer than `keep[0]`, sidesteps while the
     throw recovers, and moves for a clear shot when it has none.
   - `brute` (Stunder, Octonaut, Shraps): holds its ground. The Stunder `charge`s: it runs the
     last 1.5–5 cells at 1.8× its chase speed when it can strike again.
@@ -268,7 +281,7 @@ these do not change inventory or combat stats. Swimming / climbing hides the pro
 vertical speed advances its phase, descent reverses it, and stopping holds
 the grip. Regenerate via the Blender commands in
 `character.py`, `spider.py`, `stunder.py`, `snake.py`, `octonaut.py`, `fireface.py`,
-`triangle.py`, `firecat.py`, `shraps.py` and `sword.py` (the SDF creatures share `blender/creature.py`
+`triangle.py`, `firecat.py`, `shraps.py`, `spicy.py` and `sword.py` (the SDF creatures share `blender/creature.py`
 and can also be rebuilt from a Blender MCP session; previews land in `blender/previews/`). Tests check balance, hit timing,
 direction / reach / height, cancellations, deterministic spawns, clearance,
 navigation and the exported asset/clip contract.

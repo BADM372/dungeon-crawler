@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS, makeEnemy, attackOf, pickAttack,
-  attacksInReach, isRanged, attackDamage, blowOf, lungeDistance, lungeAt } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS, SPICY, makeEnemy, attackOf, pickAttack,
+  attacksInReach, isRanged, attackDamage, blowOf, lungeDistance, lungeAt, retreatAt, fireAt, shotOf } from '../src/core/enemies.js';
+import { startBeam, aimBeam, castBeam, beamHits, beamDistance, muzzleAt } from '../src/core/beams.js';
 import { launch, touches, stepProjectile, ignite, burnStep, burntOut, chillFrom, chillStep, chillFactor, THAW } from '../src/core/projectiles.js';
 import { SWORD, HEAVY_HIT, swordState, startSwing, advanceSwing, cancelSwing, inSwordArc, swordHit, softTarget, damageEnemy } from '../src/core/combat.js';
 
@@ -239,6 +240,37 @@ test('an ice ball chills: slowed for its time, thawing back at the end', () => {
   }
   assert.ok(Math.abs(t - c.time) < 2 / 60);
   assert.ok(chillFactor(c) > 0.99, 'thawed when it wears off');
+});
+test('Spicy rolls back before its laser shines for 0.6 s and bursts at the hit frame', () => {
+  assert.ok(isRanged(SPICY)); assert.equal(shotOf(SPICY), SPICY.beam);
+  assert.equal(SPICY.beam.time, 0.6);
+  assert.ok(Math.abs(fireAt(SPICY) + SPICY.beam.time - SPICY.hitAt) < 1e-9);
+  assert.ok(SPICY.retreat.to <= fireAt(SPICY) && SPICY.trackUntil <= fireAt(SPICY), 'backs off and turns before it fires');
+  assert.equal(fireAt(FIREFACE), FIREFACE.hitAt, 'a throw leaves at the hit frame');
+  assert.equal(retreatAt(SPICY.retreat, 0), 0);
+  assert.ok(Math.abs(retreatAt(SPICY.retreat, SPICY.retreat.to) - SPICY.retreat.dist) < 1e-9);
+  assert.deepEqual(attacksInReach(SPICY, 3, 1.2), [0], 'shoots up and down a stair like a throw');
+  assert.deepEqual(attacksInReach(SPICY, SPICY.reach + 0.1, 0), []);
+  assert.equal(blowOf(SPICY).damage, SPICY.damage);
+});
+test('a beam follows its target slowly, stops at walls and bodies, and hits what it touches when it bursts', () => {
+  const e = { x: 0, y: 0, z: 0, yaw: Math.PI / 2 }, none = () => false;   // facing +x
+  const p = { x: 4, y: 0, z: 0, r: 0.22, h: 0.85 }, chest = q => ({ x: q.x, y: q.y + q.h * 0.55, z: q.z });
+  const o = muzzleAt(e, SPICY.beam.muzzle);
+  assert.ok(Math.abs(o.x - SPICY.beam.muzzle[2]) < 1e-9 && Math.abs(o.y - SPICY.beam.muzzle[1]) < 1e-9);
+  const b = castBeam(startBeam(e, SPICY.beam, chest(p)), none, p);
+  assert.ok(Math.abs(b.ex - (p.x - p.r)) < 0.08, 'ends on the body: ' + b.ex);
+  assert.ok(beamHits(b, p));
+  assert.ok(castBeam(startBeam(e, SPICY.beam, chest(p)), x => x > 2).ex < 2.05, 'a wall stops it');
+  assert.ok(Math.abs(castBeam(startBeam(e, SPICY.beam, { x: 4, y: 1.27, z: 0 }), none).length - SPICY.beam.range) < 1e-9);
+  // a player walking across it gets out before it bursts; one standing still does not
+  const t = SPICY.beam.time, walk = 1.9;
+  for (let k = 0; k < 36; k++) { p.z += walk * t / 36; aimBeam(b, chest(p), t / 36); }
+  castBeam(b, none, p);
+  assert.ok(!beamHits(b, p), 'dodged: ' + beamDistance(b, p));
+  assert.ok(Math.abs(b.az - SPICY.beam.track * t) < 1e-6, 'the aim follows at its track speed');
+  const still = { ...p, z: b.az };
+  assert.ok(beamHits(b, still));
 });
 test('the Fire-cat pounce stops short of its target and eases through the leap', () => {
   const { lunge } = FIRECAT;

@@ -114,3 +114,33 @@ export function projectileFx(pr, what) {
       grow: 0.9, color: '#d8f2ff', alpha: 0.35, drag: 0.8 });
   if (what !== 'spent') sfx(fire ? 'whump' : ice ? 'icecrack' : 'shatter', { at: pr, volume: 0.8 });
 }
+
+// the Spicy's laser (game/beams.js) switched on ('start'), went off ('burst') or was put out
+// because its enemy was staggered or killed ('fizzle')
+export function beamFx(b, what) {
+  const color = b.profile?.beamColor ?? b.spec.color ?? '#7dff3a', colors = ['#ffffff', color, '#d8ff7a'];
+  if (what === 'start') { sfx('laser', { at: b }); return; }
+  if (what === 'fizzle') {
+    for (let i = 0; i < 6; i++)
+      emit(glow, b.x, b.y, b.z, { v: [rand(-1, 1), rand(0, 1), rand(-1, 1)], life: rand(0.15, 0.3), size: rand(0.04, 0.08), color: colors[i % 3], drag: 2 });
+    sfx('fizzle', { at: b, pitch: 1.4, volume: 0.6 });
+    return;
+  }
+  // the burst: a flash where it ends, and the whole beam crackling apart
+  const { ex: x, ey: y, ez: z } = b;
+  emit(glow, x, y, z, { life: 0.22, size: 1.1, grow: 1.2, color, alpha: 0.9 });
+  emit(glow, x, y, z, { life: 0.12, size: 0.6, grow: 1, color: '#ffffff', alpha: 0.9 });
+  for (let i = 0; i < 26; i++)
+    emit(glow, x, y, z, { v: [rand(-3.5, 3.5), rand(0.5, 4), rand(-3.5, 3.5)], life: rand(0.25, 0.55), size: rand(0.06, 0.13),
+      color: colors[i % 3], gravity: 7, drag: 2 });
+  for (let i = 0; i < 4; i++)   // a whiff of toxic smoke
+    emit(soft, x, y + 0.1, z, { v: [rand(-0.3, 0.3), rand(0.4, 0.8), rand(-0.3, 0.3)], life: rand(0.8, 1.2), size: rand(0.22, 0.32),
+      grow: 0.8, color: '#7a9a4a', alpha: 0.35, drag: 0.6 });
+  for (let i = 0, n = Math.ceil(b.length / 0.25); i < n; i++) {
+    const k = (i + Math.random()) / n;
+    emit(glow, b.x + (x - b.x) * k, b.y + (y - b.y) * k, b.z + (z - b.z) * k, { v: [rand(-0.6, 0.6), rand(-0.2, 0.8), rand(-0.6, 0.6)],
+      life: rand(0.15, 0.3), size: rand(0.06, 0.11), color: colors[i % 3], drag: 3 });
+  }
+  sfx('zapburst', { at: { x, y, z } });
+  if (Math.hypot(x - player.x, z - player.z) < 3) cameraKick(x - player.x, z - player.z, 0.06, 0.02);
+}

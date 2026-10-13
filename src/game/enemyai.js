@@ -2,7 +2,8 @@
 // wind-up / strike / recovery, and what a hit does; a species with several attacks
 // picks one each time it strikes, among those its target is in reach of. A ranged attack is
 // thrown from its reach away when it has a clear shot; a species that also fights up close
-// keeps closing in while its throw recovers. A pouncing one is carried forward through its leap.
+// keeps closing in while its throw recovers. A pouncing one is carried forward through its leap,
+// one that retreats (the Spicy) rolls back before it fires its beam (game/beams.js).
 //
 // Awareness: an enemy sees the player within its `aggro` ahead of it, half as far behind it,
 // and hears one right next to it. It turns towards a player it half notices, reacts a moment
@@ -17,8 +18,9 @@
 import { player, state } from './state.js';
 import { playerFloor, strikePlayer } from './enemycombat.js';
 import { stepEnemy, findPath, pathToward, around, clearLine } from '../physics/enemynav.js';
-import { attackOf, pickAttack, attacksInReach, lungeDistance, lungeAt, isRanged } from '../core/enemies.js';
+import { attackOf, pickAttack, attacksInReach, lungeDistance, lungeAt, retreatAt, fireAt, isRanged, shotOf } from '../core/enemies.js';
 import { launchProjectile } from './projectiles.js';
+import { fireBeam } from './beams.js';
 import { tryHordeAttack } from './hordes.js';
 
 const THINK = 0.2;         // s between decisions
@@ -163,13 +165,13 @@ function decide(e) {
   const heard = alive && calls.find(c => c.from !== e && Math.hypot(c.x - e.x, c.z - e.z) < CALL && Math.abs(c.y - e.y) < 2);
   if (heard) notice(e, REACT * (1.5 + Math.random()), false);
 }
-// a thrown attack needs a free line from its muzzle height to the player's chest
-const clearShot = (e, a) => clearLine(e.x, e.y + a.projectile.muzzle[1], e.z, player.x, player.y + player.h * 0.55, player.z);
+// a thrown attack (or a beam) needs a free line from its muzzle height to the player's chest
+const clearShot = (e, a) => clearLine(e.x, e.y + shotOf(a).muzzle[1], e.z, player.x, player.y + player.h * 0.55, player.z);
 // the attacks e could start now (indices into profile.attacks; [0] for a single attack)
 function ready(e, d) {
   const p = player, list = e.profile.attacks ?? [e.profile];
   if (p.ragdoll) return [];
-  return attacksInReach(e.profile, d, Math.abs(p.y - e.y)).filter(i => !list[i].projectile || clearShot(e, list[i]));
+  return attacksInReach(e.profile, d, Math.abs(p.y - e.y)).filter(i => !shotOf(list[i]) || clearShot(e, list[i]));
 }
 // where a wind-up turns to: the player, or for a throw a little ahead of where they run
 function aim(e, a) {
@@ -185,6 +187,11 @@ function leap(e, lunge, t0, dx, dz) {
   if (t0 < lunge.from && e.t >= lunge.from) e.leap = lungeDistance(lunge, Math.max(0, fx * dx + fz * dz));
   const step = (lungeAt(lunge, e.t) - lungeAt(lunge, t0)) * e.leap;
   if (step > 0) stepEnemy(e, fx * step, fz * step);
+}
+// A retreat: it rolls straight back from its heading by retreat.dist over the retreat's window.
+function backOff(e, retreat, t0) {
+  const step = retreatAt(retreat, e.t) - retreatAt(retreat, t0);
+  if (step > 0) stepEnemy(e, -Math.sin(e.yaw) * step, -Math.cos(e.yaw) * step);
 }
 // Between blows, by style. Returns false where it should simply close in.
 //   skirmish: backs off after a blow, circles at `circle` cells (sidestepping if it `strafe`s,
@@ -229,7 +236,7 @@ function fight(e, dt) {
   if (!e.path) { e.speed = 0; turn(e, toPlayer(e), dt, 3); return; }
   const facing = Math.cos(Math.atan2(dx, dz) - e.yaw) > 0.7, can = ready(e, d), list = cfg.attacks ?? [cfg];
   // only throws in reach while they recover: one that also bites keeps coming
-  const closing = e.cool > 0 && can.every(i => list[i].projectile) && list.some(a => !a.projectile);
+  const closing = e.cool > 0 && can.every(i => shotOf(list[i])) && list.some(a => !shotOf(a));
   const strike = can.length > 0 && !closing;
   e.held = false;
   if (strike && e.cool <= 0 && state.enemyGrace <= 0) {
@@ -255,8 +262,13 @@ function act(e, dt) {
     const a = attackOf(e), t0 = e.t;
     e.t += dt; e.speed = 0;
     if (e.t < a.trackUntil) turn(e, aim(e, a), dt, 6);
+    else if (e.beam) turn(e, Math.atan2(e.beam.ax - e.x, e.beam.az - e.z), dt, 10);   // follows its laser's aim
     if (a.lunge) leap(e, a.lunge, t0, dx, dz);
-    if (!e.bit && e.t >= a.hitAt) { e.bit = true; if (a.projectile) launchProjectile(e, a); else strikePlayer(e); }
+    if (a.retreat) backOff(e, a.retreat, t0);
+    if (!e.bit && e.t >= fireAt(a)) {
+      e.bit = true;
+      if (a.beam) fireBeam(e, a); else if (a.projectile) launchProjectile(e, a); else strikePlayer(e);
+    }
     if (e.t >= a.attackTime) { e.mode = 'chase'; e.cool = cfg.cooldown * (0.8 + Math.random() * 0.4); e.side = side(); }
     return;
   }

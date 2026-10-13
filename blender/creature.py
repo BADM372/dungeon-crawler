@@ -1,6 +1,6 @@
 """
 Shared building blocks for the SDF clay enemies (snake.py, octonaut.py,
-fireface.py, triangle.py, firecat.py, shraps.py).
+fireface.py, triangle.py, firecat.py, shraps.py, spicy.py).
 
 Same construction as stunder.py / spider.py: every part is a signed distance
 field meshed with OpenVDB (figure._sdf_to_mesh), all parts are joined into

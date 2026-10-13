@@ -1,6 +1,6 @@
 // Generated sound effects (Web Audio, no sample files): a sword whoosh, a bow's draw and twang,
 // a crossbow's shot and reload, a spell's cast and burst, shots striking walls, hits, kills,
-// getting hurt, pickups, thrown fireballs / punches / ice balls and burning, the player's body (jumps,
+// getting hurt, pickups, thrown fireballs / punches / ice balls and burning, lasers, the player's body (jumps,
 // falls, knock-downs, fluid deaths), travel, items and the bag, and the enemies' voices
 // (voices.js). Footsteps are footsteps.js, the continuous sounds loops.js. The audio context
 // lives in context.js.
@@ -164,6 +164,19 @@ const SOUNDS = {
       const at = t + 0.03 + i * 0.035 * (0.7 + Math.random() * 0.6), hz = (2200 + Math.random() * 2600) * p;
       tone('triangle', hz, hz * 0.97, at, 0.12, amp(at, 0.002, 0.12, 0.12, out));
     }
+  },
+  laser(t, out, p) {      // the Spicy's laser: a buzzing hum rising to a whine for its 0.6 s
+    tone('sawtooth', 110 * p, 220 * p, t, 0.62, filter('bandpass', 900 * p, 2, amp(t, 0.04, 0.3, 0.58, out)));
+    tone('square', 1650 * p, 2600 * p, t, 0.62, filter('lowpass', 3500, 1, amp(t, 0.08, 0.05, 0.54, out)));
+    for (let i = 0; i < 6; i++) {   // and it crackles
+      const at = t + 0.05 + i * 0.09 * (0.7 + Math.random() * 0.6);
+      noise(at, 0.02, filter('highpass', 4000 * p, 1, amp(at, 0.001, 0.2, 0.02, out)));
+    }
+  },
+  zapburst(t, out, p) {   // the laser bursting: a sharp electric pop, a falling zap and a thump
+    noise(t, 0.12, filter('highpass', 2500 * p, 0.7, amp(t, 0.001, 0.7, 0.12, out)));
+    tone('square', 1800 * p, 180 * p, t, 0.22, filter('lowpass', 3000, 1, amp(t, 0.002, 0.2, 0.22, out)));
+    tone('sine', 190 * p, 50 * p, t, 0.25, amp(t, 0.002, 0.75, 0.25, out));
   },
   portal(t, out, p) {     // the town portal opening or taking you: a rising shimmer over a soft rush
     const f = filter('bandpass', 300 * p, 1.2, amp(t, 0.15, 0.6, 0.6, out));

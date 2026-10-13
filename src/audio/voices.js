@@ -82,6 +82,21 @@ export function voices({ amp, noise, filter, tone, sweep }) {
         tone('triangle', 1200 * p, 500 * p, t + 0.1, 0.6, amp(t + 0.1, 0.02, 0.1, 0.55, out));
       },
     },
+    spicy: {    // a little wheeled thing: squeaky chirps, wheels whirring backwards and a charge, sputtering out
+      alert: (t, out, p) => {
+        for (const [i, [f0, f1]] of [[700, 1300], [950, 1700]].entries())
+          tone('square', f0 * p, f1 * p, t + i * 0.1, 0.08, filter('lowpass', 2800, 1, amp(t + i * 0.1, 0.004, 0.14, 0.08, out)));
+      },
+      windup: (t, out, p) => {
+        sweep(t, 0.6, 600 * p, 1400 * p, 500 * p, 4, 0.22, out, 0.05);
+        clicks(t, 7, 0.08, 2600 * p, 0.3, out);
+        tone('sine', 300 * p, 900 * p, t + 0.55, 0.35, amp(t + 0.55, 0.05, 0.12, 0.3, out));
+      },
+      death: (t, out, p) => {
+        tone('sawtooth', 900 * p, 90 * p, t, 0.8, filter('bandpass', 1200 * p, 2, amp(t, 0.01, 0.25, 0.78, out)));
+        clicks(t + 0.1, 10, 0.07, 3200 * p, 0.35, out);
+      },
+    },
   };
   const out = {};
   for (const [species, kinds] of Object.entries(V)) for (const k of VOICE_KINDS) out[`${species}_${k}`] = kinds[k];

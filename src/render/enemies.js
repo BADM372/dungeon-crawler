@@ -6,6 +6,8 @@
 // An enemy kind (core/enemies.js) is drawn with its species' model, recoloured
 // (recolor.js), stripped of the parts it hides and scaled by its size; its `light` and `sparks`
 // replace the glow's colours, and its `fx` names a glow of its own.
+// Wheels (bones named wheel.*, a species with a `wheel` radius) spin by the distance the body
+// rolls along its heading, whatever clip plays, and spin down once it is dead.
 import * as THREE from 'three';
 import { scene, camera } from './scene.js';
 import { spiderModel } from './spidermodel.js';
@@ -16,6 +18,7 @@ import { fireFaceModel } from './firefacemodel.js';
 import { triangleModel } from './trianglemodel.js';
 import { fireCatModel } from './firecatmodel.js';
 import { shrapsModel } from './shrapsmodel.js';
+import { spicyModel } from './spicymodel.js';
 import { trackLight, untrackLight } from './lightpool.js';
 import { glow, emit, rand } from './particles.js';
 import { cloneEnemy } from './enemymodel.js';
@@ -26,7 +29,7 @@ import { player } from '../game/state.js';
 import { makeBar, makeLevelLabel, makeAlertMark } from './bars.js';
 
 const prefabs = { spider: spiderModel, stunder: stunderModel, snake: snakeModel, octonaut: octonautModel,
-  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel, shraps: shrapsModel };
+  fireface: fireFaceModel, triangle: triangleModel, firecat: fireCatModel, shraps: shrapsModel, spicy: spicyModel };
 // light: [color, intensity, distance, height]; pulse: emissive / light swing with the
 // clip's beat (twice per hover loop); embers: per second, rising from `from` (a bone, or
 // a height above the body); flicker: extra flame motion
@@ -42,6 +45,27 @@ const tmp = new THREE.Vector3(), wobble = new THREE.Quaternion(), axis = new THR
 let clock = 0;
 const white = new THREE.Color(0xffffff), hover = new THREE.Color(0xffd9a0), inverseYaw = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
+const spin = new THREE.Quaternion(), from = new THREE.Vector3(), to = new THREE.Vector3();
+// the wheel bones and the axle each spins about, in its own frame (found in the rest pose)
+function findWheels(model) {
+  const bones = ['wheel.L', 'wheel.R'].map(n => model.getObjectByName(THREE.PropertyBinding.sanitizeNodeName(n)));
+  if (bones.some(b => !b)) return null;
+  model.updateMatrixWorld(true);
+  bones[0].getWorldPosition(from); bones[1].getWorldPosition(to);
+  const axle = from.sub(to).normalize();   // left to right: model +x, the way a forward roll turns
+  return bones.map(bone => ({ bone, axis: axle.clone().applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion()).invert()) }));
+}
+function spinWheels(v, e, dt) {
+  if (!v.wheels) return;
+  if (e.mode === 'dead') v.spin *= Math.exp(-dt * 1.2);
+  else if (dt > 1e-4 && v.rolled) {
+    const d = (e.x - v.rolled.x) * Math.sin(e.yaw) + (e.z - v.rolled.z) * Math.cos(e.yaw);
+    v.spin = Math.abs(d) < 0.5 ? d / dt / (e.profile.wheel || 0.15) : 0;   // a jump (a slid cube) is not a roll
+  }
+  v.rolled = { x: e.x, z: e.z };
+  v.roll = (v.roll + v.spin * dt) % (2 * Math.PI);
+  for (const w of v.wheels) w.bone.quaternion.multiply(spin.setFromAxisAngle(w.axis, v.roll));
+}
 const angleTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
 
 function makeView(e, prefab) {
@@ -92,7 +116,7 @@ function makeView(e, prefab) {
   }
   const embers = typeof fx?.embers?.from === 'string' ? model.getObjectByName(fx.embers.from) : null;
   return { group, model, mixer, actions, prefab, materials, ghost, bar, hpBar, label, mark, markT: 0, yaw: e.yaw, phase: e.phase,
-    attacks: -1, dead: false, weights, fx, flames, light, embers, size, sparks: e.profile.sparks ?? EMBERS, seed: Math.random() * 100 };
+    attacks: -1, dead: false, weights, fx, flames, light, embers, size, wheels: findWheels(model), roll: 0, spin: 0, rolled: null, sparks: e.profile.sparks ?? EMBERS, seed: Math.random() * 100 };
 }
 // the hover clip's beat (matches blender/triangle.py): sharp, twice per loop
 const beat = phase => (0.5 + 0.5 * Math.cos(2 * Math.PI * 2 * phase)) ** 6;
@@ -114,7 +138,7 @@ function glowFx(v, e, dt, life) {
         spread: 0.2, life: rand(0.5, 0.9), size: rand(0.04, 0.07), color: v.sparks[i % v.sparks.length], gravity: -0.3, drag: 0.8 });
     }
 }
-function dying(v, e) {
+function dying(v, e, dt) {
   if (!v.dead) {
     v.dead = true;
     for (const a of Object.values(v.actions)) a.setEffectiveWeight(0);
@@ -128,6 +152,7 @@ function dying(v, e) {
   v.bar.visible = false; v.label.visible = false; v.mark.visible = false;
   v.group.visible = fade > 0;
   v.mixer.update(0);
+  spinWheels(v, e, dt);
   glowFx(v, e, 0, Math.max(0, 1 - e.deadT / e.profile.deathTime) * fade);   // the glow dies with it
 }
 export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
@@ -140,7 +165,7 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     v.yaw = e.mode === 'attack' ? e.yaw : angleTo(v.yaw, e.yaw, Math.min(1, dt * 14));
     v.group.position.set(e.x + off.x, e.y + off.y, e.z + off.z);
     v.group.rotation.y = v.yaw;
-    if (e.mode === 'dead') { dying(v, e); continue; }
+    if (e.mode === 'dead') { dying(v, e, dt); continue; }
     const attack = e.mode === 'attack', strike = A[attackOf(e).clip ?? 'attack'];
     if (attack && v.attacks !== e.attacks) {
       v.attacks = e.attacks; strike.reset().play(); strike.timeScale = 0;
@@ -173,6 +198,7 @@ export function animateEnemies(list, dt, off = { x: 0, y: 0, z: 0 }) {
     v.mark.visible = v.markT > 0;
     v.mark.scale.setScalar(0.5 * (e.mode === 'alert' ? 1 + 0.35 * Math.sin(Math.PI * v.markT) : v.markT));
     v.mixer.update(0);
+    spinWheels(v, e, dt);
     glowFx(v, e, dt, 1);
   }
 }

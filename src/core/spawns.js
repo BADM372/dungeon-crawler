@@ -11,7 +11,7 @@
 //     always-present species are kept first, the others in a random order weighted by chance.
 //   The lead: one present species (picked by chance) dominates the cube. It draws its count
 //     from the top half of its range, every other species from the bottom half.
-// Ranged species (Fire-face, Triangle, Shraps) stay at a few per cube; the melee ones, the spiders
+// Ranged species (Fire-face, Triangle, Shraps, Spicy) stay at a few per cube; the melee ones, the spiders
 // above all, come in larger and larger packs further down.
 import { mulberry32, hash32 } from './util.js';
 import { ENEMY_KINDS } from './enemies.js';
@@ -36,11 +36,14 @@ export const DEPTH_SPAWNS = Object.freeze([
   /*  8 frozen caves */ D(3, ['octonaut', 1, 3, 5, 2], ['shraps', .9, 2, 3], ['spider', .8, 7, 12, 4, { frostspider: 3, spider: 1 }],
     ['stunder', .6, 1, 2, 1, { froststunder: 2, stonestunder: 1 }], ['triangle', .15, 1, 1]),
   /*  9 fungal swamp */ D(3, ['snake', 1, 6, 10, 3, { venomadder: 2, snake: 2, bloodviper: 1 }], ['octonaut', .8, 2, 4, 2, { bogoctonaut: 3, octonaut: 1 }],
+    ['spicy', .6, 1, 2],
     ['spider', .6, 6, 10, 4, { bogspider: 3, spider: 1 }], ['stunder', .25, 1, 2]),
   /* 10 fungal swamp */ D(3, ['snake', 1, 7, 12, 3, { venomadder: 2, snake: 1, bloodviper: 1 }], ['octonaut', .8, 3, 5, 2, { bogoctonaut: 3, octonaut: 1 }],
+    ['spicy', .8, 1, 3],
     ['spider', .6, 8, 12, 4, { bogspider: 3, spider: 1 }], ['fireface', .1, 1, 1]),
   /* 11 spider nests */ D(3, ['spider', 1, 16, 24, 6, { spider: 3, bogspider: 1, redback: 1 }], ['stunder', .5, 1, 2, 1, { stunder: 1, stonestunder: 1 }],
-    ['octonaut', .3, 1, 2, 1, { octonaut: 1, bogoctonaut: 1 }], ['snake', .3, 4, 6, 3, { venomadder: 1, bloodviper: 1 }]),
+    ['octonaut', .3, 1, 2, 1, { octonaut: 1, bogoctonaut: 1 }], ['snake', .3, 4, 6, 3, { venomadder: 1, bloodviper: 1 }],
+    ['spicy', .25, 1, 2]),
   /* 12 spider nests */ D(3, ['spider', 1, 20, 28, 7, { spider: 2, bogspider: 1, redback: 1.5 }], ['stunder', .6, 1, 3, 1, { stunder: 1, stonestunder: 1 }],
     ['octonaut', .4, 1, 2, 1, { octonaut: 1, bogoctonaut: 1, coraloctonaut: .5 }], ['triangle', .15, 1, 1]),
   /* 13 crystal mines */ D(3, ['triangle', 1, 1, 2, 1, { emeraldtriangle: 2, triangle: 1 }], ['stunder', .6, 1, 2, 1, { stonestunder: 1 }],

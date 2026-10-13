@@ -7,10 +7,12 @@ import { fireFaces, resetFireFaces, updateFireFaces, detachFireFaces } from './f
 import { triangles, resetTriangles, updateTriangles, detachTriangles } from './triangles.js';
 import { fireCats, resetFireCats, updateFireCats, detachFireCats } from './firecats.js';
 import { shraps, resetShraps, updateShraps, detachShraps } from './shraps.js';
+import { spicies, resetSpicies, updateSpicies, detachSpicies } from './spicy.js';
 import { contactEnemies, resetEnemyCombat, updateBurning, updateChill } from './enemycombat.js';
 import { stepEnemies, stepCalls, resetCalls } from './enemyai.js';
 import { removeEnemyViews } from '../render/enemies.js';
 import { updateProjectiles, drawAllProjectiles, clearProjectiles } from './projectiles.js';
+import { updateBeams, drawAllBeams, clearBeams } from './beams.js';
 import { hitWithSword } from './sword.js';
 import { updateShots, drawAllShots, clearShots } from './shots.js';
 import { animateEnemies } from '../render/enemies.js';
@@ -35,12 +37,12 @@ export const ENTRY_GRACE = 1.2;
 let spawned = [];
 export function addEnemies(list) { spawned.push(...list); }
 
-export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats, ...shraps, ...spawned];
+export const allEnemies = () => [...spiders, ...stunders, ...snakes, ...octonauts, ...fireFaces, ...triangles, ...fireCats, ...shraps, ...spicies, ...spawned];
 export function resetEnemies() {
-  resetEnemyCombat(); clearProjectiles(); clearShots(); resetCalls();
+  resetEnemyCombat(); clearProjectiles(); clearBeams(); clearShots(); resetCalls();
   removeEnemyViews(spawned); spawned = [];
   state.enemyGrace = ENTRY_GRACE;
-  resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats(); resetShraps();
+  resetSpiders(); resetStunders(); resetSnakes(); resetOctonauts(); resetFireFaces(); resetTriangles(); resetFireCats(); resetShraps(); resetSpicies();
   defenceThink = 0;
   hordeGroups = createHordeGroups(state.map, allEnemies());
   coordinateDefence(state.map, state.run, allEnemies(), player);
@@ -70,17 +72,17 @@ export function updateEnemies(dt) {
   if (coordinateHordes(hordeGroups, player, dt)) setStatus('Horde awakened!');
   stepCalls(dt);
   updateSpiders(dt); updateStunders(dt); updateSnakes(dt); updateOctonauts(dt);
-  updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt); updateShraps(dt);
+  updateFireFaces(dt); updateTriangles(dt); updateFireCats(dt); updateShraps(dt); updateSpicies(dt);
   stepEnemies(spawned, dt);
   spawned = spawned.filter(e => e.mode !== 'dead' || e.deadT < e.profile.corpseTime || (removeEnemyViews([e]), false));
-  updateProjectiles(dt); updateBurning(dt); updateChill(dt);
+  updateProjectiles(dt); updateBeams(dt); updateBurning(dt); updateChill(dt);
   contactEnemies(allEnemies(), dt);
 }
-export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); drawAllShots(dt, off); }
+export function drawEnemies(dt, off) { animateEnemies(allEnemies(), dt, off); drawAllProjectiles(dt, off); drawAllBeams(dt, off); drawAllShots(dt, off); }
 function detachSpawned() { const list = spawned; spawned = []; return list; }
 // projectiles and shots in flight do not travel along
 export function detachEnemies() {
-  clearProjectiles(); clearShots(); hordeGroups = [];
+  clearProjectiles(); clearBeams(); clearShots(); hordeGroups = [];
   return [...detachSpiders(), ...detachStunders(), ...detachSnakes(), ...detachOctonauts(),
-    ...detachFireFaces(), ...detachTriangles(), ...detachFireCats(), ...detachShraps(), ...detachSpawned()];
+    ...detachFireFaces(), ...detachTriangles(), ...detachFireCats(), ...detachShraps(), ...detachSpicies(), ...detachSpawned()];
 }

@@ -6,7 +6,7 @@ import { assets } from './paths.js';
 import { SLASH_CLIP, SHOOT_CLIP, CROSSBOW_CLIP, CAST_CLIP, KINDS } from '../src/core/combat.js';
 import { MUZZLES } from '../src/core/shots.js';
 import { WEAPONS } from '../src/core/items.js';
-import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS } from '../src/core/enemies.js';
+import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS, SPICY, fireAt } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
 function glb(name) {
@@ -227,6 +227,27 @@ test('Shraps pinches and throws on the profile timings, from the profile muzzle,
   const shell = j.materials.find(m => m.name === 'ShrapsShell').pbrMetallicRoughness.baseColorFactor;
   assert.ok(shell[2] > shell[1] && shell[1] > shell[0], 'light blue');
   for (const [name, [r, g, b]] of glowing(j).filter(([n]) => /Fire|Flame/.test(n))) assert.ok(r === 1 && g < 0.5 && b < 0.05, name);
+});
+test('Spicy rolls on wheels, backs off and fires its laser on the profile timings, from the profile muzzle', () => {
+  const { j, a } = enemyClips('spicy', SPICY, { walk: 'SpicyRoll', attack: 'SpicyLaser', death: 'SpicyDeath' });
+  const laser = a.SpicyLaser.extras;
+  assert.equal(laser.attack_style, 'laser');
+  assert.ok(Math.abs(laser.beam_frame / 30 - fireAt(SPICY)) < 1e-9, 'the beam shines for its time up to the burst');
+  assert.deepEqual(laser.muzzle, [...SPICY.beam.muzzle]);
+  assert.deepEqual([laser.retreat_from, laser.retreat_to, laser.retreat], [SPICY.retreat.from, SPICY.retreat.to, SPICY.retreat.dist]);
+  assert.equal(a.SpicyRoll.extras.wheel_radius, SPICY.wheel);
+  for (const bone of ['body', 'stalk0', 'stalk3', 'eye.L', 'eye.R', 'axle.L', 'wheel.L', 'wheel.R', 'arm_upper.L', 'hand.R'])
+    assert.ok(j.nodes.some(n => n.name === bone), bone);
+  // the game spins the wheels: no clip turns them
+  const wheels = new Set(j.nodes.flatMap((n, i) => /^wheel\./.test(n.name) ? [i] : []));
+  for (const clip of j.animations) for (const c of clip.channels) if (wheels.has(c.target.node) && c.target.path === 'rotation') {
+    const q = glb('spicy').floats(clip.samplers[c.sampler].output);
+    for (let i = 0; i < q.length; i += 4) assert.ok(Math.abs(Math.abs(q[i + 3]) - 1) < 1e-4, clip.name);
+  }
+  const body = j.materials.find(m => m.name === 'SpicyBody').pbrMetallicRoughness.baseColorFactor;
+  assert.ok(body[1] > 0.6 && body[1] > 2 * body[0] && body[0] > body[2], 'toxic green');
+  const [r, g, b] = j.materials.find(m => m.name === 'SpicyEyes_glow').emissiveFactor;
+  assert.ok(r === 1 && g < 0.1 && b < 0.1, 'red eyes');
 });
 test('standalone sword is a small untextured, unskinned prop', () => {
   const { json: j } = glb('sword');
