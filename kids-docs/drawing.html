@@ -67,6 +67,52 @@
   </div>
 </section>
 
+<section class="slide" id="click" data-lv="2" data-src="src/game/pointer.js#pickFloor">
+  <h2 lang="en">Try it: from your click back into the world</h2>
+  <h2 lang="de">Probier es: von deinem Klick zurück in die Welt</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">The camera turns the 3D world into a flat picture. But when you click on the floor to walk there, the game has to go the other way: which spot in the world is under the mouse?</p>
+      <p lang="de">Die Kamera macht aus der 3D-Welt ein flaches Bild. Aber wenn du auf den Boden klickst, um dorthin zu laufen, muss das Spiel den umgekehrten Weg gehen: Welcher Ort in der Welt ist unter der Maus?</p>
+      <ol class="steps">
+        <li lang="en">Shoot a line, a <b>ray</b>, from the camera through the point on the screen where the mouse is.</li>
+        <li lang="de">Schieß eine Linie, einen <b>Strahl</b>, von der Kamera durch den Punkt auf dem Bildschirm, wo die Maus ist.</li>
+        <li lang="en">Walk along the ray in tiny steps (0.04 cells each).</li>
+        <li lang="de">Lauf in winzigen Schritten den Strahl entlang (je 0,04 Zellen).</li>
+        <li lang="en">At every step, ask the world: is this inside the ground? The first step that is: that's the spot.</li>
+        <li lang="de">Frag bei jedem Schritt die Welt: Ist das im Boden drin? Der erste Schritt, bei dem es so ist: Das ist der Ort.</li>
+      </ol>
+      <p lang="en">Then the hero finds a path there. Make the steps big in the demo, and see what goes wrong with the thin bridge.</p>
+      <p lang="de">Dann sucht der Held einen Weg dorthin. Mach die Schritte in der Demo groß und schau, was mit der dünnen Brücke schiefgeht.</p>
+      <p class="small muted" lang="en">The same walk along a line also finds what's between you and the camera (the cutaway) and whether a monster can see you.</p>
+      <p class="small muted" lang="de">Dasselbe Ablaufen einer Linie findet auch, was zwischen dir und der Kamera ist (der Ausschnitt), und ob ein Monster dich sehen kann.</p>
+    </div>
+    <div class="demo" data-demo="pick"></div>
+  </div>
+</section>
+
+<section class="slide" id="click-code" data-lv="3" data-src="src/game/pointer.js#pickFloor">
+  <h2 lang="en">The real code: the floor under the mouse</h2>
+  <h2 lang="de">Der echte Code: der Boden unter der Maus</h2>
+  <div class="cols wide-left">
+    <pre data-code="src/game/pointer.js#pickFloor"></pre>
+    <div>
+      <ul class="small">
+        <li lang="en"><code>cast()</code> makes the ray: <code>o</code> is where it starts (the camera), <code>d</code> which way it goes.</li>
+        <li lang="de"><code>cast()</code> macht den Strahl: <code>o</code> ist, wo er anfängt (die Kamera), <code>d</code>, in welche Richtung er geht.</li>
+        <li lang="en"><code>d.y > -1e-3</code>: a ray that doesn't go down never hits a floor. Give up at once.</li>
+        <li lang="de"><code>d.y > -1e-3</code>: Ein Strahl, der nicht nach unten geht, trifft nie einen Boden. Sofort aufgeben.</li>
+        <li lang="en">The first <code>t</code> skips the empty sky above the highest floor of the cube.</li>
+        <li lang="de">Das erste <code>t</code> überspringt den leeren Himmel über dem höchsten Boden des Würfels.</li>
+        <li lang="en">The loop: the point at distance <code>t</code> is <code>o + d × t</code>. Then <code>t += 0.04</code>, a little further.</li>
+        <li lang="de">Die Schleife: Der Punkt in der Entfernung <code>t</code> ist <code>o + d × t</code>. Dann <code>t += 0.04</code>, ein Stück weiter.</li>
+        <li lang="en"><code>continue</code> skips to the next step: outside the cube, or a floor the cutaway hides near you (you can't click on what you can't see).</li>
+        <li lang="de"><code>continue</code> springt zum nächsten Schritt: außerhalb des Würfels, oder ein Boden, den der Ausschnitt in deiner Nähe versteckt (worauf du nichts siehst, kannst du nicht klicken).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <section class="slide" id="light" data-lv="2" data-src="src/render/scene.js#sun,hemi">
   <h2 lang="en">Light and shadow</h2>
   <h2 lang="de">Licht und Schatten</h2>

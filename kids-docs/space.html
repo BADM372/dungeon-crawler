@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title data-de="Wo die Dinge sind · Kinderführer zu Cube Crawler">Where Things Are · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
+</head>
+<body data-theme="badlands">
+<main class="deck">
+
+<section class="slide" id="address" data-lv="1" data-src="src/core/constants.js#N">
+  <h2 lang="en">Try it: every spot has an address</h2>
+  <h2 lang="de">Probier es: Jeder Ort hat eine Adresse</h2>
+  <div class="cols wide-right">
+    <div>
+      <p class="lead" lang="en">To the game, every place is just a few numbers: its <b>coordinates</b>.</p>
+      <p class="lead" lang="de">Für das Spiel ist jeder Ort nur ein paar Zahlen: seine <b>Koordinaten</b>.</p>
+      <ul>
+        <li lang="en"><b>x</b> goes left to right, east.</li>
+        <li lang="de"><b>x</b> geht von links nach rechts, nach Osten.</li>
+        <li lang="en"><b>z</b> goes top to bottom on this map, south.</li>
+        <li lang="de"><b>z</b> geht auf dieser Karte von oben nach unten, nach Süden.</li>
+        <li lang="en"><b>y</b> goes up, towards the sky. (This map is seen from above, so you can't see y here.)</li>
+        <li lang="de"><b>y</b> geht nach oben, zum Himmel. (Diese Karte ist von oben gesehen, darum siehst du y hier nicht.)</li>
+      </ul>
+      <p lang="en">A cube is <b data-val="src/core/constants.js#N">16</b> cells wide, so x and z go from 0 to 16. One cell is exactly 1 long.</p>
+      <p lang="de">Ein Würfel ist <b data-val="src/core/constants.js#N">16</b> Zellen breit, also gehen x und z von 0 bis 16. Eine Zelle ist genau 1 lang.</p>
+      <p lang="en">The hero can stand anywhere, like at x = 4.3. But floors, walls and stairs are built cell by cell. Which cell is the hero in? Round down: <code>Math.floor(4.3)</code> is 4.</p>
+      <p lang="de">Der Held kann überall stehen, zum Beispiel bei x = 4,3. Aber Böden, Wände und Treppen sind Zelle für Zelle gebaut. In welcher Zelle ist der Held? Abrunden: <code>Math.floor(4.3)</code> ist 4.</p>
+    </div>
+    <div class="demo" data-demo="space" data-show="where"></div>
+  </div>
+</section>
+
+<section class="slide" id="arrows" data-lv="1">
+  <h2 lang="en">Try it: arrows from here to there</h2>
+  <h2 lang="de">Probier es: Pfeile von hier nach dort</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">How do you get from the hero to the spider? Take the spider's numbers <b>minus</b> the hero's numbers:</p>
+      <p lang="de">Wie kommst du vom Helden zur Spinne? Nimm die Zahlen der Spinne <b>minus</b> die Zahlen des Helden:</p>
+      <p class="mono" style="color:#fff">dx = spider.x − hero.x<br>dz = spider.z − hero.z</p>
+      <p lang="en">That pair of numbers is an arrow, called a <a class="w" href="words.html#vector">vector</a>. It says which way, and how far: "go 6 right and 5 up".</p>
+      <p lang="de">Dieses Zahlenpaar ist ein Pfeil, ein sogenannter <a class="w" href="words.html#vector">Vektor</a>. Er sagt, in welche Richtung und wie weit: "Geh 6 nach rechts und 5 nach oben."</p>
+      <p lang="en">Vectors are everywhere in the game. The hero's speed is one too: an arrow for how far it moves in one second. Every frame, the game adds a little bit of that arrow to the hero's position.</p>
+      <p lang="de">Vektoren sind überall im Spiel. Das Tempo des Helden ist auch einer: ein Pfeil dafür, wie weit er sich in einer Sekunde bewegt. In jedem Bild zählt das Spiel ein kleines Stück dieses Pfeils zur Position des Helden dazu.</p>
+      <a class="portal" href="physics.html#adding" lang="en">Moving is just adding</a>
+      <a class="portal" href="physics.html#adding" lang="de">Bewegen ist nur Zusammenzählen</a>
+    </div>
+    <div class="demo" data-demo="space" data-show="arrow"></div>
+  </div>
+</section>
+
+<section class="slide" id="distance" data-lv="2" data-src="src/core/enemies.js#SPIDER src/core/townportal.js#onPad">
+  <h2 lang="en">Try it: how far is it?</h2>
+  <h2 lang="de">Probier es: Wie weit ist es?</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">The arrow and its two numbers make a triangle with a right angle. Over two thousand years ago, Pythagoras found out how long the slanted side is:</p>
+      <p lang="de">Der Pfeil und seine zwei Zahlen bilden ein Dreieck mit einem rechten Winkel. Vor über zweitausend Jahren hat Pythagoras herausgefunden, wie lang die schräge Seite ist:</p>
+      <p class="mono" style="color:#fff">distance = √(dx² + dz²)</p>
+      <p lang="en">In code that's <code>Math.hypot(dx, dz)</code>. The game asks it all the time: has the spider seen me (closer than <b data-val="src/core/enemies.js#SPIDER.aggro">3</b> cells)? Is it close enough to bite? Am I standing on the town portal?</p>
+      <p lang="de">Im Code heißt das <code>Math.hypot(dx, dz)</code>. Das Spiel fragt das ständig: Hat die Spinne mich gesehen (näher als <b data-val="src/core/enemies.js#SPIDER.aggro">3</b> Zellen)? Ist sie nah genug zum Beißen? Stehe ich auf dem Stadtportal?</p>
+      <pre class="wrap" data-code="src/core/townportal.js#onPad"></pre>
+      <p class="small muted" lang="en">You're on the portal if your height is close (<code>Math.abs</code> drops the minus sign), the distance is small, you stand on the ground, aren't stunned, and aren't running through.</p>
+      <p class="small muted" lang="de">Du bist auf dem Portal, wenn deine Höhe nah dran ist (<code>Math.abs</code> lässt das Minus weg), die Entfernung klein ist, du auf dem Boden stehst, nicht betäubt bist und nicht durchrennst.</p>
+    </div>
+    <div class="demo" data-demo="space" data-show="far"></div>
+  </div>
+</section>
+
+<section class="slide" id="angles" data-lv="2" data-src="src/game/enemyai.js#turn">
+  <h2 lang="en">Try it: which way to turn?</h2>
+  <h2 lang="de">Probier es: Wohin drehen?</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">To face the spider, the hero has to turn. By how much? <code>Math.atan2(dx, dz)</code> turns the arrow into an <b>angle</b>. The game calls the way something faces its <code>yaw</code>.</p>
+      <p lang="de">Um die Spinne anzuschauen, muss sich der Held drehen. Um wie viel? <code>Math.atan2(dx, dz)</code> macht aus dem Pfeil einen <b>Winkel</b>. Das Spiel nennt die Richtung, in die etwas schaut, seinen <code>yaw</code>.</p>
+      <p lang="en">Computers measure angles in <b>radians</b>, not degrees: a full turn is 2 × π, about 6.28, instead of 360°.</p>
+      <p lang="de">Computer messen Winkel im <b>Bogenmaß</b>, nicht in Grad: Eine ganze Drehung ist 2 × π, ungefähr 6,28, statt 360°.</p>
+      <p lang="en">Monsters turn towards you with this little machine. It doesn't snap round at once, it turns a bit every frame, and always the short way:</p>
+      <p lang="de">Monster drehen sich mit dieser kleinen Maschine zu dir. Sie schnappen nicht auf einmal herum, sie drehen sich in jedem Bild ein Stück, und immer den kurzen Weg:</p>
+      <pre class="wrap" data-code="src/game/enemyai.js#turn"></pre>
+      <p class="small muted" lang="en">The <code>Math.atan2(Math.sin(...), Math.cos(...))</code> part is a trick: it turns "350° to the left" into "10° to the right".</p>
+      <p class="small muted" lang="de">Der Teil <code>Math.atan2(Math.sin(...), Math.cos(...))</code> ist ein Trick: Er macht aus "350° nach links" ein "10° nach rechts".</p>
+      <a class="portal" href="combat.html#hit-test" lang="en">Angles decide if your sword hits</a>
+      <a class="portal" href="combat.html#hit-test" lang="de">Winkel entscheiden, ob dein Schwert trifft</a>
+    </div>
+    <div class="demo" data-demo="space" data-show="angle"></div>
+  </div>
+</section>
+
+<section class="slide" id="unit" data-lv="2" data-src="src/game/sword.js#hitWithSword">
+  <h2 lang="en">Try it: just the direction</h2>
+  <h2 lang="de">Probier es: nur die Richtung</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">Sometimes you only want to know <i>which way</i>, not how far. When your sword hits a spider, it gets pushed away from you. The push should be the same strength, whether the spider was close or a bit further away.</p>
+      <p lang="de">Manchmal willst du nur wissen, <i>in welche Richtung</i>, nicht wie weit. Wenn dein Schwert eine Spinne trifft, wird sie von dir weggestoßen. Der Stoß soll gleich stark sein, egal ob die Spinne nah war oder etwas weiter weg.</p>
+      <p lang="en">So the game divides the arrow by its own length. The new arrow points the same way, but is exactly 1 long. Then it multiplies by how hard to push:</p>
+      <p lang="de">Also teilt das Spiel den Pfeil durch seine eigene Länge. Der neue Pfeil zeigt in dieselbe Richtung, ist aber genau 1 lang. Dann nimmt es ihn mal, wie fest gestoßen werden soll:</p>
+      <pre data-src="src/game/sword.js#hitWithSword"><code>const dx = e.x - p.x, dz = e.z - p.z, l = Math.hypot(dx, dz) || 1;
+const push = ...;   // how hard: harder when it dies, less for heavy monsters
+e.kbx = dx / l * push; e.kbz = dz / l * push;</code></pre>
+      <p class="small muted" lang="en"><code>|| 1</code> is a safety net: if the spider stood exactly on you, the length would be 0, and dividing by 0 breaks maths.</p>
+      <p class="small muted" lang="de"><code>|| 1</code> ist ein Sicherheitsnetz: Wenn die Spinne genau auf dir stünde, wäre die Länge 0, und durch 0 teilen macht die Mathe kaputt.</p>
+    </div>
+    <div class="demo" data-demo="space" data-show="unit"></div>
+  </div>
+</section>
+
+<section class="slide" id="cube-address" data-lv="2" data-src="src/world/coords.js#D6,key,parse,step">
+  <h2 lang="en">Addresses for whole cubes</h2>
+  <h2 lang="de">Adressen für ganze Würfel</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">The hero's x and z only say where it is <i>inside</i> its cube. The cubes need addresses too, like house numbers on a street. Every cube has three whole numbers: <b>X</b>, <b>Y</b> and <b>Z</b>.</p>
+      <p lang="de">x und z des Helden sagen nur, wo er <i>in</i> seinem Würfel ist. Die Würfel brauchen auch Adressen, wie Hausnummern in einer Straße. Jeder Würfel hat drei ganze Zahlen: <b>X</b>, <b>Y</b> und <b>Z</b>.</p>
+      <ul>
+        <li lang="en">The town is at <code>0,0,0</code>.</li>
+        <li lang="de">Die Stadt ist bei <code>0,0,0</code>.</li>
+        <li lang="en"><b>Y</b> is the floor: 0 at the surface, −1 one depth down, −20 at the core. So the depth is just −Y.</li>
+        <li lang="de"><b>Y</b> ist das Stockwerk: 0 an der Oberfläche, −1 eine Tiefe weiter unten, −20 am Kern. Die Tiefe ist also einfach −Y.</li>
+        <li lang="en">The address is written as text, like <code>'2,-3,1'</code>, so it can be used as a name: the world keeps its cubes under these names.</li>
+        <li lang="de">Die Adresse wird als Text geschrieben, wie <code>'2,-3,1'</code>, damit sie als Name dienen kann: Die Welt hebt ihre Würfel unter diesen Namen auf.</li>
+      </ul>
+    </div>
+    <div>
+      <pre data-code="src/world/coords.js#D6,key,parse,step"></pre>
+      <p lang="en"><code>D6</code> lists the six neighbours as arrows: east, west, south, north, down, up. <code>step</code> takes an address and a direction and gives the neighbour's address: <code>parse</code> turns the text into numbers, it adds the arrow, and <code>key</code> turns it back into text.</p>
+      <p lang="de"><code>D6</code> listet die sechs Nachbarn als Pfeile auf: Osten, Westen, Süden, Norden, unten, oben. <code>step</code> nimmt eine Adresse und eine Richtung und gibt die Adresse des Nachbarn: <code>parse</code> macht aus dem Text Zahlen, dann wird der Pfeil dazugezählt, und <code>key</code> macht wieder Text daraus.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="toolbox" data-lv="1">
+  <h2 lang="en">Your maths toolbox</h2>
+  <h2 lang="de">Dein Mathe-Werkzeugkasten</h2>
+  <p lang="en">With these few tools, you can read almost every bit of maths in the game:</p>
+  <p lang="de">Mit diesen paar Werkzeugen kannst du fast jedes Stück Mathe im Spiel lesen:</p>
+  <table>
+    <tr><th lang="en">TOOL</th> <th lang="de">WERKZEUG</th><th lang="en">ANSWERS</th> <th lang="de">BEANTWORTET</th><th lang="en">USED FOR</th> <th lang="de">BENUTZT FÜR</th></tr>
+    <tr><td><code>x, y, z</code></td><td lang="en">where is it?</td> <td lang="de">wo ist es?</td><td lang="en">everything that moves</td> <td lang="de">alles, was sich bewegt</td></tr>
+    <tr><td><code>Math.floor(x)</code></td><td lang="en">which cell?</td> <td lang="de">welche Zelle?</td><td lang="en">floors, walls, the minimap</td> <td lang="de">Böden, Wände, die Minikarte</td></tr>
+    <tr><td><code>b.x − a.x</code></td><td lang="en">how do I get there?</td> <td lang="de">wie komme ich hin?</td><td lang="en">chasing, aiming, falling</td> <td lang="de">Jagen, Zielen, Fallen</td></tr>
+    <tr><td><code>Math.hypot(dx, dz)</code></td><td lang="en">how far?</td> <td lang="de">wie weit?</td><td lang="en">noticing, biting, picking things up</td> <td lang="de">Bemerken, Beißen, Aufheben</td></tr>
+    <tr><td><code>Math.atan2(dx, dz)</code></td><td lang="en">which way to face?</td> <td lang="de">wohin schauen?</td><td lang="en">turning, the sword's arc</td> <td lang="de">Drehen, der Bogen des Schwerts</td></tr>
+    <tr><td><code>dx / length</code></td><td lang="en">just the direction</td> <td lang="de">nur die Richtung</td><td lang="en">pushing, flying fireballs</td> <td lang="de">Stoßen, fliegende Feuerbälle</td></tr>
+    <tr><td><code>'X,Y,Z'</code></td><td lang="en">which cube?</td> <td lang="de">welcher Würfel?</td><td lang="en">the world, portals, the map</td> <td lang="de">die Welt, Portale, die Karte</td></tr>
+  </table>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

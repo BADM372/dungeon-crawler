@@ -62,6 +62,7 @@ export function hurt(amount, reason) {
 
 // The cube as you came in. A death puts it back: the enemies you defeated since return and
 // the coins they dropped (and you did not pick up yet) go.
+// kids-docs: memory.html#death (see kids-docs/README.md)
 export function beginVisit() {
   state.visit = { key: state.cubeKey, defeated: new Set(state.run.defeated), loot: lootMark() };
 }
@@ -73,6 +74,7 @@ function restoreVisit(v) {
 
 // died: back to where you came in, in the cube as it was then (after a fall through cubes:
 // the cube the fall started in)
+// kids-docs: memory.html#death (see kids-docs/README.md)
 export function die() {
   sfx('death');
   if (state.fallFrom) { returnFromFall(true); return; }

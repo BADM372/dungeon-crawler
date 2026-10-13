@@ -1,6 +1,6 @@
 // Shared dimensions, fluid ids, grid directions and physics tuning.
 
-// kids-docs: code.html#names, start.html#cubes (see kids-docs/README.md)
+// kids-docs: code.html#names, space.html#address, start.html#cubes (see kids-docs/README.md)
 export const N = 16;            // cube footprint in cells
 // kids-docs: physics.html#adding (see kids-docs/README.md)
 export const LH = 0.5;          // height of one terrain level
@@ -40,7 +40,7 @@ export const CHAR_SCALE = 0.55; // the rig is ~2 m tall -> ~1.1 units
 export const CHAR_R = 0.22;     // collision radius
 // kids-docs: physics.html#adding (see kids-docs/README.md)
 export const CHAR_H = 0.85;     // collision height
-// kids-docs: code.html#names, physics.html#adding (see kids-docs/README.md)
+// kids-docs: animation.html#mixing, code.html#names, physics.html#adding (see kids-docs/README.md)
 export const WALK_SPEED = 1.9, RUN_SPEED = 2.8, SWIM_SPEED = 0.9;
 // on the ground speed builds up linearly: standing to a full run in RUN_RAMP s (walking pace
 // after about 70% of it, so short taps stay precise); stopping brakes at BRAKE units/s²
@@ -48,12 +48,14 @@ export const WALK_SPEED = 1.9, RUN_SPEED = 2.8, SWIM_SPEED = 0.9;
 export const RUN_RAMP = 0.25, BRAKE = 30;
 // the walk / run cycles play at the pace of these ground speeds; the remaining
 // distance is covered with longer strides (see render/stride.js)
+// kids-docs: animation.html#feet (see kids-docs/README.md)
 export const WALK_ANIM = 1.4, RUN_ANIM = 2.8;   // the run: its authored stride, no stretch
 // kids-docs: physics.html#adding (see kids-docs/README.md)
 export const JUMP_V = 6.27;     // -> jumps ~0.9 units high
-// kids-docs: physics.html#landing (see kids-docs/README.md)
+// kids-docs: animation.html#modes, physics.html#landing (see kids-docs/README.md)
 export const SIT_IMPACT = 10;   // landing faster than this knocks you onto your bottom
 // kids-docs: physics.html#landing (see kids-docs/README.md)
 export const RAGDOLL_IMPACT = 14;   // ... and this turns you into a ragdoll (and hurts)
+// kids-docs: animation.html#getup (see kids-docs/README.md)
 export const GET_UP_SPEED = 1.35;   // the GetUpBack / GetUpFront clips play this much faster
 export const FALL_DAMAGE = 60;   // the most a hard landing costs; a fall through cubes always costs this

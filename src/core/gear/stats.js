@@ -23,7 +23,7 @@ export const ILVL_DAMAGE = 0.05;
 // kids-docs: loot.html#stats-code (see kids-docs/README.md)
 export const ilvlDamage = ilvl => 1 + ILVL_DAMAGE * (Math.max(1, ilvl || 1) - 1);
 
-// kids-docs: loot.html#stats-code (see kids-docs/README.md)
+// kids-docs: loot.html#stats-code, stronger.html#race (see kids-docs/README.md)
 export function itemStats(item) {
   const def = ITEMS[item?.itemId], w = def?.weapon;
   if (!w) return null;

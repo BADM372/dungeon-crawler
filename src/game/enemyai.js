@@ -8,6 +8,7 @@ import { stepEnemy, findPath, around, clearLine } from '../physics/enemynav.js';
 import { attackOf, pickAttack, lungeDistance, lungeAt } from '../core/enemies.js';
 import { launchProjectile } from './projectiles.js';
 
+// kids-docs: space.html#angles (see kids-docs/README.md)
 const turn = (e, yaw, dt, rate = 8) => { e.yaw += Math.atan2(Math.sin(yaw - e.yaw), Math.cos(yaw - e.yaw)) * Math.min(1, dt * rate); };
 function steer(e, x, z, speed, dt) {
   const dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz);

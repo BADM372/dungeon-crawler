@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title data-de="Lebendig werden · Kinderführer zu Cube Crawler">Coming Alive · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
+</head>
+<body data-theme="abyss">
+<main class="deck">
+
+<section class="slide" id="flipbook" data-lv="1" data-src="src/render/blendtree.js#header">
+  <h2 lang="en">Poses, one after another</h2>
+  <h2 lang="de">Posen, eine nach der anderen</h2>
+  <div class="cols">
+    <div>
+      <p class="lead" lang="en">The hero's model has a skeleton: invisible bones inside it. Turn a bone, and the skin around it follows.</p>
+      <p class="lead" lang="de">Das Modell des Helden hat ein Skelett: unsichtbare Knochen darin. Dreh einen Knochen, und die Haut drumherum folgt.</p>
+      <p lang="en">An animation, called a <a class="w" href="words.html#clip">clip</a>, is a list of poses: where every bone points, 30 times a second. Play them one after another, and the hero walks. Like a flipbook again, but for bones.</p>
+      <p lang="de">Eine Animation, ein sogenannter <a class="w" href="words.html#clip">Clip</a>, ist eine Liste von Posen: wohin jeder Knochen zeigt, 30-mal pro Sekunde. Spiel sie nacheinander ab, und der Held läuft. Wieder wie ein Daumenkino, aber für Knochen.</p>
+      <p lang="en">The hero has a whole set of clips: standing, walking, running, jumping, falling, landing, swimming, climbing, swinging the sword, getting up...</p>
+      <p lang="de">Der Held hat einen ganzen Satz Clips: Stehen, Gehen, Rennen, Springen, Fallen, Landen, Schwimmen, Klettern, Schwerthieb, Aufstehen...</p>
+      <a class="portal" href="art.html#bones" lang="en">How bones and clips are made</a>
+      <a class="portal" href="art.html#bones" lang="de">Wie Knochen und Clips gemacht werden</a>
+    </div>
+    <div class="card">
+      <h3 lang="en">The hard part</h3>
+      <h3 lang="de">Der schwierige Teil</h3>
+      <p lang="en">Playing one clip is easy. But a game is never just one clip:</p>
+      <p lang="de">Einen Clip abzuspielen ist leicht. Aber ein Spiel ist nie nur ein Clip:</p>
+      <ul>
+        <li lang="en">You speed up slowly from standing to running. Which clip is that?</li>
+        <li lang="de">Du wirst langsam schneller, vom Stehen zum Rennen. Welcher Clip ist das?</li>
+        <li lang="en">You run at any speed. The clip was made for one speed.</li>
+        <li lang="de">Du rennst in jedem Tempo. Der Clip wurde für ein Tempo gemacht.</li>
+        <li lang="en">You land in the middle of a run, fall into water, get knocked over...</li>
+        <li lang="de">Du landest mitten im Rennen, fällst ins Wasser, wirst umgeworfen...</li>
+      </ul>
+      <p lang="en">That's what this room is about: making a few clips look like a body that moves.</p>
+      <p lang="de">Darum geht es in diesem Raum: aus ein paar Clips einen Körper zu machen, der sich bewegt.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="mixing" data-lv="1" data-src="src/render/blendtree.js#updateBlend src/core/constants.js#WALK_SPEED">
+  <h2 lang="en">Try it: mixing walk and run</h2>
+  <h2 lang="de">Probier es: Gehen und Rennen mischen</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">The game doesn't switch from walking to running. It <b>mixes</b> them. Every bone gets a bit of the walk pose and a bit of the run pose, by <b>weights</b>:</p>
+      <p lang="de">Das Spiel schaltet nicht vom Gehen aufs Rennen um. Es <b>mischt</b> sie. Jeder Knochen bekommt ein bisschen von der Geh-Pose und ein bisschen von der Renn-Pose, nach <b>Gewichten</b>:</p>
+      <ul>
+        <li lang="en">standing still: all idle,</li>
+        <li lang="de">Stillstehen: alles Stehen,</li>
+        <li lang="en">walking speed (<b data-val="src/core/constants.js#WALK_SPEED">1.9</b> cells a second): all walk,</li>
+        <li lang="de">Gehtempo (<b data-val="src/core/constants.js#WALK_SPEED">1,9</b> Zellen pro Sekunde): alles Gehen,</li>
+        <li lang="en">full speed (<b data-val="src/core/constants.js#RUN_SPEED">2.8</b>): all run,</li>
+        <li lang="de">volles Tempo (<b data-val="src/core/constants.js#RUN_SPEED">2,8</b>): alles Rennen,</li>
+        <li lang="en">in between: some of each.</li>
+        <li lang="de">dazwischen: von jedem etwas.</li>
+      </ul>
+      <p lang="en">Game makers call this a <b>blend tree</b>. Move the speed slowly and watch the bars. Then switch off "the cycle follows the speed".</p>
+      <p lang="de">Spielemacher nennen das einen <b>Blend Tree</b> (Mischbaum). Beweg das Tempo langsam und schau auf die Balken. Dann schalte "der Zyklus folgt dem Tempo" aus.</p>
+    </div>
+    <div class="demo" data-demo="walkcycle"></div>
+  </div>
+</section>
+
+<section class="slide" id="feet" data-lv="2" data-src="src/core/constants.js#WALK_ANIM src/render/stride.js#stretchStride">
+  <h2 lang="en">Feet that don't slide</h2>
+  <h2 lang="de">Füße, die nicht rutschen</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">If a clip plays at its own pace while the hero moves at a different one, the feet <b>skate</b> over the ground. People notice that at once, even if they can't say what's wrong.</p>
+      <p lang="de">Wenn ein Clip in seinem eigenen Tempo spielt, während sich der Held in einem anderen bewegt, <b>schlittern</b> die Füße über den Boden. Das merken Leute sofort, auch wenn sie nicht sagen können, was nicht stimmt.</p>
+      <p lang="en">So the game moves the clip forward by the <b>distance walked</b>, not by the time that passed. One full cycle (two steps) for every stride length. Stand still, and the cycle stops too.</p>
+      <p lang="de">Darum schiebt das Spiel den Clip um die <b>gelaufene Strecke</b> weiter, nicht um die vergangene Zeit. Ein ganzer Zyklus (zwei Schritte) für jede Schrittlänge. Steh still, und der Zyklus hält auch an.</p>
+      <p lang="en">One more trick: the walk clip looks best at <b data-val="src/core/constants.js#WALK_ANIM">1.4</b> cells a second, the run clip at <b data-val="src/core/constants.js#RUN_ANIM">2.8</b>. When the hero is faster than its clip, the game doesn't play the clip faster (that looks like a cartoon). It swings the legs a bit <b>further</b> instead: longer strides.</p>
+      <p lang="de">Noch ein Trick: Der Geh-Clip sieht bei <b data-val="src/core/constants.js#WALK_ANIM">1,4</b> Zellen pro Sekunde am besten aus, der Renn-Clip bei <b data-val="src/core/constants.js#RUN_ANIM">2,8</b>. Wenn der Held schneller ist als sein Clip, spielt das Spiel den Clip nicht schneller ab (das sieht aus wie ein Zeichentrickfilm). Es schwingt die Beine stattdessen etwas <b>weiter</b>: längere Schritte.</p>
+    </div>
+    <div>
+      <pre class="wrap" data-code="src/render/stride.js#stretchStride"></pre>
+      <p class="small" lang="en">For both thighs and both upper arms: start from the standing pose, go to the clip's pose, and then keep going a bit further along the same curve. <code>slerp</code> is how you mix two rotations; a number above 1 goes past the second one.</p>
+      <p class="small" lang="de">Für beide Oberschenkel und beide Oberarme: Fang bei der Steh-Pose an, geh zur Pose des Clips und dann noch ein Stück weiter auf derselben Kurve. <code>slerp</code> ist, wie man zwei Drehungen mischt; eine Zahl über 1 geht über die zweite hinaus.</p>
+      <a class="portal" href="checks.html#example" lang="en">A real change: matching the run</a>
+      <a class="portal" href="checks.html#example" lang="de">Eine echte Änderung: das Rennen anpassen</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="modes" data-lv="2" data-src="src/render/blendtree.js#nextMode,RATE src/core/constants.js#SIT_IMPACT">
+  <h2 lang="en">One mode at a time</h2>
+  <h2 lang="de">Ein Modus zur Zeit</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Walking and running mix. But jumping, falling and swimming don't mix with walking. So the animation has <b>modes</b>, and it's always in exactly one of them:</p>
+      <p lang="de">Gehen und Rennen mischen sich. Aber Springen, Fallen und Schwimmen mischen sich nicht mit Gehen. Darum hat die Animation <b>Modi</b>, und sie ist immer in genau einem davon:</p>
+      <table class="small">
+        <tr><td><code>loco</code></td><td lang="en">on the ground: standing, walking, running (mixed)</td> <td lang="de">auf dem Boden: stehen, gehen, rennen (gemischt)</td></tr>
+        <tr><td><code>jump</code> → <code>fall</code></td><td lang="en">a jump turns into falling when you start going down</td> <td lang="de">ein Sprung wird zum Fallen, sobald es abwärts geht</td></tr>
+        <tr><td><code>land</code></td><td lang="en">a short landing, then back to <code>loco</code></td> <td lang="de">eine kurze Landung, dann zurück zu <code>loco</code></td></tr>
+        <tr><td><code>sit</code></td><td lang="en">landed faster than <b data-val="src/core/constants.js#SIT_IMPACT">10</b>: you fall onto your bottom</td> <td lang="de">schneller gelandet als <b data-val="src/core/constants.js#SIT_IMPACT">10</b>: du fällst auf den Hintern</td></tr>
+        <tr><td><code>swim</code></td><td lang="en">in water: treading water, or paddling (mixed by speed)</td> <td lang="de">im Wasser: Wasser treten oder paddeln (nach Tempo gemischt)</td></tr>
+        <tr><td><code>climb</code></td><td lang="en">on a ladder; the cycle runs backwards going down</td> <td lang="de">auf einer Leiter; beim Runtergehen läuft der Zyklus rückwärts</td></tr>
+      </table>
+    </div>
+    <div>
+      <p lang="en">That's a <a class="w" href="words.html#state-machine">state machine</a>, just like a monster's brain. Every frame, it asks: did the hero jump? Land? Fall into water? And moves to the right mode.</p>
+      <p lang="de">Das ist ein <a class="w" href="words.html#state-machine">Zustandsautomat</a>, genau wie das Gehirn eines Monsters. In jedem Bild fragt er: Ist der Held gesprungen? Gelandet? Ins Wasser gefallen? Und wechselt in den passenden Modus.</p>
+      <p lang="en">The switch is never instant: the old clip fades out and the new one fades in, within a fraction of a second. Landing switches fast, swimming slowly. It's the same "catch up a little every frame" trick as the camera.</p>
+      <p lang="de">Der Wechsel passiert nie sofort: Der alte Clip blendet aus und der neue ein, in einem Bruchteil einer Sekunde. Landen wechselt schnell, Schwimmen langsam. Es ist derselbe Trick "jedes Bild ein bisschen aufholen" wie bei der Kamera.</p>
+      <a class="portal" href="enemies.html#state-machine" lang="en">A monster's state machine</a>
+      <a class="portal" href="enemies.html#state-machine" lang="de">Der Zustandsautomat eines Monsters</a>
+      <a class="portal" href="loop.html#smoothing" lang="en">Catching up, a little every frame</a>
+      <a class="portal" href="loop.html#smoothing" lang="de">Jedes Bild ein bisschen aufholen</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="getup" data-lv="2" data-src="src/render/animator.js#MORPH,startMorph,applyMorph src/core/constants.js#GET_UP_SPEED">
+  <h2 lang="en">From floppy to standing</h2>
+  <h2 lang="de">Von schlabbrig zu stehend</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">When the hero is knocked over, no clip plays at all: the ragdoll's physics moves the bones. When it stops, the hero gets up with a clip: one for lying on the back, one for lying on the front.</p>
+      <p lang="de">Wenn der Held umgeworfen wird, spielt gar kein Clip: Die Physik der Ragdoll bewegt die Knochen. Wenn sie liegen bleibt, steht der Held mit einem Clip auf: einem für auf dem Rücken liegen, einem für auf dem Bauch.</p>
+      <p lang="en">But the ragdoll can end up in any pose: an arm twisted here, a leg there. The clip starts from <i>its</i> pose. Switching straight to the clip would make the body jump.</p>
+      <p lang="de">Aber die Ragdoll kann in jeder Pose landen: ein Arm hier verdreht, ein Bein dort. Der Clip fängt bei <i>seiner</i> Pose an. Direkt auf den Clip umzuschalten würde den Körper springen lassen.</p>
+      <p lang="en">So the game first remembers the ragdoll's pose, and then <b>morphs</b> from it into the clip, bone by bone, in <b>0.3</b> seconds. Too quick to notice, slow enough not to jump.</p>
+      <p lang="de">Darum merkt sich das Spiel erst die Pose der Ragdoll und <b>verwandelt</b> sie dann Knochen für Knochen in den Clip, in <b>0,3</b> Sekunden. Zu schnell, um es zu bemerken, langsam genug, um nicht zu springen.</p>
+      <p class="small muted" lang="en">The get-up clips also play <span data-val="src/core/constants.js#GET_UP_SPEED">1.35</span> times faster than they were made. In a fight, nobody wants to wait.</p>
+      <p class="small muted" lang="de">Die Aufsteh-Clips spielen außerdem <span data-val="src/core/constants.js#GET_UP_SPEED">1,35</span>-mal schneller, als sie gemacht wurden. Im Kampf will niemand warten.</p>
+    </div>
+    <div>
+      <pre data-code="src/render/animator.js#applyMorph"></pre>
+      <p class="small" lang="en"><code>k</code> goes smoothly from 1 to 0 in <code>MORPH</code> seconds: "how much of the ragdoll is left". Every bone is turned that much back towards where the ragdoll left it. At 0 the morph is done, and only the clip is left.</p>
+      <p class="small" lang="de"><code>k</code> geht in <code>MORPH</code> Sekunden sanft von 1 auf 0: "wie viel von der Ragdoll noch übrig ist". Jeder Knochen wird so weit zurück dorthin gedreht, wo die Ragdoll ihn gelassen hat. Bei 0 ist die Verwandlung fertig, und nur der Clip ist übrig.</p>
+      <a class="portal" href="physics.html#ragdoll" lang="en">The ragdoll</a>
+      <a class="portal" href="physics.html#ragdoll" lang="de">Die Ragdoll</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="steps" data-lv="2" data-src="src/game/footsteps.js#header">
+  <h2 lang="en">Footsteps on the beat</h2>
+  <h2 lang="de">Schritte im Takt</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">You can hear the hero walk. When does a step sound? Not on a timer: then the sound would drift away from the feet.</p>
+      <p lang="de">Du hörst den Helden gehen. Wann klingt ein Schritt? Nicht nach einer Uhr: Dann würde der Klang von den Füßen wegdriften.</p>
+      <p lang="en">The game measured in the clips <i>where</i> in the cycle each foot touches the ground. Every frame, it checks: did the cycle just pass a foot's touchdown? Then a step plays, made for the ground under that foot: grass, stone, wood, snow, mud.</p>
+      <p lang="de">Das Spiel hat in den Clips gemessen, <i>wo</i> im Zyklus jeder Fuß den Boden berührt. In jedem Bild prüft es: Ist der Zyklus gerade an der Landung eines Fußes vorbeigekommen? Dann spielt ein Schritt, passend zum Boden unter diesem Fuß: Gras, Stein, Holz, Schnee, Matsch.</p>
+      <p lang="en">That's why the footsteps are updated right <i>after</i> the animation in the conductor's list: they listen to the cycle the animator just moved.</p>
+      <p lang="de">Darum werden die Schritte in der Liste des Dirigenten direkt <i>nach</i> der Animation aktualisiert: Sie hören auf den Zyklus, den der Animator gerade weitergeschoben hat.</p>
+    </div>
+    <div>
+      <pre class="wrap" data-code="src/game/footsteps.js#header"></pre>
+      <a class="portal" href="sound.html#recipe" lang="en">How a footstep sound is made</a>
+      <a class="portal" href="sound.html#recipe" lang="de">Wie ein Schrittgeräusch gemacht wird</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="blend-code" data-lv="3" data-src="src/render/blendtree.js#updateBlend">
+  <h2 lang="en">The real code: walk, run, or both</h2>
+  <h2 lang="de">Der echte Code: gehen, rennen oder beides</h2>
+  <div class="cols wide-left">
+    <pre data-src="src/render/blendtree.js#updateBlend"><code>if (mode === 'loco') {
+  // idle -> walk -> run by speed with one shared phase; the cycle plays at the pace of
+  // WALK_ANIM / RUN_ANIM and longer strides make up the rest of the distance
+  const loco = smooth(0.05, 0.35, speed), t = clamp((speed - WALK_SPEED) / (RUN_SPEED - WALK_SPEED), 0, 1);
+  T.idle = 1 - loco; T.walk = loco * (1 - t); T.run = loco * t;
+  const move = WALK_SPEED + (RUN_SPEED - WALK_SPEED) * t, anim = WALK_ANIM + (RUN_ANIM - WALK_ANIM) * t;
+  const stride = character.walkStride + (character.runStride - character.walkStride) * t;
+  phase = (phase + dt * speed * (anim / move) / stride) % 1;
+  blend.stretch = move / anim; blend.run = t;
+}</code></pre>
+    <div>
+      <ul class="small">
+        <li lang="en"><code>loco</code>: 0 when standing, 1 when moving. <code>smooth</code> makes it go gently from 0 to 1 between the speeds 0.05 and 0.35.</li>
+        <li lang="de"><code>loco</code>: 0 beim Stehen, 1 beim Bewegen. <code>smooth</code> lässt es zwischen den Tempos 0,05 und 0,35 sanft von 0 auf 1 gehen.</li>
+        <li lang="en"><code>t</code>: how far between walking and running speed, from 0 to 1. <code>clamp</code> keeps it in between.</li>
+        <li lang="de"><code>t</code>: wie weit zwischen Geh- und Renntempo, von 0 bis 1. <code>clamp</code> hält es dazwischen.</li>
+        <li lang="en"><code>T.idle</code>, <code>T.walk</code>, <code>T.run</code>: the weights. They always add up to 1.</li>
+        <li lang="de"><code>T.idle</code>, <code>T.walk</code>, <code>T.run</code>: die Gewichte. Sie ergeben zusammen immer 1.</li>
+        <li lang="en"><code>phase</code>: where in the cycle we are, from 0 to 1. It moves by the distance walked (<code>dt * speed</code>), divided by the stride. <code>% 1</code> starts it over at 1.</li>
+        <li lang="de"><code>phase</code>: wo im Zyklus wir sind, von 0 bis 1. Es bewegt sich um die gelaufene Strecke (<code>dt * speed</code>), geteilt durch die Schrittlänge. <code>% 1</code> fängt bei 1 wieder von vorn an.</li>
+        <li lang="en"><code>blend.stretch</code>: how much longer the strides are than in the clip.</li>
+        <li lang="de"><code>blend.stretch</code>: um wie viel die Schritte länger sind als im Clip.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="mode-code" data-lv="3" data-src="src/render/blendtree.js#nextMode">
+  <h2 lang="en">The real code: choosing the mode</h2>
+  <h2 lang="de">Der echte Code: den Modus wählen</h2>
+  <div class="cols wide-left">
+    <pre data-code="src/render/blendtree.js#nextMode"></pre>
+    <div>
+      <p lang="en">A long list of <code>if</code>s, read from top to bottom. Later ones can change what earlier ones decided, so the order matters:</p>
+      <p lang="de">Eine lange Liste von <code>if</code>s, von oben nach unten gelesen. Spätere können ändern, was frühere entschieden haben, darum ist die Reihenfolge wichtig:</p>
+      <ul class="small">
+        <li lang="en">A ladder comes first and wins over everything.</li>
+        <li lang="de">Eine Leiter kommt zuerst und gewinnt gegen alles.</li>
+        <li lang="en"><code>p.jumpCount !== seen.jump</code>: the body counts its jumps, the animation remembers the last count it saw. Different? A new jump happened.</li>
+        <li lang="de"><code>p.jumpCount !== seen.jump</code>: Der Körper zählt seine Sprünge, die Animation merkt sich die letzte Zahl, die sie gesehen hat. Anders? Ein neuer Sprung ist passiert.</li>
+        <li lang="en">Landing hard means <code>sit</code>, landing softly <code>land</code>.</li>
+        <li lang="de">Hart landen heißt <code>sit</code>, sanft landen <code>land</code>.</li>
+        <li lang="en"><code>modeT</code> counts how long we've been in a mode: a landing ends after half a second, or sooner if you walk on.</li>
+        <li lang="de"><code>modeT</code> zählt, wie lange wir schon in einem Modus sind: Eine Landung endet nach einer halben Sekunde, oder früher, wenn du weitergehst.</li>
+        <li lang="en">Water comes last, so it wins over everything except the start of a jump out of it.</li>
+        <li lang="de">Wasser kommt zuletzt, darum gewinnt es gegen alles außer den Anfang eines Sprungs hinaus.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="alive" data-lv="1">
+  <h2 lang="en">Making it feel alive</h2>
+  <h2 lang="de">Damit es lebendig wirkt</h2>
+  <ol class="steps">
+    <li lang="en"><b>Mix, don't switch</b>: walk and run blend by speed.</li>
+    <li lang="de"><b>Mischen, nicht umschalten</b>: Gehen und Rennen werden nach Tempo gemischt.</li>
+    <li lang="en"><b>Follow the ground</b>: the cycle moves by distance, so feet stay planted.</li>
+    <li lang="de"><b>Dem Boden folgen</b>: Der Zyklus bewegt sich nach Strecke, damit die Füße stehen bleiben.</li>
+    <li lang="en"><b>One mode at a time</b>, with soft fades between them.</li>
+    <li lang="de"><b>Ein Modus zur Zeit</b>, mit weichen Übergängen dazwischen.</li>
+    <li lang="en"><b>Never jump</b>: morph from wherever the body is.</li>
+    <li lang="de"><b>Nie springen</b>: Verwandle von dort aus, wo der Körper gerade ist.</li>
+    <li lang="en"><b>Sound on the beat</b>: steps follow the feet, not a clock.</li>
+    <li lang="de"><b>Klang im Takt</b>: Schritte folgen den Füßen, nicht einer Uhr.</li>
+  </ol>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

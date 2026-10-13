@@ -15,18 +15,18 @@ import { hash32, mulberry32 } from './util.js';
 // what every species gains per level, as a share of its level-1 value: health keeps pace with
 // the weapons and levels a player finds and gains on the way down, damage with the player's
 // health, and the rewards grow with both (docs/balance.md)
-// kids-docs: enemies.html#kind-code (see kids-docs/README.md)
+// kids-docs: enemies.html#kind-code, stronger.html#curve #monsters-grow (see kids-docs/README.md)
 export const GROWTH = Object.freeze({ hp: 0.17, damage: 0.1, xp: 0.25, coins: 0.25 });
 // the level enemies have at a depth: one per depth (1 at the surface), and ±1 for a cube's
 // species from depth 2 on
-// kids-docs: code.html#functions (see kids-docs/README.md)
+// kids-docs: code.html#functions, stronger.html#monsters-grow (see kids-docs/README.md)
 export const depthLevel = depth => Math.max(1, Math.floor(depth || 0));
 // guardians stand above their depth: side guardians one level, descent guardians two (on the
 // road out of town, the very first ones, at the road's own level)
 export const GUARDIAN_LEVELS = Object.freeze({ side: 1, descent: 2 });
 export const guardianLevel = (depth, role) => depthLevel(depth) + (depth >= 1 ? GUARDIAN_LEVELS[role] : 0);
 
-// kids-docs: checks.html#try-test, code.html#objects, combat.html#damage, enemies.html#numbers (see kids-docs/README.md)
+// kids-docs: checks.html#try-test, code.html#objects, combat.html#damage, enemies.html#numbers, space.html#distance, stronger.html#monsters-grow (see kids-docs/README.md)
 export const SPIDER = Object.freeze({
   type: 'spider', species: 'spider', label: 'Spider', hp: 32, damage: 15, knock: 4.5,
   xp: 20, coins: Object.freeze([4, 8]),
@@ -314,7 +314,9 @@ export function blowOf(profile, a = profile) {
 }
 
 // a level-1 value grown to `level`
+// kids-docs: stronger.html#monsters-grow (see kids-docs/README.md)
 export const grown = (value, rate, level) => value * (1 + rate * (level - 1));
+// kids-docs: stronger.html#race (see kids-docs/README.md)
 export function enemyProfile(profile, level) {
   if (!Number.isSafeInteger(level) || level < 1) throw new RangeError('Invalid enemy level');
   return Object.freeze({ ...profile, hp: Math.round(grown(profile.hp, GROWTH.hp, level)),
@@ -322,6 +324,7 @@ export function enemyProfile(profile, level) {
 }
 // the copper a kind drops at a level: [least, most]
 export const coinRange = (profile, level) => profile.coins.map(c => Math.round(grown(c, GROWTH.coins, level)));
+// kids-docs: memory.html#names (see kids-docs/README.md)
 export function enemyRoll(map, profile, floorId) {
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt ^ Math.imul(floorId, 7919) ^ 0x1007));
   const depth = Math.max(0, map.depth || 0), r = R();

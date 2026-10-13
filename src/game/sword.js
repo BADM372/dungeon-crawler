@@ -37,7 +37,7 @@ export function updateSword(dt) {
   swingFx();
 }
 
-// kids-docs: architecture.html#swing-journey (see kids-docs/README.md)
+// kids-docs: architecture.html#swing-journey, space.html#unit (see kids-docs/README.md)
 export function hitWithSword(list) {
   const p = player;
   if (state.inventoryOpen || state.transitioning || p.ragdoll || p.stun > 0 || p.hp <= 0) return;

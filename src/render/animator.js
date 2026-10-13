@@ -11,6 +11,7 @@ import { applyRagdollPose } from './ragdollpose.js';
 import { stretchStride } from './stride.js';
 import { W, blend, updateBlend, resetMode } from './blendtree.js';
 
+// kids-docs: animation.html#getup (see kids-docs/README.md)
 const MORPH = 0.3;       // s from the ragdoll pose into the get-up clip
 const GET_UP_OUT = 10;   // fade-out rate of a get-up cut short by walking
 let clean = null;        // [bone, quaternion, position]: the pose the mixer produced last
@@ -29,6 +30,7 @@ function restorePose() { for (const [b, q, p] of clean) { b.quaternion.copy(q); 
 function keepPose() { for (const [b, q, p] of clean) { q.copy(b.quaternion); p.copy(b.position); } }
 
 // remember the ragdoll pose in world space; the model is turned and moved under it
+// kids-docs: animation.html#getup (see kids-docs/README.md)
 function startMorph() {
   const list = Object.values(character.bones);   // parents first
   character.group.updateMatrixWorld(true);
@@ -37,6 +39,7 @@ function startMorph() {
 }
 
 // blend from the remembered ragdoll pose into the animated one, bone by bone in world space
+// kids-docs: animation.html#getup (see kids-docs/README.md)
 function applyMorph(dt) {
   morph.t += dt;
   const k = 1 - smooth(0, MORPH, morph.t), hips = character.bones.hips;

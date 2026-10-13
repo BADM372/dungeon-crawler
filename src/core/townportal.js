@@ -18,5 +18,6 @@ export function townPadIn(map, run) {
 }
 
 // standing in it on purpose, as with wells and rings (not stunned, knocked or running through)
+// kids-docs: space.html#distance (see kids-docs/README.md)
 export const onPad = (p, pad) => Math.abs(p.y - pad.y) <= 0.6 && Math.hypot(p.x - pad.x, p.z - pad.z) < TRIGGER_RADIUS
   && p.grounded && p.stun <= 0 && Math.hypot(p.vx, p.vz) < 4.4;
