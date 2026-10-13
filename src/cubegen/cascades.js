@@ -3,6 +3,7 @@
 // in through the top (inflow, its columns stay free of slabs). After the streams: the sheets.
 import { N, LH, CUBE_H, BASE, DIRS, FLUID_NAME } from '../core/constants.js';
 import { idx } from '../core/util.js';
+import { bankGround } from './contain.js';
 
 const TOP = (CUBE_H - BASE) / LH, BOTTOM = -BASE / LH;   // the glass box's top / bottom (levels)
 
@@ -45,6 +46,7 @@ export function cascadeGround(ctx) {
     shaft(fc); shaft(fc - dx - dz * N);
     list.push({ c: fc, d: inn.d, top: TOP, bot: S, type: inn.type, layer: 0, in: true });
   }
+  if (list.length) bankGround(ctx, new Set(list.map(f => f.c)));   // the pools spill only into their falls
 }
 
 export function cascadeFalls(ctx) {

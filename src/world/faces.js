@@ -25,8 +25,9 @@ function sideFace(world, k, d, withPortal) {
   const f = { sock, profile: profile(world, fk, sock), river: null, portal: null };
   const guardian = guarded(world, k) || guarded(world, step(k, d));
   if (sock === 'W' && !guardian) {   // the crossing is never open to the depth below
-    f.river = { pos: 4 + Math.floor(R() * 7), w: R() < 0.5 ? 1 : 2 };
-    for (let t = f.river.pos; t < f.river.pos + f.river.w; t++) if (f.profile[t] === VOID) f.profile[t] = 3;
+    f.river = { pos: 4 + Math.floor(R() * 7), w: R() < 0.5 ? 2 : 3 };
+    // ground under the crossing and a bank on either side of it (never water next to the void)
+    for (let t = f.river.pos - 1; t <= f.river.pos + f.river.w; t++) if (f.profile[t] === VOID) f.profile[t] = 3;
   }
   if (!withPortal) { f.spout = guardian ? null : spout(world, fk, f, LAYER_BASE); f.wall = caveWall(world, fk, f); return f; }
   const townDir = isTown(k) ? d : isTown(step(k, d)) ? d ^ 1 : null;

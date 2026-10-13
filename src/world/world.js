@@ -1,10 +1,10 @@
-// The world: a lazily grown set of cubes. Preparing a cube collapses it and its six neighbours
-// (WFC), decides its faces, and then generates its map from a spec built out of those faces.
+// The world: a lazily grown set of cubes. Preparing a cube collapses its whole depth (WFC, once
+// per depth), decides its faces, and then generates its map from a spec built out of those faces.
 import { hash32 } from '../core/util.js';
 import { worldNoise } from '../core/wnoise.js';
 import { generate } from '../cubegen/index.js';
 import { WFC } from './wfc.js';
-import { key, parse, step, faceKey, hashKey, MIN_Y } from './coords.js';
+import { key, parse, step, faceKey, hashKey } from './coords.js';
 import { decideFaces, LAYER_BASE } from './faces.js';
 import { themeAt } from '../themes/depth.js';
 import { makeLayouts } from './layout.js';
@@ -28,18 +28,19 @@ export class World {
   constructor(seed, opts = {}) {
     this.seed = seed;
     this.opts = opts;
-    this.wfc = new WFC(seed);
+    this.layout = makeLayouts(seed);   // depth -> which cubes exist and how they connect
+    this.wfc = new WFC(seed, this.layout);
     this.noise = worldNoise(seed);
     this.faces = new Map();
     this.cubes = new Map();
     this.start = key(0, 0, 0);
-    this.layout = makeLayouts(seed);   // depth -> which cubes exist and how they connect
   }
 
   // learn: architecture.html#cube-journey (see learn/README.md)
   prepare(k) {
-    const around = [0, 1, 2, 3, 4, 5].map(d => step(k, d)).filter(n => { const y = parse(n)[1]; return y <= 0 && y >= MIN_Y; });
-    this.wfc.collapse([k, ...around]);
+    const d = -parse(k)[1];
+    if (!this.layout(d).exists.has(k)) throw new Error(`${k} is not part of depth ${d}`);
+    this.wfc.collapseDepth(d);
     decideFaces(this, k);
   }
 

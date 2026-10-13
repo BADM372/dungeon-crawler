@@ -38,8 +38,8 @@ Authored prop placements are shared by worker metadata and rendering without
 marking the camp as town. Both gates and every building/tent frontage are validated
 by a body-radius-aware flood-fill before rendering.
 
-Both clearing tiles are pinned to lowland sockets and one layer **before any WFC
-collapse**. All dry ground is exactly level 4 (2 game units); the town's reserved
+Both clearing tiles are pinned to lowland sockets and one layer **before the surface
+collapses**. All dry ground is exactly level 4 (2 game units); the town's reserved
 five-cell pond has a lower bed and water surface. Clearing face profiles and corner
 levels are fixed, and neighbouring terrain's shared boundary corners are pinned
 during smoothing, including the camp-to-countryside edge. Neither clearing depends
@@ -140,10 +140,40 @@ The tile set covers all 81 socket combinations, so collapsing a cube next to any
 collapsed neighbors always succeeds. There is no backtracking and never a contradiction.
 Uniform tiles weigh more, which grows regions; the mixed tiles appear where regions meet.
 
-Collapsing works on the set {cube + its 6 neighbors}, lowest entropy first. Each cube draws
-from its own random stream (world seed plus cube key). Because the collapse is lazy, the
-world depends on the seed **and the order of exploration**. Two players with the same seed
-who explore differently get different worlds.
+Each depth is its own puzzle: domains and layer counts only look at the four side
+neighbours, never up or down. A depth collapses **in one go**, the first time any of its
+cubes is prepared: its layout's cubes plus their side neighbours (the neighbours carry the
+faces between a room and the rock around it), lowest entropy first. Each cube draws from its
+own random stream (world seed plus cube key), and the region is fixed by the layout, which
+only depends on the seed. So the tiles depend on the seed alone, **not on the order of
+exploration**: walking a depth backwards, prefetching other portals or generating depth 9
+before depth 2 gives the same world. That is 17–42 cubes per depth, a few
+milliseconds. Cubes outside a depth's layout are refused (`World.prepare` throws) rather
+than collapsed on the fly, which would bring the order dependence back.
+`tests/wfc.test.js` covers this.
+
+### Later: an unbounded world
+
+This only works because every depth is bounded (`world/layout.js`): the whole region a depth
+can ever need is known up front. Portals that lead off the planned route into endless wilds
+would need a different scheme. The plan is a hybrid:
+
+- The planned region still collapses first, in one go. Off-route cubes only ever border
+  tiles that are already fixed, so the route stays a function of the seed.
+- The wilds pick each **face's** socket from world-space noise fields (rivers as a noise
+  contour sampled at cube corners, highland from a threshold field) and derive the cube's
+  tile from its four faces. The tile set covers all 81 socket combinations, so this always
+  fits, needs no search and does not depend on the order. Where the wilds touch the planned
+  region, the region's sockets win.
+- Rules that read the layout (`voidAllowed`, cascades, spouts, side portals, guardians)
+  need their own order-independent equivalents off the route, e.g. a per-face hash for
+  portals.
+
+We tried noise sockets for the planned route too: it made the world coherent at map scale
+but dull at room scale. Over 40 seeds, 68% of rooms had the same kind as the room before
+(WFC: 46%) and only 28% had mixed edges (WFC: 53%), so it is meant for the wilds only.
+Lazily continuing the WFC into the wilds would also work, but then the wilds depend on the
+exploration order again; reproducing them would need the collapse order or the tiles saved.
 
 ## Faces (`world/faces.js`)
 
@@ -182,7 +212,8 @@ Which cubes exist and how they connect depends only on the world seed:
 
 Layer counts are part of the WFC state. A collapsing cube's count is drawn towards its
 neighbours' counts, so tall regions form. A face's portal sits on any layer both cubes
-have, half the time the highest one. That gives L0 32%, L1 44%, L2 19%, L3 4%.
+have, half the time the highest one (guardian faces always on the ground). Over 40 seeds
+that gives L0 54%, L1 28%, L2 15%, L3 4%.
 
 ## Void and relief
 
@@ -374,6 +405,14 @@ in game devtools for real worker, asset, shader and collision checks.
 - Ramps and pools never modify the outer ring.
 - Rivers start at their face crossings and meet at a junction. A lone river ends in a pool;
   lake cubes get a lake.
+- Every fluid is walled in: whatever lies next to it reaches its surface, except where a fall
+  spills on purpose (`cubegen/contain.js`). Face cells beside a river crossing are never
+  void. On the ground, void or low cells next to water become banks (`bankGround`). Ground
+  pools keep a dry rim instead of touching other water or the void. Upper pools and stream
+  channels thicken their bank slabs down to their own bed, or are skipped. A last pass
+  before routing turns any fluid that still stands above its neighbour into ground up to its
+  surface (`containFluids`). `tests/fluids.test.js` checks it with the renderer's heights;
+  corner smoothing may still sag a bank by up to a level.
 - Routing is described in "The way down" below. Moves already used are cheap, so routes
   share paths. Each route is kept for test bots and the path overlay (P).
 - Drops are capped at 8 levels (deeper ones ragdoll you) and need an extra level of headroom.
@@ -607,7 +646,6 @@ three.js recompile every lit shader on each cube change, which was the biggest s
 - **Stuck route:** 1 cube in 1000 has a route the character cannot walk. Corner smoothing
   pulls a slab corner below its own underside. This is an old smoothing quirk that the
   world-fixed layer levels make a bit more likely.
-- **Exploration order:** the world depends on the order you explore in (see above).
 - **Corner vertices:** the height rule ("H if more than two of the four sockets are H") is
   arbitrary. Highland corners can show small dips.
 - **Vertical portals:** they only need to line up loosely; a pad that would overlap another

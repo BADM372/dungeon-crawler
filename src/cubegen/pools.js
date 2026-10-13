@@ -2,10 +2,30 @@
 import { N, HEAD, DIRS, FLUID_NAME } from '../core/constants.js';
 import { idx, inb } from '../core/util.js';
 
+// The slabs walling in a fluid body (surface S, bed 2 levels lower) reach down as deep as its
+// own slab, so its sides never show under a thinner ledge next to it. null if one of them
+// cannot (no headroom below); with apply, they are thickened.
+export function banks(ctx, cells, S, apply = false) {
+  const bed = S - 2, set = new Set(cells), out = [];
+  for (const f of cells) for (const [dx, dz] of DIRS) {
+    const x = f.x + dx, z = f.z + dz;
+    if (!inb(x, z)) continue;
+    const b = ctx.cols[idx(x, z)].find(h => !set.has(h) && !h.fluid && h.top >= S && h.bottom <= S);
+    if (!b || b.merged || b.bottom <= bed - 1 || out.includes(b)) continue;
+    const below = ctx.nextBelow(b);
+    if (below && below.top + HEAD > bed - 1) return null;
+    out.push(b);
+  }
+  if (apply) for (const b of out) b.bottom = bed - 1;
+  return out;
+}
+
 // turn floors into a fluid body with surface S (bed 2 levels lower); false if a slab gets too thin
 function flood(ctx, cells, type, S) {
   const bed = S - 2;
   if (bed < 0 || cells.some(f => ctx.border(f) || f.site) || cells.some(f => { const b = ctx.nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) return false;
+  if (!banks(ctx, cells, S)) return false;
+  banks(ctx, cells, S, true);
   for (const f of cells) { f.top = bed; f.fluid = type; f.surf = S; if (!f.merged) f.bottom = Math.min(f.bottom, bed - 1); }
   return true;
 }

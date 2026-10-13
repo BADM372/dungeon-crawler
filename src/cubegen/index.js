@@ -14,6 +14,7 @@ import { addPools } from './pools.js';
 import { addStreams } from './streams.js';
 import { cascadeGround, cascadeFalls } from './cascades.js';
 import { spoutGround, spoutWater } from './spouts.js';
+import { containFluids } from './contain.js';
 import { makeMoves } from './moves.js';
 import { findRoute, finishRoute } from './route.js';
 import { addEscapes } from './escape.js';
@@ -78,6 +79,7 @@ function tryGenerate(seed, spec) {
   addStreams(ctx);
   cascadeFalls(ctx);
   spoutWater(ctx);
+  containFluids(ctx);
   indexFloors(ctx);
   if (ctx.portalFloors.some(f => !f)) return null;
   makeMoves(ctx);

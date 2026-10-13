@@ -170,8 +170,8 @@ so ancient ruins and lava chambers do not default to wooden cliff fences.
 
 - Shared boundaries, portal routes and fall escapes remain valid across seeds.
 - Sites are reachable and have an onward/return route after all blockers exist.
-- Site intent stays fixed across retries; distinguish this from the existing
-  exploration-order-dependent WFC behavior.
+- Site intent stays fixed across retries and exploration order (the WFC tiles are
+  order-independent too).
 - No overlapping reservations, blocked reward anchors or inaccessible approaches.
 - Correct fluid/shore/lip placement and no floating cover or insufficient headroom.
 - Track actual versus requested sites, retry counts and generation time by biome.

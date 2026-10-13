@@ -2,7 +2,7 @@
 // waterfall into a pool (or an existing body of the same fluid) below.
 import { N, HEAD, DIRS, FLUID_NAME } from '../core/constants.js';
 import { idx, inb } from '../core/util.js';
-import { poolAround } from './pools.js';
+import { poolAround, banks } from './pools.js';
 
 // candidate channels on layer k: straight runs with banks on both sides, ending at an edge
 function channels(ctx, k) {
@@ -60,10 +60,12 @@ export function addStreams(ctx) {
     S -= 1;
     const bed = S - 2;
     if (st.chan.some(f => { const b = nextBelow(f); return !f.merged && b && b.top + HEAD > bed - 1; })) continue;
+    if (!banks(ctx, st.chan, S)) continue;   // its banks have to reach as deep as the channel
 
     // the pool at the bottom (or an existing body of the same fluid)
     const S2 = st.g.fluid ? (st.g.fluid === type ? st.g.surf : 0) : poolAround(ctx, st.g, 1.3 + R() * 0.6, type);
     if (!S2 || S2 >= S - 2) continue;
+    banks(ctx, st.chan, S, true);
     for (const f of st.chan) { f.top = bed; f.fluid = type; f.surf = S; if (!f.merged) f.bottom = Math.min(f.bottom, bed - 1); }
     falls.push({ c: st.bc, d: st.d, top: S, bot: S2, type, layer: st.g.layer });
     stats.fluids.push(FLUID_NAME[type] + ' fall L' + k + '→L' + st.g.layer);

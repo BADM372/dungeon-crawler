@@ -117,7 +117,7 @@
   </div>
 </section>
 
-<section class="slide" id="wfc" data-lv="2" data-src="src/world/tiles.js#W src/world/wfc.js#collapse">
+<section class="slide" id="wfc" data-lv="2" data-src="src/world/tiles.js#W src/world/wfc.js#collapseDepth,collapse">
   <h2 lang="en">Wave function collapse</h2>
   <h2 lang="de">Wave Function Collapse</h2>
   <div class="cols">
@@ -144,8 +144,10 @@
         <p lang="en"><b>Big regions:</b> meadows and highlands have big weights (6 and 5), the mixed pieces tiny ones (slope 0.35, gorge 0.03). So same-kind cubes clump together into big areas, and the mixed pieces appear where two areas meet. The theme of each depth changes the weights: the snowy peaks love highlands.</p>
         <p lang="de"><b>Große Gebiete:</b> Wiesen und Hochländer haben große Gewichte (6 und 5), die gemischten Teile winzige (Hang 0,35, Schlucht 0,03). Darum klumpen gleiche Würfel zu großen Gebieten zusammen, und die gemischten Teile erscheinen dort, wo zwei Gebiete sich treffen. Das Thema jeder Tiefe ändert die Gewichte: Die Schneegipfel lieben Hochland.</p>
       </div>
-      <p class="small" lang="en">In the game, a cube and its six neighbours collapse the moment you get close. So the world depends on the seed <b>and</b> on the order you explore in!</p>
-      <p class="small" lang="de">Im Spiel kollabieren ein Würfel und seine sechs Nachbarn in dem Moment, in dem du in die Nähe kommst. Die Welt hängt also vom Seed <b>und</b> von der Reihenfolge ab, in der du sie erkundest!</p>
+      <p class="small" lang="en">In the game, a whole depth is solved at once, the first time you need any cube of it: all its rooms and their neighbours. So the order you explore in does not matter. The same seed always gives the same world, even if you walk backwards!</p>
+      <p class="small" lang="de">Im Spiel wird eine ganze Tiefe auf einmal gelöst, sobald du zum ersten Mal irgendeinen Würfel davon brauchst: alle ihre Räume und deren Nachbarn. Darum ist es egal, in welcher Reihenfolge du erkundest. Derselbe Seed gibt immer dieselbe Welt, auch wenn du rückwärts gehst!</p>
+      <p class="small muted" lang="en">That only works because every depth has an end. An endless world would need a new trick.</p>
+      <p class="small muted" lang="de">Das klappt nur, weil jede Tiefe ein Ende hat. Eine endlose Welt bräuchte einen neuen Trick.</p>
     </div>
   </div>
 </section>
@@ -243,8 +245,8 @@
       <li lang="de">Obere Stockwerke (Platten)</li>
       <li lang="en">Ramps and supports</li>
       <li lang="de">Rampen und Stützen</li>
-      <li lang="en">Pools and streams</li>
-      <li lang="de">Teiche und Bäche</li>
+      <li lang="en">Pools and streams, each with banks all around (no water in the air!)</li>
+      <li lang="de">Teiche und Bäche, jeder mit Ufern rundherum (kein Wasser in der Luft!)</li>
       <li lang="en">Every possible move: walk, drop, jump, stairs, bridge, ladder</li>
       <li lang="de">Jede mögliche Bewegung: gehen, fallen, springen, Treppe, Brücke, Leiter</li>
       <li lang="en">Routes between the portals</li>
@@ -307,7 +309,7 @@
   <h2 lang="en">The real code: collapsing cubes</h2>
   <h2 lang="de">Der echte Code: Würfel kollabieren lassen</h2>
   <div class="cols wide-left">
-    <pre data-code="src/world/wfc.js#domain,collapse"></pre>
+    <pre data-code="src/world/wfc.js#domain,collapseDepth,collapse"></pre>
     <div>
       <p lang="en"><code>domain</code>: keep only the pieces where every collapsed neighbour's touching edge (<code>OPP6[d]</code> is the opposite side) matches ours.</p>
       <p lang="de"><code>domain</code>: Behalte nur die Teile, bei denen die berührende Kante jedes kollabierten Nachbarn (<code>OPP6[d]</code> ist die gegenüberliegende Seite) zu unserer passt.</p>
@@ -317,6 +319,8 @@
       <p lang="de">Der Teil <code>hashKey(k) % 1000 * 1e-6</code> ist ein winziger Gleichstandsbrecher, damit zwei gleiche Würfel immer in derselben Reihenfolge gewählt werden.</p>
       <p lang="en">Then the marble bag picks a piece, and <code>layersOf</code> decides how many floors it gets (leaning towards what the neighbours have, so tall regions form).</p>
       <p lang="de">Dann wählt der Murmelbeutel ein Teil, und <code>layersOf</code> entscheidet, wie viele Stockwerke es bekommt (es lehnt sich an die Nachbarn an, damit hohe Gebiete entstehen).</p>
+      <p lang="en"><code>collapseDepth</code> collects every room of a depth and the cubes next to them, sorts them, and hands them all to <code>collapse</code> at once. <code>depths</code> remembers which depths are already done.</p>
+      <p lang="de"><code>collapseDepth</code> sammelt alle Räume einer Tiefe und die Würfel daneben, sortiert sie und gibt sie alle auf einmal an <code>collapse</code>. <code>depths</code> merkt sich, welche Tiefen schon fertig sind.</p>
     </div>
   </div>
 </section>

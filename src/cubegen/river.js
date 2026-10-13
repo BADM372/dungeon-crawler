@@ -3,6 +3,7 @@
 import { N, DIRS, FLUID_NAME } from '../core/constants.js';
 import { idx, inb } from '../core/util.js';
 import { edgeCell } from './portals.js';
+import { bankGround } from './contain.js';
 
 export const RIVER_SURF = 2;   // all rivers in the world flow at this level
 
@@ -28,7 +29,7 @@ export function carveRiver(ctx) {
       }
     }
     if (lake || ends.length === 1) {   // a lake, or a pool where a lone river ends
-      const rad = lake ? 2.6 + R() * 1.6 : 1.3 + R() * 0.7;
+      const rad = lake ? 3.4 + R() * 1.8 : 1.8 + R() * 0.8;
       for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) if (Math.hypot(x - jx, z - jz) < rad) cells.add(idx(x, z));
     }
     fill([...cells].filter(i => !prot0[i]), spec.fluid, RIVER_SURF);
@@ -39,13 +40,16 @@ export function carveRiver(ctx) {
   const sea = (ctx.seaCells || []).filter(i => !prot0[i] && !fluid0[i]);
   if (sea.length) { fill(sea, spec.fluid, RIVER_SURF); stats.fluids.push(FLUID_NAME[spec.fluid] + ' sea'); }
 
-  for (let p = ri(0, 2); p > 0; p--) {
+  // pools keep a dry rim: never next to other fluid (it would stand at another level) or the void
+  const wet = i => fluid0[i] || ctx.void0[i];
+  const rim = (x, z) => DIRS.some(([dx, dz]) => wet(idx(x + dx, z + dz)));
+  for (let p = ri(1, 3); p > 0; p--) {
     const type = pickFluid();
     const cx = 3 + R() * (N - 6), cz = 3 + R() * (N - 6), rad = 1.1 + R() * 1.4;
     const cells = [];
     for (let z = 1; z < N - 1; z++) for (let x = 1; x < N - 1; x++) {
       const i = idx(x, z);
-      if (!prot0[i] && !fluid0[i] && !ctx.void0[i] && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
+      if (!prot0[i] && !wet(i) && !rim(x, z) && Math.hypot(x + 0.5 - cx, z + 0.5 - cz) < rad) cells.push(i);
     }
     if (!cells.length) continue;
     const set = new Set(cells);
@@ -62,4 +66,5 @@ export function carveRiver(ctx) {
     stats.fluids.push(FLUID_NAME[type] + ' pool');
   }
   ctx.fluid0 = fluid0; ctx.surf0 = surf0;
+  bankGround(ctx);
 }

@@ -1,7 +1,10 @@
-// Lazy wave function collapse over the (unbounded) grid of cubes. Each depth Y is its own
-// horizontal grid; a cube's domain is every tile whose side sockets match the collapsed
-// neighbours. Collapsing a set of cubes picks the lowest-entropy one first, with a random
-// stream per cube so results only depend on the world seed and the order of exploration.
+// Wave function collapse over the grid of cubes. Each depth Y is its own horizontal grid; a
+// cube's domain is every tile whose side sockets match the collapsed neighbours. A depth is
+// collapsed in one go, the first time any of its cubes is needed: its layout's cubes and their
+// side neighbours, lowest entropy first, with a random stream per cube. So the tiles only
+// depend on the world seed, never on the order of exploration. That works because every
+// depth is bounded (layout.js); an unbounded world would need a different scheme (see
+// docs/world.md).
 import { mulberry32, hash32 } from '../core/util.js';
 import { TILES, layersOf } from './tiles.js';
 import { OPP6, step, hashKey } from './coords.js';
@@ -12,8 +15,11 @@ import { TOWN_KEY, merchantCampKey } from './town.js';
 const weightAt = k => { const m = themeAt(depthOf(k)).tiles; return t => t.weight * (m[t.kind] ?? 1); };
 
 export class WFC {
-  constructor(seed) {
+  // layout: depth -> its layout (layout.js), for the cubes each depth collapses
+  constructor(seed, layout) {
     this.seed = seed;
+    this.layout = layout;
+    this.depths = new Set();
     // Pin both clearings before any collapse, even when countryside is visited first.
     const meadow = TILES.find(t => t.kind === 'meadow' && t.sock.every(s => s === 'L'));
     this.tiles = new Map([TOWN_KEY, merchantCampKey(seed)].map(k => [k, { ...meadow, K: 1 }]));
@@ -31,6 +37,16 @@ export class WFC {
   }
 
   rng(k, salt = 0) { return mulberry32(hash32(this.seed ^ hashKey(k) ^ salt)); }
+
+  // the whole depth d at once: its cubes and their side neighbours, in a fixed order
+  // learn: world.html#wfc #wfc-code (see learn/README.md)
+  collapseDepth(d) {
+    if (this.depths.has(d)) return;
+    this.depths.add(d);
+    const region = new Set();
+    for (const k of this.layout(d).exists) { region.add(k); for (let i = 0; i < 4; i++) region.add(step(k, i)); }
+    this.collapse([...region].sort());
+  }
 
   // learn: world.html#wfc #wfc-code (see learn/README.md)
   collapse(keys) {
