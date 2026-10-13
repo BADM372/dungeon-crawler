@@ -7,7 +7,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { DECKS } from '../kids-docs/decks.js';
-import { check, describe } from '../tools/kids-docs.mjs';
+import { check, describe, restamp } from '../tools/kids-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KIDS = join(ROOT, 'kids-docs');
@@ -97,4 +97,28 @@ test('the game modules the demos and live values import still export what they u
 test('the kids\' guide is up to date with the game', async () => {
   const problems = await check(), text = describe(problems);
   assert.ok(!text, '\n' + text);
+});
+
+test('stamping clears the notes of reviewed slides only, and deferring keeps them', () => {
+  // a.html#x explains A, a.html#y explains A and B, b.html#z explains C
+  const refs = hashes => new Map(Object.entries({ A: ['a.html#x', 'a.html#y'], B: ['a.html#y'], C: ['b.html#z'] })
+    .map(([k, slides]) => [k, { hash: hashes[k], slides }]));
+  const start = { refs: { A: '1', B: '1', C: '1' }, outdated: {} };
+
+  // C changes and is put off: its slide is noted, the code accepted
+  const deferred = restamp(start, refs({ A: '1', B: '1', C: '2' }), { defer: true, since: 'abc' });
+  assert.deepEqual(deferred, { refs: { A: '1', B: '1', C: '2' }, outdated: { 'b.html#z': 'C changed (since abc)' } });
+  // then A changes and is reviewed: the note on b.html#z stays (it was the bug: it went away)
+  const stamped = restamp(deferred, refs({ A: '2', B: '1', C: '2' }));
+  assert.deepEqual(stamped.outdated, { 'b.html#z': 'C changed (since abc)' });
+  assert.equal(stamped.refs.A, '2');
+  // naming the noted slide clears it
+  assert.deepEqual(restamp(stamped, refs({ A: '2', B: '1', C: '2' }), { slides: ['b.html#z'] }).outdated, {});
+
+  // only a.html#x reviewed: A is accepted, a.html#y (which also explains A) gets noted, C waits
+  const some = restamp(start, refs({ A: '2', B: '1', C: '2' }), { slides: ['a.html#x'] });
+  assert.deepEqual(some, { refs: { A: '2', B: '1', C: '1' }, outdated: { 'a.html#y': 'A changed' } });
+  // deferring twice for the same change does not repeat the note
+  const twice = restamp(restamp(start, refs({ A: '2', B: '1', C: '1' }), { defer: true }), refs({ A: '2', B: '1', C: '1' }), { defer: true });
+  assert.deepEqual(twice.outdated, { 'a.html#x': 'A changed', 'a.html#y': 'A changed' });
 });

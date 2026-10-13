@@ -28,12 +28,18 @@ When you change such a definition, finish the game change first, then:
    `data-code` and numbers shown with `data-val` update themselves; the words around them
    do not.
 3. `npm run kids-docs -- --stamp` accepts the code as it is now. It also rewrites the markers and
-   the written fallbacks of `data-val` numbers.
+   the written fallbacks of `data-val` numbers. If you reviewed only some of the slides, name
+   them: `--stamp combat.html#arc-code`; slides that explain the same code are noted as outdated.
 
-If the slides should wait, `npm run kids-docs -- --defer` accepts the code but notes the slides
-as outdated in `stamps.json`; the guide then shows a "may be out of date" note on them until a
-later `--stamp`. Either way `npm test` passes again, so the guide never blocks a game change for
-long, and nothing goes stale silently.
+If the slides should wait, `npm run kids-docs -- --defer` (or `--defer page.html#slide ...`)
+accepts the code but notes the slides as outdated in `stamps.json`, with the commit the change
+was made on (`git diff <commit>` shows it); the guide then shows a "may be out of date" note on
+them. A note stays until that slide is reviewed: `--stamp page.html#slide` clears it, a plain
+`--stamp` for other code does not. Either way `npm test` passes again, so the guide never blocks
+a game change, and nothing goes stale silently: `npm run kids-docs` lists the noted slides.
+
+Small fixes to the words belong in the same change as the code. A bigger rewrite can wait:
+defer it, and catch up on the noted slides later, on their own.
 
 Never edit markers or `stamps.json` by hand; the tool owns them.
 

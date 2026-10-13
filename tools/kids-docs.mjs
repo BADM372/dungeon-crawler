@@ -5,14 +5,20 @@
 // fingerprint of every referenced definition is kept in kids-docs/stamps.json. When the code
 // changes, the slides that describe it may need updating:
 //
-//   node tools/kids-docs.mjs            check: which slides describe code that changed
+//   node tools/kids-docs.mjs            check: which slides describe code that changed, and which
+//                                       were noted as outdated before (those do not fail it)
 //   node tools/kids-docs.mjs --stamp    after reviewing / updating them: accept the code as it is
 //   node tools/kids-docs.mjs --defer    not now: note the slides as outdated (the guide shows a
-//                                       note on them) and accept the code; --stamp clears notes
+//                                       note on them) and accept the code
+//   ... --stamp page.html#slide ...     only these slides were reviewed: accept the code they explain
+//                                       (other slides explaining the same code get noted as outdated)
+//                                       and clear their notes; this is also how a noted slide is cleared
+//   ... --defer page.html#slide ...     note only these slides (and others explaining the same code)
 //
 // Stamping also rewrites the markers in the game's code (a "kids-docs:" comment above every
 // referenced definition, naming the slides) and the written fallbacks of data-val values.
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseRefs, refKey, extract, fingerprint, MARKER, readValue, formatValue } from '../kids-docs/refs.js';
@@ -143,8 +149,9 @@ export function describe(p) {
     const bySlide = new Map();
     for (const s of p.stale) for (const slide of s.slides) bySlide.set(slide, [...(bySlide.get(slide) ?? []), s.key + (s.isNew ? ' (new)' : '')]);
     lines.push('Game code that the kids\' guide explains has changed. Review these slides (both languages)',
-      'and update what no longer matches, then run "npm run kids-docs -- --stamp". To leave it for',
-      'later, "npm run kids-docs -- --defer" notes the slides as outdated instead:',
+      'and update what no longer matches, then run "npm run kids-docs -- --stamp" (or name the slides',
+      'you reviewed: "--stamp page.html#slide ..."). To leave it for later, "--defer" notes the slides',
+      'as outdated instead:',
       ...[...bySlide].map(([slide, keys]) => `  kids-docs/${slide}: ${keys.join(', ')}`));
   }
   if (p.markers.length) lines.push('kids-docs markers out of date (npm run kids-docs -- --stamp rewrites them):', ...p.markers.map(f => '  ' + f));
@@ -152,21 +159,42 @@ export function describe(p) {
   return lines.join('\n');
 }
 
-async function stamp(defer) {
-  const refs = references(), stamps = loadStamps();
-  stamps.outdated ??= {};
-  const errors = [...refs.values()].filter(r => r.error);
-  if (errors.length) { console.error(describe({ errors: errors.map(r => r.error), stale: [], markers: [], values: [] })); process.exit(1); }
+// The next stamps.json after a review. refs: Map key -> { hash, slides }. Without `slides`,
+// every slide whose code changed was reviewed (stamp) or is put off (defer); with them, only
+// those were, and code they share with other slides notes those others as outdated. Notes only
+// go away for slides that were reviewed: a deferred slide stays noted until it is stamped.
+// `since` (a commit) goes into new notes, so the reviewer can diff from there.
+export function restamp(stamps, refs, { defer = false, slides = null, since = '' } = {}) {
+  const picked = slides && new Set(slides), outdated = { ...(stamps.outdated ?? {}) }, reviewed = new Set(picked ?? []);
+  const note = (slide, k) => { if (!outdated[slide]?.includes(`${k} changed`)) outdated[slide] = [outdated[slide], `${k} changed${since ? ` (since ${since})` : ''}`].filter(Boolean).join('; '); };
+  const next = {};
   for (const [k, r] of refs) {
-    const changed = stamps.refs[k] && stamps.refs[k] !== r.hash;
+    const was = stamps.refs?.[k];
+    if (was === undefined || was === r.hash) { next[k] = r.hash; continue; }   // new, or the same: nothing to review
+    if (picked && !r.slides.some(s => picked.has(s))) { next[k] = was; continue; }   // left for its own review
+    next[k] = r.hash;
     for (const slide of r.slides) {
-      if (defer && changed) stamps.outdated[slide] = [stamps.outdated[slide], `${k} changed`].filter(Boolean).join('; ');
-      else if (!defer) delete stamps.outdated[slide];
+      if (defer || (picked && !picked.has(slide))) note(slide, k);
+      else reviewed.add(slide);
     }
   }
-  stamps.refs = Object.fromEntries([...refs].map(([k, r]) => [k, r.hash]));
-  for (const slide of Object.keys(stamps.outdated)) if (![...refs.values()].some(r => r.slides.includes(slide))) delete stamps.outdated[slide];
-  saveStamps(stamps);
+  if (!defer) for (const slide of reviewed) delete outdated[slide];
+  for (const slide of Object.keys(outdated)) if (![...refs.values()].some(r => r.slides.includes(slide))) delete outdated[slide];
+  return { refs: next, outdated };
+}
+
+const commit = () => { try { return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { return ''; } };
+
+async function stamp(defer, slides) {
+  const refs = references(), stamps = loadStamps();
+  const errors = [...refs.values()].filter(r => r.error);
+  if (errors.length) { console.error(describe({ errors: errors.map(r => r.error), stale: [], markers: [], values: [] })); process.exit(1); }
+  slides = slides.map(s => s.replace(/^kids-docs\//, ''));
+  const known = new Set([...refs.values()].flatMap(r => r.slides));
+  const unknown = slides.filter(s => !known.has(s));
+  if (unknown.length) { console.error(`not a slide that explains game code: ${unknown.join(', ')} (write them as page.html#slide)`); process.exit(1); }
+  const next = restamp(stamps, refs, { defer, slides: slides.length ? slides : null, since: commit() });
+  saveStamps(next);
   for (const [file, text] of markedFiles(refs)) if (read(file) !== text) { writeFileSync(join(ROOT, file), text); console.log('markers:', file); }
   const fixes = await valueFixes();
   for (const page of new Set(fixes.map(f => f.page))) {
@@ -175,16 +203,27 @@ async function stamp(defer) {
     writeFileSync(join(KIDS, page), html);
     console.log('values:', page);
   }
-  const notes = Object.keys(stamps.outdated);
-  console.log(`stamped ${refs.size} references` + (notes.length ? `; ${notes.length} slide(s) noted as outdated: ${notes.join(', ')}` : ''));
+  const left = [...refs].filter(([k, r]) => next.refs[k] !== r.hash);
+  console.log(`stamped ${refs.size - left.length} of ${refs.size} references` + (left.length ? ` (${left.length} still to review)` : ''));
+  const notes = backlog(next);
+  if (notes) console.log(notes);
+}
+
+// slides noted as outdated: they do not fail the check, but should be looked at
+export function backlog(stamps = loadStamps()) {
+  const notes = Object.entries(stamps.outdated ?? {});
+  if (!notes.length) return '';
+  return [`${notes.length} slide(s) noted as outdated. Review them (both languages), then "npm run kids-docs -- --stamp <slide>":`,
+    ...notes.map(([slide, why]) => `  kids-docs/${slide}: ${why}`)].join('\n');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = process.argv[2];
-  if (arg === '--stamp' || arg === '--defer') await stamp(arg === '--defer');
+  if (arg === '--stamp' || arg === '--defer') await stamp(arg === '--defer', process.argv.slice(3));
   else {
-    const p = await check(), text = describe(p);
+    const p = await check(), text = describe(p), notes = backlog();
     console.log(text || 'kids-docs: up to date with the game');
+    if (notes) console.log('\n' + notes);
     if (text) process.exit(1);
   }
 }
