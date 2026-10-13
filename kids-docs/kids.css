@@ -106,10 +106,9 @@ figure { margin: 0 0 12px; } figcaption { font-size: 13px; color: var(--dim); ma
 .icon.s { width: 36px; height: 36px; }
 .note { border-left: 3px solid var(--gold); background: #2a24161f; padding: 8px 12px; border-radius: 0 4px 4px 0; margin: 0 0 12px; }
 .note.think { border-color: var(--violet); }
-.note.agent { border-color: var(--green); }
 .note > :last-child { margin-bottom: 0; }
 .note b:first-child { font-family: var(--mono); font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-right: 4px; }
-.note.think b:first-child { color: var(--violet); } .note.agent b:first-child { color: var(--green); }
+.note.think b:first-child { color: var(--violet); }
 table { border-collapse: collapse; font-size: 15px; margin: 0 0 12px; width: 100%; }
 th, td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid #2a2f3a; vertical-align: top; }
 th { font-family: var(--mono); font-size: 12px; color: var(--dim); font-weight: normal; letter-spacing: 1px; }
@@ -133,15 +132,6 @@ a.w:hover { color: var(--title); }
 .deeper:hover, .portal:hover { filter: brightness(1.25); color: #fff; }
 .links { margin-top: 14px; }
 
-/* prompt quest cards */
-.quests { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-bottom: 12px; }
-.prompt { position: relative; background: #141a14; border: 1px solid #3c5a3c; border-radius: 6px; padding: 10px 12px 10px; }
-.prompt::before { content: attr(data-title); display: block; font: 12px var(--mono); color: var(--green); letter-spacing: 1px; margin-bottom: 4px; padding-right: 70px; }
-.prompt .stars { position: absolute; top: 8px; right: 10px; color: var(--gold); font: 12px var(--mono); letter-spacing: 2px; }
-.prompt q { display: block; quotes: none; font-family: var(--mono); font-size: 13.5px; color: #e9f5e6; line-height: 1.5; }
-.prompt .why { display: block; font-size: 13px; color: var(--dim); margin-top: 6px; }
-.prompt .copy { position: absolute; right: 8px; bottom: 8px; font-size: 10px; padding: 2px 6px; opacity: .7; }
-.prompt .copy:hover { opacity: 1; }
 
 /* the quick bar at the bottom: one slot per slide */
 .qbar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 10; display: flex; gap: 5px; align-items: center;
@@ -189,6 +179,30 @@ html[data-lang=de] .demo.real::before { content: "AUSPROBIEREN \00B7 ECHTER SPIE
 .chip.ok { border-color: #3c8a4a; color: #8fe39a; } .chip.no { border-color: #8a3c3c; color: #ff9a8a; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 12px var(--mono); color: var(--muted); margin-top: 6px; }
 .legend i { display: inline-block; width: 11px; height: 11px; border: 1px solid #0006; vertical-align: -1px; margin-right: 5px; }
+
+/* the parts of the game (parts demo) and journeys through them */
+.parts .partsvg svg { display: block; width: 100%; height: auto; max-height: 58vh; }
+.parts .zone { fill: #ffffff05; stroke-dasharray: 5 4; stroke-width: 1; }
+.parts .zone.main { stroke: color-mix(in srgb, var(--cyan) 45%, transparent); }
+.parts .zone.worker { stroke: color-mix(in srgb, var(--violet) 55%, transparent); }
+.parts .zlabel { font: 10px var(--mono); fill: var(--dim); letter-spacing: 1px; }
+.parts .edges path { fill: none; stroke: #8a96a8; opacity: .35; transition: opacity .2s; }
+.parts .edges path.out { stroke: var(--gold); opacity: 1; } .parts .edges path.in { stroke: var(--cyan); opacity: 1; }
+.parts .edges path.walk { stroke: var(--accent); opacity: 1; } .parts .edges path.dim { opacity: .08; } .parts .edges path.minor { opacity: 0; }
+.parts .ah.base { fill: #8a96a8; } .parts .ah.out { fill: var(--gold); } .parts .ah.in { fill: var(--cyan); } .parts .ah.walk { fill: var(--accent); }
+.parts .node { cursor: pointer; outline: none; }
+.parts .node rect { fill: #181e28; stroke: #3a4352; stroke-width: 1.5; }
+.parts .node:hover rect, .parts .node:focus-visible rect { stroke: #8a96a8; }
+.parts .node.on rect { stroke: var(--gold); stroke-width: 2.5; fill: #222a36; }
+.parts .node text { text-anchor: middle; }
+.parts .node .n { font: 14px var(--mono); fill: var(--title); } .parts .node .nick { font: 11px var(--read); fill: var(--muted); }
+.parts .t.main { fill: var(--cyan); } .parts .t.worker { fill: var(--violet); }
+.parts .walker { fill: var(--accent); stroke: #fff; stroke-width: 2; pointer-events: none; }
+ol.journey > li { cursor: pointer; border-radius: 4px; padding-top: 2px; padding-bottom: 2px; margin: 4px 0; }
+ol.journey > li:hover { background: #ffffff08; }
+ol.journey > li.on { background: #ffffff12; color: #fff; }
+ol.journey > li.on::before { background: var(--accent); color: #0b0d12; border-color: var(--accent); }
+.demo .things button { font-family: var(--mono); }
 
 /* weapon card (loot demo), like the inventory's detail panel */
 .weapon { display: grid; grid-template-columns: 110px 1fr; gap: 12px; background: #181e28; border: 1px solid var(--rarity, var(--line)); border-radius: 6px; padding: 10px;

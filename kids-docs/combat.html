@@ -140,35 +140,6 @@
   <p class="small muted" lang="de">Die <b>Trefferpause</b> ist winzig: Die Zeit läuft 0,055 Sekunden lang nur mit 3% (0,09 bei einem Todesstoß). Sehen kannst du sie kaum, aber spüren. Schalte sie aus, und Treffer fühlen sich an wie Schläge in die Luft.</p>
 </section>
 
-<section class="slide" id="targets" data-lv="2">
-  <h2 lang="en">Who do I hit? Picking a target</h2>
-  <h2 lang="de">Wen treffe ich? Ein Ziel wählen</h2>
-  <div class="cols">
-    <div>
-      <p lang="en">There are three ways to attack in Cube Crawler:</p>
-      <p lang="de">In Cube Crawler gibt es drei Arten anzugreifen:</p>
-      <ul>
-        <li lang="en"><b>Click a monster:</b> the hero walks up to it (finding a way around walls) and swings. Hold the button to keep attacking.</li>
-        <li lang="de"><b>Klick auf ein Monster:</b> Der Held läuft hin (und findet einen Weg um Wände herum) und schlägt zu. Halt die Taste gedrückt, um weiter anzugreifen.</li>
-        <li lang="en"><b>Hold <kbd>Shift</kbd>:</b> auto-attack. Swings at the best monster within reach, and never at thin air.</li>
-        <li lang="de"><b><kbd>Umschalt</kbd> halten:</b> Auto-Angriff. Schlägt nach dem besten Monster in Reichweite, und nie in die leere Luft.</li>
-        <li lang="en">No weapon? No attacks at all. (You can drop all your swords!)</li>
-        <li lang="de">Keine Waffe? Dann gar keine Angriffe. (Du kannst alle deine Schwerter fallen lassen!)</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3 lang="en">The "best" monster</h3>
-      <h3 lang="de">Das "beste" Monster</h3>
-      <p lang="en">For auto-attack, every monster in reach gets a score: its distance, but a monster <b>behind</b> you counts as twice as far away as one right in front. The lowest score wins.</p>
-      <p lang="de">Beim Auto-Angriff bekommt jedes Monster in Reichweite eine Punktzahl: seinen Abstand, aber ein Monster <b>hinter</b> dir zählt doppelt so weit weg wie eins direkt vor dir. Die niedrigste Punktzahl gewinnt.</p>
-      <p lang="en">The one under your mouse pointer always wins first. That's how the game guesses what you <i>meant</i>.</p>
-      <p lang="de">Das Monster unter deinem Mauszeiger gewinnt immer zuerst. So rät das Spiel, was du <i>gemeint</i> hast.</p>
-      <pre data-src="src/core/combat.js#softTarget"><code>const score = d * (1.5 - 0.5 * ahead);   // straight behind counts as twice as far</code></pre>
-      <p class="small muted" lang="en"><code>ahead</code> is 1 straight in front, 0 to the side, -1 straight behind.</p>
-      <p class="small muted" lang="de"><code>ahead</code> ist 1 direkt vor dir, 0 zur Seite, -1 direkt hinter dir.</p>
-    </div>
-  </div>
-</section>
 
 <section class="slide" id="arc-code" data-lv="3">
   <h2 lang="en">The real code: the hit test</h2>
@@ -208,22 +179,12 @@
       <p lang="de">Die <code>staggered</code>-Zeile liest sich so: taumelt, wenn es gestorben ist, <b>oder</b> wenn es nicht standfest ist, <b>oder</b> wenn der Treffer schwer war (<code>||</code> heißt "oder", <code>!</code> heißt "nicht").</p>
       <p lang="en">A stagger stuns it (<code>stun</code>), delays its next attack (<code>cool</code>), makes it think again right away (<code>think = 0</code>) and starts its poise timer.</p>
       <p lang="de">Taumeln betäubt es (<code>stun</code>), verzögert seinen nächsten Angriff (<code>cool</code>), lässt es sofort neu nachdenken (<code>think = 0</code>) und startet seinen Standfestigkeits-Zeitmesser.</p>
-      <p lang="en">Notice: no sparks, no sounds in here. Just rules. <a class="portal" href="start.html#rules-vs-pictures">Rules and pictures</a></p>
-      <p lang="de">Fällt dir auf: Hier drin keine Funken, keine Geräusche. Nur Regeln. <a class="portal" href="start.html#rules-vs-pictures">Regeln und Bilder</a></p>
+      <p lang="en">Notice: no sparks, no sounds in here. Just rules. <a class="portal" href="architecture.html#rules-vs-pictures">Rules and pictures</a></p>
+      <p lang="de">Fällt dir auf: Hier drin keine Funken, keine Geräusche. Nur Regeln. <a class="portal" href="architecture.html#rules-vs-pictures">Regeln und Bilder</a></p>
     </div>
   </div>
 </section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Swords &amp; Fighting</h2>
-  <h2 lang="de">Prompt-Aufgaben: Schwerter &amp; Kämpfe</h2>
-  <div class="quests">
-    <div class="prompt" data-title="LUCKY STRIKES" data-stars="1" data-de-data-title="GLÜCKSTREFFER"><q lang="en">Make critical hits happen 10% of the time instead of 5%, and make the critical damage number purple instead of golden.</q> <q lang="de">Lass kritische Treffer in 10% statt 5% der Fälle passieren, und mach die Zahl bei kritischen Treffern lila statt golden.</q><span class="why" lang="en">Two small changes: a rule (how often) and a look (the colour). The agent finds both places by itself.</span> <span class="why" lang="de">Zwei kleine Änderungen: eine Regel (wie oft) und ein Aussehen (die Farbe). Beide Stellen findet der Agent selbst.</span></div>
-    <div class="prompt" data-title="BIG FINISH" data-stars="1" data-de-data-title="GROSSES FINALE"><q lang="en">When an enemy dies, make the camera nudge and the sparks a bit bigger than now, so kills feel more powerful. Don't change any damage numbers.</q> <q lang="de">Wenn ein Gegner stirbt, mach den Kamera-Schubs und die Funken etwas größer als jetzt, damit sich Todesstöße stärker anfühlen. Ändere keine Schadenszahlen.</q><span class="why" lang="en">"Don't change X" is a useful fence: it keeps the agent from changing more than you want.</span> <span class="why" lang="de">"Ändere nicht X" ist ein nützlicher Zaun: Er hält den Agenten davon ab, mehr zu ändern, als du willst.</span></div>
-    <div class="prompt" data-title="SPIN ATTACK" data-stars="3" data-de-data-title="WIRBELANGRIFF"><q lang="en">Add a spin attack on the R key... wait, R is respawn. Find a free key first, then add a spin attack: a slower swing that hits all around me (a full circle) for 70% damage. Reuse the timing of the normal swing and add tests for it like the ones that already exist.</q> <q lang="de">Füge einen Wirbelangriff auf der Taste R hinzu... halt, R ist Wiederbeleben. Such zuerst eine freie Taste, dann füge einen Wirbelangriff hinzu: ein langsamerer Hieb, der rundherum alles trifft (ein ganzer Kreis), mit 70% Schaden. Benutze das Timing des normalen Hiebs und schreib Tests dafür wie die, die es schon gibt.</q><span class="why" lang="en">Ask the agent to check for clashes (like a key already in use), and to add tests.</span> <span class="why" lang="de">Lass den Agenten auf Konflikte prüfen (wie eine schon belegte Taste) und Tests hinzufügen.</span></div>
-    <div class="prompt" data-title="EXPLAIN POISE" data-stars="1" data-de-data-title="STANDFESTIGKEIT ERKLÄRT"><q lang="en">Explain how stagger and poise work in this game, and why they were added.</q> <q lang="de">Erklär mir, wie Taumeln und Standfestigkeit (stagger und poise) in diesem Spiel funktionieren und warum sie eingebaut wurden.</q><span class="why" lang="en">Asking "why" makes the agent read the game's design notes, not just the code.</span> <span class="why" lang="de">Mit "warum" liest der Agent auch die Entwurfsnotizen des Spiels, nicht nur den Code.</span></div>
-  </div>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

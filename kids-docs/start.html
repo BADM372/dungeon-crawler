@@ -78,10 +78,10 @@
     <div class="card"><h3 lang="en"><code>blender/</code> the workshop</h3> <h3 lang="de"><code>blender/</code> die Werkstatt</h3><p lang="en">Scripts that <i>build</i> the models in a 3D program called Blender, then put them in the storeroom.</p> <p lang="de">Skripte, die die Modelle in einem 3D-Programm namens Blender <i>bauen</i> und dann ins Lager legen.</p></div>
     <div class="card"><h3 lang="en"><code>music/</code> the band</h3> <h3 lang="de"><code>music/</code> die Band</h3><p lang="en">13 songs, written as text files. The game plays them with a tiny synthesizer.</p> <p lang="de">13 Lieder, als Textdateien geschrieben. Das Spiel spielt sie mit einem winzigen Synthesizer.</p></div>
     <div class="card"><h3 lang="en"><code>tests/</code> the inspectors</h3> <h3 lang="de"><code>tests/</code> die Prüfer</h3><p lang="en">Over 20 files of checks that make sure the rules still work after every change.</p> <p lang="de">Über 20 Dateien mit Prüfungen, die nach jeder Änderung kontrollieren, dass die Regeln noch stimmen.</p></div>
-    <div class="card"><h3 lang="en"><code>docs/</code> the library</h3> <h3 lang="de"><code>docs/</code> die Bibliothek</h3><p lang="en">Notes that explain how everything works (for grown-ups, and for AI helpers). This guide is the kids' version.</p> <p lang="de">Notizen, die erklären, wie alles funktioniert (für Erwachsene und für KI-Helfer). Dieser Führer ist die Version für Kinder.</p></div>
+    <div class="card"><h3 lang="en"><code>docs/</code> the library</h3> <h3 lang="de"><code>docs/</code> die Bibliothek</h3><p lang="en">Notes that explain how everything works (for grown-ups). This guide is the kids' version.</p> <p lang="de">Notizen, die erklären, wie alles funktioniert (für Erwachsene). Dieser Führer ist die Version für Kinder.</p></div>
   </div>
-  <a class="deeper" data-lv="2" href="#files" lang="en">Look inside the brain</a>
-  <a class="deeper" data-lv="2" href="#files" lang="de">Schau ins Gehirn</a>
+  <a class="portal" href="architecture.html" lang="en">How the parts fit together</a>
+  <a class="portal" href="architecture.html" lang="de">Wie die Teile zusammenpassen</a>
 </section>
 
 <section class="slide" id="cubes" data-lv="1" data-src="src/core/constants.js#N">
@@ -104,57 +104,7 @@
   <a class="portal" href="world.html" lang="de">Wie die Welt erfunden wird</a>
 </section>
 
-<section class="slide" id="files" data-lv="2">
-  <h2 lang="en">Inside the brain: many small files</h2>
-  <h2 lang="de">Im Gehirn: viele kleine Dateien</h2>
-  <p lang="en">Big programs are split into small files, each with one job. A file can <em>import</em> things from another file, like borrowing a tool from a neighbour.</p>
-  <p lang="de">Große Programme werden in kleine Dateien aufgeteilt, jede mit einer Aufgabe. Eine Datei kann Dinge aus einer anderen <em>importieren</em>, so wie man sich beim Nachbarn ein Werkzeug leiht.</p>
-  <table>
-    <tr><th lang="en">FOLDER</th> <th lang="de">ORDNER</th><th lang="en">WHAT LIVES THERE</th> <th lang="de">WAS DORT WOHNT</th><th lang="en">A FILE TO PEEK AT</th> <th lang="de">EINE DATEI ZUM REINSCHAUEN</th></tr>
-    <tr><td><code>src/core/</code></td><td lang="en">The rules and numbers: how much a sword hurts, how strong a spider is, what an item is.</td> <td lang="de">Die Regeln und Zahlen: wie sehr ein Schwert wehtut, wie stark eine Spinne ist, was ein Gegenstand ist.</td><td><code>src/core/constants.js</code></td></tr>
-    <tr><td><code>src/world/</code></td><td lang="en">The big plan of the world: which cubes exist and how they connect.</td> <td lang="de">Der große Plan der Welt: welche Würfel es gibt und wie sie verbunden sind.</td><td><code>src/world/layout.js</code></td></tr>
-    <tr><td><code>src/cubegen/</code></td><td lang="en">The cube factory: turns a plan into one cube with hills, rivers, stairs and bridges.</td> <td lang="de">Die Würfelfabrik: macht aus einem Plan einen Würfel mit Hügeln, Flüssen, Treppen und Brücken.</td><td><code>src/cubegen/index.js</code></td></tr>
-    <tr><td><code>src/physics/</code></td><td lang="en">Walking, jumping, falling, bumping into walls.</td> <td lang="de">Gehen, Springen, Fallen, gegen Wände stoßen.</td><td><code>src/physics/move.js</code></td></tr>
-    <tr><td><code>src/game/</code></td><td lang="en">What happens while you play: the hero, the monsters, portals, the inventory.</td> <td lang="de">Was beim Spielen passiert: der Held, die Monster, Portale, das Inventar.</td><td><code>src/game/update.js</code></td></tr>
-    <tr><td><code>src/render/</code></td><td lang="en">Drawing everything in 3D.</td> <td lang="de">Alles in 3D malen.</td><td><code>src/render/scene.js</code></td></tr>
-    <tr><td><code>src/audio/</code></td><td lang="en">Sound effects and music.</td> <td lang="de">Geräusche und Musik.</td><td><code>src/audio/sfx.js</code></td></tr>
-    <tr><td><code>src/themes/</code></td><td lang="en">The look of each depth: colours, light, which song plays.</td> <td lang="de">Das Aussehen jeder Tiefe: Farben, Licht, welches Lied spielt.</td><td><code>src/themes/index.js</code></td></tr>
-  </table>
-  <div class="note" lang="en"><b>Tip</b> Every file starts with a comment that says what it is for. That is a big help for people <i>and</i> for AI helpers that read the code.</div>
-  <div class="note" lang="de"><b>Tipp</b> Jede Datei beginnt mit einem Kommentar, der sagt, wofür sie da ist. Das hilft Menschen <i>und</i> KI-Helfern, die den Code lesen. (Der Code und seine Kommentare sind auf Englisch, wie fast überall beim Programmieren.)</div>
-</section>
 
-<section class="slide" id="rules-vs-pictures" data-lv="2">
-  <h2 lang="en">Rules and pictures are kept apart</h2>
-  <h2 lang="de">Regeln und Bilder sind getrennt</h2>
-  <div class="cols">
-    <div>
-      <p lang="en">One of the smartest ideas in this game: the <b>rules</b> do not know anything about the <b>pictures</b>.</p>
-      <p lang="de">Eine der klügsten Ideen in diesem Spiel: Die <b>Regeln</b> wissen nichts über die <b>Bilder</b>.</p>
-      <p lang="en">The file <code>src/core/combat.js</code> decides <i>if</i> your sword hits a spider and how much it hurts. It is just math.
-        A different file, <code>src/game/juice.js</code>, adds the sparks, the damage number and the "thwack" sound.</p>
-      <p lang="de">Die Datei <code>src/core/combat.js</code> entscheidet, <i>ob</i> dein Schwert eine Spinne trifft und wie sehr es wehtut. Das ist nur Mathe.
-        Eine andere Datei, <code>src/game/juice.js</code>, fügt die Funken, die Schadenszahl und das "Zack"-Geräusch hinzu.</p>
-      <p lang="en">Why is that smart?</p>
-      <p lang="de">Warum ist das klug?</p>
-      <ul>
-        <li lang="en">The rules can be <b>tested</b> without a screen. A test can check "does the Old Sword need two hits for a spider?" in a split second.</li>
-        <li lang="de">Die Regeln kann man <b>testen</b>, ganz ohne Bildschirm. Ein Test kann in einem Sekundenbruchteil prüfen: "Braucht das Alte Schwert zwei Treffer für eine Spinne?"</li>
-        <li lang="en">You can change how things <b>look</b> without breaking how they <b>work</b>.</li>
-        <li lang="de">Du kannst ändern, wie Dinge <b>aussehen</b>, ohne kaputt zu machen, wie sie <b>funktionieren</b>.</li>
-        <li lang="en">The world builder can run in the <b>background</b>, without drawing anything.</li>
-        <li lang="de">Der Weltbauer kann im <b>Hintergrund</b> laufen, ohne etwas zu malen.</li>
-      </ul>
-    </div>
-    <div>
-      <pre data-code="src/game/juice.js#header"></pre>
-      <p class="small muted" lang="en">That is the first line of the "juice" file. It promises: you could delete all the sparks and the game would still play the same.</p>
-      <p class="small muted" lang="de">Das ist die erste Zeile der "Juice"-Datei. Sie verspricht: Man könnte alle Funken löschen, und das Spiel würde sich genauso spielen.</p>
-      <a class="portal" href="combat.html" lang="en">Swords &amp; fighting</a>
-      <a class="portal" href="combat.html" lang="de">Schwerter &amp; Kämpfe</a>
-    </div>
-  </div>
-</section>
 
 <section class="slide" id="running" data-lv="2">
   <h2 lang="en">How it runs in your browser</h2>
@@ -192,38 +142,6 @@
   </div>
 </section>
 
-<section class="slide" id="main-js" data-lv="3">
-  <h2 lang="en">The real code: where it all starts</h2>
-  <h2 lang="de">Der echte Code: wo alles anfängt</h2>
-  <div class="cols wide-left">
-    <pre data-src="src/main.js#frame"><code>// Entry point: load the first cube and run the frame loop.
-import { renderer, scene, camera } from './render/scene.js';
-import { loadCube } from './game/flow.js';
-import { updatePlayer } from './game/update.js';
-import { updateEnemies } from './game/enemies.js';
-// ... about 50 more imports ...
-
-function frame() {
-  // ... listen, think, draw (see the next room) ...
-  renderer.render(scene, camera);
-  requestAnimationFrame(frame);
-}
-
-loadCube();
-setStatus('Welcome to town. Follow the path through the grove to leave.');
-frame();</code></pre>
-    <div>
-      <p lang="en"><code>import</code> lines borrow functions from other files. <code>./render/scene.js</code> means "the file <code>scene.js</code> in the folder <code>render</code> next to me".</p>
-      <p lang="de"><code>import</code>-Zeilen leihen sich Funktionen aus anderen Dateien. <code>./render/scene.js</code> heißt: "die Datei <code>scene.js</code> im Ordner <code>render</code> neben mir".</p>
-      <p lang="en"><code>function frame()</code> is the heartbeat. At the end it asks the browser: <i>"call <code>frame</code> again before the next picture"</i>. That is how it runs forever.</p>
-      <p lang="de"><code>function frame()</code> ist der Herzschlag. Am Ende bittet sie den Browser: <i>"Ruf <code>frame</code> vor dem nächsten Bild nochmal auf."</i> So läuft sie für immer.</p>
-      <p lang="en">The last three lines run once: load the town cube, show the welcome message, start the heartbeat.</p>
-      <p lang="de">Die letzten drei Zeilen laufen nur einmal: den Stadtwürfel laden, die Begrüßung zeigen, den Herzschlag starten.</p>
-      <a class="deeper" data-lv="3" href="loop.html#frame-code" lang="en">The whole frame function, explained</a>
-      <a class="deeper" data-lv="3" href="loop.html#frame-code" lang="de">Die ganze frame-Funktion, erklärt</a>
-    </div>
-  </div>
-</section>
 
 <section class="slide" id="how-to-use" data-lv="1">
   <h2 lang="en">How to use this guide</h2>
@@ -258,28 +176,11 @@ frame();</code></pre>
           <b class="mono" style="color:var(--gold)">ECHTER SPIELCODE</b> steht, läuft der echte Code des Spiels, direkt hier auf der Seite.</li>
         <li lang="en">Point at <a class="w" href="words.html#algorithm">dotted words</a> to see what they mean.</li>
         <li lang="de">Zeig auf <a class="w" href="words.html#algorithm">gepunktete Wörter</a>, um zu sehen, was sie bedeuten.</li>
-        <li lang="en">Every room ends with <b>prompt quests</b>: things you can ask an AI helper to change in the game.</li>
-        <li lang="de">Jeder Raum endet mit <b>Prompt-Aufgaben</b>: Dinge, die du einen KI-Helfer im Spiel ändern lassen kannst.</li>
       </ul>
     </div>
   </div>
 </section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Town</h2>
-  <h2 lang="de">Prompt-Aufgaben: Stadt</h2>
-  <p lang="en">An AI coding <a class="w" href="words.html#agent">agent</a> can read all the game's files, change them and run the tests. You tell it what you want,
-    in plain words. That message is called a <a class="w" href="words.html#prompt">prompt</a>. Try these (copy them with the button):</p>
-  <p lang="de">Ein KI-Coding-<a class="w" href="words.html#agent">Agent</a> kann alle Dateien des Spiels lesen, sie ändern und die Tests laufen lassen. Du sagst ihm in ganz normalen
-    Worten, was du willst. Diese Nachricht heißt <a class="w" href="words.html#prompt">Prompt</a>. Probier diese hier (kopier sie mit dem Knopf). Du kannst Agenten auf Deutsch schreiben:</p>
-  <div class="quests">
-    <div class="prompt" data-title="TOUR GUIDE" data-stars="1" data-de-data-title="FREMDENFÜHRER"><q lang="en">Give me a short tour of this project. What are the main folders and what is each one for? Keep it simple, I am new to coding.</q> <q lang="de">Gib mir eine kurze Führung durch dieses Projekt. Was sind die wichtigsten Ordner und wofür ist jeder da? Halte es einfach, ich bin neu beim Programmieren.</q><span class="why" lang="en">Asking the agent to explain things first is always a good start.</span> <span class="why" lang="de">Den Agenten erst erklären zu lassen, ist immer ein guter Anfang.</span></div>
-    <div class="prompt" data-title="NEW GREETING" data-stars="1" data-de-data-title="NEUE BEGRÜSSUNG"><q lang="en">Change the welcome message that appears when the game starts to say "Welcome, brave crawler! The well is waiting." Show me which file you changed.</q> <q lang="de">Ändere die Begrüßung, die beim Start des Spiels erscheint, in "Willkommen, mutiger Crawler! Der Brunnen wartet." Zeig mir, welche Datei du geändert hast.</q><span class="why" lang="en">Asking "show me" helps you learn where things live.</span> <span class="why" lang="de">"Zeig mir" hilft dir zu lernen, wo die Dinge wohnen.</span></div>
-    <div class="prompt" data-title="FIND IT" data-stars="2" data-de-data-title="FINDE ES"><q lang="en">Where in the code is it decided how many depths the world has? Explain it to me, but do not change anything yet.</q> <q lang="de">Wo im Code wird entschieden, wie viele Tiefen die Welt hat? Erklär es mir, aber ändere noch nichts.</q><span class="why" lang="en">"Do not change anything yet" lets you look before you leap.</span> <span class="why" lang="de">"Ändere noch nichts" lässt dich erst schauen, bevor du springst.</span></div>
-  </div>
-  <a class="portal" href="agents.html" lang="en">Learn more about prompting</a>
-  <a class="portal" href="agents.html" lang="de">Mehr über Prompts lernen</a>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

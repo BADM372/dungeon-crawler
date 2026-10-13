@@ -11,7 +11,7 @@ import { itemStats } from './gear/stats.js';
 
 export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
 // game time (s) for the basic sword (the Old Sword's timing)
-// kids-docs: combat.html#chain #damage (see kids-docs/README.md)
+// kids-docs: checks.html#try-test, combat.html#chain #damage (see kids-docs/README.md)
 export const SWORD = Object.freeze({
   damage: 30, range: 0.85, arc: Math.PI * 0.42,
   activeStart: 0.16, activeEnd: 0.27,   // the blade connects ~0.16 s after the click
@@ -93,7 +93,6 @@ export function inSwordArc(p, enemy) {
 // Keyboard soft-targeting, like Diablo's controller scheme: the closest living enemy within
 // blade reach plus `extra`, preferring those ahead along `yaw`.
 // visible(e): line of sight, checked only for the candidates that would win.
-// kids-docs: combat.html#targets (see kids-docs/README.md)
 export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra = 0) {
   const range = (combatStats(p) || SWORD).range;
   let best = null, bestScore = Infinity;
@@ -129,6 +128,7 @@ export function damageEnemy(enemy, amount) {
 }
 // a blade hit: { damage, crit } (false for none). roll: the crit roll in 0..1. A crit
 // multiplies the damage; life on hit (leech) heals, never above the maximum
+// kids-docs: architecture.html#swing-journey, checks.html#try-test (see kids-docs/README.md)
 export function swordHit(p, enemy, roll = Math.random()) {
   if (!inSwordArc(p, enemy)) return false;
   p.sword.hits.add(enemy);

@@ -28,7 +28,7 @@ Plain ES modules and a vendored three.js; no build step.
   (`node tools/balance.mjs`, see `docs/balance.md`).
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
 - `kids-docs/`: an interactive guide for children (about 12), in English and German, from the
-  big ideas down to the real code and prompting (`/kids-docs/` on the dev server). Code it
+  big ideas down to the real code (`/kids-docs/` on the dev server). Code it
   explains carries a `// kids-docs: ...` marker. After changing such code, run
   `npm run kids-docs` (`npm test` runs it too): it names the slides to review; then
   `npm run kids-docs -- --stamp`, or `-- --defer` to note them as outdated. See `kids-docs/README.md`.

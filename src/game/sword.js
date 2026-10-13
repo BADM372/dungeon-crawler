@@ -21,6 +21,7 @@ function aimYaw(target) {
   return Math.hypot(dx, dz) > 0.05 ? Math.atan2(dx, dz) : player.yaw;
 }
 
+// kids-docs: architecture.html#swing-journey (see kids-docs/README.md)
 export function updateSword(dt) {
   if (state.inventoryOpen) return;
   if (state.transitioning) { cancelSwing(player); return; }
@@ -36,6 +37,7 @@ export function updateSword(dt) {
   swingFx();
 }
 
+// kids-docs: architecture.html#swing-journey (see kids-docs/README.md)
 export function hitWithSword(list) {
   const p = player;
   if (state.inventoryOpen || state.transitioning || p.ragdoll || p.stun > 0 || p.hp <= 0) return;

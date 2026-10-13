@@ -160,6 +160,10 @@
   <div class="demo real" data-demo="noise"></div>
   <p class="small muted" lang="en">The noise is the same everywhere in the world, so the ground at the edge of one cube continues smoothly into the next one.</p>
   <p class="small muted" lang="de">Das Rauschen ist überall in der Welt dasselbe. Darum geht der Boden am Rand eines Würfels sanft in den nächsten über.</p>
+  <p lang="en">On top of the hills, every cube gets one big shape, its <a class="w" href="words.html#archetype">archetype</a>: a crack across the cube, a needle of rock, islands, a crater around a lake...
+    Weighted dice pick it. The shape fades out near the edges, so the edges still match the next cube.</p>
+  <p lang="de">Über die Hügel bekommt jeder Würfel eine große Form, seinen <a class="w" href="words.html#archetype">Archetyp</a>: eine Spalte quer durch den Würfel, eine Felsnadel, Inseln, ein Krater um einen See...
+    Gewichtete Würfel wählen ihn aus. Die Form wird zu den Rändern hin schwächer, damit die Ränder trotzdem zum nächsten Würfel passen.</p>
 </section>
 
 <section class="slide" id="faces" data-lv="2" data-src="src/world/faces.js#sideFace">
@@ -193,24 +197,6 @@
   </div>
 </section>
 
-<section class="slide" id="archetypes" data-lv="2" data-src="src/world/world.js#LEAN,archetype">
-  <h2 lang="en">Big shapes: archetypes</h2>
-  <h2 lang="de">Große Formen: Archetypen</h2>
-  <p lang="en">On top of the hills, every cube gets one big shape, its <a class="w" href="words.html#archetype">archetype</a>. The shape fades out near the edges, so the edges still match.</p>
-  <p lang="de">Über die Hügel bekommt jeder Würfel eine große Form, seinen <a class="w" href="words.html#archetype">Archetyp</a>. Die Form wird zu den Rändern hin schwächer, damit die Ränder trotzdem passen.</p>
-  <table>
-    <tr><th lang="en">ARCHETYPE</th> <th lang="de">ARCHETYP</th><th lang="en">WHAT IT LOOKS LIKE</th> <th lang="de">WIE ER AUSSIEHT</th></tr>
-    <tr><td>plain</td><td lang="en">nothing extra</td> <td lang="de">nichts Besonderes</td></tr>
-    <tr><td>chasm</td><td lang="en">a winding crack across the cube with raised rims</td> <td lang="de">eine gewundene Spalte quer durch den Würfel mit erhöhten Rändern</td></tr>
-    <tr><td>spire</td><td lang="en">a tall needle of rock on a raised base</td> <td lang="de">eine hohe Felsnadel auf einem erhöhten Sockel</td></tr>
-    <tr><td>sinkhole</td><td lang="en">a round pit with a raised rim</td> <td lang="de">ein rundes Loch mit erhöhtem Rand</td></tr>
-    <tr><td>archipelago</td><td lang="en">islands</td> <td lang="de">Inseln</td></tr>
-    <tr><td>mesa</td><td lang="en">one big flat-topped block</td> <td lang="de">ein großer Block mit flacher Oberseite</td></tr>
-    <tr><td>crater</td><td lang="en">a ring wall around a lake (of water, lava or acid)</td> <td lang="de">eine Ringmauer um einen See (aus Wasser, Lava oder Säure)</td></tr>
-  </table>
-  <p lang="en">Which one? Weighted dice, of course: the theme of the depth sets the weights, and the kind of land leans them. A lake cube is three times more likely to become islands. <a class="portal" href="random.html#pick-code">The marble bag code</a></p>
-  <p lang="de">Welcher? Gewichtete Würfel, natürlich: Das Thema der Tiefe legt die Gewichte fest, und die Art des Landes neigt sie. Ein See-Würfel wird dreimal so oft zu Inseln. <a class="portal" href="random.html#pick-code">Der Murmelbeutel-Code</a></p>
-</section>
 
 <section class="slide" id="factory" data-lv="1">
   <h2 lang="en">The builder: try the real cube factory</h2>
@@ -371,16 +357,6 @@
   </div>
 </section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Building the World</h2>
-  <h2 lang="de">Prompt-Aufgaben: Die Welt erschaffen</h2>
-  <div class="quests">
-    <div class="prompt" data-title="LONGER ADVENTURES" data-stars="1" data-de-data-title="LÄNGERE ABENTEUER"><q lang="en">Each depth has a route of 7 to 14 rooms. Show me where that is decided, and explain what would happen if I made it 10 to 18. Don't change it yet.</q> <q lang="de">Jede Tiefe hat eine Route aus 7 bis 14 Räumen. Zeig mir, wo das festgelegt wird, und erklär mir, was passieren würde, wenn ich 10 bis 18 daraus mache. Ändere es noch nicht.</q><span class="why" lang="en">Asking "what would happen" first is smart: bigger changes can break tests.</span> <span class="why" lang="de">Erst zu fragen "was würde passieren" ist schlau: Größere Änderungen können Tests kaputtmachen.</span></div>
-    <div class="prompt" data-title="CRATER COUNTRY" data-stars="2" data-de-data-title="KRATERLAND"><q lang="en">Make craters much more common in the badlands theme, then start the game with ?dev=1 and tell me how to jump to depth 4 to see them.</q> <q lang="de">Mach Krater im Ödland-Thema (badlands) viel häufiger, dann sag mir, wie ich mit ?dev=1 im Spiel zu Tiefe 4 springe, um sie zu sehen.</q><span class="why" lang="en">Dev mode lets you skip ahead, so you can see a change in seconds.</span> <span class="why" lang="de">Mit dem Entwicklermodus kannst du vorspringen und eine Änderung in Sekunden sehen.</span></div>
-    <div class="prompt" data-title="NEW ARCHETYPE" data-stars="3" data-de-data-title="NEUER ARCHETYP"><q lang="en">Add a new cube archetype called "twin peaks": two tall rounded hills. Follow how the existing archetypes work, add it to some theme weights, and run the tests to make sure every cube can still be finished.</q> <q lang="de">Füge einen neuen Würfel-Archetyp namens "twin peaks" hinzu: zwei hohe, runde Hügel. Mach es so, wie die bestehenden Archetypen funktionieren, trag ihn in ein paar Themen-Gewichte ein und lass die Tests laufen, damit jeder Würfel weiterhin schaffbar ist.</q><span class="why" lang="en">"Follow how the existing ones work" and "run the tests" make a big change much safer.</span> <span class="why" lang="de">"Mach es so wie die bestehenden" und "lass die Tests laufen" machen eine große Änderung viel sicherer.</span></div>
-    <div class="prompt" data-title="WORLD STATS" data-stars="2" data-de-data-title="WELT-STATISTIK"><q lang="en">Write a small tool that generates the first 5 depths for seed 123 and prints how many cubes of each archetype it made.</q> <q lang="de">Schreib ein kleines Werkzeug, das die ersten 5 Tiefen für Seed 123 erzeugt und ausgibt, wie viele Würfel von jedem Archetyp es gebaut hat.</q><span class="why" lang="en">Tools that measure things help you see if a change did what you wanted.</span> <span class="why" lang="de">Werkzeuge, die Dinge messen, helfen dir zu sehen, ob eine Änderung das getan hat, was du wolltest.</span></div>
-  </div>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

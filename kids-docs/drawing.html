@@ -96,17 +96,6 @@
   </div>
 </section>
 
-<section class="slide" id="pool" data-lv="1" data-src="src/render/lightpool.js#POOL">
-  <h2 lang="en">Try it: only 8 lights at a time</h2>
-  <h2 lang="de">Probier es: nur 8 Lichter auf einmal</h2>
-  <p lang="en">A cave can have dozens of glowing things. But the game only ever uses <b>8</b> real lights: the ones closest to you. Move around the cave and watch them follow you.
-    Then switch off the pool and see how the number of lights jumps around.</p>
-  <p lang="de">Eine Höhle kann Dutzende leuchtende Dinge haben. Aber das Spiel benutzt immer nur <b>8</b> echte Lichter: die, die dir am nächsten sind. Beweg dich durch die Höhle und schau, wie sie dir folgen.
-    Schalte dann den Vorrat aus und sieh, wie die Zahl der Lichter herumspringt.</p>
-  <div class="demo" data-demo="lightpool"></div>
-  <div class="note" lang="en"><b>Why?</b> The graphics card runs small programs called <a class="w" href="words.html#shader">shaders</a>. When the number of lights changes, three.js has to rebuild every one of them. That took so long that the game stuttered every time you entered a new cube. A fixed pool of 8 lights that just move around fixed it. This was the biggest stutter in the game!</div>
-  <div class="note" lang="de"><b>Warum?</b> Die Grafikkarte führt kleine Programme aus, die <a class="w" href="words.html#shader">Shader</a> heißen. Wenn sich die Zahl der Lichter ändert, muss three.js jeden davon neu bauen. Das dauerte so lange, dass das Spiel jedes Mal ruckelte, wenn man einen neuen Würfel betrat. Ein fester Vorrat aus 8 Lichtern, die nur herumwandern, hat das repariert. Das war das größte Ruckeln im Spiel!</div>
-</section>
 
 <section class="slide" id="cutaway" data-lv="1">
   <h2 lang="en">Try it: cutting holes in the roof</h2>
@@ -152,17 +141,6 @@
   </div>
 </section>
 
-<section class="slide" id="dither" data-lv="1">
-  <h2 lang="en">Try it: fading without see-through</h2>
-  <h2 lang="de">Probier es: Überblenden ohne Durchsichtigkeit</h2>
-  <p lang="en">When you walk through a portal, the old cube fades out and the new one fades in. But making 3D things see-through is surprisingly hard for a graphics card
-    (it has to sort everything from back to front). So the game uses a trick from old printers: <a class="w" href="words.html#dither">dithering</a>. Each pixel is either fully old cube, or fully new cube.</p>
-  <p lang="de">Wenn du durch ein Portal gehst, blendet der alte Würfel aus und der neue ein. Aber 3D-Dinge durchsichtig zu machen ist für eine Grafikkarte überraschend schwer
-    (sie muss alles von hinten nach vorne sortieren). Darum benutzt das Spiel einen Trick von alten Druckern: <a class="w" href="words.html#dither">Dithering</a>. Jeder Pixel ist entweder ganz alter Würfel oder ganz neuer Würfel.</p>
-  <div class="demo" data-demo="dither"></div>
-  <p class="small muted" lang="en">Turn the pixel size down to 1: from a little distance, your eyes blend the pattern into a smooth fade. That's how it looks in the game.</p>
-  <p class="small muted" lang="de">Stell die Pixelgröße auf 1: Aus ein bisschen Abstand mischen deine Augen das Muster zu einer weichen Überblendung. So sieht es im Spiel aus.</p>
-</section>
 
 <section class="slide" id="themes" data-lv="2">
   <h2 lang="en">Every depth has its own look</h2>
@@ -229,34 +207,7 @@
   </div>
 </section>
 
-<section class="slide" id="cut-code" data-lv="3">
-  <h2 lang="en">The real code: the probe</h2>
-  <h2 lang="de">Der echte Code: die Sonde</h2>
-  <div class="cols wide-left">
-    <pre data-code="src/game/cut.js#STEP,blockedAt"></pre>
-    <div>
-      <p lang="en">The direction to the camera is divided by its length (<code>dx /= len</code>...). Now it's exactly 1 long, so <code>t</code> counts real distance.</p>
-      <p lang="de">Die Richtung zur Kamera wird durch ihre Länge geteilt (<code>dx /= len</code>...). Jetzt ist sie genau 1 lang, also zählt <code>t</code> echte Strecke.</p>
-      <p lang="en">Then walk: <code>t = 0.12</code>, <code>0.24</code>, <code>0.36</code>... At each spot, ask the world: is this inside something solid? Or inside a tree crown or a roof (<code>viewBlockedAt</code>)?</p>
-      <p lang="de">Dann laufen: <code>t = 0.12</code>, <code>0.24</code>, <code>0.36</code>... An jeder Stelle die Welt fragen: Ist das in etwas Festem drin? Oder in einer Baumkrone oder einem Dach (<code>viewBlockedAt</code>)?</p>
-      <p lang="en">Above the top of the cube nothing can block, so stop there (<code>break</code>).</p>
-      <p lang="de">Über der Oberkante des Würfels kann nichts mehr im Weg sein, also dort aufhören (<code>break</code>).</p>
-      <p lang="en">It's the same idea as the monsters' <a class="portal" href="paths.html#sight">line of sight</a>!</p>
-      <p lang="de">Das ist dieselbe Idee wie die <a class="portal" href="paths.html#sight">Sichtlinie</a> der Monster!</p>
-    </div>
-  </div>
-</section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Drawing the World</h2>
-  <h2 lang="de">Prompt-Aufgaben: Die Welt malen</h2>
-  <div class="quests">
-    <div class="prompt" data-title="WIDER VIEW" data-stars="1" data-de-data-title="STEILERER BLICK"><q lang="en">Make the camera look down a bit steeper, like 55 degrees instead of 44. Show me the number, then I'll tell you if I like it.</q> <q lang="de">Lass die Kamera etwas steiler nach unten schauen, etwa 55 Grad statt 44. Zeig mir die Zahl, dann sage ich dir, ob es mir gefällt.</q><span class="why" lang="en">"I'll tell you if I like it": for looks, you are the judge. Try, look, adjust.</span> <span class="why" lang="de">"Dann sage ich dir, ob es mir gefällt": Beim Aussehen bist du der Richter. Probieren, schauen, nachstellen.</span></div>
-    <div class="prompt" data-title="PINK SKY" data-stars="1" data-de-data-title="ROSA HIMMEL"><q lang="en">Make the sky of the meadow islands theme a sunset: pink at the top and orange at the bottom. Only change colours.</q> <q lang="de">Mach den Himmel des Wiesen-Themas zu einem Sonnenuntergang: oben rosa und unten orange. Ändere nur Farben.</q><span class="why" lang="en">Data changes are the safest changes: no logic, just values.</span> <span class="why" lang="de">Datenänderungen sind die sichersten Änderungen: keine Logik, nur Werte.</span></div>
-    <div class="prompt" data-title="BIGGER HOLE" data-stars="2" data-de-data-title="GRÖSSERES LOCH"><q lang="en">The cutaway hole around my hero feels too small when I'm zoomed out. Find where its size is set and make it 30% bigger. Take a screenshot before and after if you can.</q> <q lang="de">Das Ausschnitt-Loch um meinen Helden ist zu klein, wenn ich rausgezoomt bin. Finde, wo seine Größe festgelegt wird, und mach es 30% größer. Mach vorher und nachher einen Screenshot, wenn du kannst.</q><span class="why" lang="en">Agents that can run a browser can compare screenshots, a great way to check visual changes.</span> <span class="why" lang="de">Agenten, die einen Browser bedienen können, können Screenshots vergleichen: ein toller Weg, Änderungen am Aussehen zu prüfen.</span></div>
-    <div class="prompt" data-title="RAINBOW FADE" data-stars="3" data-de-data-title="REGENBOGEN-ÜBERBLENDUNG"><q lang="en">When I travel through a portal, the new cube dissolves in with a dither pattern. Explain how that works. Then try a different pattern: a diamond-shaped wipe from the centre of the screen instead.</q> <q lang="de">Wenn ich durch ein Portal reise, löst sich der neue Würfel mit einem Dither-Muster ein. Erklär mir, wie das funktioniert. Dann probier ein anderes Muster: ein rautenförmiges Wischen von der Bildschirmmitte aus.</q><span class="why" lang="en">Shaders are hard. Asking for an explanation first means you can follow what the agent does next.</span> <span class="why" lang="de">Shader sind schwer. Erst um eine Erklärung zu bitten heißt, dass du verstehen kannst, was der Agent als Nächstes macht.</span></div>
-  </div>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

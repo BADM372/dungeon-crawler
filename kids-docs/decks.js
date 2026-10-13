@@ -7,7 +7,10 @@ export const DECKS = [
   { file: 'start.html', theme: 'meadow', depth: 0, icon: '../assets/items/item_town_portal.png',
     title: 'Welcome to Town', teaser: 'What Cube Crawler is, what it is made of, and how this guide works.',
     de: { title: 'Willkommen in der Stadt', teaser: 'Was Cube Crawler ist, woraus es besteht und wie dieser Führer funktioniert.' } },
-  { file: 'loop.html', theme: 'meadow', depth: 1, icon: '../assets/items/item_potion_health.png',
+  { file: 'architecture.html', theme: 'meadow', depth: 1, icon: '../assets/items/weapon_staff.png',
+    title: 'How It Fits Together', teaser: 'The parts of the game, what each one does, and how they work together.',
+    de: { title: 'Wie alles zusammenpasst', teaser: 'Die Teile des Spiels, was jeder macht und wie sie zusammenarbeiten.' } },
+  { file: 'loop.html', theme: 'meadow', depth: 2, icon: '../assets/items/item_potion_health.png',
     title: 'The Heartbeat', teaser: 'The game redraws itself 60 times a second. What happens in one tick?',
     de: { title: 'Der Herzschlag', teaser: 'Das Spiel malt sich 60-mal pro Sekunde neu. Was passiert in einem Takt?' } },
   { file: 'random.html', theme: 'peaks', depth: 3, icon: '../assets/items/item_crystal_diamond.png',
@@ -40,9 +43,9 @@ export const DECKS = [
   { file: 'art.html', theme: 'abyss', depth: 19, icon: '../assets/items/item_crystal_emerald.png',
     title: 'Making Monsters', teaser: 'Models built by code in Blender, from blobs of digital clay.',
     de: { title: 'Monster bauen', teaser: 'Modelle, die Code in Blender baut, aus Klumpen digitaler Knete.' } },
-  { file: 'agents.html', theme: 'core', depth: 20, icon: '../assets/items/item_potion_mana.png',
-    title: 'Building with AI Helpers', teaser: 'How to ask a coding agent to change the game, and check its work.',
-    de: { title: 'Bauen mit KI-Helfern', teaser: 'Wie du einen Coding-Agenten bittest, das Spiel zu ändern, und seine Arbeit prüfst.' } },
+  { file: 'checks.html', theme: 'core', depth: 20, icon: '../assets/items/item_potion_mana.png',
+    title: 'Keeping It Working', teaser: 'Tests, seeds, tools to look inside, and save points: how game makers keep a game from breaking.',
+    de: { title: 'Damit alles läuft', teaser: 'Tests, Seeds, Werkzeuge zum Hineinschauen und Speicherpunkte: wie Spielemacher verhindern, dass ein Spiel kaputtgeht.' } },
 ];
 
 // a room's texts in a language ('en' or 'de')

@@ -96,25 +96,6 @@
   <p class="small muted" lang="de">Die Farben benutzen OKLCH: <b>L</b> für Helligkeit (lightness), <b>C</b> für Buntheit (chroma) und <b>H</b> für den Farbton (hue). Anders als bei einfachem RGB sieht eine Farbe nicht plötzlich heller oder dunkler aus, wenn man den Farbton ändert.</p>
 </section>
 
-<section class="slide" id="checking-art" data-lv="2">
-  <h2 lang="en">Looking at your work</h2>
-  <h2 lang="de">Die eigene Arbeit anschauen</h2>
-  <div class="cols">
-    <div>
-      <p lang="en">An AI helper can't hold the model in its hands. So the scripts make it easy to <b>look</b>:</p>
-      <p lang="de">Ein KI-Helfer kann das Modell nicht in die Hand nehmen. Darum machen es die Skripte leicht, <b>hinzuschauen</b>:</p>
-      <ul>
-        <li lang="en">Every script renders a <b>contact sheet</b>: the model in several poses, side by side, saved as a picture in <code>blender/previews/</code>. A person, or an agent that can see images, can check it.</li>
-        <li lang="de">Jedes Skript zeichnet einen <b>Kontaktbogen</b>: das Modell in mehreren Posen nebeneinander, als Bild in <code>blender/previews/</code> gespeichert. Ein Mensch, oder ein Agent, der Bilder sehen kann, kann es prüfen.</li>
-        <li lang="en">Blender can be controlled from outside: an agent can talk to a running Blender, build a model, and look at it.</li>
-        <li lang="de">Blender lässt sich von außen steuern: Ein Agent kann mit einem laufenden Blender reden, ein Modell bauen und es anschauen.</li>
-        <li lang="en"><code>blender/tests/</code> has test scripts that check the libraries of props and items.</li>
-        <li lang="de">In <code>blender/tests/</code> gibt es Testskripte, die die Sammlungen von Requisiten und Gegenständen prüfen.</li>
-      </ul>
-    </div>
-    <figure><img class="shot" src="../blender/previews/items-preview.png" alt="A sheet of item models: swords, potions, coins, crystals" data-de-alt="Ein Bogen mit Gegenstandsmodellen: Schwerter, Tränke, Münzen, Kristalle"><figcaption lang="en">The items contact sheet: every sword, potion and coin.</figcaption> <figcaption lang="de">Der Kontaktbogen der Gegenstände: jedes Schwert, jeder Trank und jede Münze.</figcaption></figure>
-  </div>
-</section>
 
 <section class="slide" id="sdf-code" data-lv="3">
   <h2 lang="en">The real code: clay in Python</h2>
@@ -134,15 +115,6 @@
   </div>
 </section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Making Monsters</h2>
-  <h2 lang="de">Prompt-Aufgaben: Monster bauen</h2>
-  <div class="quests">
-    <div class="prompt" data-title="NEW EYES" data-stars="1" data-de-data-title="NEUE AUGEN"><q lang="en">Change the Octonaut's eye colour from purple to bright yellow in its Blender script, re-export it, and show me the new preview picture.</q> <q lang="de">Ändere die Augenfarbe des Octonauts in seinem Blender-Skript von lila zu knallgelb, exportiere es neu und zeig mir das neue Vorschaubild.</q><span class="why" lang="en">Asking for the preview picture means you (and the agent) can see if it worked.</span> <span class="why" lang="de">Nach dem Vorschaubild zu fragen heißt, dass du (und der Agent) sehen könnt, ob es geklappt hat.</span></div>
-    <div class="prompt" data-title="PET MUSHROOM" data-stars="3" data-de-data-title="HAUSTIER-PILZ"><q lang="en">I drew a walking mushroom monster: a red cap with white dots, a fat stem, two stubby legs and big eyes. Make a new Blender script for it, built the same way as the other monsters, with a walk, an attack and a death clip. Render a preview contact sheet so I can see it. Don't add it to the game yet.</q> <q lang="de">Ich habe ein laufendes Pilzmonster gemalt: ein roter Hut mit weißen Punkten, ein dicker Stiel, zwei stummelige Beine und große Augen. Schreib ein neues Blender-Skript dafür, gebaut wie die anderen Monster, mit einem Lauf-, einem Angriffs- und einem Sterbe-Clip. Mach einen Kontaktbogen, damit ich es sehen kann. Bau es noch nicht ins Spiel ein.</q><span class="why" lang="en">You can even give the agent a photo of your drawing! And "don't add it to the game yet" keeps the first step small.</span> <span class="why" lang="de">Du kannst dem Agenten sogar ein Foto deiner Zeichnung geben! Und "bau es noch nicht ein" hält den ersten Schritt klein.</span></div>
-    <div class="prompt" data-title="EXPLAIN A SCRIPT" data-stars="1" data-de-data-title="EIN SKRIPT ERKLÄRT"><q lang="en">Explain how the Triangle monster's model is built, part by part, in simple words.</q> <q lang="de">Erklär mir Teil für Teil in einfachen Worten, wie das Modell des Triangle-Monsters gebaut wird.</q><span class="why" lang="en">Reading a model script with an agent is like having the artist explain their work.</span> <span class="why" lang="de">Ein Modell-Skript mit einem Agenten zu lesen ist, als würde die Künstlerin ihre Arbeit erklären.</span></div>
-  </div>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title data-de="Damit alles läuft · Kinderführer zu Cube Crawler">Keeping It Working · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
+</head>
+<body data-theme="core">
+<main class="deck">
+
+<section class="slide" id="break" data-lv="1">
+  <h2 lang="en">Programs break in surprising places</h2>
+  <h2 lang="de">Programme gehen an überraschenden Stellen kaputt</h2>
+  <div class="cols">
+    <div>
+      <p class="lead" lang="en">You make the hero run a little slower. Easy! But then the legs move too fast for the speed, the footsteps don't match, and a monster that used to just miss you now catches you.</p>
+      <p class="lead" lang="de">Du lässt den Helden ein bisschen langsamer rennen. Ganz leicht! Aber dann bewegen sich die Beine zu schnell für das Tempo, die Schritte passen nicht mehr, und ein Monster, das dich vorher knapp verfehlt hat, erwischt dich jetzt.</p>
+      <p lang="en">In a game, everything touches everything. One small change can show up somewhere far away. Game makers can't play the whole game after every change, so they have helpers:</p>
+      <p lang="de">In einem Spiel hängt alles mit allem zusammen. Eine kleine Änderung kann sich ganz woanders zeigen. Spielemacher können nicht nach jeder Änderung das ganze Spiel durchspielen, darum haben sie Helfer:</p>
+    </div>
+    <div class="cols" style="gap:12px">
+      <div class="card"><h3 lang="en">Tests</h3> <h3 lang="de">Tests</h3><p class="small" lang="en">Little programs that check the rules, hundreds of times, in seconds.</p> <p class="small" lang="de">Kleine Programme, die die Regeln prüfen, hundertfach, in Sekunden.</p></div>
+      <div class="card"><h3 lang="en">Seeds</h3> <h3 lang="de">Seeds</h3><p class="small" lang="en">A bug that happened once can be made to happen again.</p> <p class="small" lang="de">Ein Fehler, der einmal passiert ist, lässt sich wieder hervorholen.</p></div>
+      <div class="card"><h3 lang="en">Tools to look</h3> <h3 lang="de">Werkzeuge zum Hinschauen</h3><p class="small" lang="en">Secret switches and pages that show what is normally hidden.</p> <p class="small" lang="de">Geheime Schalter und Seiten, die zeigen, was sonst versteckt ist.</p></div>
+      <div class="card"><h3 lang="en">Save points</h3> <h3 lang="de">Speicherpunkte</h3><p class="small" lang="en">Every working step is saved, so you can always go back.</p> <p class="small" lang="de">Jeder funktionierende Schritt wird gespeichert, damit du immer zurück kannst.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="try-test" data-lv="1" data-src="src/core/combat.js#SWORD,swordHit src/core/enemies.js#SPIDER,STUNDER">
+  <h2 lang="en">Try it: break a test</h2>
+  <h2 lang="de">Probier es: Mach einen Test kaputt</h2>
+  <p lang="en">One of the game's tests checks how the Old Sword feels: a spider should take <b>two</b> slashes, a Stunder <b>five</b>. Here the test runs with the game's real combat code. Change the sword's damage and run the test again.</p>
+  <p lang="de">Einer der Tests des Spiels prüft, wie sich das Alte Schwert anfühlt: Eine Spinne soll <b>zwei</b> Hiebe brauchen, ein Stunder <b>fünf</b>. Hier läuft der Test mit dem echten Kampfcode des Spiels. Ändere den Schaden des Schwerts und lass den Test noch mal laufen.</p>
+  <div class="demo real" data-demo="testlab"></div>
+  <p class="small muted" lang="en">Look at the strip: only a few numbers pass. The test doesn't care about the exact number, it cares about how the fight <i>feels</i>.</p>
+  <p class="small muted" lang="de">Schau dir den Streifen an: Nur wenige Zahlen bestehen. Dem Test ist die genaue Zahl egal, ihm ist wichtig, wie sich der Kampf <i>anfühlt</i>.</p>
+</section>
+
+<section class="slide" id="tests" data-lv="2">
+  <h2 lang="en">Tests: inspectors that never get tired</h2>
+  <h2 lang="de">Tests: Prüfer, die nie müde werden</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">A <a class="w" href="words.html#test">test</a> is a small program that uses the game's code and checks one thing. For example:</p>
+      <p lang="de">Ein <a class="w" href="words.html#test">Test</a> ist ein kleines Programm, das den Code des Spiels benutzt und eine Sache prüft. Zum Beispiel:</p>
+      <pre data-label="tests/movement.test.js (as of commit 3e16e07)"><code>test('running ramps up over RUN_RAMP, passing walking pace early, so taps stay precise', () =&gt; {
+  stand();
+  const walk = until(WALK_SPEED, 1, 0, true);
+  assert.ok(walk.t &lt; RUN_RAMP * 0.75, 'walking pace after about 70% of the ramp: ' + walk.t);
+  stand();
+  const run = until(RUN_SPEED, 1, 0, true);
+  assert.ok(Math.abs(run.t - RUN_RAMP) &lt;= DT, 'full run after RUN_RAMP: ' + run.t);
+});</code></pre>
+      <p lang="en">Type <code>npm test</code>, and all of them run. Green: all good. Red: something you changed broke something, maybe something you didn't even think about.</p>
+      <p lang="de">Tipp <code>npm test</code>, und alle laufen. Grün: alles gut. Rot: Etwas, das du geändert hast, hat etwas kaputtgemacht, vielleicht etwas, an das du gar nicht gedacht hast.</p>
+      <p lang="en">Some tests build hundreds of worlds and walk through them: can every world be finished down to the core? Do houses in the town overlap?</p>
+      <p lang="de">Manche Tests bauen Hunderte Welten und laufen hindurch: Kann man jede Welt bis zum Kern schaffen? Überlappen sich Häuser in der Stadt?</p>
+    </div>
+    <div class="card">
+      <h3 lang="en">A true story</h3>
+      <h3 lang="de">Eine wahre Geschichte</h3>
+      <p lang="en">The hero used to run at 4.1 cells per second. It felt too fast, so the run was slowed down to 2.8.</p>
+      <p lang="de">Der Held rannte früher mit 4,1 Zellen pro Sekunde. Das fühlte sich zu schnell an, also wurde das Rennen auf 2,8 verlangsamt.</p>
+      <p lang="en">And then a test failed! It checked that, when you start running, you reach walking speed after about <i>half</i> of the speed-up time. With the slower run, that now took 70%.</p>
+      <p lang="de">Und dann schlug ein Test fehl! Er prüfte, dass man beim Losrennen nach etwa der <i>Hälfte</i> der Anlaufzeit Gehtempo erreicht. Mit dem langsameren Rennen dauerte das jetzt 70%.</p>
+      <p lang="en">Was that bad? No, it was fine, so the test was updated to say 70%, and the notes in <code>docs/combat.md</code> too.</p>
+      <p lang="de">War das schlimm? Nein, es war in Ordnung, also wurde der Test auf 70% geändert, und die Notizen in <code>docs/combat.md</code> auch.</p>
+      <p class="small muted" lang="en">Lesson: a failing test is not always a bug. It's a question: "did you mean to change this?"</p>
+      <p class="small muted" lang="de">Lehre: Ein fehlschlagender Test ist nicht immer ein Fehler. Er ist eine Frage: "Wolltest du das ändern?"</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="replay" data-lv="2">
+  <h2 lang="en">Bugs you can replay</h2>
+  <h2 lang="de">Fehler, die man wiederholen kann</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">The worst kind of bug is one you saw once and can never find again. In Cube Crawler that almost can't happen: every world comes from a <a class="w" href="words.html#seed">seed</a>. Open the same seed, and you get the same world, the same bridges, the same monsters in the same places.</p>
+      <p lang="de">Die schlimmste Art Fehler ist einer, den man einmal gesehen hat und nie wiederfindet. In Cube Crawler kann das fast nicht passieren: Jede Welt kommt aus einem <a class="w" href="words.html#seed">Seed</a>. Öffne denselben Seed, und du bekommst dieselbe Welt, dieselben Brücken, dieselben Monster an denselben Stellen.</p>
+      <p lang="en">The dev panel (<code>?dev=1</code>) shows the seed, the depth and the floor you're on, with a button to copy all of it.</p>
+      <p lang="de">Das Entwickler-Panel (<code>?dev=1</code>) zeigt den Seed, die Tiefe und das Stockwerk, auf dem du bist, mit einem Knopf, um alles zu kopieren.</p>
+      <a class="portal" href="random.html#why" lang="en">Why "not really random" is great</a>
+      <a class="portal" href="random.html#why" lang="de">Warum "nicht wirklich zufällig" super ist</a>
+    </div>
+    <div class="card">
+      <h3 lang="en">A good bug report</h3>
+      <h3 lang="de">Ein guter Fehlerbericht</h3>
+      <p lang="en">Whoever fixes the bug wasn't there when it happened. Tell them three things, and where:</p>
+      <p lang="de">Wer den Fehler repariert, war nicht dabei, als er passiert ist. Sag drei Dinge, und wo:</p>
+      <ol class="steps">
+        <li lang="en"><b>What you did:</b> "I jumped from the bridge into the lava."</li>
+        <li lang="de"><b>Was du gemacht hast:</b> "Ich bin von der Brücke in die Lava gesprungen."</li>
+        <li lang="en"><b>What happened:</b> "I landed on it and walked away."</li>
+        <li lang="de"><b>Was passiert ist:</b> "Ich bin darauf gelandet und weggelaufen."</li>
+        <li lang="en"><b>What you expected:</b> "I should have burned."</li>
+        <li lang="de"><b>Was du erwartet hast:</b> "Ich hätte verbrennen sollen."</li>
+        <li lang="en"><b>Where:</b> "Seed 123, depth 4, next to the stairs." A screenshot helps a lot.</li>
+        <li lang="de"><b>Wo:</b> "Seed 123, Tiefe 4, neben der Treppe." Ein Screenshot hilft sehr.</li>
+      </ol>
+      <p class="small muted" lang="en">"Lava is broken" is not a bug report. It's a riddle.</p>
+      <p class="small muted" lang="de">"Lava ist kaputt" ist kein Fehlerbericht. Das ist ein Rätsel.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="look" data-lv="2">
+  <h2 lang="en">Tools to look inside</h2>
+  <h2 lang="de">Werkzeuge, um hineinzuschauen</h2>
+  <p lang="en">A lot of what the game does is invisible: routes, dice rolls, odds. So the makers built tools to make it visible. With the game's server running (<code>npm run serve</code>), try them:</p>
+  <p lang="de">Vieles, was das Spiel macht, ist unsichtbar: Routen, Würfelwürfe, Chancen. Darum haben die Macher Werkzeuge gebaut, die es sichtbar machen. Mit laufendem Spielserver (<code>npm run serve</code>) probier sie aus:</p>
+  <div class="cols">
+    <div>
+      <ul>
+        <li lang="en"><a href="../index.html?dev=1"><code>?dev=1</code></a>: the dev panel. <kbd>PgDn</kbd> / <kbd>PgUp</kbd> jump a depth down or up, clicking a portal takes it, and you can drop any monster at any level next to you.</li>
+        <li lang="de"><a href="../index.html?dev=1"><code>?dev=1</code></a>: das Entwickler-Panel. <kbd>Bild↓</kbd> / <kbd>Bild↑</kbd> springen eine Tiefe nach unten oder oben, ein Klick auf ein Portal nimmt es, und du kannst jedes Monster in jeder Stufe neben dir erscheinen lassen.</li>
+        <li lang="en"><kbd>P</kbd> in the game: the route the cube factory planned, as a pink line.</li>
+        <li lang="de"><kbd>P</kbd> im Spiel: die Route, die die Würfelfabrik geplant hat, als rosa Linie.</li>
+        <li lang="en"><a href="../tools/kinds.html">tools/kinds.html</a>: every monster kind lined up, coloured as in the game.</li>
+        <li lang="de"><a href="../tools/kinds.html">tools/kinds.html</a>: alle Monstersorten in einer Reihe, gefärbt wie im Spiel.</li>
+        <li lang="en"><a href="../tools/player.html">tools/player.html</a>: a music player for the game's songs, with every mood.</li>
+        <li lang="de"><a href="../tools/player.html">tools/player.html</a>: ein Musikspieler für die Lieder des Spiels, mit jeder Stimmung.</li>
+        <li lang="en">In a terminal, <code>node tools/loot-table.mjs</code> prints the odds of every sword, and <code>node tools/balance.mjs</code> plays whole games in fast-forward and prints how strong you are at every depth.</li>
+        <li lang="de">Im Terminal druckt <code>node tools/loot-table.mjs</code> die Chancen für jedes Schwert, und <code>node tools/balance.mjs</code> spielt ganze Spiele im Schnelldurchlauf und druckt, wie stark du in jeder Tiefe bist.</li>
+      </ul>
+    </div>
+    <figure><img class="shot" src="../blender/previews/items-preview.png" alt="A sheet of item models: swords, potions, coins, crystals" data-de-alt="Ein Bogen mit Gegenstandsmodellen: Schwerter, Tränke, Münzen, Kristalle"><figcaption lang="en">Every Blender script also saves a picture of what it built, a "contact sheet", into blender/previews/. One look, and you know if a sword came out wrong.</figcaption> <figcaption lang="de">Jedes Blender-Skript speichert auch ein Bild von dem, was es gebaut hat, einen "Kontaktbogen", in blender/previews/. Ein Blick, und du weißt, ob ein Schwert schiefgegangen ist.</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" id="git" data-lv="2">
+  <h2 lang="en">Save points: git</h2>
+  <h2 lang="de">Speicherpunkte: git</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Games have save points. Code has <a class="w" href="words.html#git">git</a>. Every time something works, you save a <b>commit</b>: a snapshot of all files, with a message saying what changed.</p>
+      <p lang="de">Spiele haben Speicherpunkte. Code hat <a class="w" href="words.html#git">git</a>. Jedes Mal, wenn etwas funktioniert, speicherst du einen <b>Commit</b>: einen Schnappschuss aller Dateien, mit einer Nachricht, was sich geändert hat.</p>
+      <p lang="en">If your next change goes wrong, you can always go back to the last commit. That makes it safe to try wild ideas!</p>
+      <p lang="de">Wenn deine nächste Änderung schiefgeht, kannst du immer zum letzten Commit zurück. Darum ist es sicher, wilde Ideen auszuprobieren!</p>
+      <table>
+        <tr><td><code>git status</code></td><td lang="en">which files did I change?</td> <td lang="de">welche Dateien habe ich geändert?</td></tr>
+        <tr><td><code>git diff</code></td><td lang="en">what exactly did I change?</td> <td lang="de">was genau habe ich geändert?</td></tr>
+        <tr><td><code>git commit</code></td><td lang="en">save a snapshot, with a message</td> <td lang="de">einen Schnappschuss speichern, mit einer Nachricht</td></tr>
+        <tr><td><code>git restore</code></td><td lang="en">throw away changes, back to the last snapshot</td> <td lang="de">Änderungen wegwerfen, zurück zum letzten Schnappschuss</td></tr>
+      </table>
+    </div>
+    <div>
+      <p lang="en">Some real commit messages from this game:</p>
+      <p lang="de">Ein paar echte Commit-Nachrichten aus diesem Spiel:</p>
+      <pre><code>feat(loot): add generated weapon drops with rarity glows and floor panel
+feat(player): get up from ragdolls with authored clips
+fix(player): keep feet planted while getting up
+feat(audio): give every theme its own song
+fix(player): slow the run and match its cycle and footsteps
+feat(dev): spawn any enemy kind from the dev panel</code></pre>
+      <p class="small" lang="en">"feat" means a new feature, "fix" a repair. The word in brackets is the part of the game. Short, clear, one thing each.</p>
+      <p class="small" lang="de">"feat" heißt neue Funktion, "fix" eine Reparatur. Das Wort in Klammern ist der Teil des Spiels. Kurz, klar, eine Sache pro Nachricht.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="example" data-lv="3">
+  <h2 lang="en">A real change, from idea to commit</h2>
+  <h2 lang="de">Eine echte Änderung, von der Idee zum Commit</h2>
+  <div class="cols wide-left">
+    <pre data-label="git show 3e16e07 (shortened)"><code>fix(player): slow the run and match its cycle and footsteps
+
+ docs/combat.md         | 4 ++--
+ src/core/constants.js  | 6 +++---
+ tests/movement.test.js | 2 +-
+
+--- a/src/core/constants.js
++++ b/src/core/constants.js
+-export const WALK_SPEED = 1.9, RUN_SPEED = 4.1, SWIM_SPEED = 0.9;
++export const WALK_SPEED = 1.9, RUN_SPEED = 2.8, SWIM_SPEED = 0.9;
+-export const WALK_ANIM = 1.4, RUN_ANIM = 3.2;
++export const WALK_ANIM = 1.4, RUN_ANIM = 2.8;   // the run: its authored stride, no stretch
+
+--- a/tests/movement.test.js
++++ b/tests/movement.test.js
+-  assert.ok(walk.t &lt; RUN_RAMP * 0.55, 'walking pace after about half the ramp: ' + walk.t);
++  assert.ok(walk.t &lt; RUN_RAMP * 0.75, 'walking pace after about 70% of the ramp: ' + walk.t);</code></pre>
+    <div>
+      <p lang="en">This is how a change looks to git. Lines with <code>-</code> were removed, lines with <code>+</code> added.</p>
+      <p lang="de">So sieht eine Änderung für git aus. Zeilen mit <code>-</code> wurden entfernt, Zeilen mit <code>+</code> hinzugefügt.</p>
+      <p lang="en">The idea: "the run is too fast, and the legs don't match the speed". The change:</p>
+      <p lang="de">Die Idee: "Das Rennen ist zu schnell, und die Beine passen nicht zum Tempo." Die Änderung:</p>
+      <ol class="steps">
+        <li lang="en">the rule: <code>RUN_SPEED</code> from 4.1 to 2.8,</li>
+        <li lang="de">die Regel: <code>RUN_SPEED</code> von 4,1 auf 2,8,</li>
+        <li lang="en">the look: the run animation now plays at the same pace (<code>RUN_ANIM</code>), so the feet don't slide,</li>
+        <li lang="de">das Aussehen: Die Rennanimation spielt jetzt im selben Tempo (<code>RUN_ANIM</code>), damit die Füße nicht rutschen,</li>
+        <li lang="en">the check: the test, updated on purpose,</li>
+        <li lang="de">die Prüfung: der Test, absichtlich angepasst,</li>
+        <li lang="en">the notes: <code>docs/combat.md</code>.</li>
+        <li lang="de">die Notizen: <code>docs/combat.md</code>.</li>
+      </ol>
+      <p lang="en">Rule, look, check, notes. A good change usually touches all four.</p>
+      <p lang="de">Regel, Aussehen, Prüfung, Notizen. Eine gute Änderung berührt meistens alle vier.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="small-steps" data-lv="1">
+  <h2 lang="en">Small steps</h2>
+  <h2 lang="de">Kleine Schritte</h2>
+  <p lang="en">Game makers work in a loop, a bit like the game loop:</p>
+  <p lang="de">Spielemacher arbeiten in einer Schleife, ein bisschen wie die Spielschleife:</p>
+  <ol class="steps">
+    <li lang="en"><b>Idea:</b> one thing at a time. "Spiders should notice me from further away."</li>
+    <li lang="de"><b>Idee:</b> eine Sache auf einmal. "Spinnen sollen mich von weiter weg bemerken."</li>
+    <li lang="en"><b>Change</b> the code.</li>
+    <li lang="de"><b>Ändern</b>: den Code.</li>
+    <li lang="en"><b>Check:</b> run the tests.</li>
+    <li lang="de"><b>Prüfen:</b> die Tests laufen lassen.</li>
+    <li lang="en"><b>Play:</b> does it feel right? Is it fun? No test can tell you that.</li>
+    <li lang="de"><b>Spielen:</b> Fühlt es sich richtig an? Macht es Spaß? Das kann dir kein Test sagen.</li>
+    <li lang="en"><b>Save or undo:</b> happy? Commit it. Not happy? Go back and try something else.</li>
+    <li lang="de"><b>Speichern oder zurück:</b> Zufrieden? Commit. Nicht zufrieden? Zurück und etwas anderes probieren.</li>
+  </ol>
+  <p lang="en">Small loops are better than big ones: if something breaks, you know which step broke it.</p>
+  <p lang="de">Kleine Schleifen sind besser als große: Wenn etwas kaputtgeht, weißt du, welcher Schritt es war.</p>
+  <div class="note" lang="en"><b>Your own game</b> Everything in this guide works for a new game too: a game loop, seeds, a puzzle world, paths, a state machine, a loot table, juice. Start tiny (one room, one monster, one sword), and grow it one small loop at a time.</div>
+  <div class="note" lang="de"><b>Dein eigenes Spiel</b> Alles in diesem Führer klappt auch für ein neues Spiel: eine Spielschleife, Seeds, eine Puzzle-Welt, Wege, ein Zustandsautomat, eine Beutetabelle, Juice. Fang winzig an (ein Raum, ein Monster, ein Schwert) und lass es Schleife für Schleife wachsen.</div>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

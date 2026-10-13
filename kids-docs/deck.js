@@ -5,7 +5,6 @@
 //   - S switches between slides and one long scrolling report
 //   - [data-demo="name"] loads demos/name.js when it comes into view and calls its default export
 //   - <a class="w" href="words.html#seed"> shows the glossary entry when hovered
-//   - <div class="prompt"> becomes a quest card with a copy button
 //   - <pre data-file="..."> gets light syntax colours and a file label
 // Pages are bilingual: every text block is a <x lang="en"> / <x lang="de"> pair and lang.js
 // shows one of them (attributes: data-de-alt, data-de-title ... replace alt, title ... in German).
@@ -151,20 +150,6 @@ async function staleNotes(slides) {
   }
 }
 
-function prompts(root) {
-  for (const p of root.querySelectorAll('.prompt')) {
-    const n = +(p.dataset.stars || 1);
-    p.insertAdjacentHTML('afterbegin', `<span class="stars" title="${t('Quest difficulty', 'Schwierigkeit')}">${'\u2605'.repeat(n)}${'\u2606'.repeat(3 - n)}</span>`);
-    const btn = document.createElement('button');
-    btn.className = 'copy'; btn.textContent = t('copy', 'kopieren');
-    btn.onclick = async () => {
-      try { await navigator.clipboard.writeText(shown(p, 'q').textContent.trim()); btn.textContent = t('copied!', 'kopiert!'); }
-      catch { btn.textContent = t('select & copy', 'markieren & kopieren'); }
-      setTimeout(() => { btn.textContent = t('copy', 'kopieren'); }, 1500);
-    };
-    p.append(btn);
-  }
-}
 
 // ---- glossary tooltips -----------------------------------------------------------------------
 let words = null;
@@ -367,7 +352,6 @@ stars();
 wordTips();
 for (const pre of document.querySelectorAll('pre')) if (pre.dataset.code != null) liveCode(pre); else highlight(pre);
 liveValues(document);
-prompts(document);
 const main = document.querySelector('main.deck');
 if (main) deck(main);
 else { const box = document.createElement('div'); box.className = 'langbar'; langSwitch(box); document.body.append(box); }

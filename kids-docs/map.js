@@ -17,8 +17,8 @@ const blurb = [null,
     'Nur die großen Ideen, mit Bildern und Sachen zum Ausprobieren. Fang hier an, wenn alles neu für dich ist.'),
   t('How the parts really work, step by step, with more demos and numbers from the game.',
     'Wie die Teile wirklich funktionieren, Schritt für Schritt, mit mehr Demos und Zahlen aus dem Spiel.'),
-  t('The real code from the game, explained. For when you want to change it yourself (or ask an agent to).',
-    'Der echte Code des Spiels, erklärt. Für wenn du ihn selbst ändern willst (oder einen Agenten darum bittest).')];
+  t('The real code from the game, explained. For when you want to know exactly how it works.',
+    'Der echte Code des Spiels, erklärt. Für wenn du genau wissen willst, wie es funktioniert.')];
 const box = document.getElementById('levels');
 const draw = () => {
   const lv = +(localStorage.getItem('kids.lv') || 3);

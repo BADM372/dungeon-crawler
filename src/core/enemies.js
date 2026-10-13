@@ -25,7 +25,7 @@ export const depthLevel = depth => Math.max(1, Math.floor(depth || 0));
 export const GUARDIAN_LEVELS = Object.freeze({ side: 1, descent: 2 });
 export const guardianLevel = (depth, role) => depthLevel(depth) + (depth >= 1 ? GUARDIAN_LEVELS[role] : 0);
 
-// kids-docs: combat.html#damage, enemies.html#numbers (see kids-docs/README.md)
+// kids-docs: checks.html#try-test, combat.html#damage, enemies.html#numbers (see kids-docs/README.md)
 export const SPIDER = Object.freeze({
   type: 'spider', species: 'spider', label: 'Spider', hp: 32, damage: 15, knock: 4.5,
   xp: 20, coins: Object.freeze([4, 8]),
@@ -37,7 +37,7 @@ export const SPIDER = Object.freeze({
   parts: Object.freeze({ body: ['SpiderBody'], eyes: ['SpiderEyes'] }),
   seedSalt: 0x5b1d3a, spacing: 3,
 });
-// kids-docs: combat.html#damage (see kids-docs/README.md)
+// kids-docs: checks.html#try-test, combat.html#damage (see kids-docs/README.md)
 export const STUNDER = Object.freeze({
   type: 'stunder', species: 'stunder', label: 'Stunder', hp: 140, damage: 30, knock: 7,
   xp: 80, coins: Object.freeze([20, 35]),

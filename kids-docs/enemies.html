@@ -151,42 +151,6 @@
   </div>
 </section>
 
-<section class="slide" id="rosters" data-lv="2" data-src="src/core/spawns.js#DEPTH_SPAWNS">
-  <h2 lang="en">Who lives where</h2>
-  <h2 lang="de">Wer wo wohnt</h2>
-  <div class="cols">
-    <div>
-      <p lang="en">Each depth has a <b>roster</b>: a list of which monsters can live there, how likely, and how many. For example, at depth 3 (the snowy peaks):</p>
-      <p lang="de">Jede Tiefe hat eine <b>Besetzungsliste</b>: welche Monster dort leben können, wie wahrscheinlich und wie viele. Zum Beispiel in Tiefe 3 (den Schneegipfeln):</p>
-      <ul>
-        <li lang="en"><b>spiders</b>, always, 8 to 14, in packs of up to 3, mostly Frost spiders</li>
-        <li lang="de"><b>Spinnen</b>, immer, 8 bis 14, in Rudeln bis 3, meistens Frost spiders</li>
-        <li lang="en"><b>Stunders</b>, 50% of the time, 1 or 2, Frost stunders</li>
-        <li lang="de"><b>Stunder</b>, in 50% der Fälle, 1 oder 2, Frost stunders</li>
-        <li lang="en"><b>Triangles</b>, 12% of the time, just one: a mini-boss!</li>
-        <li lang="de"><b>Triangles</b>, in 12% der Fälle, nur eins: ein Mini-Boss!</li>
-      </ul>
-      <p lang="en">Every cube rolls its own dice: which species are there, how many, and which one <b>leads</b> (has the most). So two cubes at the same depth can feel very different: a spider den with a lone snake, or a snake pit with a few spiders.</p>
-      <p lang="de">Jeder Würfel würfelt selbst: welche Arten da sind, wie viele und welche <b>anführt</b> (die meisten hat). So können sich zwei Würfel in derselben Tiefe ganz verschieden anfühlen: eine Spinnenhöhle mit einer einsamen Schlange, oder eine Schlangengrube mit ein paar Spinnen.</p>
-    </div>
-    <div class="card">
-      <h3 lang="en">Design rules</h3>
-      <h3 lang="de">Regeln beim Planen</h3>
-      <ul>
-        <li lang="en">The surface starts easy: depth 1 has only snakes and a rare Stunder.</li>
-        <li lang="de">Oben fängt es leicht an: Tiefe 1 hat nur Schlangen und einen seltenen Stunder.</li>
-        <li lang="en">Each theme has its signature monsters: Octonauts in the frozen caves, spiders in the nests, fire monsters in the volcanic depths.</li>
-        <li lang="de">Jedes Thema hat seine typischen Monster: Octonauts in den Eishöhlen, Spinnen in den Nestern, Feuermonster in den Vulkantiefen.</li>
-        <li lang="en">Rare guests show up one theme early, as a preview.</li>
-        <li lang="de">Seltene Gäste tauchen ein Thema früher auf, als Vorschau.</li>
-        <li lang="en">Shooting monsters stay few (at most 4 per cube): many fireballs at once are hard to dodge.</li>
-        <li lang="de">Schießende Monster bleiben wenige (höchstens 4 pro Würfel): Viele Feuerbälle auf einmal kann man schlecht ausweichen.</li>
-        <li lang="en">Monsters never spawn near entrances.</li>
-        <li lang="de">Monster erscheinen nie nahe an Eingängen.</li>
-      </ul>
-    </div>
-  </div>
-</section>
 
 <section class="slide" id="guardians" data-lv="2" data-src="src/core/enemies.js#GUARDIAN_TIERS">
   <h2 lang="en">Guardians and balance</h2>
@@ -258,16 +222,6 @@
   </div>
 </section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Monster Brains</h2>
-  <h2 lang="de">Prompt-Aufgaben: Monster-Gehirne</h2>
-  <div class="quests">
-    <div class="prompt" data-title="NEW KIND" data-stars="2" data-de-data-title="NEUE SORTE"><q lang="en">Add a new spider kind called "Ghost spider": pale and see-through looking (very light colours), 1.2x health, 1.3x speed. Let it spawn sometimes at depths 15 and 16. Do it the way the other kinds are made, and run the tests.</q> <q lang="de">Füge eine neue Spinnensorte namens "Ghost spider" hinzu: blass und fast durchsichtig aussehend (sehr helle Farben), 1,2-fache Gesundheit, 1,3-faches Tempo. Lass sie manchmal in Tiefe 15 und 16 erscheinen. Mach es so, wie die anderen Sorten gemacht sind, und lass die Tests laufen.</q><span class="why" lang="en">"The way the others are made" sends the agent to the existing kinds and their notes, so the new one fits right in.</span> <span class="why" lang="de">"So, wie die anderen gemacht sind" schickt den Agenten zu den bestehenden Sorten und ihren Notizen, damit die neue genau dazupasst.</span></div>
-    <div class="prompt" data-title="SCAREDY SNAKES" data-stars="3" data-de-data-title="ANGSTHASEN-SCHLANGEN"><q lang="en">Give snakes a new behaviour: when their health drops below 25%, they flee away from me for 3 seconds before fighting again. Add it as a new state of the monster brain, only for snakes, and explain the change to me.</q> <q lang="de">Gib Schlangen ein neues Verhalten: Wenn ihre Gesundheit unter 25% fällt, fliehen sie 3 Sekunden lang vor mir, bevor sie wieder kämpfen. Bau es als neuen Zustand ins Monster-Gehirn ein, nur für Schlangen, und erklär mir die Änderung.</q><span class="why" lang="en">A new state in the state machine! Ask for an explanation so you learn how it was done.</span> <span class="why" lang="de">Ein neuer Zustand im Zustandsautomaten! Bitte um eine Erklärung, damit du lernst, wie es gemacht wurde.</span></div>
-    <div class="prompt" data-title="DEPTH TOUR" data-stars="1" data-de-data-title="TIEFEN-TOUR"><q lang="en">Which monsters live at depth 9, and how many? Find the table that decides it and explain the row for depth 9 in simple words.</q> <q lang="de">Welche Monster leben in Tiefe 9, und wie viele? Finde die Tabelle, die das entscheidet, und erklär mir die Zeile für Tiefe 9 in einfachen Worten.</q><span class="why" lang="en">Reading data tables with an agent is a great way to learn how a game is set up.</span> <span class="why" lang="de">Datentabellen mit einem Agenten zu lesen ist ein toller Weg zu lernen, wie ein Spiel eingerichtet ist.</span></div>
-    <div class="prompt" data-title="SLOWER BITES" data-stars="1" data-de-data-title="LANGSAMERE BISSE"><q lang="en">Spiders are too hard for my little brother. Make their wind-up before the bite longer, so it is easier to step away. Keep the animation in sync with the bite.</q> <q lang="de">Spinnen sind zu schwer für meinen kleinen Bruder. Mach ihr Ausholen vor dem Biss länger, damit man leichter ausweichen kann. Die Animation soll trotzdem zum Biss passen.</q><span class="why" lang="en">"Keep the animation in sync" warns the agent about a trap: the bite should still land on the right animation frame.</span> <span class="why" lang="de">"Die Animation soll passen" warnt den Agenten vor einer Falle: Der Biss soll weiterhin im richtigen Animationsbild landen.</span></div>
-  </div>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

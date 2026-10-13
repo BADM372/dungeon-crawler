@@ -13,10 +13,9 @@ import { isTown, isMerchantCamp, isClearing, enemyFreeAt, isInterior } from './t
 import { generateInterior } from '../cubegen/interior.js';
 
 // how much each WFC kind leans towards an archetype (times the theme's weights)
-// kids-docs: world.html#archetypes (see kids-docs/README.md)
 const LEAN = { highland: { mesa: 2, spire: 2, archipelago: 0.3 }, lake: { archipelago: 3, crater: 2 }, gorge: { chasm: 3 },
   river: { chasm: 1.5, archipelago: 0.5 }, meadow: { plain: 1.5 }, slope: { mesa: 1.5 } };
-// kids-docs: random.html#pick-code, world.html#archetypes (see kids-docs/README.md)
+// kids-docs: random.html#pick-code (see kids-docs/README.md)
 function archetype(theme, kind, R) {
   const w = Object.entries(theme.arche).map(([a, v]) => [a, v * (LEAN[kind]?.[a] ?? 1)]);
   let r = R() * w.reduce((s, [, v]) => s + v, 0);
@@ -37,12 +36,14 @@ export class World {
     this.layout = makeLayouts(seed);   // depth -> which cubes exist and how they connect
   }
 
+  // kids-docs: architecture.html#cube-journey (see kids-docs/README.md)
   prepare(k) {
     const around = [0, 1, 2, 3, 4, 5].map(d => step(k, d)).filter(n => { const y = parse(n)[1]; return y <= 0 && y >= MIN_Y; });
     this.wfc.collapse([k, ...around]);
     decideFaces(this, k);
   }
 
+  // kids-docs: architecture.html#cube-journey (see kids-docs/README.md)
   spec(k) {
     const [X, Y, Z] = parse(k), t = this.wfc.tiles.get(k), theme = themeAt(-Y);
     const faces = [0, 1, 2, 3].map(d => {

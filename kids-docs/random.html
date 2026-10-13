@@ -55,7 +55,7 @@
   <h2 lang="en">Why "not really random" is great</h2>
   <h2 lang="de">Warum "nicht wirklich zufällig" super ist</h2>
   <div class="cols3">
-    <div class="card"><h3 lang="en">Hunting bugs</h3> <h3 lang="de">Fehlerjagd</h3><p lang="en">If a bridge is broken in world 123, a developer (or an AI helper) can open world 123 and see the exact same broken bridge. Fixing a bug you cannot see again is almost impossible.</p> <p lang="de">Wenn in Welt 123 eine Brücke kaputt ist, kann ein Entwickler (oder ein KI-Helfer) Welt 123 öffnen und genau dieselbe kaputte Brücke sehen. Einen Fehler zu reparieren, den man nicht wiederfinden kann, ist fast unmöglich.</p></div>
+    <div class="card"><h3 lang="en">Hunting bugs</h3> <h3 lang="de">Fehlerjagd</h3><p lang="en">If a bridge is broken in world 123, a developer can open world 123 and see the exact same broken bridge. Fixing a bug you cannot see again is almost impossible.</p> <p lang="de">Wenn in Welt 123 eine Brücke kaputt ist, kann ein Entwickler Welt 123 öffnen und genau dieselbe kaputte Brücke sehen. Einen Fehler zu reparieren, den man nicht wiederfinden kann, ist fast unmöglich.</p></div>
     <div class="card"><h3>Tests</h3><p lang="en">The game's tests build hundreds of worlds with fixed seeds and check them. Because the seeds are fixed, a test that passes today passes tomorrow, unless the code changed.</p> <p lang="de">Die Tests des Spiels bauen Hunderte Welten mit festen Seeds und prüfen sie. Weil die Seeds fest sind, besteht ein Test, der heute besteht, auch morgen, außer der Code hat sich geändert.</p></div>
     <div class="card"><h3 lang="en">No cheating</h3> <h3 lang="de">Kein Schummeln</h3><p lang="en">What a monster drops is decided by the world seed and the monster's name. If you die and the monster comes back, it drops <b>the same thing</b> again. Dying on purpose does not give you better loot!</p> <p lang="de">Was ein Monster fallen lässt, hängt vom Welt-Seed und vom Namen des Monsters ab. Wenn du stirbst und das Monster wiederkommt, lässt es <b>dasselbe</b> wieder fallen. Absichtlich sterben bringt dir keine bessere Beute!</p></div>
   </div>
@@ -123,8 +123,8 @@
       <pre data-code="src/world/world.js#archetype"></pre>
     </div>
     <div>
-      <p lang="en">Read it like the marble demo:</p>
-      <p lang="de">Lies es wie die Murmel-Demo:</p>
+      <p lang="en">This bag picks a cube's <a class="w" href="words.html#archetype">archetype</a>, its one big shape. Read it like the marble demo:</p>
+      <p lang="de">Dieser Beutel wählt den <a class="w" href="words.html#archetype">Archetyp</a> eines Würfels, seine eine große Form. Lies es wie die Murmel-Demo:</p>
       <ol class="steps">
         <li lang="en"><code>w</code> is the list of choices and their weights. The theme sets them, and the kind of cube <i>leans</i> them: a lake cube makes islands three times more likely.</li>
         <li lang="de"><code>w</code> ist die Liste der Möglichkeiten mit ihren Gewichten. Das Thema legt sie fest, und die Art des Würfels <i>neigt</i> sie: Ein See-Würfel macht Inseln dreimal wahrscheinlicher.</li>
@@ -135,21 +135,12 @@
         <li lang="en">The last line is a safety net that should never be needed.</li>
         <li lang="de">Die letzte Zeile ist ein Sicherheitsnetz, das nie gebraucht werden sollte.</li>
       </ol>
-      <a class="portal" href="world.html#archetypes" lang="en">Archetypes in the world room</a>
-      <a class="portal" href="world.html#archetypes" lang="de">Archetypen in "Die Welt erschaffen"</a>
+      <a class="portal" href="world.html#noise" lang="en">Archetypes in the world room</a>
+      <a class="portal" href="world.html#noise" lang="de">Archetypen in "Die Welt erschaffen"</a>
     </div>
   </div>
 </section>
 
-<section class="slide" id="quests" data-lv="1">
-  <h2 lang="en">Prompt quests: Magic Numbers</h2>
-  <h2 lang="de">Prompt-Aufgaben: Zauberzahlen</h2>
-  <div class="quests">
-    <div class="prompt" data-title="SEED DETECTIVE" data-stars="1" data-de-data-title="SEED-DETEKTIV"><q lang="en">How does the game pick its world seed when I do not put ?seed= in the address? Explain it simply and show me the code.</q> <q lang="de">Wie wählt das Spiel seinen Welt-Seed, wenn ich kein ?seed= in die Adresse schreibe? Erklär es einfach und zeig mir den Code.</q><span class="why" lang="en">"Show me the code" turns an answer into a little lesson.</span> <span class="why" lang="de">"Zeig mir den Code" macht aus einer Antwort eine kleine Lektion.</span></div>
-    <div class="prompt" data-title="MORE ISLANDS" data-stars="2" data-de-data-title="MEHR INSELN"><q lang="en">In the meadow theme, make archipelago (island) cubes twice as common as now. Show me the weights before and after.</q> <q lang="de">Mach im Wiesen-Thema (meadow) Archipel-Würfel (Inseln) doppelt so häufig wie jetzt. Zeig mir die Gewichte vorher und nachher.</q><span class="why" lang="en">Asking for before and after makes it easy to check, and easy to undo.</span> <span class="why" lang="de">Nach vorher und nachher zu fragen macht es leicht zu prüfen und leicht rückgängig zu machen.</span></div>
-    <div class="prompt" data-title="LUCKY DAY" data-stars="2" data-de-data-title="GLÜCKSTAG"><q lang="en">Explain how the game decides how rare swords are. Then make Rare swords a little more common, run the game's loot table tool, and show me how the odds changed.</q> <q lang="de">Erklär mir, wie das Spiel entscheidet, wie selten Schwerter sind. Dann mach seltene (Rare) Schwerter ein bisschen häufiger, lass das Beutetabellen-Werkzeug des Spiels laufen und zeig mir, wie sich die Chancen geändert haben.</q><span class="why" lang="en">Asking for numbers before and after is a good habit.</span> <span class="why" lang="de">Nach Zahlen vorher und nachher zu fragen ist eine gute Gewohnheit.</span></div>
-  </div>
-</section>
 
 </main>
 <script type="module" src="deck.js"></script>

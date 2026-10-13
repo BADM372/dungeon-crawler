@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title data-de="Wie alles zusammenpasst · Kinderführer zu Cube Crawler">How It Fits Together · Kids' Guide to Cube Crawler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="kids.css">
+<script src="lang.js"></script>
+</head>
+<body data-theme="meadow">
+<main class="deck">
+
+<section class="slide" id="team" data-lv="1">
+  <h2 lang="en">A team of parts</h2>
+  <h2 lang="de">Ein Team aus Teilen</h2>
+  <p class="lead" lang="en">The game is about 200 small files. Nobody could keep all of them in their head at once. So they are sorted into a few <b>parts</b>, and every part has one job, like the people in a team.</p>
+  <p class="lead" lang="de">Das Spiel besteht aus etwa 200 kleinen Dateien. Niemand könnte die alle gleichzeitig im Kopf behalten. Darum sind sie in ein paar <b>Teile</b> sortiert, und jeder Teil hat eine Aufgabe, wie die Leute in einem Team.</p>
+  <div class="demo real" data-demo="parts"></div>
+  <p class="small muted" lang="en">An arrow from one part to another means: "I borrow code from you". This picture is not drawn by hand: the page reads the game's code right now and counts. When the game changes, the picture changes with it.</p>
+  <p class="small muted" lang="de">Ein Pfeil von einem Teil zum anderen heißt: "Ich leihe mir Code von dir." Dieses Bild ist nicht von Hand gezeichnet: Die Seite liest gerade jetzt den Code des Spiels und zählt. Wenn sich das Spiel ändert, ändert sich das Bild mit.</p>
+</section>
+
+<section class="slide" id="conductor" data-lv="1" data-src="src/main.js#frame">
+  <h2 lang="en">The conductor</h2>
+  <h2 lang="de">Der Dirigent</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">In an orchestra, every musician knows their own part. The <b>conductor</b> makes sure they play together, at the right moment.</p>
+      <p lang="de">In einem Orchester kennt jeder Musiker seine eigene Stimme. Der <b>Dirigent</b> sorgt dafür, dass alle zusammen spielen, im richtigen Moment.</p>
+      <p lang="en">In Cube Crawler, the conductor is one short file: <code>src/main.js</code>. It doesn't know <i>how</i> to move a spider or paint a tree. It only knows <b>who to ask, and in which order</b>. About 60 times a second it goes through its list:</p>
+      <p lang="de">In Cube Crawler ist der Dirigent eine kurze Datei: <code>src/main.js</code>. Sie weiß nicht, <i>wie</i> man eine Spinne bewegt oder einen Baum malt. Sie weiß nur, <b>wen sie fragen muss, und in welcher Reihenfolge</b>. Ungefähr 60-mal pro Sekunde geht sie ihre Liste durch:</p>
+    </div>
+    <ol class="steps">
+      <li lang="en"><b>game/</b>: "Move the hero." (It asks <b>physics/</b> about walls and floors.)</li>
+      <li lang="de"><b>game/</b>: "Beweg den Helden." (Er fragt <b>physics/</b> nach Wänden und Böden.)</li>
+      <li lang="en"><b>game/</b>: "Let the monsters think and move. Did a sword hit?"</li>
+      <li lang="de"><b>game/</b>: "Lass die Monster denken und sich bewegen. Hat ein Schwert getroffen?"</li>
+      <li lang="en"><b>render/</b>: "Pose the hero's arms and legs, move the sparks, wave the grass."</li>
+      <li lang="de"><b>render/</b>: "Bring Arme und Beine des Helden in Pose, beweg die Funken, lass das Gras wehen."</li>
+      <li lang="en"><b>audio/</b>: "Play the footsteps."</li>
+      <li lang="de"><b>audio/</b>: "Spiel die Schritte."</li>
+      <li lang="en"><b>game/</b>: "Move the camera, cut a hole in the roof."</li>
+      <li lang="de"><b>game/</b>: "Beweg die Kamera, schneide ein Loch ins Dach."</li>
+      <li lang="en"><b>audio/</b>: "Is the music still right?"</li>
+      <li lang="de"><b>audio/</b>: "Passt die Musik noch?"</li>
+      <li lang="en"><b>render/</b>: "Now paint the picture!"</li>
+      <li lang="de"><b>render/</b>: "Und jetzt mal das Bild!"</li>
+    </ol>
+  </div>
+  <p lang="en">The order matters. The camera must move <i>after</i> the hero, or it would always be one step behind.</p>
+  <p lang="de">Die Reihenfolge ist wichtig. Die Kamera muss sich <i>nach</i> dem Helden bewegen, sonst wäre sie immer einen Schritt zu spät.</p>
+  <a class="portal" href="loop.html" lang="en">The heartbeat, slide by slide</a>
+  <a class="portal" href="loop.html" lang="de">Der Herzschlag, Folie für Folie</a>
+</section>
+
+<section class="slide" id="rules-vs-pictures" data-lv="1" data-src="src/game/juice.js#header">
+  <h2 lang="en">Rules and pictures are kept apart</h2>
+  <h2 lang="de">Regeln und Bilder sind getrennt</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">One of the smartest ideas in this game: the <b>rules</b> don't know anything about the <b>pictures</b>.</p>
+      <p lang="de">Eine der klügsten Ideen in diesem Spiel: Die <b>Regeln</b> wissen nichts über die <b>Bilder</b>.</p>
+      <p lang="en">The file <code>src/core/combat.js</code> decides <i>if</i> your sword hits a spider and how much it hurts. It is just math.
+        A different file, <code>src/game/juice.js</code>, adds the sparks, the damage number and the "thwack" sound.</p>
+      <p lang="de">Die Datei <code>src/core/combat.js</code> entscheidet, <i>ob</i> dein Schwert eine Spinne trifft und wie sehr es wehtut. Das ist nur Mathe.
+        Eine andere Datei, <code>src/game/juice.js</code>, fügt die Funken, die Schadenszahl und das "Zack"-Geräusch hinzu.</p>
+      <p lang="en">Why is that smart?</p>
+      <p lang="de">Warum ist das klug?</p>
+      <ul>
+        <li lang="en">The rules can be <b>tested</b> without a screen. A test can check "does the Old Sword need two hits for a spider?" in a split second.</li>
+        <li lang="de">Die Regeln kann man <b>testen</b>, ganz ohne Bildschirm. Ein Test kann in einem Sekundenbruchteil prüfen: "Braucht das Alte Schwert zwei Treffer für eine Spinne?"</li>
+        <li lang="en">You can change how things <b>look</b> without breaking how they <b>work</b>.</li>
+        <li lang="de">Du kannst ändern, wie Dinge <b>aussehen</b>, ohne kaputt zu machen, wie sie <b>funktionieren</b>.</li>
+        <li lang="en">The world builder can run in the <b>background</b>, without drawing anything.</li>
+        <li lang="de">Der Weltbauer kann im <b>Hintergrund</b> laufen, ohne etwas zu malen.</li>
+      </ul>
+    </div>
+    <div>
+      <pre data-code="src/game/juice.js#header"></pre>
+      <p class="small muted" lang="en">That is how the "juice" file starts. It promises: you could delete all the sparks and the game would still play the same.</p>
+      <p class="small muted" lang="de">So fängt die "Juice"-Datei an. Sie verspricht: Man könnte alle Funken löschen, und das Spiel würde sich genauso spielen.</p>
+      <a class="portal" href="combat.html#juice" lang="en">Juice: why hits feel good</a>
+      <a class="portal" href="combat.html#juice" lang="de">Juice: Warum Treffer sich gut anfühlen</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="who-knows" data-lv="2">
+  <h2 lang="en">Who knows whom</h2>
+  <h2 lang="de">Wer wen kennt</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Look at the arrows in the picture of the parts again. Most of them point <b>down</b>: from the conductor to the play, from the play to the body, the painter and the band, and from all of them to the rule book at the bottom.</p>
+      <p lang="de">Schau dir die Pfeile im Bild der Teile noch mal an. Die meisten zeigen nach <b>unten</b>: vom Dirigenten zum Spiel, vom Spiel zum Körper, zum Maler und zur Band, und von allen zum Regelbuch ganz unten.</p>
+      <p lang="en">The rule book (<code>core/</code>) borrows from almost nobody. That is on purpose. A part that needs nothing else is easy to understand, easy to test and safe to use from anywhere: the game, the worker, the tests and the guide you're reading all use it.</p>
+      <p lang="de">Das Regelbuch (<code>core/</code>) leiht sich von fast niemandem etwas. Das ist Absicht. Ein Teil, der nichts anderes braucht, ist leicht zu verstehen, leicht zu testen und überall sicher zu benutzen: Das Spiel, der Worker, die Tests und dieser Führer, den du gerade liest, benutzen es alle.</p>
+      <p lang="en">The higher up a part is, the more it knows about the others, and the more can go wrong when something changes. That's why the top parts are kept thin: <code>main.js</code> is only about a hundred lines long.</p>
+      <p lang="de">Je weiter oben ein Teil ist, desto mehr weiß er über die anderen, und desto mehr kann schiefgehen, wenn sich etwas ändert. Darum sind die oberen Teile schlank: <code>main.js</code> hat nur ungefähr hundert Zeilen.</p>
+    </div>
+    <div class="card">
+      <h3 lang="en">Arrows that point up</h3>
+      <h3 lang="de">Pfeile, die nach oben zeigen</h3>
+      <p lang="en">A few arrows go the other way. The body and the painter peek into <code>game/</code>, but almost always into the same file: the shared notebook, <code>game/state.js</code>. Mostly they just read things there, like where the hero is.</p>
+      <p lang="de">Ein paar Pfeile gehen andersherum. Der Körper und der Maler schauen in <code>game/</code> hinein, aber fast immer in dieselbe Datei: das gemeinsame Notizbuch, <code>game/state.js</code>. Meistens lesen sie dort nur etwas nach, zum Beispiel, wo der Held ist.</p>
+      <p lang="en">Real programs are never perfectly tidy. The trick is to know where the untidy places are, and keep them few.</p>
+      <p lang="de">Echte Programme sind nie perfekt aufgeräumt. Der Trick ist, zu wissen, wo die unordentlichen Stellen sind, und davon nur wenige zu haben.</p>
+      <a class="deeper" data-lv="2" href="#notebook" lang="en">The shared notebook</a>
+      <a class="deeper" data-lv="2" href="#notebook" lang="de">Das gemeinsame Notizbuch</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="notebook" data-lv="2" data-src="src/game/state.js#player,state">
+  <h2 lang="en">The shared notebook</h2>
+  <h2 lang="de">Das gemeinsame Notizbuch</h2>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">The parts need to know the same things: where is the hero? How much health is left? Which cube are we in?</p>
+      <p lang="de">Die Teile müssen dieselben Dinge wissen: Wo ist der Held? Wie viel Gesundheit ist noch übrig? In welchem Würfel sind wir?</p>
+      <p lang="en">So there is one notebook that everybody can look into: <code>game/state.js</code>. It holds two big objects:</p>
+      <p lang="de">Darum gibt es ein Notizbuch, in das alle hineinschauen können: <code>game/state.js</code>. Darin stehen zwei große Objekte:</p>
+      <ul>
+        <li lang="en"><code>player</code>: the hero. Where it stands (<code>x</code>, <code>y</code>, <code>z</code>), how fast it moves (<code>vx</code>, <code>vy</code>, <code>vz</code>), its health, its sword, its bag...</li>
+        <li lang="de"><code>player</code>: der Held. Wo er steht (<code>x</code>, <code>y</code>, <code>z</code>), wie schnell er sich bewegt (<code>vx</code>, <code>vy</code>, <code>vz</code>), seine Gesundheit, sein Schwert, seine Tasche...</li>
+        <li lang="en"><code>state</code>: everything else about this moment of the game: the map of the cube you're in, the time, the seed, which guardians you have beaten.</li>
+        <li lang="de"><code>state</code>: alles andere über diesen Moment im Spiel: die Karte des Würfels, in dem du bist, die Zeit, der Seed, welche Wächter du schon besiegt hast.</li>
+      </ul>
+      <p lang="en">The body <i>writes</i> the hero's position into the notebook. The painter <i>reads</i> it to draw the hero there. The camera reads it to follow. Nobody has to call anybody: they all look at the same page.</p>
+      <p lang="de">Der Körper <i>schreibt</i> die Position des Helden ins Notizbuch. Der Maler <i>liest</i> sie, um den Helden dort zu malen. Die Kamera liest sie, um ihm zu folgen. Niemand muss jemanden anrufen: Alle schauen auf dieselbe Seite.</p>
+    </div>
+    <pre data-code="src/game/state.js#player,state"></pre>
+  </div>
+</section>
+
+<section class="slide" id="cube-map" data-lv="2" data-src="src/cubegen/index.js#generate">
+  <h2 lang="en">Try it: a box called "map"</h2>
+  <h2 lang="de">Probier es: eine Kiste namens "map"</h2>
+  <p lang="en">The most important thing the parts hand to each other is a cube's <b>map</b>. The cube factory fills it, and then many parts read it: the body asks it how high the ground is, the painter turns it into triangles, the monsters look in it for floors to walk on, the minimap draws it.</p>
+  <p lang="de">Das Wichtigste, was sich die Teile gegenseitig geben, ist die <b>Karte</b> (map) eines Würfels. Die Würfelfabrik füllt sie, und dann lesen viele Teile darin: Der Körper fragt sie, wie hoch der Boden ist, der Maler macht Dreiecke daraus, die Monster suchen darin nach Böden zum Laufen, die Minikarte malt sie.</p>
+  <div class="cols wide-right">
+    <div>
+      <p lang="en">Here the real cube factory builds a cube for you. Open the box and look inside. Under every thing it says which parts of the game use it (the page searches the game's code for it).</p>
+      <p lang="de">Hier baut die echte Würfelfabrik einen Würfel für dich. Mach die Kiste auf und schau hinein. Unter jedem Ding steht, welche Teile des Spiels es benutzen (die Seite sucht dafür im Code des Spiels).</p>
+      <div class="note think" lang="en"><b>Think</b> Because everybody agrees on what is in the box, the factory can be changed without the painter noticing, as long as the box looks the same afterwards. Programmers call such an agreement an <a class="w" href="words.html#interface">interface</a>.</div>
+      <div class="note think" lang="de"><b>Denk nach</b> Weil sich alle einig sind, was in der Kiste ist, kann man die Fabrik ändern, ohne dass der Maler es merkt, solange die Kiste danach gleich aussieht. Programmierer nennen so eine Abmachung eine <a class="w" href="words.html#interface">Schnittstelle</a>.</div>
+    </div>
+    <div class="demo real" data-demo="mapbox"></div>
+  </div>
+</section>
+
+<section class="slide" id="worker" data-lv="2" data-src="src/world/worker.js src/world/client.js#WorldClient">
+  <h2 lang="en">Two workers at the same time</h2>
+  <h2 lang="de">Zwei Arbeiter gleichzeitig</h2>
+  <div class="cols">
+    <div>
+      <p lang="en">Building a cube can take a moment. If the game did it in between two pictures, everything would freeze. You would notice that!</p>
+      <p lang="de">Einen Würfel zu bauen kann einen Moment dauern. Wenn das Spiel das zwischen zwei Bildern machen würde, würde alles einfrieren. Das würdest du merken!</p>
+      <p lang="en">So the browser gives the game a second worker, called a <a class="w" href="words.html#worker">web worker</a>. It runs at the same time as the game, like a cook in the kitchen while the waiter serves.</p>
+      <p lang="de">Darum gibt der Browser dem Spiel einen zweiten Arbeiter, einen <a class="w" href="words.html#worker">Web Worker</a>. Er läuft gleichzeitig mit dem Spiel, wie ein Koch in der Küche, während der Kellner bedient.</p>
+      <ul>
+        <li lang="en">The <b>main thread</b> plays and draws: the hero, the monsters, the picture.</li>
+        <li lang="de">Der <b>Haupt-Thread</b> spielt und malt: der Held, die Monster, das Bild.</li>
+        <li lang="en">The <b>worker</b> plans the world and builds cubes, and even their triangles.</li>
+        <li lang="de">Der <b>Worker</b> plant die Welt und baut Würfel, sogar ihre Dreiecke.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 lang="en">They talk in letters</h3>
+      <h3 lang="de">Sie reden in Briefen</h3>
+      <p lang="en">The two can't look into each other's notebooks. They send <b>messages</b>, like letters: the game writes "please make cube <code>-3,-1,-3</code>", and some time later a letter comes back with the map inside.</p>
+      <p lang="de">Die beiden können nicht in das Notizbuch des anderen schauen. Sie schicken sich <b>Nachrichten</b>, wie Briefe: Das Spiel schreibt "bitte bau Würfel <code>-3,-1,-3</code>", und etwas später kommt ein Brief mit der Karte darin zurück.</p>
+      <p lang="en">The game doesn't wait at the mailbox. As soon as you enter a cube, it orders the cubes behind its portals. By the time you walk through, the letter is usually already there.</p>
+      <p lang="de">Das Spiel wartet nicht am Briefkasten. Sobald du einen Würfel betrittst, bestellt es die Würfel hinter seinen Portalen. Wenn du hindurchgehst, ist der Brief meistens schon da.</p>
+      <p class="small muted" lang="en">That is why the rule book must not need a screen: the worker doesn't have one.</p>
+      <p class="small muted" lang="de">Darum darf das Regelbuch keinen Bildschirm brauchen: Der Worker hat keinen.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="cube-journey" data-lv="2" data-src="src/game/flow.js#settleIn,enterCube src/world/world.js#prepare,spec src/cubegen/index.js#generate src/world/worker.js">
+  <h2 lang="en">Try it: follow a cube, from order to screen</h2>
+  <h2 lang="de">Probier es: Folge einem Würfel, von der Bestellung bis zum Bildschirm</h2>
+  <div class="cols wide-right">
+    <ol class="steps journey small">
+      <li data-at="game" lang="en">You enter a cube. The game (<code>game/flow.js</code>) orders the cubes behind its portals, just in case.</li>
+      <li data-at="game" lang="de">Du betrittst einen Würfel. Das Spiel (<code>game/flow.js</code>) bestellt vorsichtshalber die Würfel hinter seinen Portalen.</li>
+      <li data-at="world" lang="en"><code>world/client.js</code> writes a letter to the worker: "please make this cube".</li>
+      <li data-at="world" lang="de"><code>world/client.js</code> schreibt dem Worker einen Brief: "Bitte bau diesen Würfel."</li>
+      <li data-at="world" lang="en">In the worker, the planner (<code>world/world.js</code>) solves the puzzle for the cube and its neighbours, and fixes the walls they share.</li>
+      <li data-at="world" lang="de">Im Worker löst der Planer (<code>world/world.js</code>) das Puzzle für den Würfel und seine Nachbarn und legt die Wände fest, die sie sich teilen.</li>
+      <li data-at="themes" lang="en">It looks up the theme of the depth: how hilly, how much water, which colours.</li>
+      <li data-at="themes" lang="de">Er schaut das Thema der Tiefe nach: wie hügelig, wie viel Wasser, welche Farben.</li>
+      <li data-at="cubegen" lang="en">The cube factory (<code>cubegen/</code>) builds the cube step by step, and checks it. Can't get through? Throw it away, try again.</li>
+      <li data-at="cubegen" lang="de">Die Würfelfabrik (<code>cubegen/</code>) baut den Würfel Schritt für Schritt und prüft ihn. Man kommt nicht durch? Wegwerfen, noch mal.</li>
+      <li data-at="core" lang="en">All along, it uses the rule book: how big a cube is, how high a step is, its own dice.</li>
+      <li data-at="core" lang="de">Dabei benutzt sie die ganze Zeit das Regelbuch: wie groß ein Würfel ist, wie hoch eine Stufe ist, ihre eigenen Würfel zum Würfeln.</li>
+      <li data-at="render" lang="en">Still in the worker, one file of the painter (<code>render/cubegeo.js</code>) turns the cube into triangles.</li>
+      <li data-at="render" lang="de">Noch im Worker macht eine Datei des Malers (<code>render/cubegeo.js</code>) aus dem Würfel Dreiecke.</li>
+      <li data-at="world" lang="en">The worker sends a letter back: the map and the triangles. <code>world/client.js</code> keeps them.</li>
+      <li data-at="world" lang="de">Der Worker schickt einen Brief zurück: die Karte und die Dreiecke. <code>world/client.js</code> hebt sie auf.</li>
+      <li data-at="game" lang="en">You walk through the portal. The game puts the map into the notebook.</li>
+      <li data-at="game" lang="de">Du gehst durch das Portal. Das Spiel legt die Karte ins Notizbuch.</li>
+      <li data-at="render" lang="en">The painter builds the 3D scene: ground, water, trees, lights.</li>
+      <li data-at="render" lang="de">Der Maler baut die 3D-Szene: Boden, Wasser, Bäume, Lichter.</li>
+      <li data-at="game" lang="en">The monsters come in. They will walk on the floors in the map.</li>
+      <li data-at="game" lang="de">Die Monster kommen herein. Sie werden auf den Böden in der Karte laufen.</li>
+      <li data-at="physics" lang="en">From now on, the body asks the map every frame: how high is the ground right here?</li>
+      <li data-at="physics" lang="de">Ab jetzt fragt der Körper die Karte in jedem Bild: Wie hoch ist der Boden genau hier?</li>
+    </ol>
+    <div class="demo real" data-demo="parts"></div>
+  </div>
+</section>
+
+<section class="slide" id="swing-journey" data-lv="2" data-src="src/game/sword.js#updateSword,hitWithSword src/core/combat.js#swordHit src/game/enemies.js#updateEnemies src/game/juice.js#enemyHitFx">
+  <h2 lang="en">Try it: follow one sword hit</h2>
+  <h2 lang="de">Probier es: Folge einem Schwerthieb</h2>
+  <div class="cols wide-right">
+    <ol class="steps journey small">
+      <li data-at="game" lang="en">You click on a spider. <code>game/input.js</code> hears the click, and <code>game/orders.js</code> makes it an order: "go there and attack".</li>
+      <li data-at="game" lang="de">Du klickst auf eine Spinne. <code>game/input.js</code> hört den Klick, und <code>game/orders.js</code> macht daraus einen Befehl: "Geh hin und greif an."</li>
+      <li data-at="physics" lang="en">The hero walks there. The body knows which floors connect, so it goes around walls.</li>
+      <li data-at="physics" lang="de">Der Held läuft hin. Der Körper weiß, welche Böden verbunden sind, also geht er um Wände herum.</li>
+      <li data-at="game" lang="en">Close enough! <code>game/sword.js</code> asks for a swing...</li>
+      <li data-at="game" lang="de">Nah genug! <code>game/sword.js</code> bittet um einen Hieb...</li>
+      <li data-at="core" lang="en">...and the rule book (<code>core/combat.js</code>) runs it: wind-up, the moment the blade can hit, recovery.</li>
+      <li data-at="core" lang="de">...und das Regelbuch (<code>core/combat.js</code>) führt ihn aus: Ausholen, der Moment, in dem die Klinge treffen kann, Erholen.</li>
+      <li data-at="game" lang="en">While the blade can hit, the game checks every monster, every frame:</li>
+      <li data-at="game" lang="de">Solange die Klinge treffen kann, prüft das Spiel in jedem Bild jedes Monster:</li>
+      <li data-at="core" lang="en">Is it inside the sword's arc? (a rule)</li>
+      <li data-at="core" lang="de">Ist es im Bogen des Schwerts? (eine Regel)</li>
+      <li data-at="physics" lang="en">Is there a wall in between? (the body knows)</li>
+      <li data-at="physics" lang="de">Ist eine Wand dazwischen? (der Körper weiß es)</li>
+      <li data-at="core" lang="en">Hit! The rule book works out the damage, maybe a critical hit, and takes it off the spider's health. Just numbers so far.</li>
+      <li data-at="core" lang="de">Treffer! Das Regelbuch rechnet den Schaden aus, vielleicht einen kritischen Treffer, und zieht ihn von der Gesundheit der Spinne ab. Bis jetzt nur Zahlen.</li>
+      <li data-at="render" lang="en">Now the juice: <code>game/juice.js</code> asks the painter for sparks and a flying damage number...</li>
+      <li data-at="render" lang="de">Jetzt kommt der Juice: <code>game/juice.js</code> bittet den Maler um Funken und eine fliegende Schadenszahl...</li>
+      <li data-at="audio" lang="en">...and the band for a "thwack".</li>
+      <li data-at="audio" lang="de">...und die Band um ein "Zack".</li>
+      <li data-at="game" lang="en">Health at zero? <code>game/enemies.js</code> gives you experience and drops the loot.</li>
+      <li data-at="game" lang="de">Gesundheit bei null? <code>game/enemies.js</code> gibt dir Erfahrung und lässt die Beute fallen.</li>
+      <li data-at="core" lang="en">Which loot? The rule book's sword machine (<code>core/gear/</code>) decides.</li>
+      <li data-at="core" lang="de">Welche Beute? Die Schwertmaschine im Regelbuch (<code>core/gear/</code>) entscheidet.</li>
+    </ol>
+    <div class="demo real" data-demo="parts"></div>
+  </div>
+  <p class="small muted" lang="en">One click, five parts, and a dozen files. Each one only does its own small job.</p>
+  <p class="small muted" lang="de">Ein Klick, fünf Teile und ein Dutzend Dateien. Jede macht nur ihre eigene kleine Aufgabe.</p>
+</section>
+
+<section class="slide" id="before" data-lv="2">
+  <h2 lang="en">Made before you play, made while you play</h2>
+  <h2 lang="de">Vor dem Spielen gemacht, beim Spielen gemacht</h2>
+  <div class="cols">
+    <div class="card">
+      <h3 lang="en">Before you play</h3>
+      <h3 lang="de">Vor dem Spielen</h3>
+      <p lang="en">Some things are made once, by the people who build the game, and saved as files:</p>
+      <p lang="de">Manche Dinge werden einmal gemacht, von den Leuten, die das Spiel bauen, und als Dateien gespeichert:</p>
+      <ul>
+        <li lang="en"><b>Models.</b> Scripts in <code>blender/</code> build the hero, the monsters, swords and houses in Blender and save them into <code>assets/</code>. The painter loads them from there.</li>
+        <li lang="de"><b>Modelle.</b> Skripte in <code>blender/</code> bauen den Helden, die Monster, Schwerter und Häuser in Blender und speichern sie in <code>assets/</code>. Der Maler lädt sie von dort.</li>
+        <li lang="en"><b>Item pictures</b> for the inventory, rendered by the same scripts.</li>
+        <li lang="de"><b>Bilder von Gegenständen</b> fürs Inventar, von denselben Skripten gerendert.</li>
+        <li lang="en"><b>Songs.</b> Written as text files in <code>music/</code>. The band reads them and plays them.</li>
+        <li lang="de"><b>Lieder.</b> Als Textdateien in <code>music/</code> geschrieben. Die Band liest sie und spielt sie.</li>
+      </ul>
+      <a class="portal" href="art.html" lang="en">Making monsters</a>
+      <a class="portal" href="art.html" lang="de">Monster bauen</a>
+    </div>
+    <div class="card">
+      <h3 lang="en">While you play</h3>
+      <h3 lang="de">Beim Spielen</h3>
+      <p lang="en">Everything else is made by code, right when it's needed:</p>
+      <p lang="de">Alles andere macht der Code, genau dann, wenn es gebraucht wird:</p>
+      <ul>
+        <li lang="en"><b>Every cube</b>, by the planner and the cube factory.</li>
+        <li lang="de"><b>Jeder Würfel</b>, vom Planer und der Würfelfabrik.</li>
+        <li lang="en"><b>Every sword</b> that drops, by the sword machine.</li>
+        <li lang="de"><b>Jedes Schwert</b>, das fällt, von der Schwertmaschine.</li>
+        <li lang="en"><b>Every sound</b>: no sound files at all, only recipes.</li>
+        <li lang="de"><b>Jedes Geräusch</b>: überhaupt keine Sounddateien, nur Rezepte.</li>
+        <li lang="en"><b>The music itself</b>: the songs are only notes, the instruments are made from math.</li>
+        <li lang="de"><b>Die Musik selbst</b>: Die Lieder sind nur Noten, die Instrumente entstehen aus Mathe.</li>
+      </ul>
+      <p class="small muted" lang="en">All the code that invents the world is smaller than the model of a single fire cat. Rules take much less space than the things they make.</p>
+      <p class="small muted" lang="de">Der ganze Code, der die Welt erfindet, ist kleiner als das Modell einer einzigen Feuerkatze. Regeln brauchen viel weniger Platz als die Dinge, die sie machen.</p>
+    </div>
+  </div>
+  <p lang="en">And then there are parts that are not in the game at all: <code>tests/</code> and <code>tools/</code>. They borrow the game's parts to check and measure them.</p>
+  <p lang="de">Und dann gibt es Teile, die gar nicht im Spiel sind: <code>tests/</code> und <code>tools/</code>. Sie leihen sich die Teile des Spiels, um sie zu prüfen und zu messen.</p>
+  <a class="portal" href="checks.html" lang="en">Keeping it working</a>
+  <a class="portal" href="checks.html" lang="de">Damit alles läuft</a>
+</section>
+
+<section class="slide" id="main-js" data-lv="3" data-src="src/main.js#frame">
+  <h2 lang="en">The real code: where it all starts</h2>
+  <h2 lang="de">Der echte Code: wo alles anfängt</h2>
+  <div class="cols wide-left">
+    <pre data-src="src/main.js#frame"><code>// Entry point: load the first cube and run the frame loop.
+import { renderer, scene, camera } from './render/scene.js';
+import { loadCube } from './game/flow.js';
+import { updatePlayer } from './game/update.js';
+import { updateEnemies } from './game/enemies.js';
+// ... about 50 more imports ...
+
+function frame() {
+  // ... listen, think, draw (see the next room) ...
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+loadCube();
+setStatus('Welcome to town. Follow the path through the grove to leave.');
+frame();</code></pre>
+    <div>
+      <p lang="en"><code>import</code> lines borrow functions from other files. <code>./render/scene.js</code> means "the file <code>scene.js</code> in the folder <code>render</code> next to me". Every arrow in the picture of the parts is made of lines like these.</p>
+      <p lang="de"><code>import</code>-Zeilen leihen sich Funktionen aus anderen Dateien. <code>./render/scene.js</code> heißt: "die Datei <code>scene.js</code> im Ordner <code>render</code> neben mir". Jeder Pfeil im Bild der Teile besteht aus solchen Zeilen.</p>
+      <p lang="en"><code>function frame()</code> is the conductor's list. At the end it asks the browser: <i>"call <code>frame</code> again before the next picture"</i>. That is how it runs forever.</p>
+      <p lang="de"><code>function frame()</code> ist die Liste des Dirigenten. Am Ende bittet sie den Browser: <i>"Ruf <code>frame</code> vor dem nächsten Bild nochmal auf."</i> So läuft sie für immer.</p>
+      <p lang="en">The last three lines run once: load the town cube, show the welcome message, start the heartbeat.</p>
+      <p lang="de">Die letzten drei Zeilen laufen nur einmal: den Stadtwürfel laden, die Begrüßung zeigen, den Herzschlag starten.</p>
+      <a class="deeper" data-lv="3" href="loop.html#frame-code" lang="en">The whole frame function, explained</a>
+      <a class="deeper" data-lv="3" href="loop.html#frame-code" lang="de">Die ganze frame-Funktion, erklärt</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="letters-code" data-lv="3" data-src="src/world/worker.js">
+  <h2 lang="en">The real code: the worker's mailbox</h2>
+  <h2 lang="de">Der echte Code: der Briefkasten des Workers</h2>
+  <div class="cols wide-left">
+    <pre data-code="src/world/worker.js"></pre>
+    <div>
+      <p lang="en">This is the whole worker. It is short, because the real work happens in the files it imports.</p>
+      <p lang="de">Das ist der ganze Worker. Er ist kurz, weil die echte Arbeit in den Dateien passiert, die er importiert.</p>
+      <ul>
+        <li lang="en"><code>onmessage</code> is the mailbox. Every letter from the game arrives here, as <code>data</code>.</li>
+        <li lang="de"><code>onmessage</code> ist der Briefkasten. Jeder Brief vom Spiel kommt hier an, als <code>data</code>.</li>
+        <li lang="en">A letter of type <code>'init'</code> says: "here is the seed, start a new world".</li>
+        <li lang="de">Ein Brief vom Typ <code>'init'</code> sagt: "Hier ist der Seed, fang eine neue Welt an."</li>
+        <li lang="en">A letter of type <code>'cube'</code> says: "make this cube". The worker builds it, turns it into triangles, and answers with <code>postMessage</code>: the letter back.</li>
+        <li lang="de">Ein Brief vom Typ <code>'cube'</code> sagt: "Bau diesen Würfel." Der Worker baut ihn, macht Dreiecke daraus und antwortet mit <code>postMessage</code>: dem Brief zurück.</li>
+        <li lang="en">If building fails, the answer is a letter of type <code>'error'</code> instead, so the game is never left waiting forever.</li>
+        <li lang="de">Wenn das Bauen schiefgeht, ist die Antwort stattdessen ein Brief vom Typ <code>'error'</code>, damit das Spiel nie ewig wartet.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="big-picture" data-lv="1">
+  <h2 lang="en">The big picture</h2>
+  <h2 lang="de">Das große Bild</h2>
+  <p lang="en">If you remember five things from this room, make it these:</p>
+  <p lang="de">Wenn du dir aus diesem Raum fünf Dinge merkst, dann diese:</p>
+  <ol class="steps">
+    <li lang="en"><b>One job per part.</b> The planner plans, the painter paints, the rule book knows the rules.</li>
+    <li lang="de"><b>Eine Aufgabe pro Teil.</b> Der Planer plant, der Maler malt, das Regelbuch kennt die Regeln.</li>
+    <li lang="en"><b>A conductor</b> asks them in the right order, 60 times a second.</li>
+    <li lang="de"><b>Ein Dirigent</b> fragt sie in der richtigen Reihenfolge, 60-mal pro Sekunde.</li>
+    <li lang="en"><b>Arrows point down.</b> The rules at the bottom need nobody, so everybody can use them.</li>
+    <li lang="de"><b>Pfeile zeigen nach unten.</b> Die Regeln ganz unten brauchen niemanden, darum kann jeder sie benutzen.</li>
+    <li lang="en"><b>Shared things are written down</b>: the notebook, and the map in its box.</li>
+    <li lang="de"><b>Was alle brauchen, wird aufgeschrieben</b>: das Notizbuch und die Karte in ihrer Kiste.</li>
+    <li lang="en"><b>Slow work goes to the worker</b>, so the picture never freezes.</li>
+    <li lang="de"><b>Langsame Arbeit geht an den Worker</b>, damit das Bild nie einfriert.</li>
+  </ol>
+  <p lang="en">The rooms that follow each visit one of the parts. You can always come back here to see where you are.</p>
+  <p lang="de">Die nächsten Räume besuchen jeweils einen der Teile. Du kannst immer hierher zurückkommen, um zu sehen, wo du bist.</p>
+</section>
+
+</main>
+<script type="module" src="deck.js"></script>
+</body>
+</html>

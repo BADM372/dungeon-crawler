@@ -139,6 +139,7 @@ export const portalSeen = (k, m) => Object.fromEntries(m.portals.map(p => [p.id,
 // `from` (null: the spawn pad). `back`: returning to a cube left by a fall, with the
 // entry and visit it had then (see game/fall.js). `at`: arriving at that point instead (the
 // town portal, game/townportal.js)
+// kids-docs: architecture.html#cube-journey (see kids-docs/README.md)
 export function enterCube(c, from = null, back = null, at = null) {
   const k = c.key;
   if (!back) discover(c);
@@ -169,6 +170,7 @@ export function enterCube(c, from = null, back = null, at = null) {
 }
 
 // HUD, minimap and neighbours for the cube we are in now
+// kids-docs: architecture.html#cube-journey (see kids-docs/README.md)
 export function settleIn(neighbors = true) {
   const c = state.cubes.cubes.get(state.cubeKey);
   showStats(c.map, state.cubeKey, state.cubes.seed, c.visits);
