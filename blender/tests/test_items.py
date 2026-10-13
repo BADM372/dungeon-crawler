@@ -102,6 +102,14 @@ def check_glb(path, reports):
                 assert len(extra['string_tip_gltf']) == 3, node['name']
             if extra['weapon'] == 'staff':
                 assert len(extra['head_gltf']) == 3, node['name']
+        if report['category'] in ('wearable', 'held'):
+            socket, quat, offset, hold = items.WEARS[node['name']]
+            assert (extra['socket'], extra['slot']) == (socket, items.SLOTS[socket]), node['name']
+            assert extra['attach'] == ('head' if socket == 'head' else 'hand')
+            assert extra['category'] == ('wearable' if socket == 'head' else 'held')
+            assert abs(sum(c * c for c in extra['mount_quat_gltf']) - 1) < 1e-3, node['name']
+            assert extra['mount_offset_gltf'] == [round(c, 6) for c in offset], node['name']
+            assert extra.get('hold') == hold, node['name']
         triangles = 0
         low, high = [float('inf')] * 3, [-float('inf')] * 3
         meshes = [(node['mesh'], [0, 0, 0])] + [(gltf['nodes'][c]['mesh'], gltf['nodes'][c].get('translation', [0, 0, 0]))

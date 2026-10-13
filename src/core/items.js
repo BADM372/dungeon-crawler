@@ -73,7 +73,38 @@ export const TOWN_PORTAL = Object.freeze({
   description: 'Opens a portal to town after 5 seconds of standing still. Step back through it in town to return here. Never used up.',
   icon: icon('item_town_portal'),
 });
+// Things a character wears or carries (render/figure.js puts them on): `slot` is where they go,
+// one thing per slot (OUTFIT_SLOTS): on the head, or in the right or the left hand. Their models
+// say which bone they sit on, how, and how the arm holds them (blender/items.py WEARS).
+// `glow`: the colour the gem-like part shines in. No stats or uses yet; for now only the
+// villagers wear them (world/town.js VILLAGERS), but they are items like any other.
+const wearable = (id, name, slot, description, more = {}) => Object.freeze({
+  id, name, category: slot === 'head' ? 'wearable' : 'held', slot, stackLimit: 1, icon: icon(id), model: model(id),
+  description, ...more });
+export const OUTFIT_SLOTS = Object.freeze(['head', 'right', 'left']);
+export const WEARABLES = Object.freeze([
+  wearable('wear_headscarf', 'Headscarf', 'head', 'A plum kerchief with golden dots, knotted at the nape.'),
+  wearable('wear_welding_mask', 'Welding mask', 'head', 'A smith\'s mask with a dark glass window.'),
+  wearable('wear_wizard_hat', 'Wizard hat', 'head', 'Tall, pointed and covered in stars.'),
+  wearable('held_towel', 'Towel', 'left', 'A striped towel, carried over the forearm.'),
+  wearable('held_crystal_ball', 'Crystal ball', 'right', 'It floats over the palm and glows softly.', { glow: '#7fb4ff' }),
+  wearable('held_rope', 'Rope', 'right', 'A coil of hemp rope.'),
+  wearable('held_hammer', 'Hammer', 'right', 'A smith\'s hammer.'),
+  wearable('held_pliers', 'Pliers', 'left', 'A smith\'s pliers, holding a glowing billet.', { glow: '#ff7a2a' }),
+  wearable('held_feed_bag', 'Feed bag', 'left', 'Grain for the animals, and a carrot.'),
+]);
+// what a list of worn and held item ids puts in each slot: { head, right, left } (missing: empty)
+export function outfitOf(ids) {
+  const out = {};
+  for (const id of ids) {
+    const slot = ITEMS[id]?.slot;
+    if (!slot) throw new TypeError(`Not a wearable item: ${id}`);
+    if (out[slot]) throw new Error(`Two things for the ${slot} slot: ${out[slot]} and ${id}`);
+    out[slot] = id;
+  }
+  return out;
+}
 // Mana and stamina potions and the materials have inventory definitions only; no use, crafting
 // or shops yet.
-export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, HEALTH_POTION, ...stackables, TOWN_PORTAL].map(i => [i.id, i])));
+export const ITEMS = Object.freeze(Object.fromEntries([...WEAPONS, ...COINS, HEALTH_POTION, ...stackables, TOWN_PORTAL, ...WEARABLES].map(i => [i.id, i])));
 export const OLD_SWORD = WEAPONS[0];

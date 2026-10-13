@@ -18,6 +18,7 @@ import { cancelSword } from './sword.js';
 import { drawMinimap } from './minimap.js';
 import { whenPropsReady } from '../render/props.js';
 import { townAssetsReady } from '../render/townassets.js';
+import { villagersReady } from '../render/villagers.js';
 import { createPlayerStats, createRun, takeDamage } from '../core/progression.js';
 import { restoreDefeated, gateLocked, guardianLockMessage } from '../core/guardians.js';
 import { syncEquippedWeapon } from './equipment.js';
@@ -216,7 +217,9 @@ export function newWorld(seed = (Math.random() * 1e9) >>> 0) {
   clearInput();
   Object.assign(player, createPlayerStats());
   state.run = createRun(); state.inventoryOpen = false;
-  return whenReady(Promise.all([state.cubes.get(state.cubes.start), townAssetsReady, syncEquippedWeapon()]))
+  // the villagers are a nicety: a failure to load them (logged) does not hold the game up
+  return whenReady(Promise.all([state.cubes.get(state.cubes.start), townAssetsReady, syncEquippedWeapon(),
+    villagersReady.catch(() => null)]))
     .then(([c]) => { enterCube(c); state.transitioning = false; });
 }
 

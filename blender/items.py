@@ -80,12 +80,38 @@ MOUNTS = {
 # the player's attack clip for each kind (character.py)
 CLIPS = {'sword': 'Slash', 'bow': 'Shoot', 'crossbow': 'CrossbowShot', 'staff': 'Cast'}
 
+# Things a character wears or carries (category 'wearable' / 'held'): name: (socket bone,
+# rotation (glTF x y z w) and offset (rig units) in the socket bone's head frame, the arm's
+# hold pose (character.py CARRIES; the game lays its Hold<Name> clip over the others)).
+# Headwear is modelled around the head's centre (figure.HEAD_Z; Blender Z up, the face towards
+# -Y), so it sits upright above the head bone's root; held items are modelled around the fist.
+# The rotations and offsets come from blender/loadout.py --mounts (AIMS there).
+WEARS = {
+    'wear_headscarf': ('head', (0.0, 0.0, 0.0, 1.0), (0.0, 0.26, 0.0), None),
+    'wear_welding_mask': ('head', (0.0, 0.0, 0.0, 1.0), (0.0, 0.26, 0.0), None),
+    'wear_wizard_hat': ('head', (0.0, 0.0, 0.0, 1.0), (0.0, 0.26, 0.0), None),
+    'held_towel': ('hand.L', (0.6848, -0.1319, 0.1281, 0.7052), (0.0, -0.11, 0.0), 'towel'),
+    'held_crystal_ball': ('hand.R', (-0.0873, -0.7346, -0.6202, 0.2609), (0.1537, 0.0733, 0.2943), 'orb'),
+    'held_rope': ('hand.R', (-0.4136, -0.3007, -0.8559, 0.0775), (0.0, 0.0, 0.0), 'rope'),
+    'held_hammer': ('hand.R', (0.5313, 0.5908, 0.4854, 0.3648), (0.0, 0.0, 0.0), 'hammer'),
+    'held_pliers': ('hand.L', (-0.0316, 0.6471, 0.7473, 0.1478), (0.0, 0.0, 0.0), 'pliers'),
+    'held_feed_bag': ('hand.L', (-0.0821, 0.5792, 0.7958, 0.1564), (0.0, 0.0, 0.0), 'feed'),
+}
+# where in the outfit each socket is (core/items.js `slot`)
+SLOTS = {'head': 'head', 'hand.R': 'right', 'hand.L': 'left'}
+# how high over the fist (rig units) the crystal ball floats; the game bobs it about there
+BALL_FLOAT = .34
+
 
 def mount_matrix(kind):
-    """The weapon's own (Blender) space in its socket bone's head frame, from MOUNTS."""
-    x, y, z, w = MOUNTS[kind][1]
+    """The weapon's own (Blender) space in its socket bone's head frame, from MOUNTS (or a worn
+    or held item's, from WEARS, by its name)."""
+    if kind in WEARS:
+        _, (x, y, z, w), offset, _ = WEARS[kind]
+    else:
+        (x, y, z, w), offset = MOUNTS[kind][1], (0, 0, 0)
     to_gltf = Matrix(((1, 0, 0), (0, 0, 1), (0, -1, 0)))
-    return (Quaternion((w, x, y, z)).to_matrix() @ to_gltf).to_4x4()
+    return Matrix.Translation(offset) @ (Quaternion((w, x, y, z)).to_matrix() @ to_gltf).to_4x4()
 
 
 def gltf(p):
@@ -790,6 +816,329 @@ def chest(m, v=0):
     lid.slot = 0
 
 
+# ----------------------------------------------------------------------------
+# Worn and held things (WEARS). Headwear is built around the head's centre: the clay head is
+# a ball of figure.HEAD_R (.26); the face looks towards -Y. Held items are built around the
+# fist, which is the round end of an arm of radius figure.LIMB_R (.125).
+# ----------------------------------------------------------------------------
+HEAD_R = .26
+SCARF = '#8a3a6c'
+SCARF_DOTS = '#e3b64e'
+SCARF_DARK = '#6d2c55'
+TOWEL = '#ece6d4'
+TOWEL_STRIPE = '#5e86b2'
+ROPE = '#c7a36a'
+ROPE_DARK = '#9c7a48'
+BURLAP = '#b59c6b'
+BURLAP_DARK = '#8f7650'
+MASK = '#6f7550'
+MASK_DARK = '#4f5439'
+LENS = '#27463a'
+HAT = '#4a3d8e'
+HAT_DARK = '#3a2f72'
+STAR = '#e6c35a'
+BALL = ('#8fb8e6', '#c9e2f7', '#6f8fd0')
+
+
+def on_sphere(center, radius, phi, theta):
+    """A point on a sphere: theta from straight up, phi round from the front (-Y) towards +X."""
+    s = math.sin(theta)
+    return Vector(center) + radius * Vector((s * math.sin(phi), -s * math.cos(phi), math.cos(theta)))
+
+
+def recolor(m, k, color, shade=1):
+    """Give face k another colour (the facet jitter as Mesh.face draws it)."""
+    value = shade * m.rng.uniform(.93, 1.07)
+    m.colors[k] = tuple(min(1, c * value) for c in props.linear(color)) + (1,)
+
+
+def sheet(m, grid, thickness, color, closed=False):
+    """A cloth or shell over a grid of (point, outward direction) (rows of columns), `thickness`
+    thick outwards. color(i, j): the face between columns i, i + 1 and rows j, j + 1. closed:
+    the columns wrap round."""
+    rows, cols = len(grid), len(grid[0])
+    outer = [[m.vert(p + n * thickness) for p, n in row] for row in grid]
+    inner = [[m.vert(p) for p, n in row] for row in grid]
+    span = cols if closed else cols - 1
+    for j in range(rows - 1):
+        for i in range(span):
+            k = (i + 1) % cols
+            c = color(i, j)
+            m.face((outer[j][i], outer[j][k], outer[j + 1][k], outer[j + 1][i]), c)
+            m.face((inner[j][k], inner[j][i], inner[j + 1][i], inner[j + 1][k]), c, shade=.8)
+    # the edges
+    for j in (0, rows - 1):
+        for i in range(span):
+            k = (i + 1) % cols
+            m.face((inner[j][i], inner[j][k], outer[j][k], outer[j][i]), color(min(i, span - 1), min(j, rows - 2)), shade=.9)
+    if not closed:
+        for i in (0, cols - 1):
+            for j in range(rows - 1):
+                m.face((inner[j][i], inner[j + 1][i], outer[j + 1][i], outer[j][i]), color(min(i, span - 1), j), shade=.9)
+    return outer
+
+
+def star(m, center, normal, size, color, points=5, depth=.012):
+    """A flat star standing out of a surface along `normal`."""
+    normal = Vector(normal).normalized()
+    u = normal.cross(Vector((0, 0, 1)))
+    if u.length < 1e-6:
+        u = Vector((1, 0, 0))
+    u.normalize()
+    v = normal.cross(u)
+    rim = []
+    for i in range(points * 2):
+        a = math.pi * i / points
+        r = size if i % 2 == 0 else size * .45
+        rim.append(Vector(center) + u * (r * math.sin(a)) + v * (r * math.cos(a)))
+    top = [m.vert(p + normal * depth) for p in rim]
+    low = [m.vert(p) for p in rim]
+    mid_top = m.vert(Vector(center) + normal * depth * 1.4)
+    for i in range(len(rim)):
+        j = (i + 1) % len(rim)
+        m.face((top[i], top[j], mid_top), color)
+        m.face((low[i], low[j], top[j], top[i]), color, shade=.85)
+    m.face(tuple(reversed(low)), color)
+
+
+def headscarf(m, v=0):
+    """A plum kerchief with golden dots over the hair, from the forehead down over the ears to the nape,
+    knotted at the back with two short tails."""
+    def edge(phi):   # how far down it reaches (from straight up) all round
+        return math.radians(64 + 54 * (1 - math.cos(phi)) / 2 + 10 * math.sin(phi) ** 2)
+    n, rows, r = 24, 7, HEAD_R + .008
+    grid = []
+    for j in range(rows + 1):
+        row = []
+        for i in range(n):
+            phi = math.tau * i / n
+            theta = max(.06, edge(phi) * j / rows)
+            p = on_sphere((0, 0, 0), r, phi, theta)
+            row.append((p, p.normalized()))
+        grid.append(row)
+    sheet(m, grid, .024, lambda i, j: SCARF_DOTS if (i + 3 * (j % 2)) % 6 == 0 and 0 < j < rows - 1 else SCARF,
+          closed=True)
+    m.lathe((0, 0, r + .02), [(-.02, .025), (0, 0)], SCARF, n=8, jitter=0)   # the crown
+    # the hem: a rolled edge all round
+    hem = [on_sphere((0, 0, 0), r + .014, math.tau * i / n, edge(math.tau * i / n)) for i in range(n + 1)]
+    for a, b in zip(hem, hem[1:]):
+        m.tube([a, b], .018, SCARF_DARK, n=5)
+    # the knot at the nape and its tails
+    knot = on_sphere((0, 0, 0), r + .03, math.pi, math.radians(112))
+    m.blob(knot, (.055, .045, .045), SCARF_DARK, n=6, jitter=.08)
+    for side in (-1, 1):
+        base = knot + Vector((side * .035, .01, -.01))
+        tip = base + Vector((side * .08, .07, -.16))
+        m.leaf(base, tip, .045, SCARF)
+        m.box(tip + Vector((0, 0, .015)), (.03, .012, .03), SCARF_DOTS, tilt=side * .4)
+
+
+def welding_mask(m, v=0):
+    """A smith's welding mask, visor down: a flat, boxy olive shield in front of the face, a
+    little narrower at the chin, with a dark green window in its upper half. Its sides and top
+    turn back towards the head, hinged on knobs to a headband; the round head shows behind it."""
+    top_w, low_w, low, high, front, back = .5, .43, -.25, .27, -.34, -.13
+    rows, cols = 6, 8
+
+    def across(z):   # the plate's half width at height z
+        return (low_w + (top_w - low_w) * (z - low) / (high - low)) / 2
+
+    def plate_y(x, z):   # curved a little round the face, the chin turned back
+        return front + .35 * x * x + .12 * max(0, -.12 - z) ** 1.5 * 4
+    grid = []
+    for j in range(rows + 1):
+        z = low + (high - low) * j / rows
+        h = across(z)
+        grid.append([(Vector((x, plate_y(x, z), z)), Vector((0, -1, 0)))
+                     for x in [-h + 2 * h * i / cols for i in range(cols + 1)]])
+    sheet(m, grid, .024, lambda i, j: MASK)
+    # the sides and the top turn back towards the head, so it reads as a box
+    for side in (-1, 1):
+        flank = []
+        for j in range(rows + 1):
+            z = low + (high - low) * j / rows
+            x = side * across(z)
+            y0 = plate_y(x, z)
+            flank.append([(Vector((x, y0 + (back - y0) * t, z)), Vector((side, 0, 0))) for t in (0, .5, 1)])
+        sheet(m, flank, .022, lambda i, j: MASK_DARK)
+    h = across(high)
+    lid = [[(Vector((x, plate_y(x, high) + (back - plate_y(x, high)) * t, high)), Vector((0, 0, 1)))
+            for x in [-h + 2 * h * i / cols for i in range(cols + 1)]] for t in (0, .5, 1)]
+    sheet(m, lid, .022, lambda i, j: MASK_DARK)
+    # the window: a raised frame and the dark green glass, in the upper half
+    wz, ww, wh = .1, .3, .12
+    y = plate_y(0, wz) - .024
+    for (cx, cz, sx, sz) in [(0, wz + wh / 2 + .02, ww + .08, .04), (0, wz - wh / 2 - .02, ww + .08, .04),
+                             (-ww / 2 - .02, wz, .04, wh), (ww / 2 + .02, wz, .04, wh)]:
+        m.box((cx, y - .012 + .35 * cx * cx, cz), (sx, .03, sz), MASK_DARK)
+    m.slot = 2
+    m.box((0, y + .004, wz), (ww, .012, wh), LENS)
+    m.box((-.08, y - .004, wz + .03), (.06, .004, .018), '#7fa595')   # a glint
+    m.slot = 1
+    # hinge knobs on the sides, where the headband holds the mask
+    for side in (-1, 1):
+        m.lathe((side * (across(.02) + .01), back + .03, .02), [(0, .045), (.03, .045), (.045, .028)], IRON,
+                n=8, jitter=0, axis=(side, 0, 0))
+    m.slot = 0
+    # the headband round the back of the head and a strap over the crown
+    band = [Vector((side * (across(.02) + .01), back + .03, .02)) for side in (1,)]
+    band += [on_sphere((0, 0, 0), HEAD_R + .012, math.radians(a), math.radians(88)) for a in range(100, 261, 20)]
+    band += [Vector((-(across(.02) + .01), back + .03, .02))]
+    m.tube(band, .022, LEATHER, n=5)
+    crown = [on_sphere((0, 0, 0), HEAD_R + .012, math.radians(90 if a >= 0 else -90), math.radians(abs(a)))
+             for a in range(-88, 89, 16)]
+    crown = [p + Vector((0, .02, 0)) for p in crown]
+    m.tube(crown, .02, LEATHER, n=5)
+
+
+def wizard_hat(m, v=0):
+    """A tall indigo wizard's hat with a wide, drooping brim, a gold band and stars, its tip
+    bent back."""
+    base = .1   # where the brim sits on the head (the head is .24 across there)
+    m.lathe((0, .01, base), [(-.05, .47), (-.035, .48), (-.005, .43), (.012, .3), (.02, .235)], HAT_DARK, n=18,
+            jitter=0, colors=[HAT_DARK, HAT, HAT])
+    path = [(0, .01, base), (0, .02, base + .18), (0, .04, base + .38), (0, .1, base + .56), (0, .2, base + .7),
+            (0, .32, base + .74)]
+    radii = [.25, .2, .145, .09, .045, .012]
+    m.tube(path, radii, HAT, n=12)
+    m.slot = 1
+    m.lathe((0, .01, base), [(0, .255), (.07, .235)], STAR, n=18, jitter=0)
+    m.slot = 0
+    for (k, t, phi, size) in [(0, .55, -.3, .045), (1, .3, .9, .035), (1, .7, -1.1, .03), (2, .4, .2, .03),
+                              (0, .3, 2.6, .04), (2, .1, -2.2, .03)]:
+        a, b = Vector(path[k]), Vector(path[k + 1])
+        c = a.lerp(b, t)
+        r = radii[k] + (radii[k + 1] - radii[k]) * t
+        normal = Vector((math.sin(phi), -math.cos(phi), .25)).normalized()
+        star(m, c + Vector((normal.x, normal.y, 0)).normalized() * (r - .004), normal, size, STAR)
+
+
+def towel(m, v=0):
+    """A striped towel folded over a forearm (along Y): over the top of the arm, hanging down on
+    both sides, one side longer."""
+    r = .125 + .025   # the forearm's radius and a little air
+    profile = [(-r - .02, -.33), (-r - .01, -.2), (-r, -.06)]
+    profile += [(-r * math.cos(a), r * math.sin(a)) for a in [math.pi * i / 8 for i in range(1, 8)]]
+    profile += [(r, -.06), (r + .01, -.16), (r + .02, -.24)]
+    width, cols = .24, 3
+    grid = []
+    for j, (x, z) in enumerate(profile):
+        a = Vector(profile[max(j - 1, 0)])
+        b = Vector(profile[min(j + 1, len(profile) - 1)])
+        t = (b - a).normalized()
+        n = Vector((-t.y, t.x))   # outwards, away from the arm
+        if n.dot(Vector((x, z))) < 0:
+            n = -n
+        grid.append([(Vector((x, -width / 2 + width * i / cols, z)), Vector((n.x, 0, n.y))) for i in range(cols + 1)])
+    stripes = {1, len(profile) - 3}
+    sheet(m, grid, .022, lambda i, j: TOWEL_STRIPE if j in stripes else TOWEL)
+    # a little fringe on the long end
+    for i in range(5):
+        y = -width / 2 + .025 + i * (width - .05) / 4
+        m.box((-r - .03, y, -.35), (.014, .016, .04), TOWEL)
+
+
+def crystal_ball(m, v=0):
+    """A faceted crystal ball with three small shards circling it; it floats over the fist (the
+    game bobs and turns it about its centre, the origin)."""
+    r = .16
+    light, pale, deep = BALL
+    m.slot = 2
+    profile = [(-r, 0)] + [(-r * math.cos(a), r * math.sin(a)) for a in [math.pi * i / 7 for i in range(1, 7)]] + [(r, 0)]
+    m.lathe((0, 0, 0), profile, light, n=12, jitter=0, colors=[deep, light, pale, light, deep, light])
+    for i in range(3):
+        a = math.tau * i / 3 + .4
+        c = Vector((math.cos(a) * .25, math.sin(a) * .25, .04 * (i - 1)))
+        m.lathe(c + Vector((0, 0, -.03)), [(0, 0), (.03, .024), (.06, 0)], pale, n=4, jitter=0, phase=a)
+    m.slot = 0
+
+
+def rope(m, v=0):
+    """A coil of rope hanging from the fist (the coil's top, at the origin), its loose end
+    hanging out, bound where the fist holds it."""
+    turns, per, n = 3, 18, 6
+    points = []
+    for k in range(turns * per + 1):
+        a = math.pi / 2 + math.tau * k / per
+        turn = k / per
+        radius = .21 + .014 * math.sin(turn * 2.1)
+        centre = Vector((0, -.04 + .04 * turn, -.2))
+        points.append(centre + Vector((radius * math.cos(a), 0, radius * math.sin(a))))
+    start = len(m.faces)
+    m.tube(points, .03, ROPE, n=n)
+    for s in range(len(points) - 1):   # twisted strands
+        for i in range(n):
+            if (s + i) % 3 == 0:
+                recolor(m, start + 1 + s * n + i, ROPE_DARK)
+    end = points[-1]
+    start = len(m.faces)
+    tail = [end, end + Vector((.09, .01, -.06)), end + Vector((.15, .015, -.24)), end + Vector((.16, .02, -.44))]
+    m.tube(tail, [.03, .029, .027, .025], ROPE, n=n)
+    for s in range(len(tail) - 1):
+        for i in range(n):
+            if (s + i) % 3 == 0:
+                recolor(m, start + 1 + s * n + i, ROPE_DARK)
+    m.lathe(tail[-1], [(0, .03), (.035, .036), (.05, .014)], '#e2cc9a', n=6, jitter=.1,
+            axis=tail[-1] - tail[-2])   # frayed end
+    # the binding round the bundle, either side of the fist
+    for x in (-.13, .13):
+        m.lathe((x - .03, 0, 0), [(0, .06), (.06, .06)], ROPE_DARK, n=7, jitter=0, axis=(1, 0, 0))
+
+
+def hammer(m, v=0):
+    """A smith's hammer: a wooden handle through the fist, the iron head along X (the striking
+    face at +X, a cross peen at -X)."""
+    top = .5
+    m.tube([(0, 0, -.17), (0, 0, .15), (0, 0, top)], [.04, .038, .034], WOOD, n=7)
+    m.lathe((0, 0, -.19), [(0, .045), (.035, .045), (.05, .036)], '#5d4128', n=7, jitter=0)
+    m.slot = 1
+    m.box((0, 0, top), (.22, .12, .12), IRON)
+    m.lathe((.11, 0, top), [(0, .074), (.05, .074), (.065, .062)], STEEL, n=8, jitter=0, axis=(1, 0, 0))
+    m.lathe((-.11, 0, top), [(0, .064), (.12, .016)], STEEL, n=4, jitter=0, axis=(-1, 0, 0), phase=math.pi / 4)
+    m.box((0, 0, top + .065), (.04, .07, .025), IRON)   # the wedge
+    m.slot = 0
+
+
+def pliers(m, v=0):
+    """A smith's pliers: two iron arms crossing at a rivet, the handles through the fist, the
+    jaws up, holding a small glowing billet."""
+    m.slot = 1
+    for side, y in ((-1, .02), (1, -.02)):
+        m.tube([(side * .06, y, -.22), (side * .045, y, -.03), (0, y, .25), (-side * .034, y, .38),
+                (-side * .018, y, .48)], [.022, .025, .028, .022, .017], IRON, n=5)
+        m.box((-side * .024, y, .48), (.036, .03, .07), IRON)
+    m.lathe((0, -.045, .25), [(0, .04), (.09, .04)], STEEL, n=7, jitter=0, axis=(0, 1, 0))
+    m.slot = 0
+    for side in (-1, 1):
+        m.tube([(side * .062, 0, -.24), (side * .05, 0, -.07)], .036, '#7b3a2b', n=6)
+    m.slot = 2
+    m.box((0, 0, .52), (.045, .045, .15), '#f07a2a')
+    m.slot = 0
+
+
+def feed_bag(m, v=0):
+    """A small burlap bag of animal feed hanging from a cord in the fist: grain heaped in its
+    open mouth and a carrot sticking out."""
+    start, size = len(m.vertices), 1.25
+    lip = -.13
+    m.lathe((0, 0, lip - .27), [(0, .07), (.04, .13), (.14, .155), (.23, .135), (.27, .115)], BURLAP, n=9,
+            jitter=.05, colors=[BURLAP, BURLAP, BURLAP_DARK, BURLAP])
+    m.ring((0, 0, lip), .118, .022, BURLAP_DARK, n=9, section=4)
+    m.blob((0, 0, lip + .005), (.1, .1, .045), '#d9b85c', n=7, jitter=.15)
+    for i in range(7):
+        a = math.tau * i / 7
+        m.box((math.cos(a) * .06, math.sin(a) * .06, lip + .04), (.022, .014, .014), '#a67c3a', tilt=a)
+    # the carrot stands in the grain, its point down in the bag, its leaves up
+    top = Vector((.07, .03, lip + .14))
+    m.lathe(top, [(0, .034), (.05, .032), (.22, 0)], '#e07a2e', n=6, jitter=0,
+            axis=Vector((-.04, -.02, -1)).normalized())
+    for d in ((-.05, .02, .1), (.03, -.04, .11), (-.01, .05, .09)):
+        m.leaf(top, top + Vector(d), .018, '#5e9c4a')
+    m.tube([(-.118, 0, lip), (-.08, 0, lip + .07), (0, 0, .02), (.08, 0, lip + .07), (.118, 0, lip)],
+           .013, '#7d5e3c', n=5)
+    m.vertices[start:] = [(x * size, y * size, z * size) for x, y, z in m.vertices[start:]]
+
+
 # (name, builder, variant, category, attachment)
 SPECS = [(f'item_stick_{s}', stick, i, 'resource', 'ground')
          for i, s in enumerate(('short', 'forked', 'long'))] + [
@@ -807,7 +1156,16 @@ SPECS = [(f'item_stick_{s}', stick, i, 'resource', 'ground')
     ('item_potion_mana', potion, 1, 'consumable', 'ground'),
     ('item_potion_stamina', potion, 2, 'consumable', 'ground'),
     ('treasure_chest', chest, 0, 'container', 'ground'),
-    ('item_town_portal', scroll, 0, 'tool', 'ground')]
+    ('item_town_portal', scroll, 0, 'tool', 'ground')] + [
+    ('wear_headscarf', headscarf, 0, 'wearable', 'head'),
+    ('wear_welding_mask', welding_mask, 0, 'wearable', 'head'),
+    ('wear_wizard_hat', wizard_hat, 0, 'wearable', 'head'),
+    ('held_towel', towel, 0, 'held', 'hand'),
+    ('held_crystal_ball', crystal_ball, 0, 'held', 'hand'),
+    ('held_rope', rope, 0, 'held', 'hand'),
+    ('held_hammer', hammer, 0, 'held', 'hand'),
+    ('held_pliers', pliers, 0, 'held', 'hand'),
+    ('held_feed_bag', feed_bag, 0, 'held', 'hand')]
 
 
 def build(scene=None):
@@ -843,6 +1201,14 @@ def build(scene=None):
                 info.update(head_gltf=gltf(staff_head(v)))
         if builder in (arrow, bolt):
             info.update(axis_gltf='+Y', axis_blender='+Z')
+        if name in WEARS:
+            socket, quat, offset, hold = WEARS[name]
+            info.update(slot=SLOTS[socket], socket=socket, mount_quat_gltf=[round(c, 6) for c in quat],
+                        mount_offset_gltf=[round(c, 6) for c in offset])
+            if hold:
+                info['hold'] = hold
+            if builder == crystal_ball:
+                info['float'] = BALL_FLOAT
         if builder == potion:
             info['potion_type'] = ['health', 'mana', 'stamina'][v]
         if builder == chest:
@@ -858,7 +1224,7 @@ def build(scene=None):
 
 
 def validate(objects):
-    assert len(objects) == len(SPECS) == 38
+    assert len(objects) == len(SPECS) == 47
     assert {o.name for o in objects} == {s[0] for s in SPECS}
     report = []
     for obj in objects:
@@ -883,8 +1249,8 @@ def validate(objects):
         hi = [max(v[i] for v in vertices) for i in range(3)]
         if obj['attach'] in ('ground', 'nock'):
             assert abs(lo[2]) < 1e-6, (obj.name, lo)
-        else:
-            assert lo[2] < 0 < hi[2], obj.name
+        elif obj['attach'] == 'hand':
+            assert lo[2] < 0 < hi[2] or obj['category'] == 'held', obj.name
         obj['radius'] = round(max(math.hypot(v.x, v.y) for v in vertices), 4)
         report.append({'name': obj.name, 'triangles': triangles,
                        'size': [round(b - a, 4) for a, b in zip(lo, hi)],
@@ -919,13 +1285,14 @@ def setup_preview(scene, objects):
     # family, then the rest.
     groups = [[o for o in objects if o.name.startswith(p + '_')]
               for p in ('weapon_sword', 'weapon_bow', 'weapon_crossbow', 'weapon_staff')]
+    groups.append([o for o in objects if o.name.startswith(('wear_', 'held_'))])
     rest = [o for o in objects if not any(o in g for g in groups)]
     groups += [rest[:9], rest[9:]]
     labels = {'weapon_sword_greatsword': 'GREATSWORD', 'treasure_chest': 'CHEST',
               'item_town_portal': 'TOWN PORTAL'}
     for row, group in enumerate(groups):
         for i, obj in enumerate(group):
-            x, y = (i - (len(group) - 1) / 2) * 1.6, (2.5 - row) * 3.1
+            x, y = (i - (len(group) - 1) / 2) * 1.6, (3 - row) * 3.1
             low = min(v.co.z for v in obj.data.vertices)
             obj.location = (x, y, .085 - low)
             platform = bpy.data.meshes.new('ItemPlinth')
@@ -947,7 +1314,7 @@ def setup_preview(scene, objects):
     cam = link('ItemsCamera', bpy.data.cameras.new('ItemsCamera'))
     cam.location = (3, -12, 14)
     town.aim(cam, (0, 0, .35))
-    cam.data.type, cam.data.ortho_scale = 'ORTHO', 21
+    cam.data.type, cam.data.ortho_scale = 'ORTHO', 23.5
     scene.camera = cam
     for name, pos, power, size in [('ItemsKey', (-3, -5, 10), 1500, 7),
                                   ('ItemsFill', (7, -1, 8), 900, 6), ('ItemsRim', (0, 6, 9), 1100, 5)]:

@@ -1,6 +1,6 @@
 // Load prefab clips once; each instance owns its skeleton, not the source's bones.
-import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { cloneSkinned } from './skinned.js';
 
 // names.attack is one clip name, or { [attack.clip]: clip name } for several attacks.
 // names.props: standalone nodes (projectiles) taken out of the model into model.props.
@@ -27,16 +27,7 @@ export function loadEnemyModel(url, scale, names) {
   return model;
 }
 export function cloneEnemy(model) {
-  const source = model.source, copy = source.clone(true), bones = {};
-  copy.traverse(o => { if (o.isBone) bones[o.name] = o; });
-  const meshes = [];
-  source.traverse(o => { if (o.isSkinnedMesh) meshes.push(o); });
-  let i = 0;
-  copy.traverse(o => {
-    if (!o.isSkinnedMesh) return;
-    const original = meshes[i++].skeleton;
-    o.bind(new THREE.Skeleton(original.bones.map(b => bones[b.name]), original.boneInverses), o.bindMatrix);
-  });
+  const copy = cloneSkinned(model.source);
   copy.scale.setScalar(model.scale);
   return copy;
 }

@@ -12,7 +12,7 @@ import { updateCamera } from './game/camera.js';
 import { updateCut } from './game/cut.js';
 import { updateHud } from './game/hud.js';
 import { updateInventory } from './game/inventory.js';
-import { devSwapWeapon, devDropWeapon } from './game/equipment.js';
+import { devSwapWeapon, devDropWeapon, devWear } from './game/equipment.js';
 import { updateLightPool, focusPoint } from './render/lightpool.js';
 import { tickNeighbors, cullNeighbors } from './render/neighbors.js';
 import { tickProps } from './render/props.js';
@@ -112,6 +112,7 @@ window.__game = {
   get enemies() { return allEnemies(); }, updateEnemies,
   musicInfo, musicMood: forceMood,   // musicMood('boss') holds a mood to listen to it, musicMood() lets go
   devSwapWeapon: state.dev ? devSwapWeapon : undefined, devDropWeapon: state.dev ? devDropWeapon : undefined,
+  devWear: state.dev ? devWear : undefined,   // devWear('wear_wizard_hat'), devWear(null)
   ...(state.dev && { spawnEnemy: spawnEnemies, killEnemies, clearEnemies, goHorde }),
 };
 frame();

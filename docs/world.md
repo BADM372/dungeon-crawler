@@ -47,6 +47,13 @@ on generation retries, exploration order or the `?arche=` debug override. Buildi
 pond, spawn and paths are reserved before placing vegetation or validating
 reachability.
 
+Villagers stand at the trades (`VILLAGERS` in `world/town.js`, see
+[villagers.md](villagers.md)): the innkeeper on the inn's porch, a groom in front of the
+horses, the smith at the anvil, the pet keeper by the rabbit pen, and in the camp the
+alchemist and the enchanter in front of the potion and herb tents. Each is a body-sized
+circle collider, placed before the clutter, so props keep clear of them and the walkability
+checks include them.
+
 Sixteen large oak/elm/birch trees from `assets/town_trees.glb` form an irregular
 perimeter grove, with smaller shrubs and flowers in reserved pockets. The trees
 are 6–7 units tall, higher than the inn; their crowns may overhang the clearing,

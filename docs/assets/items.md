@@ -1,6 +1,6 @@
 # Loot and player equipment
 
-![38-asset overview](../../blender/previews/items-preview.png)
+![47-asset overview](../../blender/previews/items-preview.png)
 
 Built and inspected through Blender MCP. Matches the existing flat-faceted,
 texture-free clay style: warm timber, leather wraps, muted brass and steel,
@@ -22,8 +22,10 @@ one animated asset.
 | Potions | `item_potion_health` (red, round), `item_potion_mana` (blue, tall), `item_potion_stamina` (green, square) |
 | Treasure chest | `treasure_chest` (empty, lid on a hinge, `Open` / `Close` clips) |
 | Tools | `item_town_portal` (parchment scroll on two rollers, violet portal sigil, wax seal) |
+| Headwear | `wear_headscarf` (plum kerchief with golden dots, knotted at the nape), `wear_welding_mask` (flat olive shield, dark green window, headband and crown strap), `wear_wizard_hat` (indigo, drooping brim, gold band and stars, bent tip) |
+| Held | `held_towel` (striped, folded over a forearm), `held_crystal_ball` (faceted, three shards circling it), `held_rope` (a coil with a loose, frayed end), `held_hammer`, `held_pliers` (holding a glowing billet), `held_feed_bag` (burlap, grain and a carrot) |
 
-**38 assets / 14,090 triangles total.** Sticks vary in length and branching; gemstones have
+**47 assets / 18,774 triangles total.** Sticks vary in length and branching; gemstones have
 distinct cuts; swords vary in blade length, width, guard and grip, not just scale; bows in
 length, bend and recurve; crossbows in stock, prod and fittings; staffs in their heads.
 
@@ -48,7 +50,7 @@ The town portal scroll only renders its icon; the game never puts tools on the f
 
 - `blender/items.py`: deterministic source; uses sibling `props.py` and `town.py` helpers.
 - `blender/items.blend`: editable, labelled showroom with camera and lighting.
-- `assets/items.glb`: complete library, all 24 named roots at the origin.
+- `assets/items.glb`: complete library, all 47 named roots at the origin.
 - `assets/items/<name>.glb` and `<name>.png`: standalone exports and individual previews
   (the PNGs double as inventory icons).
 - `assets/items/manifest.json`: names, triangles, authoring bounds, sizes and unit/scale contract.
@@ -90,12 +92,20 @@ Export is **Y up**, with Blender `(x, y, z)` mapped to glTF `(x, z, -y)`.
   loaded bolt's tip. The string and the loaded bolt are parts (`_string`, `_bolt`).
 - **Arrow / bolt:** origin is the nock, not a grip; glTF +Y points towards its head.
   Rotate to match the shot direction when placing on the bow or firing.
+- **Headwear and held things** (`WEARS` in `blender/items.py`; how the game puts them on:
+  `docs/villagers.md`): headwear is modelled around the head's centre (Blender Z up, the face
+  towards -Y), held things around the fist. Their extras say the `slot` (`head`, `right`,
+  `left`), the `socket` bone (`head`, `hand.R`, `hand.L`), `mount_quat_gltf` and
+  `mount_offset_gltf` (rotation and offset from the bone's root, rig units; solved by
+  `blender/loadout.py --mounts` from `WEAR_AIMS`), and for held things the arm's `hold` pose
+  (the character's `Hold<Name>` clip). The crystal ball adds `float`, how high its centre
+  hovers over the fist. A glowing part (the ball, the billet) is the `Items_Facets` material.
 - Blender bone parenting is bone-tail-relative: when attaching directly to the
   rig in Blender, apply the same tail compensation as `sword.attach()`.
 
 GLB extras include `cube_crawler_item`, `category`, `attach`, `units`,
 `game_scale`, `blocking`, `radius`; equipment adds `weapon`, `socket`, axis
-and grip hints. Potions add `potion_type`; the chest adds `clips`, `lid`, `hinge_gltf`,
+and grip hints; worn and held things `slot`, `socket`, the mount, `hold` and `float`. Potions add `potion_type`; the chest adds `clips`, `lid`, `hinge_gltf`,
 `contents_gltf` and `contents_size_gltf`. These are metadata,
 not implemented inventory effects, collision or combat rules.
 
@@ -107,7 +117,8 @@ a drawn bow). With `?dev=1`, open inventory (`I`) to roll and equip any weapon. 
 stackable potions/sticks/crystals have inventory definitions and preview icons;
 coins normalize automatically. Potions/materials have no use actions yet; reward sites place
 the chest (`docs/loot.md`). How the player holds and uses each kind: `docs/combat.md`.
-See `docs/progression.md` for inventory and balance rules.
+See `docs/progression.md` for inventory and balance rules. The headwear and held things are
+items too (`core/items.js WEARABLES`), worn for now only by the villagers (`docs/villagers.md`).
 
 ## Rebuild / validate
 
@@ -126,7 +137,7 @@ importlib.reload(items)
 items.main(render=False)  # saves .blend and combined + individual GLBs
 ```
 
-Default `main()` also renders the overview and 38 individual previews (`main(render=False)`
+Default `main()` also renders the overview and 47 individual previews (`main(render=False)`
 skips them, e.g. after changing only extras such as `MOUNTS`). Tests
 run in an isolated Blender process and export only into a temporary directory.
 They check deterministic geometry/colours, triangle budgets, flat normals,

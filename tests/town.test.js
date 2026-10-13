@@ -7,7 +7,8 @@ import { N, LH, CHAR_R, EDGE_CORNERS } from '../src/core/constants.js';
 import { containsXZ, viewBlockedAt } from '../src/core/blockers.js';
 import { World } from '../src/world/world.js';
 import { step, faceKey } from '../src/world/coords.js';
-import { BUILDINGS, MERCHANTS, TOWN_LEVEL, TOWN_PORTAL_SPOT, enemyFreeAt, merchantCampKey, rotateTownPoint } from '../src/world/town.js';
+import { BUILDINGS, MERCHANTS, TOWN_LEVEL, TOWN_PORTAL_SPOT, VILLAGERS, VILLAGER_R, enemyFreeAt, merchantCampKey, rotateTownPoint } from '../src/world/town.js';
+import { ITEMS, outfitOf } from '../src/core/items.js';
 import { state } from './fixtures.js';
 import { ENEMY_PROFILES } from '../src/core/enemies.js';
 import { enemySpots } from '../src/game/enemyspawn.js';
@@ -173,6 +174,72 @@ test('the three tents form a safe roadside camp exactly one cube in front of tow
     assert.deepEqual(signature(m), signature(new World(seed).cube(k).map));
     assert.deepEqual(signature(m), signature(structuredClone(m)), 'worker clone preserves authored placements');
   }
+});
+
+// Where a body of CHAR_R can walk to from the first route's start, on a grid of steps of .1
+// across the cube; near(x, z, r): somewhere within r of (x, z) is reached.
+function walkable(m) {
+  const S = 10, W = N * S, clear = new Uint8Array(W * W), seen = new Uint8Array(W * W);
+  for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) {
+    const x = (i + .5) / S, z = (j + .5) / S, cx = Math.floor(x), cz = Math.floor(z);
+    if (m.cols[cz * N + cx][0].fluid) continue;
+    let ok = true;
+    for (let dz = -1; ok && dz <= 1; dz++) for (let dx = -1; ok && dx <= 1; dx++) {
+      const c = (cz + dz) * N + cx + dx;
+      if (cx + dx >= 0 && cz + dz >= 0 && cx + dx < N && cz + dz < N && m.staticBlockers[c].some(b => containsXZ(b, x, z, CHAR_R))) ok = false;
+    }
+    clear[j * W + i] = ok;
+  }
+  const start = m.routes[0][0], queue = [Math.floor(start.z * S) * W + Math.floor(start.x * S)];
+  seen[queue[0]] = 1;
+  while (queue.length) {
+    const k = queue.pop(), i = k % W, j = (k - i) / W;
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ni = i + di, nj = j + dj, n = nj * W + ni;
+      if (ni >= 0 && nj >= 0 && ni < W && nj < W && clear[n] && !seen[n]) { seen[n] = 1; queue.push(n); }
+    }
+  }
+  return (x, z, r) => {
+    for (let j = Math.max(0, Math.floor((z - r) * S)); j < Math.min(W, Math.ceil((z + r) * S)); j++)
+      for (let i = Math.max(0, Math.floor((x - r) * S)); i < Math.min(W, Math.ceil((x + r) * S)); i++)
+        if (seen[j * W + i] && Math.hypot((i + .5) / S - x, (j + .5) / S - z) <= r) return true;
+    return false;
+  };
+}
+
+test('villagers stand at their trades in both clearings, as colliders, dressed and within reach', () => {
+  const where = { town: BUILDINGS, merchantCamp: MERCHANTS };
+  for (let seed = 0; seed < 80; seed++) {
+    const w = new World(seed), town = w.cube(w.start).map;
+    for (const m of [town, w.cube(step(w.start, town.exit)).map]) {
+      state.map = m;
+      const kind = m.town ? 'town' : 'merchantCamp', placed = m[kind].placements;
+      const want = VILLAGERS.filter(v => where[kind].some(b => b.name === v.at));
+      assert.deepEqual(m.villagers.map(v => v.name).sort(), want.map(v => v.name).sort(), kind);
+      assert.deepEqual(structuredClone(m.villagers), m.villagers, 'the worker hands them over whole');
+      for (const v of m.villagers) {
+        const spec = VILLAGERS.find(s => s.name === v.name), home = placed.find(p => p.name === spec.at);
+        assert.equal(v.y, TOWN_LEVEL * LH);
+        assert.ok(v.x > .5 && v.z > .5 && v.x < N - .5 && v.z < N - .5, v.name);
+        assert.ok(Math.abs(Math.hypot(v.x - home.x, v.z - home.z) - Math.hypot(spec.x, spec.z)) < 1e-9, 'beside their building');
+        assert.ok(Math.abs(Math.sin(v.yaw - home.yaw - spec.facing)) < 1e-9 && Math.cos(v.yaw - home.yaw - spec.facing) > 0);
+        assert.equal(m.cols[Math.floor(v.z) * N + Math.floor(v.x)][0].fluid, 0, 'on dry ground');
+        assert.deepEqual(outfitOf(v.outfit), outfitOf(spec.outfit));
+        assert.equal(v.tint, spec.tint);
+        // a collider where they stand, and nothing else there
+        const own = 'villager_' + v.name;
+        assert.ok(m.staticBlockers[Math.floor(v.z) * N + Math.floor(v.x)].some(b => b.name === own && b.r === VILLAGER_R));
+        assert.equal(blockedAt(v.x, v.z, v.y, .1), true);
+        assert.ok(!new Set(m.staticBlockers.flat()).values().some(b => b.name !== own && containsXZ(b, v.x, v.z, VILLAGER_R - .05)), v.name);
+        for (const other of m.villagers) if (other !== v) assert.ok(Math.hypot(other.x - v.x, other.z - v.z) > 2 * VILLAGER_R + .1);
+        // the player can walk up to them (from where the clearing's walks begin)
+        const near = walkable(m)(v.x, v.z, VILLAGER_R + CHAR_R + .2);
+        assert.ok(near, `${kind}: ${v.name} can be walked up to`);
+      }
+    }
+  }
+  for (const v of VILLAGERS) for (const id of v.outfit) assert.ok(ITEMS[id]?.slot, id);
+  assert.deepEqual(VILLAGERS.map(v => v.outfit.length), [1, 1, 3, 1, 1, 2]);
 });
 
 test('camp-to-countryside edges stay flat even when countryside is generated first', () => {

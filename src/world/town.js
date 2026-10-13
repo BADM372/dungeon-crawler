@@ -79,6 +79,28 @@ export const MERCHANTS = [
 ];
 // how far in front of a door (or a frontage) its doorstep is
 export const DOORSTEP = .75;
+// Villagers at their trades (render/villagers.js): next to a building (`at`), standing at
+// (x, z) in the building's own frame (front +Z, like `parts`), facing `facing` there (0: out of
+// the front), their clay tinted, wearing and holding `outfit` (core/items.js WEARABLES). Each
+// stands where it is put and is a collider (VILLAGER_R) there. The merchants stand in front of
+// their stalls, beside the counter (under the canopy the roof would hide them from the camera).
+export const VILLAGER_R = CHAR_R;
+export const VILLAGERS = [
+  // on the inn's porch, left of the door, a towel over the arm
+  { name: 'innkeeper', at: 'town_inn_a', x: -1.45, z: 2.05, facing: .5, tint: '#d9b48c', outfit: ['held_towel'] },
+  // in front of the horses, with a rope
+  { name: 'groom', at: 'town_stable_a', x: -1.2, z: 2.6, facing: -.4, tint: '#b9c79a', outfit: ['held_rope'] },
+  // at the anvil, mask down, hammer and pliers in hand
+  { name: 'smith', at: 'town_blacksmith_a', x: 1.3, z: 1.36, facing: Math.PI + .3, tint: '#c99a86',
+    outfit: ['wear_welding_mask', 'held_hammer', 'held_pliers'] },
+  // by the rabbit pen, a bag of feed in hand
+  { name: 'keeper', at: 'town_pet_shop_a', x: 1.75, z: 1.6, facing: -.5, tint: '#e0c7a0', outfit: ['held_feed_bag'] },
+  // the potion seller, in a wizard's hat
+  { name: 'alchemist', at: 'town_merchant_c', x: -1.05, z: 1.95, facing: .35, tint: '#b8b0d8', outfit: ['wear_wizard_hat'] },
+  // the enchanter, in a headscarf, a crystal ball floating over the hand
+  { name: 'enchanter', at: 'town_merchant_b', x: -1.05, z: 1.95, facing: .35, tint: '#9fc3c9',
+    outfit: ['wear_headscarf', 'held_crystal_ball'] },
+];
 const TREES = [
   { name: 'town_tree_oak_a', height: 6.8, radius: 1.30, trunk: .334, canopy: 4.01 },
   { name: 'town_tree_elm_a', height: 7.1, radius: 1.05, trunk: .276, canopy: 4.19 },
@@ -105,7 +127,7 @@ function clearingPlan(exit, seed, buildings, gates) {
   if (yaw === undefined) throw new Error('Clearing needs a side exit');
   const y = TOWN_LEVEL * LH, R = mulberry32(hash32(seed ^ 0x70a11));
   const placements = [], colliders = [], occluders = [], frontages = [], paths = [], doors = [];
-  const footprints = [], clutter = [];
+  const footprints = [], clutter = [], villagers = [];
   const add = (name, x, z, localYaw = 0, s = 1) => {
     const [rx, rz] = rotateTownPoint(x, z, yaw);
     const p = { name, x: rx, y, z: rz, yaw: localYaw + yaw, s, tint: null };
@@ -121,6 +143,11 @@ function clearingPlan(exit, seed, buildings, gates) {
         z0: Math.min(...points.map(p => p[1])), z1: Math.max(...points.map(p => p[1])) };
     };
     footprints.push({ x: p.x, z: p.z, c, s, bounds: b.bounds });
+    for (const v of VILLAGERS.filter(v => v.at === b.name)) {
+      const [x, z] = turn(v.x, v.z);
+      villagers.push({ name: v.name, x, y, z, yaw: p.yaw + v.facing, tint: v.tint, outfit: v.outfit });
+      colliders.push({ name: 'villager_' + v.name, x, z, r: VILLAGER_R, bottom: y, top: y + 1.1 });
+    }
     for (const part of b.parts || [{ box: b.bounds, top: b.height }]) {
       let body;
       if (part.box) body = { shape: 'box', name: b.name, ...aabb(part.box), bottom: y + (part.bottom ?? 0), top: y + part.top };
@@ -156,7 +183,7 @@ function clearingPlan(exit, seed, buildings, gates) {
       top: y + t.height * scale, bottom: y + t.canopy * scale });
   };
   const [sx, sz] = rotateTownPoint(8.5, 8.5, yaw);
-  const plan = { placements, colliders, occluders, frontages, paths, doors, pond: [], yaw,
+  const plan = { placements, colliders, occluders, frontages, paths, doors, villagers, pond: [], yaw,
     spawn: [Math.floor(sx), Math.floor(sz)] };
   // Solid clutter keeps away from gates, the spawn plaza and doorsteps, so every
   // generated route, gate cell and frontage stays walkable.

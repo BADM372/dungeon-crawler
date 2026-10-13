@@ -1,11 +1,13 @@
-// Loads the skinned player character and prepares its animation actions.
+// Loads the skinned player character and prepares its animation actions. The rig is loaded
+// once for every figure (render/figure.js); the player is the figure with the clips, the
+// weapons and a silhouette. It can wear things like any figure (figure.js wear, `worn`).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CHAR_SCALE } from '../core/constants.js';
 import { scene } from './scene.js';
 import { prepareHeld } from './held.js';
+import { rigReady } from './figure.js';
 
-const URL = 'assets/character.glb';
 const SWORD_URL = 'assets/sword.glb';
 const FPS = 30;
 const STAND_HIPS = 0.69;   // hips height of the standing pose (rig units)
@@ -141,7 +143,7 @@ function setup(gltf) {
   mixer.update(0);
   const standing = Object.fromEntries(Object.entries(bones).map(([n, b]) => [n, b.quaternion.clone()]));
   Object.assign(character, {
-    ready: true, group, model, mesh, bones, mixer, actions, attacks, holds, standing, light, getUps, footfalls,
+    ready: true, group, model, mesh, bones, mixer, actions, attacks, holds, standing, light, getUps, footfalls, worn: {},
     sword: null, held: null, swordWeight: 0, holdWeight: 0, getUpWeight: 0,
     walkStride: stride('Walk'), runStride: stride('Run'), swimStride: stride('Swim'),
     climbStride: extras('Climb').distance * CHAR_SCALE,
@@ -188,5 +190,5 @@ function measureFootfalls(group, bones, actions, mixer) {
   return out;
 }
 
-export const characterReady = new GLTFLoader().loadAsync(URL).then(setup);
-characterReady.catch(e => console.error('character failed to load', e));
+export const characterReady = rigReady.then(setup);
+characterReady.catch(e => console.error('character failed to set up', e));

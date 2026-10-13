@@ -53,6 +53,7 @@ Blender -b --python blender/props.py          # likewise character, spider, stun
 Blender -b --python blender/clutter.py        # libraries: clutter, items, town, town_trees
 Blender -b --python blender/tests/test_clutter.py
 npm run prop-metadata                         # after props/clutter changes
-Blender -b --python blender/loadout.py        # the player with each kind of weapon (previews;
-                                              # -- --mounts solves the weapon mounts)
+Blender -b --python blender/loadout.py        # the player with each kind of weapon and the
+                                              # villagers (previews; -- --mounts solves the mounts
+                                              # of weapons and worn / held things)
 ```

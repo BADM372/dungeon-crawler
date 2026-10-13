@@ -18,6 +18,9 @@ end in the neutral standing pose so they can be cross-faded from anything):
     Slash        -- right-handed overhead diagonal slash (extras: weapon_socket)
     Roll         -- forward roll; game moves ~`distance` forward (extras: distance)
     Flex         -- static strongman pose (the original sculpt)
+    Hold<Name>   -- still poses of one arm carrying a weapon (HOLDS: Bow, Crossbow, Staff; extras:
+                    weapon) or a held item (CARRIES: Towel, Orb, Hammer, Pliers, Rope, Feed);
+                    extras: hold, arm_bones
 
 Sockets: hand.L / hand.R are non-deforming bones at the fists for weapons.
 
@@ -992,6 +995,21 @@ HOLDS = {   # kind: (side, arm spec, forearm twist)
     "crossbow": ("R", A(D(14), D(16), D(74), -1), 0.0),
     "staff": ("R", A(D(8), D(18), D(80), -1), 0.0),
 }
+# How a hand carries the held items of blender/items.py (WEARS there): a still clip Hold<Name>
+# per item, one arm each, laid over the other clips like the weapons' holds (render/figure.js).
+CARRIES = {   # name: (side, arm spec, forearm twist)
+    # the towel over the left forearm, held level in front like a waiter's
+    "towel": ("L", A(D(10), D(10), D(88), 1), 0.0),
+    # the right hand raised before the chest, the crystal ball floating over the fist
+    "orb": ("R", A(D(14), D(12), D(94), -1), 0.0),
+    # a smith's tools held ready: the hammer up in the right fist, the pliers in the left
+    "hammer": ("R", A(D(6), D(12), D(62), -1), 0.0),
+    "pliers": ("L", A(D(6), D(12), D(58), 1), 0.0),
+    # a coil of rope hanging from the right fist, a little away from the leg
+    "rope": ("R", A(D(4), D(22), D(30), -1), 0.0),
+    # a feed bag held out in front from the left fist
+    "feed": ("L", A(D(14), D(10), D(66), 1), 0.0),
+}
 # frames the game needs: when the shot leaves, and when a chained shot or a reload is done
 SHOOT_FRAMES = {"duration": 32, "active_start": 18, "active_end": 20, "redraw": 7}
 CROSSBOW_FRAMES = {"duration": 36, "active_start": 9, "active_end": 11, "reloaded": 26}
@@ -999,9 +1017,9 @@ CAST_FRAMES = {"duration": 28, "active_start": 12, "active_end": 14}
 
 
 def hold_params(kind):
-    """The resting grip on a weapon, as a still clip (Hold<Kind>)."""
+    """The resting grip on a weapon or a held item, as a still clip (Hold<Kind>)."""
     arms = neutral_arms()
-    side, spec, twist = HOLDS[kind]
+    side, spec, twist = HOLDS.get(kind) or CARRIES[kind]
     arms[side] = spec
     return one_shot(2 / FPS, lambda t: pose_params(arms=arms, fore_twist={side: twist}))
 
@@ -1503,7 +1521,10 @@ def make_animations(rig, ob):
                                items.mount_matrix(kind) @ point if kind else point)
     for kind, (side, *_) in HOLDS.items():
         one("Hold" + kind.capitalize(), hold_params(kind), *stiff,
-            {"weapon": kind, "arm_bones": f"upper_arm.{side},forearm.{side}"})
+            {"weapon": kind, "hold": kind, "arm_bones": f"upper_arm.{side},forearm.{side}"})
+    for kind, (side, *_) in CARRIES.items():
+        one("Hold" + kind.capitalize(), hold_params(kind), *stiff,
+            {"hold": kind, "arm_bones": f"upper_arm.{side},forearm.{side}"})
     one("Roll", roll_params(), 900.0, 0.7, 1100.0, 0.7, {"distance": round(2 * math.pi * ROLL_RADIUS, 3)},
         contact="always")
     one("JumpLandSit", jump_land_sit_params(), 200.0, 0.35, 260.0, 0.4)
@@ -1542,7 +1563,8 @@ def main(scene=None, export_path=None, active_action="Walk"):
     make_animations(rig, ob)
     register_actions(rig, ("Walk", "Run", "Swim", "SwimIdle", "Climb", "Jump", "JumpLandSit",
                            "GetUpBack", "GetUpFront", "Kick", "Punch", "Slash", "Shoot", "CrossbowShot",
-                           "Cast", "HoldBow", "HoldCrossbow", "HoldStaff", "Roll", "Flex"))
+                           "Cast", "HoldBow", "HoldCrossbow", "HoldStaff",
+                           *("Hold" + k.capitalize() for k in CARRIES), "Roll", "Flex"))
     act = bpy.data.actions[active_action]
     rig.animation_data.action = act
     scene.frame_start = int(act.frame_start)

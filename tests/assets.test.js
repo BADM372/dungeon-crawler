@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { assets } from './paths.js';
 import { SLASH_CLIP, SHOOT_CLIP, CROSSBOW_CLIP, CAST_CLIP, KINDS } from '../src/core/combat.js';
 import { MUZZLES } from '../src/core/shots.js';
-import { WEAPONS } from '../src/core/items.js';
+import { WEAPONS, WEARABLES, OUTFIT_SLOTS } from '../src/core/items.js';
 import { SPIDER, STUNDER, SNAKE, OCTONAUT, FIREFACE, TRIANGLE, FIRECAT, SHRAPS, FIRE_SHRAPS, SPICY, fireAt } from '../src/core/enemies.js';
 import { CHAR_SCALE } from '../src/core/constants.js';
 
@@ -70,6 +70,28 @@ test('every weapon model says which socket it goes in, how it sits there and whi
     assert.deepEqual(parts, want.map(p => `${w.id}_${p}`), w.id);
   }
   for (const name of ['items/weapon_arrow', 'items/weapon_bolt']) assert.ok(glb(name).json.meshes.length, name);
+});
+test('worn and held things say where they sit and how the arm holds them, and the rig has those holds', () => {
+  const { json: character } = glb('character');
+  const sockets = { head: 'head', right: 'hand.R', left: 'hand.L' };
+  assert.deepEqual([...new Set(WEARABLES.map(w => w.slot))].sort(), [...OUTFIT_SLOTS].sort());
+  for (const w of WEARABLES) {
+    const { json: j } = glb(w.model.replace(/^assets\//, '').replace(/\.glb$/, ''));
+    const node = j.nodes.find(n => n.name === w.id), e = node.extras;
+    assert.equal(e.category, w.category, w.id);
+    assert.equal(e.slot, w.slot, w.id);
+    assert.equal(e.socket, sockets[w.slot], w.id);
+    assert.ok(Math.abs(Math.hypot(...e.mount_quat_gltf) - 1) < 1e-3, w.id);
+    assert.equal(e.mount_offset_gltf.length, 3);
+    assert.ok(Math.hypot(...e.mount_offset_gltf) < .5, 'close to the bone it sits on');
+    if (w.slot === 'head') { assert.equal(e.hold, undefined, w.id); continue; }
+    const clip = character.animations.find(a => a.extras?.hold === e.hold);
+    assert.ok(clip, `${w.id}: a hold clip for ${e.hold}`);
+    assert.equal(clip.name, 'Hold' + e.hold[0].toUpperCase() + e.hold.slice(1));
+    assert.deepEqual(clip.extras.arm_bones.split(','), ['upper_arm', 'forearm'].map(b => `${b}.${e.socket.slice(-1)}`), w.id);
+    if (w.glow) assert.ok(j.materials.some(m => m.name === 'Items_Facets'), `${w.id} has a part to glow`);
+    if (e.float) assert.ok(e.float > 0 && e.float < .6);
+  }
 });
 test('player climbing is a seamless in-place loop covering two ladder rungs', () => {
   const { json: j, floats, duration } = glb('character');

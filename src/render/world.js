@@ -14,6 +14,7 @@ import { makeGlass, setGlassFaces } from './glass.js';
 import { buildProps } from './props.js';
 import { openedChest, tickChests } from './chests.js';
 import { placeProps } from './propplace.js';
+import { buildVillagers, tickVillagers } from './villagers.js';
 import { themeAt } from '../themes/depth.js';
 
 export function disposeWorld(world) {
@@ -36,6 +37,7 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open =
   const placed = placeProps(m, themeAt(m.depth ?? 0));
   m.blockers = placed.blockers.map((list, i) => [...(m.staticBlockers?.[i] || []), ...list]);
   buildProps(placed.out.map(q => opened?.has(q.site) ? openedChest(q) : q), group);
+  const villagers = buildVillagers(m.villagers, group);
   addGhosts(group);
   const glass = makeGlass(1, open);
   glass.visible = !m.interior;   // inside a house: walls, no glass box
@@ -43,7 +45,7 @@ export function buildWorld(m, showPath, seen, geo = buildCubeGeometry(m), open =
   adoptLights(group);
   makeFadable(group);
   scene.add(group);
-  const world = { group, glass, fluidMeshes, splashes, lights, ...markers };
+  const world = { group, glass, fluidMeshes, splashes, lights, villagers, ...markers };
   setTownPortal(world, townPad);
   return world;
 }
@@ -95,4 +97,5 @@ export function animateWorld(world, dt, time) {
   for (const l of world.lights) l.intensity = 5 + Math.sin(time * 4 + l.position.x) * 1.5;
   for (const p of world.portalFx) p.tick(time);
   tickChests(dt);
+  tickVillagers(world.villagers, dt, time);
 }
