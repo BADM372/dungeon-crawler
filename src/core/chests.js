@@ -12,7 +12,7 @@ import { depthLevel, grown, GROWTH } from './enemies.js';
 
 // level: item levels above the depth's; copper: [least, most] at level 1 (grown like enemy
 // coins); potions: [least, most]; weapons: one roll each, `floor` the least rarity it may be
-// kids-docs: loot.html#drops (see kids-docs/README.md)
+// learn: loot.html#drops (see learn/README.md)
 export const CHESTS = Object.freeze({
   basic: { level: 0, copper: [25, 45], potions: [0, 1], weapons: [{ floor: 'common', luck: 0.1 }] },
   uncommon: { level: 1, copper: [50, 90], potions: [1, 1], weapons: [{ floor: 'uncommon', luck: 0.2 }] },

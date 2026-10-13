@@ -10,7 +10,7 @@ import { updateCamera } from './camera.js';
 import { mapInfo, inSlab, outOfSlabs } from './cutinfo.js';
 import { viewBlockedAt } from '../core/blockers.js';
 
-// kids-docs: drawing.html#cut-how (see kids-docs/README.md)
+// learn: drawing.html#cut-how (see learn/README.md)
 const REVEAL = 0.07, RESTORE = 0.12, RESTORE_DELAY = 1;   // spring times (s), wait before restoring
 const STEP = 0.12;
 let cut = Infinity, vel = 0, hold = 0, lastMap = null;
@@ -34,7 +34,7 @@ function blockedAt(x, y, z, top) {
   return Infinity;
 }
 
-// kids-docs: drawing.html#cut-how (see kids-docs/README.md)
+// learn: drawing.html#cut-how (see learn/README.md)
 function target(m) {
   const info = mapInfo(m), p = player, y = p.visY;
   // never below our feet, and never below the surface of the water we swim in

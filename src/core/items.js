@@ -14,7 +14,7 @@ const weapon = (id, name, damage, interval, range, arc = 1, old = false) => Obje
   icon: icon(old ? 'weapon_sword_medium' : id), model: old ? 'assets/sword.glb' : model(id),
   weapon: Object.freeze({ damage, interval, range, arc }),
 });
-// kids-docs: combat.html#chain (see kids-docs/README.md)
+// learn: combat.html#chain (see learn/README.md)
 export const WEAPONS = Object.freeze([
   weapon('weapon_sword_old', 'Old Sword', 30, .42, .85, 1, true),   //  71 damage per second
   weapon('weapon_sword_short', 'Short Sword', 23, .32, .72),         //  72, the fastest
@@ -23,7 +23,7 @@ export const WEAPONS = Object.freeze([
   weapon('weapon_sword_broad', 'Broadsword', 46, .54, .88, 1.25),    //  85, a wide sweep
   weapon('weapon_sword_greatsword', 'Greatsword', 60, .66, 1.15, 1.3), // 91, wide and long
 ]);
-// kids-docs: code.html#lists (see kids-docs/README.md)
+// learn: code.html#lists (see learn/README.md)
 export const COINS = Object.freeze([
   { id: 'item_coin_gold', name: 'Gold', value: 1000, suffix: 'g' },
   { id: 'item_coin_silver', name: 'Silver', value: 10, suffix: 's' },

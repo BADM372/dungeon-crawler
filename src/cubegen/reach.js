@@ -42,7 +42,7 @@ function graph(ctx, real) {
 }
 
 // ids of every node that can reach floor `goal` (null: everything counts)
-// kids-docs: world.html#inspector (see kids-docs/README.md)
+// learn: world.html#inspector (see learn/README.md)
 export function reachTo(ctx, goal, real) {
   if (!goal) return null;
   const adj = graph(ctx, real), rev = new Map();

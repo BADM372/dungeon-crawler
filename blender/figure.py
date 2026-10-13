@@ -102,7 +102,7 @@ def _sd_sphere(P, center, r):
     return np.linalg.norm(P - np.asarray(center, dtype=np.float32), axis=-1) - r
 
 
-# kids-docs: art.html#sdf-code (see kids-docs/README.md)
+# learn: art.html#sdf-code (see learn/README.md)
 def _smin(a, b, k):
     h = np.clip(0.5 + 0.5 * (b - a) / k, 0.0, 1.0)
     return b * (1 - h) + a * h - k * h * (1 - h)

@@ -1,38 +1,38 @@
-// Keeps the kids' guide (kids-docs/) in step with the game's code. See kids-docs/README.md.
+// Keeps the kids' guide (learn/) in step with the game's code. See learn/README.md.
 //
 // Slides say what code they describe: data-src="path#name" on a slide or a code excerpt,
 // data-code="path#name" (live code) and data-val="path#NAME.field" (live values). The
-// fingerprint of every referenced definition is kept in kids-docs/stamps.json. When the code
+// fingerprint of every referenced definition is kept in learn/stamps.json. When the code
 // changes, the slides that describe it may need updating:
 //
-//   node tools/kids-docs.mjs            check: which slides describe code that changed, and which
+//   node tools/learn.mjs            check: which slides describe code that changed, and which
 //                                       were noted as outdated before (those do not fail it)
-//   node tools/kids-docs.mjs --stamp    after reviewing / updating them: accept the code as it is
-//   node tools/kids-docs.mjs --defer    not now: note the slides as outdated (the guide shows a
+//   node tools/learn.mjs --stamp    after reviewing / updating them: accept the code as it is
+//   node tools/learn.mjs --defer    not now: note the slides as outdated (the guide shows a
 //                                       note on them) and accept the code
 //   ... --stamp page.html#slide ...     only these slides were reviewed: accept the code they explain
 //                                       (other slides explaining the same code get noted as outdated)
 //                                       and clear their notes; this is also how a noted slide is cleared
 //   ... --defer page.html#slide ...     note only these slides (and others explaining the same code)
 //
-// Stamping also rewrites the markers in the game's code (a "kids-docs:" comment above every
+// Stamping also rewrites the markers in the game's code (a "learn:" comment above every
 // referenced definition, naming the slides) and the written fallbacks of data-val values.
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { parseRefs, refKey, extract, fingerprint, MARKER, readValue, formatValue } from '../kids-docs/refs.js';
+import { parseRefs, refKey, extract, fingerprint, MARKER, readValue, formatValue } from '../learn/refs.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const KIDS = join(ROOT, 'kids-docs'), STAMPS = join(KIDS, 'stamps.json');
+const LEARN = join(ROOT, 'learn'), STAMPS = join(LEARN, 'stamps.json');
 const read = p => readFileSync(join(ROOT, p), 'utf8');
-const pages = () => readdirSync(KIDS).filter(f => f.endsWith('.html')).sort();
+const pages = () => readdirSync(LEARN).filter(f => f.endsWith('.html')).sort();
 
 // every slide and the references it makes: Map 'page#slide' -> [ref]
 export function slideRefs() {
   const out = new Map();
   for (const page of pages()) {
-    for (const [, attrs, body] of read(join('kids-docs', page)).matchAll(/<section class="slide"([^>]*)>([\s\S]*?)<\/section>/g)) {
+    for (const [, attrs, body] of read(join('learn', page)).matchAll(/<section class="slide"([^>]*)>([\s\S]*?)<\/section>/g)) {
       const id = attrs.match(/\bid="([^"]+)"/)[1], refs = [];
       for (const [, kind, list] of (attrs + body).matchAll(/\bdata-(src|code|val)="([^"]+)"/g))
         refs.push(...(kind === 'val' ? parseRefs(list.replace(/#([\w$]+).*/, '#$1')) : parseRefs(list)));
@@ -65,7 +65,7 @@ function saveStamps(s) {
 }
 
 // ---- markers in the game's code ---------------------------------------------------------------
-// "// kids-docs: combat.html#arc-code #hit-test, start.html#parts (see kids-docs/README.md)"
+// "// learn: combat.html#arc-code #hit-test, start.html#parts (see learn/README.md)"
 const slideList = slides => {
   const byPage = new Map();
   for (const s of [...slides].sort()) { const [p, id] = s.split('#'); byPage.set(p, [...(byPage.get(p) ?? []), id]); }
@@ -99,7 +99,7 @@ export function markedFiles(refs = references()) {
     const res = [...clean], py = file.endsWith('.py');
     for (const [at, slides] of [...lines].sort(([a], [b]) => b - a)) {
       const indent = clean[at].match(/^\s*/)[0];
-      res.splice(at, 0, `${indent}${py ? '#' : '//'} kids-docs: ${slideList(slides)} (see kids-docs/README.md)`);
+      res.splice(at, 0, `${indent}${py ? '#' : '//'} learn: ${slideList(slides)} (see learn/README.md)`);
     }
     out.set(file, res.join('\n'));
   }
@@ -111,7 +111,7 @@ const VOID = new Set(['img', 'br', 'meta', 'link', 'input', 'hr', 'source', 'wbr
 async function valueFixes() {
   const fixes = [];
   for (const page of pages()) {
-    const html = read(join('kids-docs', page)), stack = [];
+    const html = read(join('learn', page)), stack = [];
     for (const m of html.matchAll(/<(\/?)(\w+)([^>]*)>/g)) {
       const [, close, tag, attrs] = m;
       if (close) { while (stack.length && stack.pop().tag !== tag); continue; }
@@ -144,18 +144,18 @@ export async function check() {
 }
 export function describe(p) {
   const lines = [];
-  if (p.errors.length) lines.push('Broken references in kids-docs (fix the data-src / data-code / data-val):', ...p.errors.map(e => '  ' + e));
+  if (p.errors.length) lines.push('Broken references in learn (fix the data-src / data-code / data-val):', ...p.errors.map(e => '  ' + e));
   if (p.stale.length) {
     const bySlide = new Map();
     for (const s of p.stale) for (const slide of s.slides) bySlide.set(slide, [...(bySlide.get(slide) ?? []), s.key + (s.isNew ? ' (new)' : '')]);
     lines.push('Game code that the kids\' guide explains has changed. Review these slides (both languages)',
-      'and update what no longer matches, then run "npm run kids-docs -- --stamp" (or name the slides',
+      'and update what no longer matches, then run "npm run learn -- --stamp" (or name the slides',
       'you reviewed: "--stamp page.html#slide ..."). To leave it for later, "--defer" notes the slides',
       'as outdated instead:',
-      ...[...bySlide].map(([slide, keys]) => `  kids-docs/${slide}: ${keys.join(', ')}`));
+      ...[...bySlide].map(([slide, keys]) => `  learn/${slide}: ${keys.join(', ')}`));
   }
-  if (p.markers.length) lines.push('kids-docs markers out of date (npm run kids-docs -- --stamp rewrites them):', ...p.markers.map(f => '  ' + f));
-  if (p.values.length) lines.push('Written values differ from the game (npm run kids-docs -- --stamp fixes them):', ...p.values.map(v => '  ' + v));
+  if (p.markers.length) lines.push('learn markers out of date (npm run learn -- --stamp rewrites them):', ...p.markers.map(f => '  ' + f));
+  if (p.values.length) lines.push('Written values differ from the game (npm run learn -- --stamp fixes them):', ...p.values.map(v => '  ' + v));
   return lines.join('\n');
 }
 
@@ -189,7 +189,7 @@ async function stamp(defer, slides) {
   const refs = references(), stamps = loadStamps();
   const errors = [...refs.values()].filter(r => r.error);
   if (errors.length) { console.error(describe({ errors: errors.map(r => r.error), stale: [], markers: [], values: [] })); process.exit(1); }
-  slides = slides.map(s => s.replace(/^kids-docs\//, ''));
+  slides = slides.map(s => s.replace(/^learn\//, ''));
   const known = new Set([...refs.values()].flatMap(r => r.slides));
   const unknown = slides.filter(s => !known.has(s));
   if (unknown.length) { console.error(`not a slide that explains game code: ${unknown.join(', ')} (write them as page.html#slide)`); process.exit(1); }
@@ -198,9 +198,9 @@ async function stamp(defer, slides) {
   for (const [file, text] of markedFiles(refs)) if (read(file) !== text) { writeFileSync(join(ROOT, file), text); console.log('markers:', file); }
   const fixes = await valueFixes();
   for (const page of new Set(fixes.map(f => f.page))) {
-    let html = read(join('kids-docs', page));
+    let html = read(join('learn', page));
     for (const f of fixes.filter(f => f.page === page && !f.error).sort((a, b) => b.at - a.at)) html = html.slice(0, f.at) + f.want + html.slice(f.end);
-    writeFileSync(join(KIDS, page), html);
+    writeFileSync(join(LEARN, page), html);
     console.log('values:', page);
   }
   const left = [...refs].filter(([k, r]) => next.refs[k] !== r.hash);
@@ -213,8 +213,8 @@ async function stamp(defer, slides) {
 export function backlog(stamps = loadStamps()) {
   const notes = Object.entries(stamps.outdated ?? {});
   if (!notes.length) return '';
-  return [`${notes.length} slide(s) noted as outdated. Review them (both languages), then "npm run kids-docs -- --stamp <slide>":`,
-    ...notes.map(([slide, why]) => `  kids-docs/${slide}: ${why}`)].join('\n');
+  return [`${notes.length} slide(s) noted as outdated. Review them (both languages), then "npm run learn -- --stamp <slide>":`,
+    ...notes.map(([slide, why]) => `  learn/${slide}: ${why}`)].join('\n');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -222,7 +222,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (arg === '--stamp' || arg === '--defer') await stamp(arg === '--defer', process.argv.slice(3));
   else {
     const p = await check(), text = describe(p), notes = backlog();
-    console.log(text || 'kids-docs: up to date with the game');
+    console.log(text || 'learn: up to date with the game');
     if (notes) console.log('\n' + notes);
     if (text) process.exit(1);
   }

@@ -7,20 +7,20 @@ import { fixedWeapon } from './gear/generate.js';
 //     few kills and later ones take about one depth each
 //   maximum health: HP + HP_PER_LEVEL per level; weapon damage: + DAMAGE_PER_LEVEL per level
 //   regeneration: REGEN of the maximum per second, after REGEN_DELAY s without damage
-// kids-docs: stronger.html#formula #levels (see kids-docs/README.md)
+// learn: stronger.html#formula #levels (see learn/README.md)
 export const PLAYER = Object.freeze({ HP: 100, HP_PER_LEVEL: 10, DAMAGE_PER_LEVEL: 0.02,
   XP_BASE: 500, XP_STEP: 1000, XP_CURVE: 60, REGEN: 0.04, REGEN_DELAY: 5 });
-// kids-docs: code.html#functions, stronger.html#curve #formula (see kids-docs/README.md)
+// learn: code.html#functions, stronger.html#curve #formula (see learn/README.md)
 export const xpToNext = level => PLAYER.XP_BASE + PLAYER.XP_STEP * (level - 1) + PLAYER.XP_CURVE * (level - 1) ** 2;
 // the XP that reaching `level` takes in all: the sum of xpToNext below it
 export const xpForLevel = level => {
   const n = level - 1;
   return PLAYER.XP_BASE * n + PLAYER.XP_STEP * n * (n - 1) / 2 + PLAYER.XP_CURVE * (n - 1) * n * (2 * n - 1) / 6;
 };
-// kids-docs: code.html#functions, stronger.html#levels (see kids-docs/README.md)
+// learn: code.html#functions, stronger.html#levels (see learn/README.md)
 export const maxHealth = level => PLAYER.HP + PLAYER.HP_PER_LEVEL * (level - 1);
 // what the player's level multiplies weapon damage by
-// kids-docs: code.html#functions, combat.html#damage, stronger.html#levels (see kids-docs/README.md)
+// learn: code.html#functions, combat.html#damage, stronger.html#levels (see learn/README.md)
 export const levelDamage = level => 1 + PLAYER.DAMAGE_PER_LEVEL * (level - 1);
 export function levelFromXP(xp) {
   whole(xp);
@@ -32,7 +32,7 @@ export function levelFromXP(xp) {
 // What a kill is worth against the player's level: enemies more than two levels below give
 // less and less (a tenth at the least), so going back up to farm does not pay; enemies above
 // give a tenth more per level, up to half again.
-// kids-docs: stronger.html#curve #farming (see kids-docs/README.md)
+// learn: stronger.html#curve #farming (see learn/README.md)
 export function xpScale(playerLevel, enemyLevel) {
   const d = playerLevel - enemyLevel;
   return (d < 0 ? 10 + Math.min(5, -d) : Math.max(1, 10 - 2 * Math.max(0, d - 2))) / 10;   // in tenths: exact
@@ -54,9 +54,9 @@ export function createPlayerStats() {
 // defeated: enemy IDs; loot: cube key -> pickups lying there (game/loot.js); chests: the reward
 // sites whose chests are open (game/chests.js); townPortal: the open town portal, if any
 // (game/townportal.js)
-// kids-docs: memory.html#notes (see kids-docs/README.md)
+// learn: memory.html#notes (see learn/README.md)
 export const createRun = () => ({ defeated: new Set(), unlockedGates: new Set(), loot: new Map(), chests: new Set(), townPortal: null });
-// kids-docs: stronger.html#xp-code (see kids-docs/README.md)
+// learn: stronger.html#xp-code (see learn/README.md)
 export function awardXP(p, amount) {
   whole(amount);
   const xp = whole(p.xp + amount), oldLevel = p.level, oldMax = p.maxHp;
@@ -65,7 +65,7 @@ export function awardXP(p, amount) {
   return p.level - oldLevel;
 }
 // XP is granted at once; the coins are only returned: they drop as loot to be picked up
-// kids-docs: stronger.html#xp-code (see kids-docs/README.md)
+// learn: stronger.html#xp-code (see learn/README.md)
 export function awardKill(p, run, enemy) {
   if (enemy.mode !== 'dead' || enemy.hp !== 0 || !enemy.id || run.defeated.has(enemy.id)) return null;
   const xp = whole(Math.round(enemy.profile.xp * xpScale(p.level, enemy.level || 1))), coins = whole(enemy.coinDrop);

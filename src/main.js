@@ -52,7 +52,7 @@ import { travelling, updateTravel, drawTravelEnemies } from './game/travel.js';
 
 const clock = new THREE.Clock();
 
-// kids-docs: architecture.html#conductor #main-js, loop.html#frame-code #one-tick #pause #smoothing (see kids-docs/README.md)
+// learn: architecture.html#conductor #main-js, loop.html#frame-code #one-tick #pause #smoothing (see learn/README.md)
 function frame() {
   const elapsed = Math.min(clock.getDelta(), 1 / 30), dt = state.inventoryOpen ? 0 : elapsed * timeScale(elapsed);
   updatePointer();   // the enemy under the cursor (with last frame's camera)

@@ -4,7 +4,7 @@
 // paths through the town and the merchant camp are dirt.
 import { LAVA } from './constants.js';
 
-// kids-docs: sound.html#recipe (see kids-docs/README.md)
+// learn: sound.html#recipe (see learn/README.md)
 export const SURFACES = ['grass', 'dirt', 'gravel', 'snow', 'ice', 'mud', 'stone', 'wood', 'rope', 'iron'];
 
 // theme (by its prop set) -> surface, or [[from level, surface], ...]

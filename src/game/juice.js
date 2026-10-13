@@ -11,7 +11,7 @@ export const kick = { x: 0, y: 0, z: 0 };
 
 export function hitstop(seconds) { stop = Math.max(stop, seconds); }
 // the frame's time scale: nearly frozen during a hit pause
-// kids-docs: combat.html#juice, loop.html#pause (see kids-docs/README.md)
+// learn: combat.html#juice, loop.html#pause (see learn/README.md)
 export function timeScale(elapsed) {
   if (stop <= 0) return 1;
   stop -= elapsed;
@@ -24,7 +24,7 @@ export function cameraKick(dx, dz, amount, dy = 0) {
 
 // the player's blade hit enemy e for dmg (killed: that was the last of its health);
 // (dx, dz): the direction of the blow; crit: a critical hit (a bigger, golden number)
-// kids-docs: architecture.html#swing-journey, combat.html#juice, loop.html#pause (see kids-docs/README.md)
+// learn: architecture.html#swing-journey, combat.html#juice, loop.html#pause (see learn/README.md)
 export function enemyHitFx(e, dmg, killed, dx, dz, crit = false) {
   const l = Math.hypot(dx, dz) || 1, nx = dx / l, nz = dz / l;
   const x = e.x - nx * e.profile.radius * 0.5, y = e.y + Math.min(e.profile.bodyHeight * 0.6, 0.7), z = e.z - nz * e.profile.radius * 0.5;

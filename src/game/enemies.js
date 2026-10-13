@@ -25,7 +25,7 @@ let defenceThink = 0;
 
 // coming into a cube (or back after a death), enemies hold their attacks this long, or until
 // you land a hit: a bad spawn spot is not an instant beating
-// kids-docs: enemies.html#fair (see kids-docs/README.md)
+// learn: enemies.html#fair (see learn/README.md)
 export const ENTRY_GRACE = 1.2;
 
 // enemies spawned with the dev tools (game/devspawn.js), of any species; gone when the cube resets
@@ -41,7 +41,7 @@ export function resetEnemies() {
   defenceThink = 0;
   coordinateDefence(state.map, state.run, allEnemies(), player);
 }
-// kids-docs: architecture.html#swing-journey, code.html#loops (see kids-docs/README.md)
+// learn: architecture.html#swing-journey, code.html#loops (see learn/README.md)
 export function updateEnemies(dt) {
   if (state.inventoryOpen || state.transitioning) return;
   state.enemyGrace = Math.max(0, state.enemyGrace - dt);

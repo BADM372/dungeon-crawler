@@ -4,7 +4,7 @@ import { swordState } from '../core/combat.js';
 import { DEFAULT_ZOOM } from '../core/zoom.js';
 import { createPlayerStats, createRun } from '../core/progression.js';
 
-// kids-docs: architecture.html#notebook (see kids-docs/README.md)
+// learn: architecture.html#notebook (see learn/README.md)
 export const player = {
   x: 0, z: 0, y: 0, vx: 0, vy: 0, vz: 0, visY: 0,
   r: CHAR_R, h: CHAR_H, layer: 0, yaw: 0,
@@ -23,7 +23,7 @@ export const player = {
 
 const params = new URLSearchParams(location.search);
 
-// kids-docs: architecture.html#notebook (see kids-docs/README.md)
+// learn: architecture.html#notebook (see learn/README.md)
 export const state = {
   map: null, world: null, time: 0,
   showPath: false, transitioning: false, inventoryOpen: false, equipping: false,

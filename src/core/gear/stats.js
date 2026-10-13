@@ -11,19 +11,19 @@ import { rarityOf } from './rarities.js';
 import { namesBase } from './names.js';
 
 export const ARC = Math.PI * 0.42;   // the basic swing arc (core/combat.js SWORD.arc)
-// kids-docs: combat.html#damage (see kids-docs/README.md)
+// learn: combat.html#damage (see learn/README.md)
 export const CRIT_CHANCE = 0.05;     // every weapon crits this often without affixes
-// kids-docs: combat.html#damage (see kids-docs/README.md)
+// learn: combat.html#damage (see learn/README.md)
 export const CRIT_DAMAGE = 1.5;      // a critical hit without affixes
 // base damage grows by this share per item level: a weapon found ten depths further down hits
 // half again as hard as the same one from the top (enemy health grows 12% a level; the
 // player's level adds the rest, core/progression.js)
-// kids-docs: loot.html#stats-code (see kids-docs/README.md)
+// learn: loot.html#stats-code (see learn/README.md)
 export const ILVL_DAMAGE = 0.05;
-// kids-docs: loot.html#stats-code (see kids-docs/README.md)
+// learn: loot.html#stats-code (see learn/README.md)
 export const ilvlDamage = ilvl => 1 + ILVL_DAMAGE * (Math.max(1, ilvl || 1) - 1);
 
-// kids-docs: loot.html#stats-code, stronger.html#race (see kids-docs/README.md)
+// learn: loot.html#stats-code, stronger.html#race (see learn/README.md)
 export function itemStats(item) {
   const def = ITEMS[item?.itemId], w = def?.weapon;
   if (!w) return null;

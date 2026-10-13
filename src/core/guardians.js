@@ -15,7 +15,7 @@ export const portalLocked = (map, run, portal) => {
 };
 
 // Ordinary kills made during this visit roll back on death; an opened gate never does.
-// kids-docs: memory.html#death (see kids-docs/README.md)
+// learn: memory.html#death (see learn/README.md)
 export function restoreDefeated(run, before) {
   const permanent = new Set([...run.unlockedGates].map(guardianId));
   for (const id of run.defeated) if (!before.has(id) && !permanent.has(id)) run.defeated.delete(id);

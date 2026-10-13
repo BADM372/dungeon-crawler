@@ -15,18 +15,18 @@ import { hash32, mulberry32 } from './util.js';
 // what every species gains per level, as a share of its level-1 value: health keeps pace with
 // the weapons and levels a player finds and gains on the way down, damage with the player's
 // health, and the rewards grow with both (docs/balance.md)
-// kids-docs: enemies.html#kind-code, stronger.html#curve #monsters-grow (see kids-docs/README.md)
+// learn: enemies.html#kind-code, stronger.html#curve #monsters-grow (see learn/README.md)
 export const GROWTH = Object.freeze({ hp: 0.17, damage: 0.1, xp: 0.25, coins: 0.25 });
 // the level enemies have at a depth: one per depth (1 at the surface), and ±1 for a cube's
 // species from depth 2 on
-// kids-docs: code.html#functions, stronger.html#monsters-grow (see kids-docs/README.md)
+// learn: code.html#functions, stronger.html#monsters-grow (see learn/README.md)
 export const depthLevel = depth => Math.max(1, Math.floor(depth || 0));
 // guardians stand above their depth: side guardians one level, descent guardians two (on the
 // road out of town, the very first ones, at the road's own level)
 export const GUARDIAN_LEVELS = Object.freeze({ side: 1, descent: 2 });
 export const guardianLevel = (depth, role) => depthLevel(depth) + (depth >= 1 ? GUARDIAN_LEVELS[role] : 0);
 
-// kids-docs: checks.html#try-test, code.html#objects, combat.html#damage, enemies.html#numbers, space.html#distance, stronger.html#monsters-grow (see kids-docs/README.md)
+// learn: checks.html#try-test, code.html#objects, combat.html#damage, enemies.html#numbers, space.html#distance, stronger.html#monsters-grow (see learn/README.md)
 export const SPIDER = Object.freeze({
   type: 'spider', species: 'spider', label: 'Spider', hp: 32, damage: 15, knock: 4.5,
   xp: 20, coins: Object.freeze([4, 8]),
@@ -38,7 +38,7 @@ export const SPIDER = Object.freeze({
   parts: Object.freeze({ body: ['SpiderBody'], eyes: ['SpiderEyes'] }),
   seedSalt: 0x5b1d3a, spacing: 3,
 });
-// kids-docs: checks.html#try-test, combat.html#damage (see kids-docs/README.md)
+// learn: checks.html#try-test, combat.html#damage (see learn/README.md)
 export const STUNDER = Object.freeze({
   type: 'stunder', species: 'stunder', label: 'Stunder', hp: 140, damage: 30, knock: 7,
   xp: 80, coins: Object.freeze([20, 35]),
@@ -51,7 +51,7 @@ export const STUNDER = Object.freeze({
   seedSalt: 0x57a4de2, spacing: 5,
 });
 // Slithers in with its head raised and lunges forward and down to bite (clip frame 12).
-// kids-docs: art.html#bones (see kids-docs/README.md)
+// learn: art.html#bones (see learn/README.md)
 export const SNAKE = Object.freeze({
   type: 'snake', species: 'snake', label: 'Grass snake', hp: 48, damage: 16, knock: 4,
   xp: 30, coins: Object.freeze([6, 12]),
@@ -144,7 +144,7 @@ export const ENEMY_PROFILES = Object.freeze([SPIDER, STUNDER, SNAKE, OCTONAUT, F
 // Anything else replaces the base value. A kind keeps its species' seedSalt, so where an
 // enemy stands, its level and its id do not depend on which kind it drew.
 const times = (v, k) => Math.round(v * k);
-// kids-docs: enemies.html#kinds (see kids-docs/README.md)
+// learn: enemies.html#kinds (see learn/README.md)
 export function enemyKind(base, { mods = {}, ...spec }) {
   const { hp = 1, damage = 1, speed = 1, size = 1 } = mods, xp = mods.xp ?? Math.sqrt(hp * damage);
   const reach = a => a.hitReach * size;
@@ -166,7 +166,7 @@ export const SAND_VIPER = enemyKind(SNAKE, {
   colors: { skin: 'oklch(0.80 0.12 82)', eyes: 'oklch(0.62 0.22 28)' }, ichor: Object.freeze(['#d9c46a', '#8a6a22']),
   mods: { hp: 1.25, damage: 1.2, speed: 1.1 },
 });
-// kids-docs: enemies.html#kind-code #kinds (see kids-docs/README.md)
+// learn: enemies.html#kind-code #kinds (see learn/README.md)
 export const BLOOD_VIPER = enemyKind(SNAKE, {
   type: 'bloodviper', label: 'Blood viper', reason: 'Bitten by a Blood viper!',
   colors: { skin: 'oklch(0.60 0.19 27)', eyes: 'oklch(0.93 0.18 100)' }, ichor: Object.freeze(['#e0503a', '#6a1410']),
@@ -258,7 +258,7 @@ export const threat = profile => attackDamage(profile) / attackCycle(profile);
 // `threat` (or `damageMult` × the species' blows), a fixed XP reward and a longer poise.
 // Side guardians are a mid-route fight; descent guardians (the boss placeholders) are the
 // depth's big one: tougher, deadlier, and they recover from staggers more slowly still.
-// kids-docs: enemies.html#guardians (see kids-docs/README.md)
+// learn: enemies.html#guardians (see learn/README.md)
 export const GUARDIAN_TIERS = Object.freeze({
   side: Object.freeze({ hp: 550, hpMult: 3.5, threat: 9, damageMult: 1.15, xp: 260, poise: 1.4 }),
   descent: Object.freeze({ hp: 1000, hpMult: 6.5, threat: 11.5, damageMult: 1.45, xp: 650, poise: 2 }),
@@ -314,9 +314,9 @@ export function blowOf(profile, a = profile) {
 }
 
 // a level-1 value grown to `level`
-// kids-docs: stronger.html#monsters-grow (see kids-docs/README.md)
+// learn: stronger.html#monsters-grow (see learn/README.md)
 export const grown = (value, rate, level) => value * (1 + rate * (level - 1));
-// kids-docs: stronger.html#race (see kids-docs/README.md)
+// learn: stronger.html#race (see learn/README.md)
 export function enemyProfile(profile, level) {
   if (!Number.isSafeInteger(level) || level < 1) throw new RangeError('Invalid enemy level');
   return Object.freeze({ ...profile, hp: Math.round(grown(profile.hp, GROWTH.hp, level)),
@@ -324,7 +324,7 @@ export function enemyProfile(profile, level) {
 }
 // the copper a kind drops at a level: [least, most]
 export const coinRange = (profile, level) => profile.coins.map(c => Math.round(grown(c, GROWTH.coins, level)));
-// kids-docs: memory.html#names (see kids-docs/README.md)
+// learn: memory.html#names (see learn/README.md)
 export function enemyRoll(map, profile, floorId) {
   const R = mulberry32(hash32(map.seed ^ profile.seedSalt ^ Math.imul(floorId, 7919) ^ 0x1007));
   const depth = Math.max(0, map.depth || 0), r = R();

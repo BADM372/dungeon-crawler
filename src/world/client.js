@@ -4,7 +4,7 @@
 import { key } from './coords.js';
 import { makeLayouts } from './layout.js';
 
-// kids-docs: architecture.html#worker (see kids-docs/README.md)
+// learn: architecture.html#worker (see learn/README.md)
 export class WorldClient {
   constructor(seed, opts = {}) {
     this.seed = seed;

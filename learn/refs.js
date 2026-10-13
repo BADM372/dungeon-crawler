@@ -1,13 +1,13 @@
 // References from the guide into the game's code, shared by the guide (live code, deck.js) and
-// the maintenance tool (fingerprints and markers, tools/kids-docs.mjs). Pure, no DOM.
+// the maintenance tool (fingerprints and markers, tools/learn.mjs). Pure, no DOM.
 //
 // A reference is "path#name", "path#a,b" (several names in one file) or just "path" (the whole
 // file). A name is a top-level function, class, const / let / var (also one of several on one
 // line), a method (`name(...) {`), a Python def / class / assignment, or "header" (the comment
 // the file starts with). Its text is the definition plus the comment lines right above it.
-// Marker lines ("// kids-docs: ..." / "# kids-docs: ...", written by the tool) are left out.
+// Marker lines ("// learn: ..." / "# learn: ...", written by the tool) are left out.
 
-export const MARKER = /^\s*(\/\/|#)\s*kids-docs:/;
+export const MARKER = /^\s*(\/\/|#)\s*learn:/;
 
 // "a#x,y b" -> [{ path: 'a', name: 'x' }, { path: 'a', name: 'y' }, { path: 'b', name: null }]
 export function parseRefs(list) {

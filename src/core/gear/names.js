@@ -26,7 +26,7 @@ function compound(rng) {   // never "Thornthorn" or "Boneedge"
   return root + pick(TAIL.filter(t => t !== root.toLowerCase() && t[0] !== end), rng);
 }
 
-// kids-docs: loot.html#affixes (see kids-docs/README.md)
+// learn: loot.html#affixes (see learn/README.md)
 export function itemName(rarity, baseName, rng) {
   switch (rarity) {
     case 'junk': return `${pick(JUNK, rng)} ${baseName}`;

@@ -6,7 +6,7 @@ import { camera } from '../render/scene.js';
 import { player, view } from './state.js';
 import { kick } from './juice.js';
 
-// kids-docs: drawing.html#camera (see kids-docs/README.md)
+// learn: drawing.html#camera (see learn/README.md)
 const pitch = THREE.MathUtils.degToRad(44);
 const cubeCenter = new THREE.Vector3(N / 2, CUBE_H / 2 - BASE - 1.5, N / 2);
 const target = new THREE.Vector3(), focus = new THREE.Vector3();

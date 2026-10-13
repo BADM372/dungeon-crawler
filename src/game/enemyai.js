@@ -8,7 +8,7 @@ import { stepEnemy, findPath, around, clearLine } from '../physics/enemynav.js';
 import { attackOf, pickAttack, lungeDistance, lungeAt } from '../core/enemies.js';
 import { launchProjectile } from './projectiles.js';
 
-// kids-docs: space.html#angles (see kids-docs/README.md)
+// learn: space.html#angles (see learn/README.md)
 const turn = (e, yaw, dt, rate = 8) => { e.yaw += Math.atan2(Math.sin(yaw - e.yaw), Math.cos(yaw - e.yaw)) * Math.min(1, dt * rate); };
 function steer(e, x, z, speed, dt) {
   const dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz);
@@ -28,7 +28,7 @@ function follow(e, speed, dt, end) {
   if (next) { steer(e, next.x + 0.5, next.z + 0.5, speed, dt); return false; }
   return steer(e, end ? end[0] : e.f.x + 0.5, end ? end[1] : e.f.z + 0.5, speed, dt);
 }
-// kids-docs: enemies.html#decide-code #state-machine, paths.html#bfs (see kids-docs/README.md)
+// learn: enemies.html#decide-code #state-machine, paths.html#bfs (see learn/README.md)
 function decide(e) {
   const p = player, cfg = e.profile, target = playerFloor(cfg.height);
   const alive = !p.ragdoll && p.hp > 0 && !state.transitioning, dist = Math.hypot(p.x - e.x, p.z - e.z);
@@ -61,7 +61,7 @@ function leap(e, lunge, t0, dx, dz) {
   const step = (lungeAt(lunge, e.t) - lungeAt(lunge, t0)) * e.leap;
   if (step > 0) stepEnemy(e, fx * step, fz * step);
 }
-// kids-docs: enemies.html#state-machine, paths.html#bfs (see kids-docs/README.md)
+// learn: enemies.html#state-machine, paths.html#bfs (see learn/README.md)
 function act(e, dt) {
   const p = player, cfg = e.profile, dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz);
   if (e.mode === 'attack') {
@@ -108,7 +108,7 @@ function knockback(e, dt) {
   e.kbx *= k; e.kbz *= k;
   if (Math.hypot(e.kbx, e.kbz) < 0.05) e.kbx = e.kbz = 0;
 }
-// kids-docs: enemies.html#decide-code #fair (see kids-docs/README.md)
+// learn: enemies.html#decide-code #fair (see learn/README.md)
 export function stepEnemies(list, dt) {
   for (const e of list) {
     knockback(e, dt);

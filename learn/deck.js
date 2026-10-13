@@ -11,7 +11,7 @@
 //   - <pre data-code="src/x.js#name"> shows that definition, read live from the game's code
 //   - <b data-val="src/x.js#NAME.field"> shows that value, read live from the game's code
 //     (demos can show live code too: set data-code on a <pre> and call liveCode)
-//   - slides that stamps.json lists as outdated get a note (tools/kids-docs.mjs, README.md)
+//   - slides that stamps.json lists as outdated get a note (tools/learn.mjs, README.md)
 import { DECKS, LEVELS, THEME_NAMES, THEME_NAMES_DE, local, iconUrl } from './decks.js';
 import { parseRefs, extract, readValue, formatValue } from './refs.js';
 
@@ -139,7 +139,7 @@ async function liveValues(root) {
     } catch { /* keep the written value */ }
   }
 }
-// slides the maintenance tool marked as possibly outdated (tools/kids-docs.mjs --defer)
+// slides the maintenance tool marked as possibly outdated (tools/learn.mjs --defer)
 async function staleNotes(slides) {
   let stamps;
   try { stamps = await (await fetch('stamps.json')).json(); } catch { return; }

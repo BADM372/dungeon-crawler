@@ -28,7 +28,7 @@ function cast() { raycaster.setFromCamera(pointer.ndc, camera); return ray; }
 
 const CUT_REACH = 3.5;   // around the player, surfaces above the cut height are hidden
 // the walkable surface under the cursor: { x, y, z, s } or null
-// kids-docs: drawing.html#click #click-code (see kids-docs/README.md)
+// learn: drawing.html#click #click-code (see learn/README.md)
 export function pickFloor() {
   const m = state.map, r = cast(), o = r.origin, d = r.direction;
   if (!m || d.y > -1e-3) return null;

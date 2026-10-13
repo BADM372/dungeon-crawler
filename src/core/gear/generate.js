@@ -19,7 +19,7 @@ const level = ilvl => Math.max(1, Math.min(MAX_ILVL, Math.floor(ilvl) || 1));
 
 // opts: rarity (an id: forces it), itemId (forces the base), and the rarity odds options
 // (luck, floor, ancient: see rarityOdds)
-// kids-docs: loot.html#generate-code (see kids-docs/README.md)
+// learn: loot.html#generate-code (see learn/README.md)
 export function rollWeapon(rng, ilvl, opts = {}) {
   ilvl = level(ilvl);
   const rarity = opts.rarity ? RARITY[opts.rarity] : rollRarity(rng, ilvl, opts);

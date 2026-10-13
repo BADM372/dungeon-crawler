@@ -62,7 +62,7 @@ export function stepEnemy(s, mx, mz, radius = s.profile.radius, height = s.profi
   };
   return go(s.x + mx, s.z + mz) || go(s.x + mx, s.z) || go(s.x, s.z + mz);
 }
-// kids-docs: paths.html#bfs-code (see kids-docs/README.md)
+// learn: paths.html#bfs-code (see learn/README.md)
 export function findPath(a, b, maxLen, height = 0.9) {
   if (!a || !b || !walkable(a, height) || !walkable(b, height)) return null;
   const prev = new Map([[a, null]]);
@@ -85,7 +85,7 @@ export function around(f, n, height = 0.9) {
     front = front.flatMap(g => neighbors(g, height).filter(h => !seen.has(h) && seen.add(h)));
   return [...seen];
 }
-// kids-docs: paths.html#sight (see kids-docs/README.md)
+// learn: paths.html#sight (see learn/README.md)
 export function clearLine(ax, ay, az, bx, by, bz) {
   const n = Math.ceil(Math.hypot(bx - ax, by - ay, bz - az) / 0.15);
   for (let i = 1; i < n; i++) {

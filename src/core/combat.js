@@ -11,7 +11,7 @@ import { itemStats } from './gear/stats.js';
 
 export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
 // game time (s) for the basic sword (the Old Sword's timing)
-// kids-docs: checks.html#try-test, combat.html#chain #damage (see kids-docs/README.md)
+// learn: checks.html#try-test, combat.html#chain #damage (see learn/README.md)
 export const SWORD = Object.freeze({
   damage: 30, range: 0.85, arc: Math.PI * 0.42,
   activeStart: 0.16, activeEnd: 0.27,   // the blade connects ~0.16 s after the click
@@ -20,7 +20,7 @@ export const SWORD = Object.freeze({
 });
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
 // a blow taking at least this share of an enemy's health staggers it even while it is poised
-// kids-docs: combat.html#stagger-code (see kids-docs/README.md)
+// learn: combat.html#stagger-code (see learn/README.md)
 export const HEAVY_HIT = 0.25;
 // how far beyond blade reach the wind-up steps in towards a target (game/update.js)
 export const LUNGE_REACH = 0.6;
@@ -78,7 +78,7 @@ export function advanceSwing(p, dt) {
   if (s.t >= (s.stats || SWORD).duration) cancelSwing(p);
 }
 
-// kids-docs: combat.html#arc-code #hit-test (see kids-docs/README.md)
+// learn: combat.html#arc-code #hit-test (see learn/README.md)
 export function inSwordArc(p, enemy) {
   const s = p.sword, stats = s.stats || SWORD;
   if (!s.active || s.t < stats.activeStart || s.t > stats.activeEnd
@@ -110,7 +110,7 @@ export function softTarget(p, enemies, yaw = p.yaw, visible = () => true, extra 
 // A hit staggers: it interrupts a wind-up (each swing can hit an enemy only once). Then the
 // enemy is poised for profile.poise s: lighter hits hurt it but do not stagger it again, so it
 // can strike back (enemy.staggered says which it was).
-// kids-docs: combat.html#damage #stagger-code (see kids-docs/README.md)
+// learn: combat.html#damage #stagger-code (see learn/README.md)
 export function damageEnemy(enemy, amount) {
   if (enemy.mode === 'dead') return false;
   enemy.hp = Math.max(0, enemy.hp - amount);
@@ -128,7 +128,7 @@ export function damageEnemy(enemy, amount) {
 }
 // a blade hit: { damage, crit } (false for none). roll: the crit roll in 0..1. A crit
 // multiplies the damage; life on hit (leech) heals, never above the maximum
-// kids-docs: architecture.html#swing-journey, checks.html#try-test, code.html#whole (see kids-docs/README.md)
+// learn: architecture.html#swing-journey, checks.html#try-test, code.html#whole (see learn/README.md)
 export function swordHit(p, enemy, roll = Math.random()) {
   if (!inSwordArc(p, enemy)) return false;
   p.sword.hits.add(enemy);

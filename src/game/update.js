@@ -15,7 +15,7 @@ import { landFall } from './fall.js';
 import { tickCast, cancelCast } from './townportal.js';
 
 // during the wind-up, step in towards an enemy that is just out of reach
-// kids-docs: combat.html#chain (see kids-docs/README.md)
+// learn: combat.html#chain (see learn/README.md)
 function lunge(s) {
   const e = s.target, stats = s.stats;
   if (!e?.profile || e.mode === 'dead' || s.t >= stats.activeStart) return [0, 0];
@@ -24,7 +24,7 @@ function lunge(s) {
     ? [Math.sin(s.yaw), Math.cos(s.yaw)] : [0, 0];
 }
 
-// kids-docs: physics.html#landing (see kids-docs/README.md)
+// learn: physics.html#landing (see learn/README.md)
 export function updatePlayer(dt) {
   if (state.inventoryOpen || state.transitioning) return;
   // a portal's charge only carries over while checkPortals sees us standing in it

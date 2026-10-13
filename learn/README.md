@@ -5,38 +5,38 @@ German. It goes from the big ideas down to the real code. The grown-up design no
 `docs/`; this is the friendly version of the same knowledge.
 
 ```sh
-npm run serve        # then http://localhost:8000/kids-docs/
+npm run serve        # then http://localhost:8000/learn/
 ```
 
 The guide reads the game's code and modules, so it needs the server (not `file://`).
 
 ## When you change the game
 
-Slides say which code they explain, and `kids-docs/stamps.json` remembers what that code
+Slides say which code they explain, and `learn/stamps.json` remembers what that code
 looked like when the slides were last checked. Above every definition a slide explains, the
 game's code carries a marker:
 
 ```js
-// kids-docs: combat.html#arc-code #hit-test (see kids-docs/README.md)
+// learn: combat.html#arc-code #hit-test (see learn/README.md)
 export function inSwordArc(p, enemy) {
 ```
 
 When you change such a definition, finish the game change first, then:
 
-1. `npm run kids-docs` (or `npm test`) lists the slides that explain code that changed.
+1. `npm run learn` (or `npm test`) lists the slides that explain code that changed.
 2. Read those slides in both languages and fix what no longer matches. Code shown with
    `data-code` and numbers shown with `data-val` update themselves; the words around them
    do not.
-3. `npm run kids-docs -- --stamp` accepts the code as it is now. It also rewrites the markers and
+3. `npm run learn -- --stamp` accepts the code as it is now. It also rewrites the markers and
    the written fallbacks of `data-val` numbers. If you reviewed only some of the slides, name
    them: `--stamp combat.html#arc-code`; slides that explain the same code are noted as outdated.
 
-If the slides should wait, `npm run kids-docs -- --defer` (or `--defer page.html#slide ...`)
+If the slides should wait, `npm run learn -- --defer` (or `--defer page.html#slide ...`)
 accepts the code but notes the slides as outdated in `stamps.json`, with the commit the change
 was made on (`git diff <commit>` shows it); the guide then shows a "may be out of date" note on
 them. A note stays until that slide is reviewed: `--stamp page.html#slide` clears it, a plain
 `--stamp` for other code does not. Either way `npm test` passes again, so the guide never blocks
-a game change, and nothing goes stale silently: `npm run kids-docs` lists the noted slides.
+a game change, and nothing goes stale silently: `npm run learn` lists the noted slides.
 
 Small fixes to the words belong in the same change as the code. A bigger rewrite can wait:
 defer it, and catch up on the noted slides later, on their own.
@@ -61,7 +61,7 @@ Plain HTML, CSS and ES modules, no build step, like the game.
 | `words.html` | the glossary; `<a class="w" href="words.html#seed">` anywhere shows its entry on hover |
 | `demos/*.js` | interactive demos, loaded when they scroll into view |
 | `img/` | screenshots of the game |
-| `../tools/kids-docs.mjs` | the check / `--stamp` / `--defer` tool |
+| `../tools/learn.mjs` | the check / `--stamp` / `--defer` tool |
 
 ## Two languages in one file
 
@@ -133,7 +133,7 @@ or it is 2D), say where it comes from in its first comment.
 
 ## Tests
 
-`tests/kids-docs.test.js` checks the rooms, that every text has both languages, links, anchors,
+`tests/learn.test.js` checks the rooms, that every text has both languages, links, anchors,
 images and demo modules, that every name a demo imports from the game is still exported, and
-`tools/kids-docs.mjs`'s check: references resolve, fingerprints, markers and written values
+`tools/learn.mjs`'s check: references resolve, fingerprints, markers and written values
 are current.

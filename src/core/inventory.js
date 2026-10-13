@@ -11,18 +11,18 @@ export function whole(n) {
   if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('Expected a non-negative safe integer');
   return n;
 }
-// kids-docs: memory.html#bag-code (see kids-docs/README.md)
+// learn: memory.html#bag-code (see learn/README.md)
 export function createInventory() {
   return { slots: Array(BAG_SIZE).fill(null), currency: COINS.map(c => ({ itemId: c.id, count: 0 })),
     bar: Array(BAR_SIZE).fill(null), equipped: null, nextInstance: 1, version: 0 };
 }
 export const copperTotal = inv => whole(inv.currency.reduce((n, s) => n + s.count * ITEMS[s.itemId].value, 0));
-// kids-docs: code.html#math (see kids-docs/README.md)
+// learn: code.html#math (see learn/README.md)
 export function coinCounts(copper) {
   whole(copper);
   return [Math.floor(copper / 1000), Math.floor(copper % 1000 / 10), copper % 10];
 }
-// kids-docs: code.html#functions (see kids-docs/README.md)
+// learn: code.html#functions (see learn/README.md)
 export function formatCoins(copper) {
   return coinCounts(copper).map((n, i) => n ? `${n}${COINS[i].suffix}` : '').filter(Boolean).join(' ') || '0c';
 }
@@ -36,7 +36,7 @@ export function addCopper(inv, amount) {
   if (amount) setCopper(inv, total);
   return true;
 }
-// kids-docs: code.html#decisions (see kids-docs/README.md)
+// learn: code.html#decisions (see learn/README.md)
 export function spendCopper(inv, amount) {
   whole(amount);
   const total = copperTotal(inv);
@@ -54,7 +54,7 @@ export function equipItem(inv, instanceId) {
 }
 
 // All-or-nothing: a full bag never consumes a reward or partially inserts an item.
-// kids-docs: memory.html#bag (see kids-docs/README.md)
+// learn: memory.html#bag (see learn/README.md)
 export function addItem(inv, itemId, count = 1) {
   whole(count);
   const def = ITEMS[itemId];
@@ -75,7 +75,7 @@ export function addItem(inv, itemId, count = 1) {
 }
 // a single item instance ({ itemId, gen }) into the first free slot; its instanceId, or null
 // when the bag is full
-// kids-docs: memory.html#bag (see kids-docs/README.md)
+// learn: memory.html#bag (see learn/README.md)
 export function addInstance(inv, item) {
   const def = ITEMS[item?.itemId];
   if (!def) throw new TypeError(`Unknown item: ${item?.itemId}`);
@@ -92,7 +92,7 @@ export function addInstance(inv, item) {
 export const isBound = itemId => !!ITEMS[itemId]?.bound;
 // the whole slot out of the bag (unequipping it): { itemId, count, gen? }, or null (also for
 // bound items)
-// kids-docs: memory.html#bag (see kids-docs/README.md)
+// learn: memory.html#bag (see learn/README.md)
 export function takeItem(inv, instanceId) {
   const i = inv.slots.findIndex(s => s?.instanceId === instanceId);
   if (i < 0 || isBound(inv.slots[i].itemId)) return null;
@@ -122,7 +122,7 @@ export function removeItem(inv, instanceId, count = 1) {
 
 // Quick bar: weapons (equip on use) and items with a use action.
 export const barAllowed = itemId => !!(ITEMS[itemId]?.weapon || ITEMS[itemId]?.use);
-// kids-docs: memory.html#references (see kids-docs/README.md)
+// learn: memory.html#references (see learn/README.md)
 const barRef = slot => ITEMS[slot.itemId].stackLimit > 1 && !slot.gen ? { itemId: slot.itemId } : { instanceId: slot.instanceId };
 const sameRef = (a, b) => !!a && !!b && a.itemId === b.itemId && a.instanceId === b.instanceId;
 function forgetBar(inv, instanceId) {
@@ -130,7 +130,7 @@ function forgetBar(inv, instanceId) {
 }
 // Put the bag item on bar slot `index`, moving it from any other slot; on the slot it already
 // has, take it off. false: no such item, or it cannot go on the bar.
-// kids-docs: memory.html#bag (see kids-docs/README.md)
+// learn: memory.html#bag (see learn/README.md)
 export function assignBar(inv, index, instanceId) {
   if (!Number.isInteger(index) || index < 0 || index >= BAR_SIZE) throw new RangeError('No such quick bar slot');
   const slot = ownedItem(inv, instanceId);
@@ -155,7 +155,7 @@ export function autoBar(inv, itemId) {
 export const barIndexOf = (inv, slot) => !slot ? -1 : inv.bar.findIndex(r => sameRef(r, barRef(slot)));
 // What bar slot `index` stands for: { itemId, slot: the bag slot using it takes (null when none
 // is left), count }, or null when it is empty.
-// kids-docs: memory.html#references (see kids-docs/README.md)
+// learn: memory.html#references (see learn/README.md)
 export function barEntry(inv, index) {
   const ref = inv.bar[index];
   if (!ref) return null;

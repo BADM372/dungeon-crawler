@@ -18,7 +18,7 @@ const guarded = (world, k) => {
   return world.layout(d).guardians.has(k);
 };
 
-// kids-docs: world.html#faces (see kids-docs/README.md)
+// learn: world.html#faces (see learn/README.md)
 function sideFace(world, k, d, withPortal) {
   const fk = faceKey(k, d), R = world.wfc.rng(fk, 0x51de);
   const sock = world.wfc.tiles.get(k).sock[d];

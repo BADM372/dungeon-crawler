@@ -1,25 +1,40 @@
-// The kids' guide (kids-docs/): its pages, its two languages, and its references into the game.
+// The kids' guide (learn/): its pages, its two languages, and its references into the game.
 // "up to date with the game" fails when code the guide explains has changed; the message says
-// which slides to review (kids-docs/README.md, tools/kids-docs.mjs).
+// which slides to review (learn/README.md, tools/learn.mjs).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { DECKS } from '../kids-docs/decks.js';
-import { check, describe, restamp } from '../tools/kids-docs.mjs';
+import { DECKS } from '../learn/decks.js';
+import { check, describe, restamp } from '../tools/learn.mjs';
+import { extract, fingerprint, MARKER } from '../learn/refs.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const KIDS = join(ROOT, 'kids-docs');
-const pages = readdirSync(KIDS).filter(f => f.endsWith('.html'));
-const read = f => readFileSync(join(KIDS, f), 'utf8');
+const LEARN = join(ROOT, 'learn');
+const pages = readdirSync(LEARN).filter(f => f.endsWith('.html'));
+const read = f => readFileSync(join(LEARN, f), 'utf8');
 const ids = f => new Set([...read(f).matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+
+test('learn markers do not change the code fingerprints', () => {
+  for (const [path, source, marker] of [
+    ['example.js', '// A value the guide explains.\nexport const ANSWER = 42;', '// learn: code.html#names (see learn/README.md)'],
+    ['example.py', '# A value the guide explains.\nANSWER = 42', '# learn: art.html#sdf-code (see learn/README.md)'],
+  ]) {
+    assert.ok(MARKER.test(marker), path);
+    assert.ok(MARKER.test('  ' + marker), path + ': indented marker');
+    const plain = extract(source, path, 'ANSWER');
+    const marked = extract(marker + '\n' + source, path, 'ANSWER');
+    assert.equal(marked.text, plain.text, path);
+    assert.equal(fingerprint(marked.text), fingerprint(plain.text), path);
+  }
+});
 
 test('every room in decks.js exists and every room page is in decks.js', () => {
   for (const d of DECKS) {
     assert.ok(pages.includes(d.file), `${d.file} is listed but missing`);
     assert.ok(d.de?.title && d.de?.teaser, `${d.file}: German title and teaser`);
-    assert.ok(existsSync(resolve(KIDS, d.icon)), `${d.file}: icon ${d.icon}`);
+    assert.ok(existsSync(resolve(LEARN, d.icon)), `${d.file}: icon ${d.icon}`);
   }
   for (const p of pages.filter(p => read(p).includes('<main class="deck">')))
     assert.ok(DECKS.some(d => d.file === p), `${p} is a room but not in decks.js`);
@@ -65,23 +80,23 @@ test('links, images and anchors in the guide resolve', () => {
   for (const page of pages) {
     for (const [, url] of read(page).matchAll(/\s(?:href|src)="([^"]+)"/g)) {
       if (/^(https?:|mailto:|data:)/.test(url) || url.includes('${')) continue;   // external, or built by a script
-      const [path, hash] = url.split('#'), abs = path ? resolve(KIDS, path.split('?')[0]) : join(KIDS, page);
+      const [path, hash] = url.split('#'), abs = path ? resolve(LEARN, path.split('?')[0]) : join(LEARN, page);
       assert.ok(existsSync(abs), `${page}: ${url} does not exist`);
-      if (hash && abs.endsWith('.html') && abs.startsWith(KIDS)) assert.ok(ids(abs.slice(KIDS.length + 1)).has(hash), `${page}: ${url} has no #${hash}`);
+      if (hash && abs.endsWith('.html') && abs.startsWith(LEARN)) assert.ok(ids(abs.slice(LEARN.length + 1)).has(hash), `${page}: ${url} has no #${hash}`);
     }
   }
 });
 
 test('every demo has its module', () => {
   for (const page of pages) for (const [, name] of read(page).matchAll(/data-demo="([^"]+)"/g))
-    assert.ok(existsSync(join(KIDS, 'demos', name + '.js')), `${page}: demo ${name}`);
+    assert.ok(existsSync(join(LEARN, 'demos', name + '.js')), `${page}: demo ${name}`);
 });
 
 test('the game modules the demos and live values import still export what they use', async () => {
-  for (const demo of readdirSync(join(KIDS, 'demos'))) {
-    const src = readFileSync(join(KIDS, 'demos', demo), 'utf8');
+  for (const demo of readdirSync(join(LEARN, 'demos'))) {
+    const src = readFileSync(join(LEARN, 'demos', demo), 'utf8');
     for (const [, names, from] of src.matchAll(/import\s*\{([^}]+)\}\s*from\s*'(\.\.\/\.\.\/[^']+)'/g)) {
-      const file = resolve(KIDS, 'demos', from);
+      const file = resolve(LEARN, 'demos', from);
       assert.ok(existsSync(file), `${demo}: ${from} does not exist`);
       // the audio player needs a browser; check its exports by reading the source
       const text = readFileSync(file, 'utf8');

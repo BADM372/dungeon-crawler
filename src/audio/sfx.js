@@ -27,7 +27,7 @@ onAudioStart((ac, output) => {
 });
 
 // building blocks: a gain envelope, noise and pitch-swept oscillators
-// kids-docs: sound.html#coin-code (see kids-docs/README.md)
+// learn: sound.html#coin-code (see learn/README.md)
 function amp(t, attack, peak, decay, out) {
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.0001, t);
@@ -82,7 +82,7 @@ const SOUNDS = {
       tone('triangle', hz * p, hz * p, at, .35, amp(at, .005, .25, .35, out));
     }
   },
-  // kids-docs: sound.html#coin-code (see kids-docs/README.md)
+  // learn: sound.html#coin-code (see learn/README.md)
   coin(t, out, p) {    // two quick bright notes; rapid pickups climb in pitch
     tone('triangle', 1568 * p, 1568 * p, t, 0.08, amp(t, 0.002, 0.32, 0.07, out));
     tone('triangle', 2093 * p, 2093 * p, t + 0.055, 0.2, amp(t + 0.055, 0.002, 0.3, 0.18, out));
@@ -311,7 +311,7 @@ export async function renderSfx(name, pitch = 1) {
 
 const ndc = new THREE.Vector3();
 // sfx(name, { at: {x,y,z} (pans by screen position), pitch, volume })
-// kids-docs: sound.html#coin-code #recipe (see kids-docs/README.md)
+// learn: sound.html#coin-code #recipe (see learn/README.md)
 export function sfx(name, { at = null, pitch = 1, volume = 1 } = {}) {
   if (!ctx || ctx.state !== 'running') return;
   const now = ctx.currentTime;

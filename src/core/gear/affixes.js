@@ -6,7 +6,7 @@
 // check every tier is valid. `tags`: the bases it may roll on (core/gear/bases.js).
 export const MAX_PREFIXES = 3, MAX_SUFFIXES = 3;
 // the item level each tier starts at; tiers 6 and 7 come only from tierBonus
-// kids-docs: loot.html#affixes (see kids-docs/README.md)
+// learn: loot.html#affixes (see learn/README.md)
 export const TIER_LEVELS = Object.freeze([1, 4, 8, 13, 19]);
 export const MAX_TIER = 7;
 export const affixTier = ilvl => TIER_LEVELS.filter(l => ilvl >= l).length;
@@ -14,7 +14,7 @@ export const affixTier = ilvl => TIER_LEVELS.filter(l => ilvl >= l).length;
 const affix = (id, kind, name, stat, op, tiers, text, decimals = 0) =>
   Object.freeze({ id, kind, name, stat, op, tiers: Object.freeze(tiers.map(t => Object.freeze(t))), text, decimals, tags: Object.freeze(['sword']) });
 
-// kids-docs: loot.html#affixes (see kids-docs/README.md)
+// learn: loot.html#affixes (see learn/README.md)
 export const AFFIXES = Object.freeze([
   affix('sharp', 'prefix', 'Sharp', 'damage', 'add',
     [[2, 4], [4, 7], [7, 11], [11, 16], [16, 22], [22, 29], [29, 38]], v => `+${v} damage`),

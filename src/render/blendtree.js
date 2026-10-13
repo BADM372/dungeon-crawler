@@ -7,7 +7,7 @@ import { player } from '../game/state.js';
 import { character } from './character.js';
 
 export const W = { idle: 1, walk: 0, run: 0, swimIdle: 0, swim: 0, climb: 0, jump: 0, fall: 0, land: 0, sit: 0 };
-// kids-docs: animation.html#modes (see kids-docs/README.md)
+// learn: animation.html#modes (see learn/README.md)
 const RATE = { loco: 10, swim: 6, climb: 14, jump: 18, fall: 7, land: 20, sit: 14 };   // cross-fade speeds
 const seen = { jump: 0, land: 0 };
 let mode = 'loco', modeT = 0, phase = 0, swimPhase = 0, climbPhase = 0, slow = 0;
@@ -19,7 +19,7 @@ export const blend = { stretch: 1, phase: 0, run: 0, climb: 0, mode: 'loco' };
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 export const resetMode = () => { mode = 'loco'; };
 
-// kids-docs: animation.html#mode-code #modes (see kids-docs/README.md)
+// learn: animation.html#mode-code #modes (see learn/README.md)
 function nextMode(dt, speed) {
   const p = player;
   modeT += dt;
@@ -47,7 +47,7 @@ function nextMode(dt, speed) {
   else if (mode === 'swim' && !p.swimming) mode = p.grounded ? 'loco' : 'fall';
 }
 
-// kids-docs: animation.html#blend-code #mixing (see kids-docs/README.md)
+// learn: animation.html#blend-code #mixing (see learn/README.md)
 export function updateBlend(dt, speed, time) {
   const A = character.actions, T = {};
   for (const n in W) T[n] = 0;
