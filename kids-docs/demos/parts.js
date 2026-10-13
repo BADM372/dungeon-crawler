@@ -56,7 +56,7 @@ export default async function mount(el) {
   let data;
   try { data = await crawl(); } catch (err) {
     box.className = 'err';
-    box.textContent = tr('This needs the game\'s server (npm run serve): ', 'Dafür braucht es den Server des Spiels (npm run serve): ') + err.message;
+    box.textContent = tr('The game\'s code could not be read: ', 'Der Code des Spiels ließ sich nicht lesen: ') + err.message;
     return;
   }
   box.remove();

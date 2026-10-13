@@ -169,6 +169,7 @@ a.w:hover { color: var(--title); }
   background: #2a2416; margin-left: 4px; }
 .qbar .door img { width: 28px; height: 28px; object-fit: contain; }
 .qbar .door:hover { filter: brightness(1.25); }
+.qbar .door:first-child { margin: 0 4px 0 0; }
 body.scroll .qbar { display: none; }
 body.scroll .bar { background: #0b0d12f0; border-bottom: 1px solid #2a2f3a; }
 
@@ -262,6 +263,14 @@ pre.stepper .ln.on { background: color-mix(in srgb, var(--accent) 28%, transpare
 .weapon .base { color: #8f9aaa; font: 12px var(--mono); }
 .weapon .stats { color: #b8c2d0; font: 12px/1.6 var(--mono); margin: 6px 0 0; white-space: pre-line; }
 .weapon ul { list-style: none; padding: 0; margin: 4px 0 0; color: #8fb6ff; font: 12px var(--mono); }
+/* 100 chests at once: every weapon, its card on hover (loot demo) */
+.loots { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 5px; margin: 10px 0; }
+.loots .it { position: relative; aspect-ratio: 1; padding: 0; border: 1px solid var(--rarity); border-radius: 5px; cursor: pointer;
+  background: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--rarity) 35%, transparent), #181e28 72%); }
+.loots .it img { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); object-fit: contain; }
+.loots .it:hover, .loots .it:focus-visible { background-color: #222a36; box-shadow: 0 0 0 1px var(--rarity), 0 0 12px color-mix(in srgb, var(--rarity) 60%, transparent); }
+.loots .it.on { box-shadow: 0 0 0 2px var(--gold); }
+.weapontip { position: fixed; z-index: 30; width: min(440px, 90vw); pointer-events: none; box-shadow: 0 10px 40px #000c; border-radius: 6px; background: #12161e; }
 
 /* ---- the map (index.html) --------------------------------------------------------------- */
 .hero { max-width: 1120px; margin: 0 auto 22px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: center; }

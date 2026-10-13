@@ -50,7 +50,7 @@ export default async function mount(el) {
     lines = e.text.split('\n');
     pre.innerHTML = `<span class="file">${PATH} \u00B7 ${NAME} <span class="live">LIVE</span></span>` + tmp.innerHTML.split('\n').map(l => `<span class="ln">${l || ' '}</span>`).join('');
   } catch (err) {
-    out.textContent = tr('This needs the game\'s server (npm run serve): ', 'Dafür braucht es den Server des Spiels (npm run serve): ') + err.message;
+    out.textContent = tr('The game\'s code could not be read: ', 'Der Code des Spiels ließ sich nicht lesen: ') + err.message;
     return;
   }
   const rows = [...pre.querySelectorAll('.ln')];

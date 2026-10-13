@@ -1,6 +1,6 @@
 // Reads the game's code the way the browser does: starts at src/main.js, follows every import,
 // and starts again at the web worker it finds (new Worker(new URL(...))). Used by the guide's
-// architecture demos, so their pictures always match the code (needs the game's server).
+// architecture demos, so their pictures always match the code.
 //
 // crawl() resolves to { files, edges, parts }:
 //   files: Map path -> { path, part, text, lines, threads: Set('main' | 'worker'), imports: [path] }

@@ -1,5 +1,6 @@
 // The game's weapon machine (src/core/gear/): roll real weapons, see what the dice did at each
-// step, and (data-mode="odds") how the rarity odds change with the item level and luck.
+// step, open 100 chests at once (every weapon shown, its card on hover), and (data-mode="odds")
+// how the rarity odds change with the item level and luck.
 import { rollWeapon } from '../../src/core/gear/generate.js';
 import { RARITIES, RARITY, rarityOdds } from '../../src/core/gear/rarities.js';
 import { itemStats, weaponDps, affixLines, displayName, baseLine } from '../../src/core/gear/stats.js';
@@ -7,6 +8,39 @@ import { AFFIX } from '../../src/core/gear/affixes.js';
 import { ITEMS } from '../../src/core/items.js';
 import { mulberry32 } from '../../src/core/util.js';
 import { canvas, html, t as tr } from '../deck.js';
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icon = item => new URL('../../' + ITEMS[item.itemId].icon, import.meta.url).href;
+
+// a weapon's card, like the detail panel of the game's inventory
+function weaponCard(item) {
+  const r = RARITY[item.gen.rarity], s = itemStats(item);
+  return `<div class="weapon" style="--rarity:${r.css}"><img src="${icon(item)}" alt="">
+      <div><h4>${esc(displayName(item))}</h4><div class="base">${r.name} \u00B7 ${tr('item level', 'Stufe')} ${item.gen.ilvl}${baseLine(item) ? ' \u00B7 ' + baseLine(item) : ''}</div>
+      <div class="stats">${tr(`${s.damage} damage \u00B7 ${(1 / s.interval).toFixed(2)} attacks per second \u00B7 ${Math.round(weaponDps(s))} damage per second
+reach ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical hits`, `${s.damage} Schaden \u00B7 ${(1 / s.interval).toFixed(2)} Hiebe pro Sekunde \u00B7 ${Math.round(weaponDps(s))} Schaden pro Sekunde
+Reichweite ${s.range.toFixed(2)} Felder \u00B7 ${Math.round(s.crit * 100)}% kritische Treffer`)}</div>
+      <ul>${affixLines(item).map((t, i) => `<li>${t} <span style="color:#5a6678">(${AFFIX[item.gen.affixes[i].id].name}, ${tr('tier', 'Stufe')} ${item.gen.affixes[i].tier})</span></li>`).join('')}</ul></div></div>`;
+}
+
+// one floating card for the whole page, next to the pointer (or the focused tile)
+const tip = {
+  el: null,
+  show(item, at) {
+    this.el ??= Object.assign(document.createElement('div'), { className: 'weapontip' });
+    if (!this.el.isConnected) document.body.append(this.el);
+    this.el.innerHTML = weaponCard(item);
+    this.el.hidden = false;
+    this.move(at);
+  },
+  move(at) {
+    if (!this.el || this.el.hidden) return;
+    const x = at.clientX ?? at.right, y = at.clientY ?? at.top, w = this.el.offsetWidth, h = this.el.offsetHeight;
+    this.el.style.left = Math.max(8, x + 16 + w > innerWidth ? x - w - 16 : x + 16) + 'px';
+    this.el.style.top = Math.max(8, Math.min(innerHeight - h - 8, y - h / 2)) + 'px';
+  },
+  hide() { if (this.el) this.el.hidden = true; },
+};
 
 export default function mount(el) {
   if (el.dataset.mode === 'odds') return odds(el);
@@ -19,13 +53,8 @@ export default function mount(el) {
   let seed = Math.floor(Math.random() * 1e9);
   const opts = () => $('.guard').checked ? { luck: 0.2, floor: RARITY.uncommon.rank, ancient: true } : {};
   function show(item) {
-    const r = RARITY[item.gen.rarity], s = itemStats(item), base = ITEMS[item.itemId];
-    card.innerHTML = `<div class="weapon" style="--rarity:${r.css}"><img src="${new URL('../../' + base.icon, import.meta.url)}" alt="">
-      <div><h4>${displayName(item)}</h4><div class="base">${r.name} \u00B7 ${tr('item level', 'Stufe')} ${item.gen.ilvl}${baseLine(item) ? ' \u00B7 ' + baseLine(item) : ''}</div>
-      <div class="stats">${tr(`${s.damage} damage \u00B7 ${(1 / s.interval).toFixed(2)} attacks per second \u00B7 ${Math.round(weaponDps(s))} damage per second
-reach ${s.range.toFixed(2)} cells \u00B7 ${Math.round(s.crit * 100)}% critical hits`, `${s.damage} Schaden \u00B7 ${(1 / s.interval).toFixed(2)} Hiebe pro Sekunde \u00B7 ${Math.round(weaponDps(s))} Schaden pro Sekunde
-Reichweite ${s.range.toFixed(2)} Felder \u00B7 ${Math.round(s.crit * 100)}% kritische Treffer`)}</div>
-      <ul>${affixLines(item).map((t, i) => `<li>${t} <span style="color:#5a6678">(${AFFIX[item.gen.affixes[i].id].name}, ${tr('tier', 'Stufe')} ${item.gen.affixes[i].tier})</span></li>`).join('')}</ul></div></div>`;
+    const r = RARITY[item.gen.rarity], base = ITEMS[item.itemId];
+    card.innerHTML = weaponCard(item);
     const kinds = item.gen.affixes.map(a => AFFIX[a.id].kind);
     const list = kinds.length ? item.gen.affixes.map((a, i) => `<b>${AFFIX[a.id].name}</b> (${kinds[i]})`).join(', ') : tr('none', 'keine');
     out.innerHTML = tr(`The dice decided, step by step:\n1. rarity: <b style="color:${r.css}">${r.name}</b> \u2192 ${r.affixes} affix${r.affixes === 1 ? '' : 'es'}, damage \u00D7${r.damage}\n`
@@ -36,12 +65,29 @@ Reichweite ${s.range.toFixed(2)} Felder \u00B7 ${Math.round(s.crit * 100)}% krit
       + `3. Affixe: ${list}\n4. Name: <b>${displayName(item)}</b>`);
   }
   $('.lv').oninput = () => { $('.lvv').textContent = $('.lv').value; };
-  $('.roll').onclick = () => show(rollWeapon(mulberry32(seed++), +$('.lv').value, opts()));
+  $('.roll').onclick = () => tip.hide() ?? show(rollWeapon(mulberry32(seed++), +$('.lv').value, opts()));
   $('.many').onclick = () => {
-    const n = {};
-    for (let i = 0; i < 100; i++) { const it = rollWeapon(mulberry32(seed++), +$('.lv').value, opts()); n[it.gen.rarity] = (n[it.gen.rarity] || 0) + 1; }
-    card.innerHTML = `<div class="card">${RARITIES.filter(r => n[r.id]).map(r => `<span class="chip" style="border-color:${r.css};color:${r.css}">${r.name}: ${n[r.id]}</span>`).join('')}</div>`;
-    out.innerHTML = tr('100 weapons rolled. Try a higher item level, or guardian luck.', '100 Waffen gewürfelt. Probier eine höhere Gegenstandsstufe oder Wächter-Glück.');
+    tip.hide();
+    const n = {}, items = [];
+    for (let i = 0; i < 100; i++) { const it = rollWeapon(mulberry32(seed++), +$('.lv').value, opts()); items.push(it); n[it.gen.rarity] = (n[it.gen.rarity] || 0) + 1; }
+    // the best first: by rarity, then by damage per second
+    const dps = it => weaponDps(itemStats(it));
+    items.sort((a, b) => RARITY[b.gen.rarity].rank - RARITY[a.gen.rarity].rank || dps(b) - dps(a));
+    card.innerHTML = `<div>${RARITIES.filter(r => n[r.id]).map(r => `<span class="chip" style="border-color:${r.css};color:${r.css}">${r.name}: ${n[r.id]}</span>`).join('')}</div>
+      <div class="loots">${items.map((it, i) => `<button class="it" data-i="${i}" style="--rarity:${RARITY[it.gen.rarity].css}" aria-label="${esc(displayName(it))}"><img src="${icon(it)}" alt=""></button>`).join('')}</div>
+      <div class="pinned"></div>`;
+    const tiles = [...card.querySelectorAll('.it')], pinned = card.querySelector('.pinned');
+    tiles.forEach(b => {
+      const it = items[+b.dataset.i];
+      b.onpointerenter = e => tip.show(it, e);
+      b.onpointermove = e => tip.move(e);
+      b.onpointerleave = () => tip.hide();
+      b.onfocus = () => tip.show(it, b.getBoundingClientRect());
+      b.onblur = () => tip.hide();
+      b.onclick = () => { tiles.forEach(t => t.classList.toggle('on', t === b)); pinned.innerHTML = weaponCard(it); };
+    });
+    out.innerHTML = tr('100 chests opened, the best weapons first. Point at a weapon to see its card, click it to keep the card open. Try a higher item level, or guardian luck.',
+      '100 Truhen geöffnet, die besten Waffen zuerst. Zeig auf eine Waffe, um ihre Karte zu sehen, klick sie an, damit die Karte offen bleibt. Probier eine höhere Gegenstandsstufe oder Wächter-Glück.');
   };
   $('.roll').click();
 }

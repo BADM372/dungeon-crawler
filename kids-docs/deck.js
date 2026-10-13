@@ -125,9 +125,8 @@ export async function liveCode(pre) {
     }));
     pre.textContent = parts.join('\n\n');
   } catch (err) {
-    pre.textContent = t(`// This code is read from the game's files, which needs the game's server
-// (npm run serve). ${err.message}`, `// Dieser Code wird aus den Dateien des Spiels gelesen, dafür braucht es den
-// Server des Spiels (npm run serve). ${err.message}`);
+    pre.textContent = t(`// This code could not be read from the game's files: ${err.message}`,
+      `// Dieser Code ließ sich nicht aus den Dateien des Spiels lesen: ${err.message}`);
   }
   highlight(pre);
 }
@@ -198,10 +197,7 @@ function demos(root) {
           console.error(err);
           target.append(box);
           box.className = 'err';
-          box.textContent = location.protocol === 'file:'
-            ? t('This demo needs the game\'s web server: run "npm run serve" and open http://localhost:8000/kids-docs/',
-              'Diese Demo braucht den Webserver des Spiels: starte "npm run serve" und öffne http://localhost:8000/kids-docs/')
-            : t('This demo did not load: ', 'Diese Demo ließ sich nicht laden: ') + err.message;
+          box.textContent = t('This demo did not load: ', 'Diese Demo ließ sich nicht laden: ') + err.message;
         });
     }
   }, { rootMargin: '200px' });
@@ -245,7 +241,7 @@ function deck(main) {
     s.insertAdjacentHTML('afterbegin', `<span class="tag" title="${t('Detail level', 'Detailstufe')}">${L.short} \u00B7 ${lvName(L)}</span>`);
   });
   // the last slide ends the room: the way on to the next room, or back to the map
-  const next = DECKS[deckIdx + 1] && local(DECKS[deckIdx + 1], lang);
+  const next = DECKS[deckIdx + 1] && local(DECKS[deckIdx + 1], lang), prev = deckIdx > 0 && local(DECKS[deckIdx - 1], lang);
   if (slides.length) slides.at(-1).insertAdjacentHTML('beforeend', `<nav class="roomend">
     <p class="done">\u2713 ${t('You finished', 'Geschafft')}: <b>${esc(info?.title ?? '')}</b></p>
     <div class="ways">${next ? `<a class="way next" href="${next.file}"><img src="${iconUrl(next)}" alt="">
@@ -267,7 +263,7 @@ function deck(main) {
   // quick bar
   const qbar = document.createElement('nav');
   qbar.className = 'qbar';
-  qbar.innerHTML = `<button class="arrow prev" title="${t('Previous', 'Zurück')} (\u2190)">\u25C2</button><div class="slots">${slides.map((s, i) =>
+  qbar.innerHTML = `${prev ? `<a class="door" href="${prev.file}#end" title="${t('Previous room', 'Voriger Raum')}: ${esc(prev.title)}"><img src="${iconUrl(prev)}" alt=""></a>` : ''}<button class="arrow prev" title="${t('Previous', 'Zurück')} (\u2190)">\u25C2</button><div class="slots">${slides.map((s, i) =>
     `<a class="slot lv${s.dataset.lv}" href="#${s.id}" title="${esc(shown(s, 'h2')?.textContent ?? '')}"><span>${i + 1}</span></a>`).join('')}</div>
     <button class="arrow next" title="${t('Next', 'Weiter')} (\u2192)">\u25B8</button>${next
     ? `<a class="door" href="${next.file}" title="${t('Next room', 'Nächster Raum')}: ${esc(next.title)}"><img src="${iconUrl(next)}" alt=""></a>` : ''}`;
@@ -283,14 +279,18 @@ function deck(main) {
     slots[cur].scrollIntoView({ block: 'nearest', inline: 'nearest' });
     if (location.hash.slice(1) !== slides[cur].id) history.replaceState(null, '', '#' + slides[cur].id);
     if (scroll && document.body.classList.contains('slides')) scrollTo(0, 0);
-    // on the last slide, the next arrow leads into the next room
-    const end = cur === slides.findLastIndex((_, j) => allowed(j)), arrow = qbar.querySelector('.next');
-    arrow.classList.toggle('to-room', end && !!next);
-    arrow.title = end && next ? `${t('Next room', 'Nächster Raum')}: ${next.title} (\u2192)` : `${t('Next', 'Weiter')} (\u2192)`;
+    // on the last slide, the next arrow leads into the next room; on the first, back arrow into the previous one
+    const end = cur === slides.findLastIndex((_, j) => allowed(j)), first = cur === slides.findIndex((_, j) => allowed(j));
+    const fwd = qbar.querySelector('.next'), back = qbar.querySelector('.prev');
+    fwd.classList.toggle('to-room', end && !!next);
+    fwd.title = end && next ? `${t('Next room', 'Nächster Raum')}: ${next.title} (\u2192)` : `${t('Next', 'Weiter')} (\u2192)`;
+    back.classList.toggle('to-room', first && !!prev);
+    back.title = first && prev ? `${t('Previous room', 'Voriger Raum')}: ${prev.title} (\u2190)` : `${t('Previous', 'Zurück')} (\u2190)`;
   }
   const step = d => {
     for (let i = cur + d; i >= 0 && i < slides.length; i += d) if (allowed(i)) return show(i);
     if (d > 0 && next) location.href = next.file;   // past the last slide: the next room
+    if (d < 0 && prev) location.href = prev.file + '#end';   // before the first: the previous room, at its end
   };
   function applyLevel() {
     const lv = level();
@@ -310,7 +310,8 @@ function deck(main) {
   qbar.querySelector('.prev').onclick = () => step(-1);
   qbar.querySelector('.next').onclick = () => step(1);
   const fromHash = () => {
-    const i = slides.findIndex(s => s.id === decodeURIComponent(location.hash.slice(1)));
+    // #end: the last slide (coming back from the next room)
+    const h = decodeURIComponent(location.hash.slice(1)), i = h === 'end' ? slides.findLastIndex((_, j) => allowed(j)) : slides.findIndex(s => s.id === h);
     if (i < 0) return false;
     if (document.body.classList.contains('scroll')) slides[i].scrollIntoView(); else show(i);
     return true;

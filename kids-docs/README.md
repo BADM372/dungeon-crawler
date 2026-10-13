@@ -93,8 +93,10 @@ prompting. Specific numbers come live from the code (`data-val`, `data-code`), n
 - Every slide has a detail level: `data-lv="1"` the big idea, `2` how it works, `3` the real code.
   Within a room, go from 1 to 3. The last slide of a room is level 1 (a short summary or the
   room's big takeaway), since `deck.js` puts the room's end card there: the way on to the next
-  room and back to the map. The quick bar also leads on: a door to the next room after the
-  slides, and on the last slide the next arrow (and the right arrow key) goes into the next room.
+  room and back to the map. The quick bar also leads on: doors to the previous and the next
+  room on either side of the slides; on the last slide the next arrow (and the right arrow key)
+  goes into the next room, on the first slide the back arrow (and the left arrow key) into the
+  previous room, at its last slide (`room.html#end`).
 - Link down with `<a class="deeper" data-lv="3" href="#slide-id">`, across rooms with
   `<a class="portal" href="room.html#slide-id">`, and words with `<a class="w" href="words.html#id">`.
 - Say what a slide explains: `data-src="src/core/enemies.js#SPIDER src/game/enemyai.js#decide,act"`
