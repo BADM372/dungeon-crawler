@@ -6,6 +6,10 @@ import { THEMES } from '../themes/index.js';
 
 export const C = s => new THREE.Color(s);
 
+// vertex colour of faces that only exist as a section cap: drawn when seen from behind (inside a
+// cut solid), discarded when seen from the front (section.js)
+export const CAP_ONLY = C('#000000');
+
 export function gradient(stops, v) {
   if (v <= stops[0][0]) return new THREE.Color(stops[0][1]);
   for (let i = 1; i < stops.length; i++) {

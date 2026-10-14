@@ -1,6 +1,7 @@
 // Cutaway: a slowly turning nine-cornered shape on screen around the character (cutshader.js).
-// Inside it, everything above the cut height that is closer to the camera than the character
-// is discarded; nothing behind the character is touched. Cut solids show their insides: back
+// Inside it, everything above the cut height on the camera's side of the character (a
+// vertical plane through it, facing the camera) is discarded; nothing behind the character is
+// touched, however high it reaches. Cut solids show their insides: back
 // faces are drawn as a flat cap, and the cut-away part as faint glass (ghosts.js). The cap
 // has one colour per kind of solid (rock strata at the cut height, structure stone, wood), so
 // the inner faces seen through the cut read as a single flat lid.
@@ -30,6 +31,11 @@ export function cutMaterial(mat, caps = false, ghost = !!caps) {
   mat.userData.ghost = ghost;
   return inject(mat, fs => {
     fs = fs.replace('#include <clipping_planes_fragment>', 'if (cutRegion(true) > 0.5 || frontWall()) discard;\n#include <clipping_planes_fragment>');
+    // cap-only faces (palette.js CAP_ONLY) are not drawn from the front
+    if (caps) fs = fs.replace('#include <clipping_planes_fragment>', `#ifdef USE_COLOR
+        if (gl_FrontFacing && vColor.r + vColor.g + vColor.b < 1e-4) discard;
+      #endif
+      #include <clipping_planes_fragment>`);
     if (caps) fs = fs.replace('#include <opaque_fragment>', `if (!gl_FrontFacing) {
         vec3 capUp = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz), capIrr = vec3(0.0);
         #if NUM_HEMI_LIGHTS > 0
@@ -81,12 +87,19 @@ export function setCut(y, map, px, py, pz) {
   const box = U.uWallBox.value, walled = !!map?.cave || !!room;
   const cx = camera.position.x - (box.x + box.y) / 2, cz = camera.position.z - (box.z + box.w) / 2;
   U.uFront.value.set(walled && cx > 6 ? 1 : 0, walled && cx < -6 ? 1 : 0, walled && cz > 6 ? 1 : 0, walled && cz < -6 ? 1 : 0);
+  // a room's walls whose inner face the camera is not beyond: no line of sight from the camera
+  // into the room crosses them, so the cutaway must not open holes in them
+  const cp = camera.position;
+  if (room) U.uBack.value.set(cp.x < room.x1 ? 1 : 0, cp.x > room.x0 ? 1 : 0, cp.z < room.z1 ? 1 : 0, cp.z > room.z0 ? 1 : 0);
+  else U.uBack.value.set(0, 0, 0, 0);
   U.uWallY.value = inside ? inside.door.y + CUT_HEIGHT : py + 1;
   camera.updateMatrixWorld();
   renderer.getDrawingBufferSize(U.uRes.value);
   U.uAspect.value = camera.aspect;
-  tmp.set(px, py, pz).applyMatrix4(camera.matrixWorldInverse);
-  U.uDepth.value = -tmp.z;
+  // horizontal direction towards the camera (the camera looks down at the character)
+  camera.getWorldDirection(tmp);
+  const len = Math.hypot(tmp.x, tmp.z), nx = len > 1e-4 ? -tmp.x / len : 0, nz = len > 1e-4 ? -tmp.z / len : 0;
+  U.uSide.value.set(nx, nz, nx * px + nz * pz);
   tmp.set(px, py, pz).project(camera);
   U.uCenter.value.set(tmp.x, tmp.y);
   // radius: project a point RADIUS to the side of the character

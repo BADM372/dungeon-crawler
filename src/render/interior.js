@@ -10,7 +10,7 @@
 // only the door stands in front of that, so it stays when its wall is cut.
 import { N, LH, BASE } from '../core/constants.js';
 import { hash32 } from '../core/util.js';
-import { C } from './palette.js';
+import { C, CAP_ONLY } from './palette.js';
 import { dirOf } from '../cubegen/interior.js';
 
 const PLANK = ['#9a7650', '#8d6a46', '#a07d55'].map(C), PLANK_SIDE = C('#6d4f33');
@@ -20,12 +20,13 @@ export const TIMBER_DEPTH = 0.05;   // how far the frame stands out of the plast
 export const WALL_CUT = 0.1;        // wall details stand out less than this; the door more
 export const CUT_HEIGHT = 0.01;     // the walls come down to this over the floor ...
 const LIFT = 0.03;                  // ... and what hangs on them starts above it
+const END_INSET = WALL_CUT + 0.01;  // upper boards' ends against a wall: in front of its details
 const DARK = C('#302d2c');
 
 // boards run along the house's front; each row of cells is a board, shaded a little apart
 export function buildInteriorFloors(m, layers) {
   const at = (x, z, layer) => x >= 0 && z >= 0 && x < N && z < N && m.cols[z * N + x].some(f => f.layer === layer);
-  const across = m.interior.front[0] ? 'x' : 'z';
+  const across = m.interior.front[0] ? 'x' : 'z', room = m.interior.room;
   for (const f of m.floors) {
     const b = layers[f.layer].wood, x = f.x, z = f.z, y0 = f.bottom * LH, y1 = f.top * LH;
     const top = PLANK[f[across] % PLANK.length].clone().multiplyScalar(0.97 + (hash32(f.c * 13 + f.layer) % 4) / 100);
@@ -35,6 +36,17 @@ export function buildInteriorFloors(m, layers) {
     // the ground floor reaches down to the walls' footing (no bedrock under houses)
     b.box(x, f.layer ? y0 : -BASE, z, x + 1, y1, z + 1, top, PLANK_SIDE,
       { px: !open(1, 0), nx: !open(-1, 0), pz: !open(0, 1), nz: !open(0, -1) });
+    // where the cutaway opens an upper board, its end at a wall must look solid, not show the
+    // wall through it: a cap-only end face facing the wall (seen from inside the room it is a
+    // back face, so drawn as the cap; from beyond a cut-down wall it is not drawn), just in
+    // front of the wall's details so they cannot poke through it
+    if (f.layer > 0) for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, nz = z + dz;
+      if (nx >= room.x0 && nx < room.x1 && nz >= room.z0 && nz < room.z1) continue;
+      const a = dx > 0 ? x + 1 - END_INSET : dx < 0 ? x + END_INSET : null, c = dz > 0 ? z + 1 - END_INSET : dz < 0 ? z + END_INSET : null;
+      if (a !== null) b.quad([a, y0, z], [a, y1, z], [a, y1, z + 1], [a, y0, z + 1], [dx, 0, 0], CAP_ONLY);
+      else b.quad([x, y0, c], [x, y1, c], [x + 1, y1, c], [x + 1, y0, c], [0, 0, dz], CAP_ONLY);
+    }
   }
 }
 
