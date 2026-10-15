@@ -40,7 +40,7 @@ def default_assets_root():
 LLM = {
     "radius": ("https://radius.pi.dev", "RADIUS_API_KEY", lambda key: {"Authorization": f"Bearer {key}"}),
     "anthropic": ("https://api.anthropic.com", "ANTHROPIC_API_KEY", lambda key: {"x-api-key": key}),
-    "openai": ("https://api.openai.com", "OPENAI_API_KEY", lambda key: {"Authorization": f"Bearer {key}"}),
+    "openai": (os.environ.get("OPENAI_UPSTREAM", "https://api.openai.com"), "OPENAI_API_KEY", lambda key: {"Authorization": f"Bearer {key}"}),
 }
 # request headers passed on (the SDKs' own), and response headers passed back
 LLM_REQUEST_HEADERS = {"content-type", "accept", "anthropic-version", "anthropic-beta", "openai-beta", "user-agent"}
@@ -101,6 +101,15 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(503, f"no key for {parts[2]} on the dev server")
             return
         body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        cap = int(os.environ.get("LLM_MAX_OUTPUT_TOKENS") or 0)
+        if cap and parts[2] == "openai":
+            try:
+                data = json.loads(body)
+                if data.get("max_output_tokens", cap + 1) > cap:
+                    data["max_output_tokens"] = cap
+                    body = json.dumps(data).encode()
+            except ValueError:
+                pass
         headers = {k: v for k, v in self.headers.items() if k.lower() in LLM_REQUEST_HEADERS}
         headers.update(auth(key))
         request = urllib.request.Request(f"{upstream}/{parts[3]}", data=body, headers=headers, method="POST")

@@ -1,0 +1,17 @@
+# The tutor asks for OpenAI model ids; these aliases send them to NCSA Lumen.
+model_list:
+  - model_name: gpt-6-sol            # tutor default -> Qwen 3.6: vision + tools, thinking off for speed
+    litellm_params:
+      model: openai/chat_completions/qwen3.6-35b-a3b
+      api_base: https://lumen.ncsa.illinois.edu/v1
+      api_key: os.environ/LUMEN_KEY
+      extra_body: {chat_template_kwargs: {enable_thinking: false}}
+  - model_name: gpt-6-luna           # alternative -> Qwen 3.8 27B: vision + tools, thinking on
+    litellm_params:
+      model: openai/chat_completions/qwen3.8-27b
+      api_base: https://lumen.ncsa.illinois.edu/v1
+      api_key: os.environ/LUMEN_KEY
+litellm_settings:
+  drop_params: true
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
