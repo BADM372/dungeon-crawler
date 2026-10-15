@@ -13,14 +13,16 @@
 //     (demos can show live code too: set data-code on a <pre> and call liveCode)
 //   - slides that stamps.json lists as outdated get a note (tools/learn.mjs, README.md)
 //   - the Guide, a tutor to ask about the room, in a side panel (tutor/tutor.js)
+// The guide is one long-lived page (nav.js): links between its pages swap <main>, so this module
+// runs once; enter() sets up each page as it comes, leave() takes it down again.
 import { DECKS, LEVELS, THEME_NAMES, THEME_NAMES_DE, local, iconUrl } from './decks.js';
 import { parseRefs, extract, readValue, formatValue } from './refs.js';
+import * as nav from './nav.js';
 
 const store = {
   get: (k, d) => { try { return localStorage.getItem('kids.' + k) ?? d; } catch { return d; } },
   set: (k, v) => { try { localStorage.setItem('kids.' + k, v); } catch { /* private mode */ } },
 };
-const here = location.pathname.split('/').pop() || 'index.html';
 
 // ---- language ---------------------------------------------------------------------------------
 export const lang = document.documentElement.dataset.lang === 'de' ? 'de' : 'en';
@@ -31,8 +33,9 @@ export const themeLabel = theme => lang === 'de' ? THEME_NAMES_DE[theme.props] ?
 // the element of a language pair (or a single element) that is showing
 export const shown = (root, sel) => root.querySelector(`${sel}[lang=${lang}]`) ?? root.querySelector(sel);
 // German attributes and title
-if (lang === 'de') {
-  for (const el of document.querySelectorAll('*')) for (const a of [...el.attributes])
+function localize(root) {
+  if (lang !== 'de') return;
+  for (const el of root.querySelectorAll('*')) for (const a of [...el.attributes])
     if (a.name.startsWith('data-de-')) el.setAttribute(a.name.slice(8), a.value);
   const title = document.querySelector('title[data-de]');
   if (title) document.title = title.dataset.de;
@@ -145,7 +148,7 @@ async function staleNotes(slides) {
   let stamps;
   try { stamps = await (await fetch('stamps.json')).json(); } catch { return; }
   for (const s of slides) {
-    const why = stamps.outdated?.[`${here}#${s.id}`];
+    const why = stamps.outdated?.[`${nav.here()}#${s.id}`];
     if (why) s.querySelector('h2:last-of-type')?.insertAdjacentHTML('afterend', `<div class="note stale"><b>${t('Heads-up', 'Achtung')}</b> ${t(
       'The game changed since this slide was written, so a detail may be out of date', 'Das Spiel hat sich geändert, seit diese Folie geschrieben wurde, ein Detail ist vielleicht veraltet')} (${esc(why)}).</div>`);
   }
@@ -183,7 +186,8 @@ function wordTips() {
 }
 
 // ---- demos: loaded when they come into view ----------------------------------------------------
-function demos(root) {
+// a demo's default export may return a function (or a promise of one) that stops it when its page is left
+function demos(root, page) {
   const io = new IntersectionObserver(entries => {
     for (const { target, isIntersecting } of entries) {
       if (!isIntersecting || target.dataset.mounted) continue;
@@ -193,7 +197,7 @@ function demos(root) {
       box.className = 'loading'; box.textContent = t('loading\u2026', 'lädt\u2026');
       target.append(box);
       import(`./demos/${target.dataset.demo}.js`)
-        .then(m => { box.remove(); return m.default(target); })
+        .then(async m => { box.remove(); const stop = await m.default(target); if (typeof stop === 'function') page.cleanups.push(stop); })
         .catch(err => {
           console.error(err);
           target.append(box);
@@ -203,11 +207,13 @@ function demos(root) {
     }
   }, { rootMargin: '200px' });
   for (const el of root.querySelectorAll('[data-demo]')) io.observe(el);
+  page.cleanups.push(() => io.disconnect());
 }
-// a demo's animation loop: runs while the demo is on screen
+// a demo's animation loop: runs while the demo is on screen, ends when its page is left
 export function loop(el, fn) {
   let last = performance.now();
   const tick = now => {
+    if (!el.isConnected) return;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (el.offsetParent !== null) fn(dt, now / 1000);
@@ -231,7 +237,10 @@ export function canvas(el, w, h) {
 export function html(el, s) { el.insertAdjacentHTML('beforeend', s); return el.lastElementChild; }
 
 // ---- the room page ---------------------------------------------------------------------------------
-function deck(main) {
+// what the page's deck offers to others (the Guide): null on pages without slides
+export let controls = null;
+function deck(main, page) {
+  const { signal } = page.abort, here = nav.here();
   const slides = [...main.querySelectorAll('section.slide')];
   const deckIdx = DECKS.findIndex(d => d.file === here), info = deckIdx >= 0 ? local(DECKS[deckIdx], lang) : null;
   const themes = lang === 'de' ? THEME_NAMES_DE : THEME_NAMES, lvName = L => lang === 'de' ? L.de : L.name;
@@ -260,6 +269,7 @@ function deck(main) {
     <button class="mode" title="${t('Slides or one long page (S)', 'Folien oder eine lange Seite (S)')}"></button><button class="helpbtn" title="${t('Keys (?)', 'Tasten (?)')}">?</button></div>`;
   langSwitch(bar.querySelector('.tools'));
   document.body.prepend(bar);
+  page.cleanups.push(() => bar.remove());
 
   // quick bar
   const qbar = document.createElement('nav');
@@ -269,6 +279,7 @@ function deck(main) {
     <button class="arrow next" title="${t('Next', 'Weiter')} (\u2192)">\u25B8</button>${next
     ? `<a class="door" href="${next.file}" title="${t('Next room', 'Nächster Raum')}: ${esc(next.title)}"><img src="${iconUrl(next)}" alt=""></a>` : ''}`;
   document.body.append(qbar);
+  page.cleanups.push(() => qbar.remove());
   const slots = [...qbar.querySelectorAll('.slot')];
 
   let cur = 0;
@@ -287,11 +298,12 @@ function deck(main) {
     fwd.title = end && next ? `${t('Next room', 'Nächster Raum')}: ${next.title} (\u2192)` : `${t('Next', 'Weiter')} (\u2192)`;
     back.classList.toggle('to-room', first && !!prev);
     back.title = first && prev ? `${t('Previous room', 'Voriger Raum')}: ${prev.title} (\u2190)` : `${t('Previous', 'Zurück')} (\u2190)`;
+    dispatchEvent(new CustomEvent('guide:slide', { detail: { file: here, id: slides[cur].id } }));
   }
   const step = d => {
     for (let i = cur + d; i >= 0 && i < slides.length; i += d) if (allowed(i)) return show(i);
-    if (d > 0 && next) location.href = next.file;   // past the last slide: the next room
-    if (d < 0 && prev) location.href = prev.file + '#end';   // before the first: the previous room, at its end
+    if (d > 0 && next) nav.go(next.file);   // past the last slide: the next room
+    if (d < 0 && prev) nav.go(prev.file + '#end');   // before the first: the previous room, at its end
   };
   function applyLevel() {
     const lv = level();
@@ -317,7 +329,7 @@ function deck(main) {
     if (document.body.classList.contains('scroll')) slides[i].scrollIntoView(); else show(i);
     return true;
   };
-  addEventListener('hashchange', fromHash);
+  addEventListener('hashchange', fromHash, { signal });
   addEventListener('keydown', e => {
     const t = e.target;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -325,22 +337,30 @@ function deck(main) {
     if (e.key === '?') { help(); return; }
     if (e.key === 'Escape') { document.getElementById('help')?.remove(); return; }
     if (e.key === 's' || e.key === 'S') { bar.querySelector('.mode').click(); return; }
-    if (e.key === 'm' || e.key === 'M') { location.href = 'index.html'; return; }
+    if (e.key === 'm' || e.key === 'M') { nav.go('index.html'); return; }
     if (document.body.classList.contains('scroll')) return;
     if (t.closest?.('button') && (e.key === ' ' || e.key === 'Enter')) return;
     const go = { ArrowRight: 1, PageDown: 1, ' ': e.shiftKey ? -1 : 1, ArrowLeft: -1, PageUp: -1 }[e.key];
     if (go) { e.preventDefault(); step(go); }
     if (e.key === 'Home') show(slides.findIndex((_, i) => allowed(i)));
     if (e.key === 'End') show(slides.findLastIndex((_, i) => allowed(i)));
-  });
+  }, { signal });
 
   staleNotes(slides);
   applyLevel();
   if (!fromHash()) show(0, false);
   setMode(store.get('mode', 'slides'));
   // the browser jumps to the #slide anchor after loading; a slide starts at the top instead
-  if (document.body.classList.contains('slides')) addEventListener('load', () => setTimeout(() => scrollTo(0, 0)));
+  if (document.body.classList.contains('slides')) addEventListener('load', () => setTimeout(() => scrollTo(0, 0)), { once: true, signal });
   if (info) { const v = visited(); v.add(info.file); store.set('visited', JSON.stringify([...v])); }
+  controls = {
+    file: here, slides,
+    current: () => slides[cur],
+    show: id => { const i = slides.findIndex(s => s.id === id); if (i < 0) return false; if (document.body.classList.contains('scroll')) slides[i].scrollIntoView(); else show(i); return true; },
+    setLevel: lv => { store.set('lv', String(lv)); applyLevel(); show(cur, false); },
+    setMode: m => setMode(m),
+  };
+  page.cleanups.push(() => { controls = null; document.body.classList.remove('slides', 'scroll'); });
 }
 
 function help() {
@@ -362,12 +382,33 @@ function help() {
   document.body.append(h);
 }
 
+// ---- the page on screen: set up as it comes (nav.js), taken down as it goes -------------------------
+let page = null;
+function enter() {
+  page = { abort: new AbortController(), cleanups: [] };
+  const main = document.querySelector('main');
+  localize(main);
+  for (const pre of main.querySelectorAll('pre')) if (pre.dataset.code != null) liveCode(pre); else highlight(pre);
+  liveValues(main);
+  if (main.classList.contains('deck')) deck(main, page);
+  else {
+    const box = document.createElement('div'); box.className = 'langbar'; langSwitch(box); document.body.append(box);
+    page.cleanups.push(() => box.remove());
+  }
+  if (main.querySelector('#map')) import('./map.js').then(m => m.mountMap(main));
+  demos(main, page);
+}
+function leave() {
+  page.abort.abort();
+  for (const f of page.cleanups.reverse()) try { f(); } catch (e) { console.error(e); }
+  document.getElementById('help')?.remove();
+  const tip = document.getElementById('wordtip'); if (tip) tip.hidden = true;
+}
+
 stars();
 wordTips();
-for (const pre of document.querySelectorAll('pre')) if (pre.dataset.code != null) liveCode(pre); else highlight(pre);
-liveValues(document);
-const main = document.querySelector('main.deck');
-if (main) deck(main);
-else { const box = document.createElement('div'); box.className = 'langbar'; langSwitch(box); document.body.append(box); }
-demos(document);
+enter();
+nav.onLeave(leave);
+nav.onEnter(enter);
+nav.start();
 import('./tutor/tutor.js').then(m => m.mount()).catch(err => console.error('tutor:', err));

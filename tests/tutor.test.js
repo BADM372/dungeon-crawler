@@ -65,6 +65,7 @@ function scripted() {
   models.setProvider(faux.provider);
   return { faux, models, model: { provider: faux.provider.id, modelId: faux.getModel().id } };
 }
+const where = text => () => ({ text: `<page>\n${text}\n</page>`, data: { room: 'index.html', slide: null, hash: '0' } });
 const hold = (_context, options) => new Promise((_, reject) => options?.signal?.addEventListener('abort', () => reject(new Error('page closed'))));
 const kinds = entries => entries.map(e => e.kind).filter(k => k !== 'pi.system');
 
@@ -76,8 +77,8 @@ test('the tutor reads the game\'s code and finishes an answer after the page clo
     hold,
   ]);
   const one = await openTutor({ files: await openFiles(store.volume()), models: A.models, context: ctx, lang: 'en', onReport: () => {} });
-  const conv = await one.room('index.html');
-  await one.ask(conv, 'How does the game know my sword hit?', 'the map', A.model);
+  const conv = one.conversation;
+  await one.ask('How does the game know my sword hit?', where('where: the map'), A.model);
   // wait until the code was read and the second answer is being written
   for (let i = 0; i < 200 && A.faux.state.callCount < 2; i++) await new Promise(r => setTimeout(r, 10));
   assert.equal(A.faux.state.callCount, 2);
@@ -86,7 +87,7 @@ test('the tutor reads the game\'s code and finishes an answer after the page clo
   const B = scripted();
   B.faux.setResponses([pi.fauxAssistantMessage('What do you think "in front of you" means for the game?')]);
   const two = await openTutor({ files: await openFiles(store.volume()), models: B.models, context: ctx, lang: 'en', onReport: () => {} });
-  assert.equal((await two.room('index.html')).id, conv.id, 'the room keeps its conversation');
+  assert.equal(two.conversation.id, conv.id, 'one conversation for the whole guide');
   await two.harness.waitForIdle(ctx);
   const { entries } = (await (await two.harness.conversation(conv.id, ctx)).viewState(ctx)).value;
   assert.deepEqual(kinds(entries), ['tutor.ask', 'pi.assistant', 'pi.tool-result', 'pi.assistant']);
@@ -96,7 +97,7 @@ test('the tutor reads the game\'s code and finishes an answer after the page clo
   // what the model saw: the guide's instructions, and where the reader was
   const { messages } = await (await two.harness.conversation(conv.id, ctx)).context(ctx);
   assert.match(JSON.stringify(messages), /Socratic/);
-  assert.match(JSON.stringify(messages), /<where>the map<\/where>/);
+  assert.match(JSON.stringify(messages), /<page>\\nwhere: the map\\n<\/page>/);
   await one.harness.close(ctx).catch(() => {});
   await two.harness.close(ctx);
 });
@@ -104,17 +105,29 @@ test('the tutor reads the game\'s code and finishes an answer after the page clo
 test('the tutor searches the code and keeps notes across rooms', async () => {
   const S = scripted();
   S.faux.setResponses([
-    pi.fauxAssistantMessage([pi.fauxToolCall('search_code', { query: 'inSwordArc' }), pi.fauxToolCall('note', { text: 'Knows what a function is.' })], { stopReason: 'toolUse' }),
+    pi.fauxAssistantMessage([pi.fauxToolCall('search_code', { query: 'inSwordArc' }), pi.fauxToolCall('note', { text: 'Knows what a function is.' }),
+      pi.fauxToolCall('show_code', { ref: 'src/core/combat.js#inSwordArc', focus: '141' })], { stopReason: 'toolUse' }),
     pi.fauxAssistantMessage('Where do you think it is used?'),
   ]);
   const T = await openTutor({ files: await openFiles(memoryStore().volume()), models: S.models, context: ctx, lang: 'en', onReport: () => {} });
-  const conv = await T.room('words.html');
-  await (await T.ask(conv, 'where is the sword code?', 'the word book', S.model)).wait(ctx);
-  const { entries } = (await conv.viewState(ctx)).value;
+  await (await T.ask('where is the sword code?', where('where: the word book'), S.model)).wait(ctx);
+  const { entries } = T.view.value;
   const found = JSON.stringify(entries.filter(e => e.kind === 'pi.tool-result').map(e => e.model));
   assert.match(found, /src\/core\/combat\.js:\d+/);
-  assert.deepEqual(await T.notes(), [{ room: 'words.html', text: 'Knows what a function is.' }]);
+  // show_code keeps what the reader saw in the result's details, to draw it again after a reload
+  const shown = entries.find(e => e.kind === 'pi.tool-result' && e.model[0].toolName === 'show_code').model[0].details;
+  assert.equal(shown.path, 'src/core/combat.js');
+  assert.match(shown.code, /^(\/\/.*\n)*export function inSwordArc/);
+  assert.deepEqual(shown.focus, [141, 141]);
+  assert.ok(shown.start <= 141 && shown.end >= 141);
+  assert.deepEqual(await T.notes(), [{ room: 'index.html', text: 'Knows what a function is.' }]);
   assert.deepEqual((await T.harness.snapshot(NotebookDoc, ctx)).notes.length, 1);
+  // the next question gets the page snapshot of the last one, to send only what changed
+  S.faux.setResponses([pi.fauxAssistantMessage('And now?')]);
+  let last;
+  await (await T.ask('and this?', l => { last = l; return where('where: the map')(); }, S.model)).wait(ctx);
+  assert.deepEqual(last, { room: 'index.html', slide: null, hash: '0' });
+  assert.equal(T.view.value.entries.findLast(e => e.kind === 'tutor.ask').data.text, 'and this?');
   await T.harness.close(ctx);
 });
 

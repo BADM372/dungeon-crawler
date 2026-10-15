@@ -1,14 +1,15 @@
 // The guide's rooms as the tutor reads them: a room's slides, one slide as text in the reader's
-// language, where the reader is right now, and the glossary. The room the reader is in is read
-// from the live page (with its demos as they are now); other rooms are fetched and parsed.
+// language, the slide the reader looks at, and the glossary. The room on screen is read from the
+// live page (with its demos as they are now); other rooms are fetched and parsed.
 import { DECKS, local } from '../decks.js';
 import { parseRefs, extract } from '../refs.js';
+import { here } from '../nav.js';
 
 const LEARN = new URL('../', import.meta.url);
 const ROOT = new URL('../../', import.meta.url);
 
-export const here = () => location.pathname.split('/').pop() || 'index.html';
-export const pageLang = () => document.documentElement.dataset.lang === 'de' ? 'de' : 'en';
+export { here };
+export const pageLang = () => globalThis.document?.documentElement.dataset.lang === 'de' ? 'de' : 'en';
 export const pickedLevel = () => { try { return +(localStorage.getItem('kids.lv') ?? 3); } catch { return 3; } };
 export const roomInfo = (file, lang) => {
   const i = DECKS.findIndex(d => d.file === file);
@@ -59,14 +60,6 @@ export function currentSlide() {
   const seen = slides.filter(s => s.offsetParent !== null).map(s => [s, s.getBoundingClientRect()]);
   return (seen.find(([, r]) => r.bottom > innerHeight * 0.35) ?? seen.at(-1) ?? [slides[0]])[0];
 }
-export function whereText(lang) {
-  const file = here(), info = roomInfo(file, lang), s = currentSlide();
-  const all = slidesOf(document), n = s ? all.indexOf(s) + 1 : 0;
-  return [`Room ${info ? `${info.index}/${info.count} "${info.title}"` : ''} (${file})`,
-    s ? `slide ${n}/${all.length} #${s.id} "${titleOf(s, lang)}" (Lv ${s.dataset.lv})` : 'the map',
-    `detail picker: Lv ${pickedLevel()}`, `page language: ${lang === 'de' ? 'German' : 'English'}`].join(', ');
-}
-
 // ---- a slide as text -------------------------------------------------------------------------------
 const SKIP = new Set(['SCRIPT', 'STYLE', 'CANVAS', 'SVG', 'svg', 'TEMPLATE', 'NAV']);
 const BLOCK = new Set(['P', 'DIV', 'SECTION', 'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'PRE', 'FIGURE', 'FIGCAPTION', 'TABLE', 'TR', 'BLOCKQUOTE', 'DL', 'DT', 'DD', 'Q']);
@@ -75,7 +68,12 @@ const squash = s => s.replace(/[ \t\n]+/g, ' ');
 // the demo's controls and readouts as they are right now (only on the live page)
 export function demoState(el) {
   const parts = [];
-  const own = n => { const c = n.cloneNode(true); c.querySelectorAll('input, select, button').forEach(x => x.remove()); return squash(c.textContent).trim(); };
+  // the text of an element without its controls, with a space between pieces of text
+  const own = n => {
+    const out = [], walk = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+    for (let t; (t = walk.nextNode());) if (!t.parentElement.closest('select, button, script, style')) out.push(t.textContent);
+    return squash(out.join(' ')).trim();
+  };
   for (const c of el.querySelectorAll('input, select')) {
     const name = (c.closest('label') && own(c.closest('label'))) || c.getAttribute('aria-label') || c.name || c.type;
     const value = c.type === 'checkbox' || c.type === 'radio' ? (c.checked ? 'on' : 'off') : c.tagName === 'SELECT' ? c.selectedOptions[0]?.textContent : c.value;

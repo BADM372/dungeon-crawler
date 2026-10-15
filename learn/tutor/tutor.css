@@ -19,6 +19,7 @@ body.tutor-open #tutor-btn { display: none; }
 #tutor header b { color: var(--title); letter-spacing: 2px; font-size: 14px; font-weight: normal; }
 #tutor header small { color: var(--accent); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #tutor header button { padding: 3px 8px; font-size: 14px; }
+#tutor header button.play { font-size: 11px; padding: 4px 8px; }
 
 #tutor .log { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.5; }
 #tutor .msg { max-width: 92%; padding: 8px 12px; border-radius: 10px; overflow-wrap: anywhere; }
@@ -35,12 +36,31 @@ body.tutor-open #tutor-btn { display: none; }
 #tutor .act::before { content: "\25B8"; position: absolute; left: 4px; color: var(--accent); }
 #tutor .act.running::before { animation: tutor-pulse 1s infinite; }
 #tutor .act.err { color: #ff9a8a; }
+/* code the Guide shows the reader before it runs it */
+#tutor .ran { align-self: stretch; border: 1px solid #3a4352; border-radius: 8px; background: #0f1218; padding: 6px 8px; }
+#tutor .ran .lbl { font: 11px var(--mono); color: var(--accent); margin-bottom: 4px; }
+#tutor .ran pre { margin: 0; font-size: 12px; max-height: 260px; }
+#tutor .ran .res { font: 11px/1.4 var(--mono); color: var(--muted); white-space: pre-wrap; margin-top: 4px; max-height: 120px; overflow: auto; }
+#tutor .ran.running .res { animation: tutor-pulse 1.2s infinite; }
+#tutor .ran.err { border-color: #8a3c3c; } #tutor .ran.err .res { color: #ff9a8a; }
+/* real code from the game, put in front of the reader (show_code) */
+#tutor .shown { align-self: stretch; border: 1px solid #3a4352; border-left: 3px solid var(--accent); border-radius: 8px; background: #0f1218; padding: 6px 0 4px; }
+#tutor .shown.pending .lbl { animation: tutor-pulse 1.2s infinite; }
+#tutor .shown .lbl { font: 11px var(--mono); color: var(--dim); margin: 0 8px 4px; }
+#tutor .shown .cap { font-size: 14px; color: var(--title); margin: 0 8px 4px; }
+#tutor .shown pre { margin: 0; border: 0; border-radius: 0; padding: 0; background: none; font-size: 12px; max-height: 340px; }
+#tutor .shown .ln { display: block; padding: 0 8px 0 0; white-space: pre; }
+#tutor .shown .ln i { display: inline-block; width: 3.2em; padding-right: .8em; text-align: right; color: #4c5668; font-style: normal; user-select: none; }
+#tutor .shown .ln.on { background: #ffcf7a1f; box-shadow: inset 3px 0 0 var(--gold); }
+#tutor .shown .ln.on i { color: var(--gold); }
 #tutor .notice { font: 12px var(--mono); color: var(--muted); padding: 6px 10px; border-left: 3px solid var(--gold); background: #2a241622; }
 #tutor .notice.bad { border-color: #ff8a7a; color: #ffc4b8; }
 #tutor .notice.warn { border-color: var(--lv3); }
 #tutor .notice.divider { align-self: center; border: 0; background: none; }
 #tutor .notice button { margin-top: 8px; }
 #tutor .notice details { margin-top: 4px; color: var(--dim); overflow-wrap: anywhere; }
+#tutor .notice.setup { font: 14px/1.5 var(--read); color: var(--text); }
+#tutor .notice.setup p { margin: 0 0 6px; }
 #tutor .thinking { align-self: flex-start; display: flex; gap: 5px; padding: 10px 14px; }
 #tutor .thinking i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: tutor-pulse 1.2s infinite; }
 #tutor .thinking i:nth-child(2) { animation-delay: .2s; } #tutor .thinking i:nth-child(3) { animation-delay: .4s; }
@@ -75,3 +95,23 @@ body.tutor-open #tutor-btn { display: none; }
   body.tutor-open .qbar { left: calc(50% - 210px); max-width: calc(100vw - 444px); }
   body.tutor-open .bar { right: 420px; }
 }
+
+/* the real game next to the guide (game.js) */
+#game-dock { position: fixed; left: 14px; bottom: 70px; z-index: 18; width: min(520px, calc(100vw - 28px)); height: 340px; display: flex; flex-direction: column;
+  background: #0b0d12; border: 1px solid var(--portal); border-radius: 8px; box-shadow: 0 16px 50px #000c; overflow: hidden; resize: both; min-width: 280px; min-height: 200px; }
+#game-dock.big { width: min(1000px, calc(100vw - 28px)); height: min(640px, calc(100dvh - 130px)); }
+#game-dock header { cursor: move; user-select: none; touch-action: none; display: flex; align-items: center; gap: 8px; padding: 4px 8px; font: 12px var(--mono); color: var(--muted); background: #161b24; border-bottom: 1px solid #2a2f3a; }
+#game-dock header b { color: var(--portal); font-weight: normal; letter-spacing: 1px; }
+#game-dock header .seed { flex: 1; }
+#game-dock header button { font-size: 12px; padding: 1px 7px; }
+#game-dock .frame { flex: 1; position: relative; min-height: 0; }
+#game-dock iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+/* who gets the keys: a glow while the game has them, "click to play" while the guide has them */
+#game-dock.focused { border-color: var(--gold); box-shadow: 0 0 0 2px #ffcf7a88, 0 16px 50px #000c; }
+#game-dock.focused header .seed { color: var(--gold); }
+#game-dock .wake { position: absolute; inset: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: 0; border-radius: 0; background: #0b0d1255; color: var(--title); font: 15px var(--mono); letter-spacing: 1px; cursor: pointer; }
+#game-dock .wake small { font: 11px var(--mono); color: var(--muted); letter-spacing: 0; }
+#game-dock .wake:hover { background: #0b0d1233; }
+#game-dock.focused .wake { display: none; }
+@media (min-width: 1100px) { body.tutor-open #game-dock.big { width: min(1000px, calc(100vw - 460px)); } }

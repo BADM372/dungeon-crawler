@@ -1,13 +1,16 @@
-// The Guide: a tutor in every page of the guide that answers questions about the game by asking
-// questions back (prompt.js). deck.js calls mount(): it adds the "Ask" button; the agent itself
-// (agent.js, pi-durable, about 1 MB) loads only when the panel opens, or when an earlier page
-// closed in the middle of an answer, so that answer finishes.
+// The Guide: a tutor beside every page of the guide that answers questions about the game by
+// asking questions back (prompt.js). deck.js calls mount() once: the guide is one long-lived page
+// (nav.js), so the panel and the game window (game.js) stay while the reader moves between rooms.
+// The agent itself (agent.js, pi-durable, about 1 MB) loads only when the panel opens, or when a
+// page closed in the middle of an answer, so that answer finishes.
 //
-// Everything is kept in this browser (files.js, IndexedDB). One page at a time runs the agent:
-// the page takes a Web Lock, and a second tab offers to take it over.
+// Everything is kept in this browser (files.js, IndexedDB). One tab at a time runs the agent:
+// it takes a Web Lock, and a second tab offers to take it over.
 // ?dev=1 adds a scripted "faux" model for tests and puts the tutor in window.learnTutor.
 import { t, lang, highlight } from '../deck.js';
 import * as page from './page.js';
+import * as state from './state.js';
+import * as game from './game.js';
 import { md } from './markdown.js';
 
 const VENDOR = '../../vendor/pi-durable/pi-durable.js';
@@ -21,7 +24,7 @@ const dev = new URLSearchParams(location.search).has('dev');
 
 let tutor = null;   // promise of the running tutor (boot)
 let ui = null;      // the panel's elements
-let room = null;    // this page's conversation: { conversation, view, stop }
+let chat = null;    // the conversation on screen: { conversation, view }
 
 export function mount() {
   const link = document.createElement('link');
@@ -30,10 +33,12 @@ export function mount() {
   document.head.append(link);
   const b = document.createElement('button');
   b.id = 'tutor-btn';
-  b.title = t('Ask the Guide about this room', 'Frag den Führer zu diesem Raum');
+  b.title = t('Ask the Guide', 'Frag den Führer');
   b.innerHTML = `<i class="orb"></i><span>${t('Ask', 'Fragen')}</span>`;
   b.onclick = () => ui && !ui.panel.hidden ? close() : open(true);
   document.body.append(b);
+  state.track();
+  game.restore();
   if (flag.get('open')) open(false);
   else if (flag.get('busy')) boot().catch(() => {});   // finish an answer the last page left running
 }
@@ -91,26 +96,33 @@ function build() {
   panel.id = 'tutor';
   panel.hidden = true;
   panel.dataset.keys = '1';
-  const info = page.roomInfo(page.here(), lang);
-  panel.innerHTML = `<header><i class="orb"></i><div><b>${t('The Guide', 'Der Führer')}</b><small>${esc(info?.title ?? t('The whole guide', 'Der ganze Führer'))}</small></div>
+  panel.innerHTML = `<header><i class="orb"></i><div><b>${t('The Guide', 'Der Führer')}</b><small class="where"></small></div>
+      <button class="play" title="${t('Play the game next to the guide', 'Das Spiel neben dem Führer spielen')}">\u25B6 ${t('Game', 'Spiel')}</button>
       <button class="gear" title="${t('Settings', 'Einstellungen')}">\u2699</button><button class="x" title="${t('Close', 'Schließen')}">\u2715</button></header>
     <div class="log" aria-live="polite"></div>
     <div class="sheet" hidden></div>
-    <form class="ask"><textarea rows="2" placeholder="${t('Ask a question about this room\u2026', 'Stell eine Frage zu diesem Raum\u2026')}"></textarea>
+    <form class="ask"><textarea rows="2" placeholder="${t('Ask a question\u2026', 'Stell eine Frage\u2026')}"></textarea>
       <div class="row"><span class="hint">${t('Enter sends, Shift+Enter a new line', 'Enter schickt ab, Shift+Enter neue Zeile')}</span>
       <button type="button" class="stop" hidden>${t('Stop', 'Stopp')}</button><button type="submit" class="send">${t('Send', 'Senden')}</button></div></form>`;
   document.body.append(panel);
   const $ = s => panel.querySelector(s);
   ui = { panel, log: $('.log'), sheet: $('.sheet'), form: $('.ask'), input: $('textarea'), stop: $('.stop'), send: $('.send'), items: new Map(), notice: null };
   $('.x').onclick = close;
+  const where = () => { $('.where').textContent = page.roomInfo(page.here(), lang)?.title ?? (page.here() === 'words.html' ? t('The Word Book', 'Das Wörterbuch') : t('The map', 'Die Karte')); };
+  where();
+  addEventListener('guide:page', where);
+  const play = () => { $('.play').classList.toggle('on', game.isOpen()); };
+  play();
+  game.onChange(play);
+  $('.play').onclick = () => game.isOpen() ? game.close() : game.open({ focus: true }).catch(e => status(esc(e.message), 'bad'));
   $('.gear').onclick = () => ui.sheet.hidden ? settings() : (ui.sheet.hidden = true);
   ui.form.onsubmit = e => { e.preventDefault(); send(ui.input.value); };
   ui.input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(ui.input.value); }
     if (e.key === 'Escape') close();
   });
-  ui.stop.onclick = async () => { const T = await tutor; await room?.conversation.abort(T.ctx); };
-  // links in answers: slides of this room turn the page, other rooms open (the panel stays open)
+  ui.stop.onclick = async () => { const T = await tutor; await chat?.conversation.abort(T.ctx); };
+  // links in answers: slides of this page turn the page, other rooms open (nav.js; the panel stays)
   ui.log.addEventListener('click', e => {
     const a = e.target.closest('a[data-slide]');
     if (a) { e.preventDefault(); location.hash = a.dataset.slide; }
@@ -125,7 +137,7 @@ async function open(focus = true) {
   document.body.classList.add('tutor-open');
   flag.set('open', '1');
   if (focus) ui.input.focus();
-  if (room) return;
+  if (chat) return;
   status(t('Waking up the Guide\u2026', 'Der Führer wacht auf\u2026'));
   let T;
   try { T = await boot(); }
@@ -134,12 +146,11 @@ async function open(focus = true) {
     console.error(e);
     return failed(t('The Guide could not start: ', 'Der Führer konnte nicht starten: ') + e.message);
   }
-  if (!(await model(T))) return setup(T);
-  const conversation = await T.room(page.here());
-  const view = await conversation.viewState(T.ctx);
-  room = { conversation, view };
+  const { conversation, view } = T;
+  chat = { conversation, view };
   status(null);
   render(view.value);
+  if (!(await model(T))) setup(T);
   let queued = null;
   view.subscribe(v => { if (!queued) requestAnimationFrame(() => { render(queued); queued = null; }); queued = v; });
 }
@@ -154,7 +165,7 @@ function close() {
 function status(html, kind = '') {
   ui.notice?.remove();
   ui.notice = null;
-  if (!html) return;
+  if (html == null || html === false) return;
   ui.notice = document.createElement('div');
   ui.notice.className = 'notice ' + kind;
   ui.notice.innerHTML = html;
@@ -162,7 +173,7 @@ function status(html, kind = '') {
   ui.log.scrollTop = ui.log.scrollHeight;
 }
 function failed(message, reload = false) {
-  room = null;
+  chat = null;
   if (!ui) return;
   ui.items.clear();
   ui.log.innerHTML = '';
@@ -175,14 +186,14 @@ function elsewhere() {
   ui.notice.querySelector('.take').onclick = async () => {
     tutor = null;
     status(t('Waking up the Guide\u2026', 'Der Führer wacht auf\u2026'));
-    try { await boot(true); room = null; open(false); } catch (e) { failed(e.message); }
+    try { await boot(true); chat = null; open(false); } catch (e) { failed(e.message); }
   };
 }
 
 // ---- asking -----------------------------------------------------------------------------------------
 async function send(text) {
   text = text.trim();
-  if (!text || !room) return;
+  if (!text || !chat) return;
   ui.input.value = '';
   status(null);
   const T = await tutor;
@@ -190,11 +201,12 @@ async function send(text) {
   if (!m) return setup(T);
   flag.set('busy', '1');
   try {
-    const submission = await T.ask(room.conversation, text, page.whereText(lang), m);
+    const submission = await T.ask(text, last => state.pageState(last, lang), m);
+    state.sent();
     idleLater(T);
     const done = await submission.wait(T.ctx);
     // a failed answer shows in the transcript already (render)
-    const last = room?.view.value?.entries.at(-1)?.model?.[0];
+    const last = chat?.view.value?.entries.at(-1)?.model?.[0];
     if (done.status === 'unanswered' && done.reason === 'aborted' && last?.stopReason !== 'aborted') status(t('(stopped)', '(angehalten)'));
     else if (done.status === 'unanswered' && done.reason !== 'aborted' && last?.stopReason !== 'error')
       status(esc(t('No answer came: ', 'Es kam keine Antwort: ') + (done.detail ?? done.reason)), 'bad');
@@ -211,17 +223,26 @@ const TOOL_LABELS = {
   search_code: a => t(`searches the code for "${a.query}"`, `sucht im Code nach \u201E${a.query}\u201C`),
   search_guide: a => t(`searches the guide for "${a.query}"`, `sucht im Führer nach \u201E${a.query}\u201C`),
   look_up_word: a => t(`looks up "${a.word}"`, `schlägt \u201E${a.word}\u201C nach`),
-  show_slide: a => t(`shows you slide #${a.slide}`, `zeigt dir Folie #${a.slide}`),
+  navigate: a => [a.room && t(`takes you to ${roomName(a.room)}`, `bringt dich zu ${roomName(a.room)}`), a.slide && t(`turns to slide #${a.slide}`, `blättert zu Folie #${a.slide}`),
+    a.level && t(`sets the detail to Lv ${a.level}`, `stellt die Detailstufe auf Lv ${a.level}`), a.layout && t('changes the layout', 'ändert die Ansicht')].filter(Boolean).join(', ') || t('moves you', 'bewegt dich'),
+  highlight: a => t('points at something', 'zeigt auf etwas') + (a.note ? `: “${a.note}”` : ''),
+  run_js: a => a.where === 'game' ? t('tries something out in the game', 'probiert im Spiel etwas aus') : t('tries something out on the page', 'probiert auf der Seite etwas aus'),
+  game: a => ({ open: t('opens the game', 'öffnet das Spiel'), close: t('closes the game', 'schließt das Spiel'), restart: t('starts the game over', 'startet das Spiel neu'),
+    go: t(`moves the hero to cube ${a.cube}`, `bringt den Helden in Würfel ${a.cube}`), key: t(`presses ${a.key} in the game`, `drückt ${a.key} im Spiel`), bigger: t('makes the game bigger', 'macht das Spiel größer'),
+    smaller: t('makes the game smaller', 'macht das Spiel kleiner'), status: t('checks the game', 'schaut nach dem Spiel') })[a.action] ?? t('works with the game', 'arbeitet mit dem Spiel'),
+  look_at_game: () => t('looks at the game', 'schaut sich das Spiel an'),
+  show_code: () => t('picks some code to show you', 'sucht Code für dich heraus'),
   note: () => t('makes a note about you', 'macht sich eine Notiz über dich'),
 };
+const roomName = file => page.roomInfo(String(file).replace(/^.*\//, ''), lang)?.title ?? file;
 const toolLabel = (name, args) => { try { return (TOOL_LABELS[name] ?? (() => name))(args ?? {}); } catch { return name; } };
 
 function render(view) {
   if (!ui || !view) return;
   const near = ui.log.scrollHeight - ui.log.scrollTop - ui.log.clientHeight < 80;
   const live = view.docs['pi.live'] ?? {}, inbox = view.docs['pi.inbox']?.items ?? [];
-  const seen = new Set(), results = new Map();
-  for (const e of view.entries) if (e.kind === 'pi.tool-result') { const m = e.model?.[0]; if (m) results.set(m.toolCallId, m.isError); }
+  const seen = new Set(), results = new Map();   // tool call id -> its result message
+  for (const e of view.entries) if (e.kind === 'pi.tool-result') { const m = e.model?.[0]; if (m) results.set(m.toolCallId, m); }
   let at = null;   // keep the items in transcript order
   const place = (key, make, update) => {
     seen.add(key);
@@ -242,8 +263,10 @@ function render(view) {
       if (!m) continue;
       m.content.forEach((c, i) => {
         if (c.type === 'text' && c.text.trim()) place(`e${e.id}.${i}`, () => bubble('guide', md(c.text)));
-        if (c.type === 'toolCall') place('t' + c.id, () => chip(toolLabel(c.name, c.arguments)), el => {
-          el.classList.toggle('err', !!results.get(c.id));
+        if (c.type === 'toolCall' && c.name === 'run_js' && c.arguments?.show) place('c' + c.id, () => codeCard(c.arguments), el => ranCode(el, results.get(c.id), !!live.run));
+        else if (c.type === 'toolCall' && c.name === 'show_code') place('s' + c.id, shownCode, el => fillShown(el, results.get(c.id)));
+        else if (c.type === 'toolCall') place('t' + c.id, () => chip(toolLabel(c.name, c.arguments)), el => {
+          el.classList.toggle('err', !!results.get(c.id)?.isError);
           el.classList.toggle('running', !results.has(c.id) && !!live.run);
         });
       });
@@ -266,13 +289,54 @@ function render(view) {
   ui.stop.hidden = !live.run;
   if (near) ui.log.scrollTop = ui.log.scrollHeight;
 }
-const userText = m => typeof m?.content === 'string' ? m.content.replace(/^<where>.*?<\/where>\n/s, '') : (m?.content ?? []).filter(c => c.type === 'text').map(c => c.text).join('\n').replace(/^<where>.*?<\/where>\n/s, '');
+const userText = m => (typeof m?.content === 'string' ? m.content : (m?.content ?? []).filter(c => c.type === 'text').map(c => c.text).join('\n')).replace(/^<page>[\s\S]*?<\/page>\n/, '');
 function bubble(cls, html) {
   const d = document.createElement('div');
   d.className = 'msg ' + cls;
   d.innerHTML = html;
   for (const pre of d.querySelectorAll('pre')) highlight(pre);
   return d;
+}
+// code the Guide chose to show the reader (run_js with show), and what it gave
+function codeCard({ code = '', where }) {
+  const d = document.createElement('div');
+  d.className = 'ran';
+  d.innerHTML = `<div class="lbl">${where === 'game' ? t('The Guide runs this code in the game:', 'Der Führer lässt diesen Code im Spiel laufen:') : t('The Guide runs this code:', 'Der Führer lässt diesen Code laufen:')}</div><pre><code></code></pre><div class="res"></div>`;
+  d.querySelector('code').textContent = code;
+  highlight(d.querySelector('pre'));
+  return d;
+}
+function ranCode(el, result, running) {
+  const res = el.querySelector('.res');
+  el.classList.toggle('running', !result && running);
+  el.classList.toggle('err', !!result?.isError);
+  if (!result) { res.textContent = running ? t('running\u2026', 'läuft\u2026') : ''; return; }
+  const out = result.content.filter(c => c.type === 'text').map(c => c.text).join('\n').replace(/^returned: undefined\n?/, '').trim();
+  res.textContent = out.split('\n').slice(0, 8).join('\n') || t('done', 'fertig');
+}
+// real code from the game the Guide put in front of the reader (show_code): drawn from the
+// result, so it shows again after a reload exactly as it was shown
+function shownCode() {
+  const d = document.createElement('div');
+  d.className = 'shown pending';
+  d.innerHTML = `<div class="lbl">${t('picking some code\u2026', 'sucht Code heraus\u2026')}</div>`;
+  return d;
+}
+function fillShown(el, result) {
+  if (!result || el.dataset.done) return;
+  el.dataset.done = '1';
+  const d = result.details;
+  if (result.isError || !d?.code) { el.hidden = true; return; }
+  el.classList.remove('pending');
+  const [a, b] = d.focus ?? [0, -1];
+  const lines = d.code.split('\n').map((line, i) => {
+    const n = d.start + i, pre = document.createElement('pre');
+    pre.textContent = line || ' ';
+    highlight(pre);
+    return `<span class="ln${n >= a && n <= b ? ' on' : ''}"><i>${n}</i>${pre.innerHTML}</span>`;
+  }).join('');
+  el.innerHTML = `${d.note ? `<div class="cap">${esc(d.note)}</div>` : ''}<div class="lbl">${esc(d.path)}${d.name ? ` \u00B7 ${esc(d.name)}` : ''} \u00B7 ${t('lines', 'Zeilen')} ${d.start}\u2013${d.end}</div><pre><code>${lines}</code></pre>`;
+  el.querySelector('.ln.on')?.scrollIntoView?.({ block: 'nearest' });
 }
 function chip(label) {
   const d = document.createElement('div');
@@ -300,27 +364,25 @@ function divider(text) { const d = notice(text); d.classList.add('divider'); ret
 function hello() {
   const d = document.createElement('div');
   d.className = 'hello';
-  d.innerHTML = `<p>${t('Hi! I am the Guide. Ask me anything about this room, or about how the game works.', 'Hallo! Ich bin der Führer. Frag mich alles über diesen Raum oder darüber, wie das Spiel funktioniert.')}</p>
+  d.innerHTML = `<p>${t('Hi! I am the Guide. Ask me anything about this room, or about how the game works. I can also open the real game next to the guide, and we can poke around inside it.', 'Hallo! Ich bin der Führer. Frag mich alles über diesen Raum oder darüber, wie das Spiel funktioniert. Ich kann auch das echte Spiel neben dem Führer öffnen, und wir können darin herumstöbern.')}</p>
     <p>${t('I will not just tell you the answers: we will find them out together. Ready?', 'Ich verrate dir nicht einfach die Antworten: Wir finden sie zusammen heraus. Bereit?')}</p>
     <div class="starts">${[t('What is this slide about?', 'Worum geht es auf dieser Folie?'), t('Quiz me on this slide!', 'Stell mir eine Quizfrage zu dieser Folie!'),
-      t('I don\'t get this part.', 'Diesen Teil verstehe ich nicht.'), t('How does the real game do this?', 'Wie macht das echte Spiel das?')]
+      t('I don\'t get this part.', 'Diesen Teil verstehe ich nicht.'), t('How does the real game do this?', 'Wie macht das echte Spiel das?'), t('Show me in the real game!', 'Zeig es mir im echten Spiel!')]
       .map(s => `<button class="start" type="button">${esc(s)}</button>`).join('')}</div>`;
   return d;
 }
 
 // ---- setup and settings -------------------------------------------------------------------------------
-// no model can be reached: a card for a grown-up
+// no model can be reached: a card for a grown-up, under the conversation
 function setup(T) {
-  status(null);
-  ui.log.innerHTML = '';
-  ui.items.clear();
-  const d = document.createElement('div');
-  d.className = 'hello';
+  status('');
+  const d = ui.notice;
+  d.className = 'notice setup';
   d.innerHTML = `<p><b>${t('The Guide needs a grown-up first.', 'Der Führer braucht zuerst einen Erwachsenen.')}</b></p>
     <p class="small">${t('It talks to an AI model through Radius, Anthropic or OpenAI, and that needs an API key. Either start the dev server with RADIUS_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY set (the key then stays on the server), or paste a key here. A pasted key is kept only in this browser.',
       'Er spricht mit einem KI-Modell über Radius, Anthropic oder OpenAI, und dafür braucht es einen API-Schlüssel. Entweder startest du den Dev-Server mit RADIUS_API_KEY, ANTHROPIC_API_KEY oder OPENAI_API_KEY (dann bleibt der Schlüssel auf dem Server), oder du fügst hier einen Schlüssel ein. Ein eingefügter Schlüssel bleibt nur in diesem Browser.')}</p>`;
-  d.append(keyForm(T, () => { d.remove(); open(false); }));
-  ui.log.append(d);
+  d.append(keyForm(T, () => status(null)));
+  ui.log.scrollTop = ui.log.scrollHeight;
 }
 function keyForm(T, done) {
   const P = T.modelsMod.PROVIDERS, f = document.createElement('form');
@@ -353,7 +415,7 @@ async function settings() {
     <div class="keyslot"></div>
     <p class="small">${t('Spent so far', 'Bisher ausgegeben')}: $${cost.toFixed(2)}</p>
     <details><summary>${t('What the Guide noted about you', 'Was sich der Führer über dich gemerkt hat')} (${notes.length})</summary><ul>${notes.map(n => `<li>${esc(n.text)} <small>(${esc(n.room)})</small></li>`).join('')}</ul></details>
-    <p><button type="button" class="restart">${t('Start this room over', 'Diesen Raum neu beginnen')}</button>
+    <p><button type="button" class="restart">${t('Start over', 'Neu anfangen')}</button>
     <button type="button" class="wipe">${t('Forget everything', 'Alles vergessen')}</button>
     <button type="button" class="done">${t('Done', 'Fertig')}</button></p>`;
   s.querySelector('.keyslot').append(keyForm(T, () => settings()));
@@ -361,8 +423,8 @@ async function settings() {
   for (const b of s.querySelectorAll('.forget-key')) b.onclick = () => { M.setStoredKey(b.dataset.id, ''); settings(); };
   s.querySelector('.done').onclick = () => { s.hidden = true; };
   s.querySelector('.restart').onclick = async () => {
-    if (!room || !confirm(t('Start a new conversation about this room? The Guide keeps its notes about you.', 'Ein neues Gespräch über diesen Raum beginnen? Der Führer behält seine Notizen über dich.'))) return;
-    await room.conversation.reset(undefined, T.ctx);
+    if (!chat || !confirm(t('Start a new conversation? The Guide keeps its notes about you.', 'Ein neues Gespräch beginnen? Der Führer behält seine Notizen über dich.'))) return;
+    await chat.conversation.reset(undefined, T.ctx);
     s.hidden = true;
   };
   s.querySelector('.wipe').onclick = async () => {

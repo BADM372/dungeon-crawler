@@ -50,9 +50,10 @@ Plain HTML, CSS and ES modules, no build step, like the game.
 | File | What |
 |---|---|
 | `index.html` | the map: the rooms, the detail level picker (`map.js`) |
+| `nav.js` | makes the guide one long-lived page: links between its pages swap `<main>` (see below) |
 | `decks.js` | the list of rooms in order, their titles in both languages, the game depth (theme) each borrows its look from |
 | `lang.js` | picks the language before the page is drawn: the reader's choice, else the browser's |
-| `deck.js` | the engine every page loads: slides, quick bar, levels, scroll mode, language switch, glossary tips, live code and values, demo loading |
+| `deck.js` | the engine every page loads: slides, quick bar, levels, scroll mode, language switch, glossary tips, live code and values, demo loading; sets each page up as it comes and takes it down as it goes |
 | `refs.js` | finds a definition in a source file, and fingerprints it (used by `deck.js` and the tool) |
 | `crawl.js` | reads the game's import graph from `src/main.js` and its worker, for demos that show the code's structure |
 | `stamps.json` | fingerprints of the code the slides explain; slides noted as outdated |
@@ -118,9 +119,10 @@ prompting. Specific numbers come live from the code (`data-val`, `data-code`), n
 
 ## Writing demos
 
-A demo is a module with a default export `mount(el)`; a slide asks for it with
+A demo is a module with a default export `mount(el)`, which may return a function that stops
+it (a song that plays, say) when its page is left; a slide asks for it with
 `<div class="demo" data-demo="name">`. Add `class="real"` when the demo runs the game's own code
-(it is labelled "REAL GAME CODE"). `deck.js` exports `canvas(el, w, h)`, `loop(el, fn)` (runs
+(it is labelled "REAL GAME CODE"). `deck.js` exports `canvas(el, w, h)`, `loop(el, fn)` (ends when its page is left; runs
 only while visible), `html(el, s)`, `t` (as `tr` in demos) and `lang`. A demo that takes keys
 sets `el.dataset.keys`, so the arrow keys do not turn the slide. Load files relative to the
 module (`new URL('../img/x.jpg', import.meta.url)`), not the page.
@@ -132,28 +134,52 @@ Prefer importing the game's pure modules (`src/core/`, `src/world/`, `src/cubege
 `src/themes/`) over copying them. When a demo has to copy game logic (it needs the game state,
 or it is 2D), say where it comes from in its first comment.
 
+## One long-lived page
+
+Every page of the guide is a whole HTML file, but in the browser the guide is one page that never
+reloads: `nav.js` catches links between the guide's pages, fetches the page, and swaps in its
+`<main>`, title and theme (back and forward work too). So what lives outside `<main>` runs on
+across rooms: the Guide and the game window. Scripts in the fetched page do not run; `deck.js`
+knows every kind of page (rooms, the map, the word book) and sets it up in `enter()`, and
+`leave()` takes it down: bars, listeners, demos. A reload or a deep link still loads the page
+the ordinary way.
+
 ## The Guide (the tutor)
 
 Every page has an "Ask" button that opens the Guide: an AI tutor that answers questions about the
-room and the game by asking questions back (the Socratic way), one small step at a time. It
-reads the slides, looks at the demos, reads and searches the game's real code and `docs/`, turns
-the reader's page to a slide, and keeps a notebook about the reader across rooms. It runs in the
-browser on [pi-durable](../vendor/pi-durable/VERSION), Pi's durable agent harness.
+game by asking questions back (the Socratic way), one small step at a time. It runs in the browser
+on [pi-durable](../vendor/pi-durable/VERSION), Pi's durable agent harness, in one conversation for
+the whole guide.
+
+With every message it is told about the page (`tutor/state.js`): the room, slide, detail level and
+language, what the reader did since their last message (slides, rooms, demo buttons and sliders),
+text they selected, the demos on their slide, and the game window. The slide's text and the room's
+slides only when they changed.
+
+It can look (slides, demos, the game's code and `docs/`, the glossary), move the reader
+(`navigate`) and point at things (`highlight`), and show real code in its panel (`show_code`). It can also open the real game in a window next to
+the guide that stays open across rooms (`tutor/game.js`: `../index.html?dev=1` in an iframe of
+the same site; the keyboard goes to the game only while it has focus, which a click into it gives
+and a click on the guide takes back, and the window shows which). And it can run its own JavaScript (`run_js`) in the guide or in the game, with
+full access: the page, the demos, the game's modules (the same ones the demos use, or the running
+game's), and the running game's `window.__game`. It decides whether the reader sees the code.
 
 | File | What |
 |---|---|
 | `tutor/tutor.js` | the button and the panel; loads the agent (about 1 MB) only when the panel opens |
-| `tutor/agent.js` | the harness, the `guide` extension, one conversation per room, the notebook |
-| `tutor/prompt.js` | how the Guide teaches: its instructions, the room section |
-| `tutor/tools.js` | its tools: `read_slide`, `look_at_demo`, `read_code`, `search_code`, `search_guide`, `look_up_word`, `show_slide`, `note` |
-| `tutor/page.js` | rooms and slides as text, where the reader is, the glossary |
+| `tutor/agent.js` | the harness, the `guide` extension, the conversation, the notebook |
+| `tutor/prompt.js` | how the Guide teaches and what it can do: its instructions |
+| `tutor/tools.js` | its tools: `read_slide`, `look_at_demo`, `look_at_game`, `read_code`, `show_code`, `search_code`, `search_guide`, `look_up_word`, `navigate`, `highlight`, `run_js`, `game`, `note` |
+| `tutor/state.js` | what it is told about the page with every message |
+| `tutor/game.js` | the game window |
+| `tutor/page.js` | rooms and slides as text, the reader's slide, the glossary |
 | `tutor/files.js` | a file system in IndexedDB for pi-durable's JSONL storage |
 | `tutor/models.js` | which model, and how the key gets there |
 | `tutor/markdown.js` | the answers as safe HTML |
 
-Everything is kept in the browser: conversations in IndexedDB, settings in `localStorage`
-(`kids.tutor.*`). Every question, answer and tool call is stored before it shows, so leaving a
-room in the middle of an answer loses nothing: the next page finishes it. Only one tab runs the
+Everything is kept in the browser: the conversation in IndexedDB, settings in `localStorage`
+(`kids.tutor.*`). Every question, answer and tool call is stored before it shows, so a reload in
+the middle of an answer loses nothing: the page finishes it when it is back. Only one tab runs the
 Guide at a time (a Web Lock); another tab offers to take it over.
 
 It needs a Radius, Anthropic or OpenAI API key, one of:
@@ -164,7 +190,7 @@ RADIUS_API_KEY=... npm run serve      # or ANTHROPIC_API_KEY / OPENAI_API_KEY: t
 ```
 
 or a key pasted into the Guide's settings, kept in that browser only and sent straight to the
-provider. The settings also pick the model, show what it has spent, start a room over, or forget everything.
+provider. The settings also pick the model, show what it has spent, start over, or forget everything.
 
 When a slide changes, the Guide needs no update: it reads the pages and the code live. When you
 add a room, nothing to do either. Change `tutor/prompt.js` for how it teaches.
@@ -179,4 +205,4 @@ images and demo modules, that every name a demo imports from the game is still e
 `tools/learn.mjs`'s check: references resolve, fingerprints, markers and written values
 are current. `tests/tutor.test.js` runs the Guide on a scripted model (its storage, tools, and
 finishing an answer after the page closed); `tests/browser/tutor.js` does the same in a real
-room opened with `?dev=1`.
+room opened with `?dev=1`, with every tool, the game window and moving on to the next room.

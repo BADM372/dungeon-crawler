@@ -58,4 +58,6 @@ export default function mount(el) {
         `<b>${info.playing}</b>, Stimmung <b>${mood}</b> (${WHEN()[mood]}): <b>${on.size}</b> von ${score.song.voices.length} Stimmen spielen.`) : tr('starting\u2026', 'startet\u2026'))
       : tr(`mood <b>${mood}</b> uses: ${[...planned].join(', ')}. Press Play to hear it.`, `Stimmung <b>${mood}</b> benutzt: ${[...planned].join(', ')}. Drück Abspielen, um sie zu hören.`);
   });
+  // leaving the room stops the song
+  return () => { if (playing) playSong(null); };
 }
