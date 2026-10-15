@@ -45,6 +45,8 @@
       <p lang="de">Vor dem Brunnen steht immer ein starker <b>Brunnenwächter</b> (gold), und unterwegs versperren ein oder zwei <b>Torwächter</b> (pink) die Tore. Besiege sie, um den Weg zu öffnen.</p>
       <p lang="en">Some rooms get a side room with a treasure chest.</p>
       <p lang="de">Manche Räume bekommen einen Nebenraum mit einer Schatztruhe.</p>
+      <p lang="en">And in one room on the route waits a <b>horde</b>: a big pack of monsters that attack together (red dot).</p>
+      <p lang="de">Und in einem Raum auf der Route wartet eine <b>Horde</b>: ein großes Rudel Monster, die zusammen angreifen (roter Punkt).</p>
       <p lang="en">Move the depth slider: deeper down, the ring gets smaller, until the core at depth 20.</p>
       <p lang="de">Beweg den Tiefen-Regler: Je tiefer, desto kleiner wird der Ring, bis zum Kern in Tiefe 20.</p>
     </div>
@@ -84,6 +86,8 @@
         <li lang="de"><b>Keine Abkürzungen:</b> Nebenräume sind nie mit anderen Räumen verbunden, also kannst du dich nicht an einem Wächter vorbeischleichen.</li>
         <li lang="en"><b>Treasure:</b> each depth plans four treasure sites, mostly in side rooms.</li>
         <li lang="de"><b>Schätze:</b> Jede Tiefe plant vier Schatzplätze, meistens in Nebenräumen.</li>
+        <li lang="en"><b>A horde:</b> one room on the route gets a wild pack of monsters, all of one kind. The room before it gets only half its monsters, so you arrive fresh.</li>
+        <li lang="de"><b>Eine Horde:</b> Ein Raum auf der Route bekommt ein wildes Rudel Monster, alle von einer Art. Der Raum davor bekommt nur die Hälfte seiner Monster, damit du ausgeruht ankommst.</li>
       </ul>
       <a class="deeper" data-lv="3" href="#route-code" lang="en">See the route code</a>
       <a class="deeper" data-lv="3" href="#route-code" lang="de">Sieh dir den Routen-Code an</a>
@@ -239,18 +243,18 @@
       <li lang="de">Wasserfälle in den Würfel darunter</li>
     </ol>
     <ol class="steps" style="counter-reset: s 6">
-      <li lang="en">Space for treasure sites</li>
-      <li lang="de">Platz für Schatzplätze</li>
+      <li lang="en">Space for treasure sites and a horde's camp</li>
+      <li lang="de">Platz für Schatzplätze und das Lager einer Horde</li>
       <li lang="en">Upper floors (slabs)</li>
       <li lang="de">Obere Stockwerke (Platten)</li>
       <li lang="en">Ramps and supports</li>
       <li lang="de">Rampen und Stützen</li>
-      <li lang="en">Pools and streams, each with banks all around (no water in the air!)</li>
-      <li lang="de">Teiche und Bäche, jeder mit Ufern rundherum (kein Wasser in der Luft!)</li>
+      <li lang="en">Pools and streams, then banks all around every water (no water in the air!)</li>
+      <li lang="de">Teiche und Bäche, dann Ufer rund um jedes Wasser (kein Wasser in der Luft!)</li>
       <li lang="en">Every possible move: walk, drop, jump, stairs, bridge, ladder</li>
       <li lang="de">Jede mögliche Bewegung: gehen, fallen, springen, Treppe, Brücke, Leiter</li>
-      <li lang="en">Routes between the portals</li>
-      <li lang="de">Routen zwischen den Portalen</li>
+      <li lang="en">Routes between the portals, and to the horde and past it</li>
+      <li lang="de">Routen zwischen den Portalen, und zur Horde und an ihr vorbei</li>
     </ol>
     <ol class="steps" style="counter-reset: s 12">
       <li lang="en">Escape routes from places you could fall into</li>
@@ -285,10 +289,10 @@
         <li lang="en">use the stairs, bridges and ladders</li>
         <li lang="de">Treppen, Brücken und Leitern benutzen</li>
       </ul>
-      <p lang="en">If <b>any</b> portal cannot reach the exit, or a route squeezes under a ceiling that is too low, the cube fails. The builder throws it away and tries again with new dice. Up to 200 tries!</p>
-      <p lang="de">Wenn <b>irgendein</b> Portal den Ausgang nicht erreicht oder eine Route unter einer zu niedrigen Decke durchquetscht, fällt der Würfel durch. Der Baumeister wirft ihn weg und versucht es mit neuen Würfeln. Bis zu 200 Versuche!</p>
-      <p lang="en">Usually the first try works: about 1.07 tries per cube on average.</p>
-      <p lang="de">Meistens klappt der erste Versuch: im Durchschnitt etwa 1,07 Versuche pro Würfel.</p>
+      <p lang="en">If <b>any</b> portal cannot reach the exit, a route squeezes under a ceiling that is too low, or there is no way to the horde and on past it, the cube fails. The builder throws it away and tries again with new dice. Up to 200 tries!</p>
+      <p lang="de">Wenn <b>irgendein</b> Portal den Ausgang nicht erreicht, eine Route unter einer zu niedrigen Decke durchquetscht oder kein Weg zur Horde und an ihr vorbei führt, fällt der Würfel durch. Der Baumeister wirft ihn weg und versucht es mit neuen Würfeln. Bis zu 200 Versuche!</p>
+      <p lang="en">Usually the first try works: about four cubes out of five.</p>
+      <p lang="de">Meistens klappt der erste Versuch: bei etwa vier von fünf Würfeln.</p>
     </div>
     <div class="card">
       <h3 lang="en">A true story</h3>
@@ -337,8 +341,8 @@
       <p lang="de"><code>return null</code> heißt "dieser Versuch ist schiefgegangen". Die Schleife in <code>generate</code> probiert dann den nächsten Seed: <code>spec.seed + a * 7919</code>, gemischt durch <code>hash32</code>. (7919 ist einfach eine große Primzahl, damit die Seeds der Versuche weit auseinander liegen.)</p>
       <p lang="en">The <code>spec</code> is what the world decided for this cube: its faces, portals and kind. Retries change the dice, but <b>never</b> the spec, so the edges always keep matching.</p>
       <p lang="de">Die <code>spec</code> ist, was die Welt für diesen Würfel entschieden hat: seine Seiten, Portale und Art. Neue Versuche ändern die Würfel, aber <b>nie</b> die spec. Darum passen die Ränder immer.</p>
-      <p class="small muted" lang="en">It also builds the treasure sites; the town and the guardian arenas have builders of their own.</p>
-      <p class="small muted" lang="de">Sie baut auch die Schatzplätze; die Stadt und die Wächter-Arenen haben eigene Baumeister.</p>
+      <p class="small muted" lang="en">It also builds the treasure sites and the horde's camp; the town and the guardian arenas have builders of their own.</p>
+      <p class="small muted" lang="de">Sie baut auch die Schatzplätze und das Lager der Horde; die Stadt und die Wächter-Arenen haben eigene Baumeister.</p>
     </div>
   </div>
 </section>

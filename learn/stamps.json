@@ -166,15 +166,5 @@
     "src/world/world.js#prepare": "a88aec54",
     "src/world/world.js#spec": "e36f95b2"
   },
-  "outdated": {
-    "architecture.html#cube-journey": "src/cubegen/index.js#generate changed (since 29d3049); src/world/world.js#spec changed (since 29d3049)",
-    "architecture.html#cube-map": "src/cubegen/index.js#generate changed (since 29d3049)",
-    "code.html#whole": "src/core/combat.js#weaponHit changed (since 29d3049)",
-    "world.html#assembly": "src/cubegen/index.js#tryGenerate changed (since 29d3049)",
-    "world.html#backtracking": "src/world/layout.js#build changed (since 29d3049)",
-    "world.html#faces": "src/world/faces.js#sideFace changed (since 29d3049)",
-    "world.html#generate-code": "src/cubegen/index.js#generate changed (since 29d3049); src/cubegen/index.js#tryGenerate changed (since 29d3049)",
-    "world.html#inspector": "src/cubegen/index.js#generate changed (since 29d3049)",
-    "world.html#route": "src/world/layout.js#build changed (since 29d3049)"
-  }
+  "outdated": {}
 }

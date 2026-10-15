@@ -1,5 +1,5 @@
 // The real layout of a depth (src/world/layout.js): which cubes exist, the route through them,
-// side rooms, guardians and reward sites. Seen from above, centred on the world's axis.
+// side rooms, guardians, the horde and reward sites. Seen from above, centred on the world's axis.
 import { makeLayouts } from '../../src/world/layout.js';
 import { parse } from '../../src/world/coords.js';
 import { themeAt, MAX_DEPTH } from '../../src/themes/depth.js';
@@ -53,6 +53,7 @@ export default function mount(el) {
       g.fillStyle = '#fff';
       g.fillText(i >= 0 ? String(i + 1) : '+', cx(x) + S / 2, cz(z) + S / 2 + 5);
       if (L.sitePlans.get(k)?.length) { g.fillStyle = '#ffcf7a'; g.fillRect(cx(x) + S - 16, cz(z) + 8, 8, 7); }
+      if (L.hordes.has(k)) { g.fillStyle = '#ff5a4a'; g.beginPath(); g.arc(cx(x) + 13, cz(z) + S - 13, 5, 0, 7); g.fill(); }
       if (role === 'town' || (d === 0 && i === 0)) { g.fillStyle = '#76ad50'; g.fillText(tr('town', 'Stadt'), cx(x) + S / 2, cz(z) + S - 9); }
     }
     // the way in (ring up) and the way down (well)
@@ -62,13 +63,16 @@ export default function mount(el) {
     // legend
     g.textAlign = 'left'; g.font = '12px ui-monospace, monospace';
     const lx = ox + (2 * R + 1) * S + 14;
-    [['#ffc94a', tr('the route', 'die Route')], ['#70d6aa', tr('side room (+)', 'Nebenraum (+)')], ['#ff5ab4', tr('side guardian', 'Torwächter')], ['#ffb000', tr('descent guardian', 'Brunnenwächter')], ['#5fd3ff', tr('way in (ring up)', 'Eingang (Ring)')], ['#ffc94a', tr('well down', 'Brunnen runter')], ['#ffcf7a', tr('treasure site', 'Schatzplatz')]]
+    [['#ffc94a', tr('the route', 'die Route')], ['#70d6aa', tr('side room (+)', 'Nebenraum (+)')], ['#ff5ab4', tr('side guardian', 'Torwächter')], ['#ffb000', tr('descent guardian', 'Brunnenwächter')], ['#5fd3ff', tr('way in (ring up)', 'Eingang (Ring)')], ['#ffc94a', tr('well down', 'Brunnen runter')], ['#ffcf7a', tr('treasure site', 'Schatzplatz')], ['#ff5a4a', tr('horde', 'Horde')]]
       .forEach(([c, t], j) => { g.fillStyle = c; g.fillRect(lx, 20 + j * 22, 12, 12); g.fillStyle = '#aab3c2'; g.fillText(t, lx + 18, 31 + j * 22); });
     const sides = [...L.guardians.values()].filter(x => x.role === 'side').length;
+    const hordes = [...L.hordes].map(([k, h]) => [spine.indexOf(k) + 1, h.count]);
     out.innerHTML = tr(`depth ${d}: <b>${spine.length}</b> rooms on the route, <b>${cells.length - spine.length}</b> side rooms, `
-      + (d < MAX_DEPTH ? `<b>${sides}</b> side guardian${sides === 1 ? '' : 's'} and a descent guardian at the well` : 'the core: no way further down'),
+      + (d < MAX_DEPTH ? `<b>${sides}</b> side guardian${sides === 1 ? '' : 's'} and a descent guardian at the well` : 'the core: no way further down')
+      + hordes.map(([i, n]) => `; a horde of <b>${n}</b> in room ${i}`).join(''),
       `Tiefe ${d}: <b>${spine.length}</b> Räume auf der Route, <b>${cells.length - spine.length}</b> Nebenräume, `
-      + (d < MAX_DEPTH ? `<b>${sides}</b> Torwächter und ein Brunnenwächter am Brunnen` : 'der Kern: kein Weg weiter nach unten'));
+      + (d < MAX_DEPTH ? `<b>${sides}</b> Torwächter und ein Brunnenwächter am Brunnen` : 'der Kern: kein Weg weiter nach unten')
+      + hordes.map(([i, n]) => `; eine Horde aus <b>${n}</b> in Raum ${i}`).join(''));
   }
   seedIn.oninput = draw; depthIn.oninput = draw;
   row.querySelector('.dice').onclick = () => { seedIn.value = Math.floor(Math.random() * 99999); draw(); };
