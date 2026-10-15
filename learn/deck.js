@@ -12,6 +12,7 @@
 //   - <b data-val="src/x.js#NAME.field"> shows that value, read live from the game's code
 //     (demos can show live code too: set data-code on a <pre> and call liveCode)
 //   - slides that stamps.json lists as outdated get a note (tools/learn.mjs, README.md)
+//   - the Guide, a tutor to ask about the room, in a side panel (tutor/tutor.js)
 import { DECKS, LEVELS, THEME_NAMES, THEME_NAMES_DE, local, iconUrl } from './decks.js';
 import { parseRefs, extract, readValue, formatValue } from './refs.js';
 
@@ -369,3 +370,4 @@ const main = document.querySelector('main.deck');
 if (main) deck(main);
 else { const box = document.createElement('div'); box.className = 'langbar'; langSwitch(box); document.body.append(box); }
 demos(document);
+import('./tutor/tutor.js').then(m => m.mount()).catch(err => console.error('tutor:', err));

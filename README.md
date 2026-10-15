@@ -28,17 +28,21 @@ Plain ES modules and a vendored three.js; no build step.
   (`node tools/balance.mjs`, see `docs/balance.md`).
 - `docs/`: design notes; `docs/assets/` documents the asset libraries.
 - `learn/`: an interactive guide for children (about 12), in English and German, from the
-  big ideas down to the real code (`/learn/` on the dev server). Code it
+  big ideas down to the real code (`/learn/` on the dev server), with an AI tutor on every page
+  (`learn/tutor/`, needs an API key, see `learn/README.md`). Code it
   explains carries a `// learn: ...` marker. After changing such code, run
   `npm run learn` (`npm test` runs it too): it names the slides to review; then
   `npm run learn -- --stamp`, or `-- --defer` to note them as outdated. See `learn/README.md`.
-- `vendor/three/`: three.js and the addons in use; `vendor/scrimshaw/`: the music score parser and synth.
+- `vendor/three/`: three.js and the addons in use; `vendor/scrimshaw/`: the music score parser and synth;
+  `vendor/pi-durable/`: Pi's durable agent harness and model access for the tutor, one bundle built
+  by `node tools/vendor-pi-durable.mjs <pi checkout>`.
 
 ## Running
 
 ```sh
 npm run serve            # uv run --no-project tools/serve.py [port]
 # http://localhost:8000/?seed=123   (?dev=1 for dev tools)
+# with RADIUS_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY set, the guide's tutor uses it through the server
 npm test
 ```
 

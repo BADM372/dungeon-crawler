@@ -61,6 +61,7 @@ Plain HTML, CSS and ES modules, no build step, like the game.
 | `words.html` | the glossary; `<a class="w" href="words.html#seed">` anywhere shows its entry on hover |
 | `demos/*.js` | interactive demos, loaded when they scroll into view |
 | `img/` | screenshots of the game |
+| `tutor/` | the Guide: an AI tutor in a side panel (see below) |
 | `../tools/learn.mjs` | the check / `--stamp` / `--defer` tool |
 
 ## Two languages in one file
@@ -131,9 +132,53 @@ Prefer importing the game's pure modules (`src/core/`, `src/world/`, `src/cubege
 `src/themes/`) over copying them. When a demo has to copy game logic (it needs the game state,
 or it is 2D), say where it comes from in its first comment.
 
+## The Guide (the tutor)
+
+Every page has an "Ask" button that opens the Guide: an AI tutor that answers questions about the
+room and the game by asking questions back (the Socratic way), one small step at a time. It
+reads the slides, looks at the demos, reads and searches the game's real code and `docs/`, turns
+the reader's page to a slide, and keeps a notebook about the reader across rooms. It runs in the
+browser on [pi-durable](../vendor/pi-durable/VERSION), Pi's durable agent harness.
+
+| File | What |
+|---|---|
+| `tutor/tutor.js` | the button and the panel; loads the agent (about 1 MB) only when the panel opens |
+| `tutor/agent.js` | the harness, the `guide` extension, one conversation per room, the notebook |
+| `tutor/prompt.js` | how the Guide teaches: its instructions, the room section |
+| `tutor/tools.js` | its tools: `read_slide`, `look_at_demo`, `read_code`, `search_code`, `search_guide`, `look_up_word`, `show_slide`, `note` |
+| `tutor/page.js` | rooms and slides as text, where the reader is, the glossary |
+| `tutor/files.js` | a file system in IndexedDB for pi-durable's JSONL storage |
+| `tutor/models.js` | which model, and how the key gets there |
+| `tutor/markdown.js` | the answers as safe HTML |
+
+Everything is kept in the browser: conversations in IndexedDB, settings in `localStorage`
+(`kids.tutor.*`). Every question, answer and tool call is stored before it shows, so leaving a
+room in the middle of an answer loses nothing: the next page finishes it. Only one tab runs the
+Guide at a time (a Web Lock); another tab offers to take it over.
+
+It needs a Radius, Anthropic or OpenAI API key, one of:
+
+```sh
+RADIUS_API_KEY=... npm run serve      # or ANTHROPIC_API_KEY / OPENAI_API_KEY: the dev server
+                                      # adds the key; the browser never sees it
+```
+
+or a key pasted into the Guide's settings, kept in that browser only. Radius (radius.pi.dev)
+does not answer browsers directly, so its requests always go through the dev server, which
+passes a pasted key on. The settings also pick
+the model, show what it has spent, start a room over, or forget everything.
+
+When a slide changes, the Guide needs no update: it reads the pages and the code live. When you
+add a room, nothing to do either. Change `tutor/prompt.js` for how it teaches.
+
+`vendor/pi-durable/pi-durable.js` is built from a Pi checkout (`node tools/vendor-pi-durable.mjs
+<pi checkout>`), like three.js it is checked in.
+
 ## Tests
 
 `tests/learn.test.js` checks the rooms, that every text has both languages, links, anchors,
 images and demo modules, that every name a demo imports from the game is still exported, and
 `tools/learn.mjs`'s check: references resolve, fingerprints, markers and written values
-are current.
+are current. `tests/tutor.test.js` runs the Guide on a scripted model (its storage, tools, and
+finishing an answer after the page closed); `tests/browser/tutor.js` does the same in a real
+room opened with `?dev=1`.
