@@ -1,15 +1,13 @@
 // Which AI model the tutor talks to, and how it gets in. Two ways, the first that works:
 //   1. a key a grown-up pasted into the tutor's settings: kept in this browser only
-//      (localStorage), sent straight to Anthropic or OpenAI;
+//      (localStorage), sent straight to Radius, Anthropic or OpenAI;
 //   2. the dev server: started with RADIUS_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY set,
 //      tools/serve.py passes requests on under /llm/<provider>/ and adds the key, so the browser
 //      never sees it.
-// Radius (the pi.dev gateway) does not answer browsers directly, so its requests always go through
-// the dev server; a pasted Radius key travels with them and the server passes it on.
 import { createModels, anthropicProvider, openaiProvider, radiusProvider } from '../../vendor/pi-durable/pi-durable.js';
 
 export const PROVIDERS = {
-  radius: { name: 'Radius', make: radiusProvider, proxy: '/llm/radius/v1', viaServer: true, default: 'claude-sonnet-5-5',
+  radius: { name: 'Radius', make: radiusProvider, proxy: '/llm/radius/v1', default: 'claude-sonnet-5-5',
     suggested: ['claude-sonnet-5-5', 'claude-haiku-5-5', 'gpt-6-sol', 'gpt-6-luna'] },
   anthropic: { name: 'Anthropic', make: anthropicProvider, proxy: '/llm/anthropic', default: 'claude-sonnet-5-5',
     suggested: ['claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5'] },
@@ -51,7 +49,6 @@ export function tutorModels(extra = []) {
       ...base,
       auth: { apiKey: { name: `${P.name} (learn tutor)`, resolve: async () => {
         const key = storedKey(id);
-        if (key && P.viaServer) return { auth: { apiKey: key, baseUrl: new URL(P.proxy, location.href).href }, source: 'this browser, through the dev server' };
         if (key) return { auth: { apiKey: key }, source: 'this browser' };
         if ((await serverProviders()).includes(id)) return { auth: { apiKey: 'added-by-dev-server', baseUrl: new URL(P.proxy, location.href).href }, source: 'dev server' };
         return undefined;

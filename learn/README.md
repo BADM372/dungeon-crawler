@@ -163,10 +163,8 @@ RADIUS_API_KEY=... npm run serve      # or ANTHROPIC_API_KEY / OPENAI_API_KEY: t
                                       # adds the key; the browser never sees it
 ```
 
-or a key pasted into the Guide's settings, kept in that browser only. Radius (radius.pi.dev)
-does not answer browsers directly, so its requests always go through the dev server, which
-passes a pasted key on. The settings also pick
-the model, show what it has spent, start a room over, or forget everything.
+or a key pasted into the Guide's settings, kept in that browser only and sent straight to the
+provider. The settings also pick the model, show what it has spent, start a room over, or forget everything.
 
 When a slide changes, the Guide needs no update: it reads the pages and the code live. When you
 add a room, nothing to do either. Change `tutor/prompt.js` for how it teaches.

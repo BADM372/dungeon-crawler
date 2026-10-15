@@ -5,8 +5,8 @@ main checkout, everything else from this worktree. Override with --assets-root.
 The kids' guide's tutor (learn/tutor/) talks to an AI model. Started with
 RADIUS_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY set, the server passes the tutor's
 requests on under /llm/<provider>/ and adds the key, so the key never reaches the browser.
-GET /llm/providers lists the providers it has a key for. Without a key of its own, the
-server passes on the key the browser sent (Radius does not answer browsers directly).
+GET /llm/providers lists the providers it has a key for. A key pasted into the tutor goes
+from the browser straight to the provider and never passes through here.
 
 Usage: uv run --no-project tools/serve.py [port] [--assets-root REPO]
 """
@@ -45,8 +45,6 @@ LLM = {
 # request headers passed on (the SDKs' own), and response headers passed back
 LLM_REQUEST_HEADERS = {"content-type", "accept", "anthropic-version", "anthropic-beta", "openai-beta", "user-agent"}
 LLM_RESPONSE_HEADERS = {"content-type", "request-id", "x-request-id", "retry-after"}
-# where the browser's own key travels, passed on when the server has none
-LLM_AUTH_HEADERS = {"authorization", "x-api-key"}
 
 
 def llm_keys():
@@ -99,14 +97,12 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
             return
         upstream, _, auth = LLM[parts[2]]
         key = llm_keys().get(parts[2])
-        body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
-        passed = LLM_REQUEST_HEADERS if key else LLM_REQUEST_HEADERS | LLM_AUTH_HEADERS
-        headers = {k: v for k, v in self.headers.items() if k.lower() in passed}
-        if key:
-            headers.update(auth(key))
-        elif not any(k.lower() in LLM_AUTH_HEADERS for k in headers):
-            self.send_error(503, f"no key for {parts[2]}: none from the browser, none on the dev server")
+        if not key:
+            self.send_error(503, f"no key for {parts[2]} on the dev server")
             return
+        body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        headers = {k: v for k, v in self.headers.items() if k.lower() in LLM_REQUEST_HEADERS}
+        headers.update(auth(key))
         request = urllib.request.Request(f"{upstream}/{parts[3]}", data=body, headers=headers, method="POST")
         try:
             response = urllib.request.urlopen(request, timeout=300)
