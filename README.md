@@ -3,6 +3,17 @@
 A browser dungeon crawler made of 16x16-cell cubes stacked into themed depths.
 Plain ES modules and a vendored three.js; no build step.
 
+**[Play it in your browser](https://mitsuhiko.github.io/dungeon-crawler/)**
+
+<p>
+  <img src="learn/img/town.jpg" alt="The town cube" width="49%">
+  <img src="learn/img/fight.jpg" alt="Fighting on a floating island" width="49%">
+</p>
+
+This game is AI generated and was made together with my kids. It comes with interactive live
+docs that explain how the game works, from the big ideas down to the real code:
+**[read the guide](https://mitsuhiko.github.io/dungeon-crawler/learn/)**.
+
 ## Layout
 
 - `index.html`, `style.css`, `src/`: the game.
