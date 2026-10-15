@@ -29,6 +29,8 @@ import { tickFloatText } from './render/floattext.js';
 import { tickParticles } from './render/particles.js';
 import { tickPortalCloud } from './render/portalcloud.js';
 import { timeScale } from './game/juice.js';
+import { gameTime, pace } from './game/pace.js';
+import { teach, tickTeach } from './game/teach.js';
 import { updatePointer } from './game/pointer.js';
 import { depthOf } from './themes/depth.js';
 import { goHorde } from './game/dev.js';
@@ -61,11 +63,11 @@ const clock = new THREE.Clock();
 
 // learn: architecture.html#conductor #main-js, loop.html#frame-code #one-tick #pause #smoothing (see learn/README.md)
 function frame() {
-  const elapsed = Math.min(clock.getDelta(), 1 / 30), dt = state.inventoryOpen ? 0 : elapsed * timeScale(elapsed);
+  const elapsed = Math.min(clock.getDelta(), 1 / 30), dt = state.inventoryOpen ? 0 : gameTime(elapsed) * timeScale(elapsed);
   updatePointer();   // the enemy under the cursor (with last frame's camera)
   state.time += dt;
-  if (!state.inventoryOpen && travelling()) updateTravel(dt);
-  else if (!state.inventoryOpen && state.map && !state.transitioning) { updatePlayer(dt); if (!state.transitioning) updateEnemies(dt); }
+  if (dt > 0 && travelling()) updateTravel(dt);
+  else if (dt > 0 && state.map && !state.transitioning) { updatePlayer(dt); if (!state.transitioning) updateEnemies(dt); }
 
   // smooth out small vertical snaps (steps), but not falls
   player.visY += (player.y - player.visY) * Math.min(1, dt * 25);
@@ -86,10 +88,11 @@ function frame() {
   updateHud(player, state.map, state.statusMsg);
   updateInventory();
   updateQuickbar(); updateEffects();
-  updateCamera(dt);
+  updateCamera(pace.paused ? elapsed : dt);   // paused by the Guide (game/pace.js): the view still turns
   if (!state.transitioning) updateCut(dt);   // after the camera: the cut depends on what the camera can see
   updateLootLabels();   // after the camera too: labels sit over their items
   updateAim(allEnemies());   // the arc a flask in hand would fly (game/throws.js)
+  tickTeach();   // what the Guide draws over the world (game/teach.js)
   // the look follows the depth smoothly (also while sliding down / up)
   if (state.cubeKey) state.lookDepth += (depthOf(state.cubeKey) - state.lookDepth) * Math.min(1, dt * 2.5);
   applyLook(state.lookDepth, camera.position.distanceTo(focusPoint(player.x, player.visY, player.z)));
@@ -115,6 +118,7 @@ window.__game = {
   get projectiles() { return projectiles; }, get beams() { return beams; },
   get enemies() { return allEnemies(); }, updateEnemies,
   musicInfo, musicMood: forceMood,   // musicMood('boss') holds a mood to listen to it, musicMood() lets go
+  teach,   // drawings, lenses, pause / slow / step, tuning with a way back (game/teach.js)
   devSwapWeapon: state.dev ? devSwapWeapon : undefined, devDropWeapon: state.dev ? devDropWeapon : undefined,
   devWear: state.dev ? devWear : undefined,   // devWear('wear_wizard_hat'), devWear(null)
   ...(state.dev && { spawnEnemy: spawnEnemies, killEnemies, clearEnemies, goHorde }),

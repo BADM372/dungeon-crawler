@@ -216,7 +216,8 @@ export function summary() {
   return [`seed ${s.baseSeed}`, `depth ${g.map?.depth ?? '?'}`, `cube ${s.cubeKey}`,
     `hero level ${p.level}, ${Math.round(p.hp)}/${p.maxHp} hp at x ${p.x.toFixed(1)} z ${p.z.toFixed(1)}`,
     s.transitioning ? 'travelling' : null,
-    near.length ? `near: ${near.slice(0, 8).join(', ')}` : 'no enemies near'].filter(Boolean).join('; ');
+    near.length ? `near: ${near.slice(0, 8).join(', ')}` : 'no enemies near',
+    g.teach?.status() || null].filter(Boolean).join('; ');
 }
 
 // a picture of the game's 3D view (the HUD on top of it is HTML and not in it), as base64 JPEG

@@ -5,7 +5,7 @@ import { fromOklch, toHex } from '../oklch.js';
 
 const tier = (id, name, rank, oklch, spec) => {
   const rgb = fromOklch(oklch);
-  return Object.freeze({ id, name, rank, rgb: Object.freeze(rgb), css: toHex(rgb), ...spec });
+  return { id, name, rank, rgb, css: toHex(rgb), ...spec };
 };
 
 // weight: base odds; minLevel: the least item level that may roll it (rarer tiers only drop
@@ -13,7 +13,7 @@ const tier = (id, name, rank, oklch, spec) => {
 // tierBonus: affix tiers above what the item level allows; damage: base damage factor;
 // glow: what the floor shows (none, ring, halo, beam height, sparks, runes, light, shimmer)
 // learn: loot.html#rarities, random.html#weighted (see learn/README.md)
-export const RARITIES = Object.freeze([
+export const RARITIES = [
   tier('junk', 'Junk', 0, { l: 0.62, c: 0.012, h: 250 },
     { weight: 24, minLevel: 1, affixes: 0, tierBonus: 0, damage: 0.8, glow: null }),
   tier('common', 'Common', 1, { l: 0.95, c: 0, h: 0 },
@@ -36,8 +36,8 @@ export const RARITIES = Object.freeze([
   tier('ancient', 'Ancient', 7, { l: 0.92, c: 0.09, h: 95 },
     { weight: 0.015, minLevel: 17, affixes: 5, tierBonus: 2, damage: 1.4, guardianOnly: true,
       glow: { ring: 1, halo: 1.2, beam: 5, sparks: 10, runes: true, light: 3, shimmer: true } }),
-]);
-export const RARITY = Object.freeze(Object.fromEntries(RARITIES.map(r => [r.id, r])));
+];
+export const RARITY = Object.fromEntries(RARITIES.map(r => [r.id, r]));
 export const rarityOf = item => RARITY[item?.gen?.rarity] || RARITY.common;
 
 // how much each step up the tiers gains per item level, on top of its base weight: deeper

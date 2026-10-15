@@ -13,12 +13,12 @@ import { depthLevel, grown, GROWTH } from './enemies.js';
 // level: item levels above the depth's; copper: [least, most] at level 1 (grown like enemy
 // coins); potions: [least, most]; weapons: one roll each, `floor` the least rarity it may be
 // learn: loot.html#drops (see learn/README.md)
-export const CHESTS = Object.freeze({
+export const CHESTS = {
   basic: { level: 0, copper: [25, 45], potions: [0, 1], weapons: [{ floor: 'common', luck: 0.1 }] },
   uncommon: { level: 1, copper: [50, 90], potions: [1, 1], weapons: [{ floor: 'uncommon', luck: 0.2 }] },
   rare: { level: 1, copper: [100, 160], potions: [1, 2], weapons: [{ floor: 'rare', luck: 0.3 }, { floor: 'uncommon', luck: 0.3 }] },
   exceptional: { level: 2, copper: [180, 280], potions: [2, 2], weapons: [{ floor: 'epic', luck: 0.45 }, { floor: 'rare', luck: 0.45 }] },
-});
+};
 
 // site: a reward site ({ id, prestige }); { copper, items: [{ itemId, count, gen? }] }; favor:
 // the kind of weapon the player fights with (weapons lean towards it, gear/bases.js)

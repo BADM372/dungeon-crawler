@@ -16,10 +16,10 @@
 import { mulberry32, hash32 } from './util.js';
 import { ENEMY_KINDS } from './enemies.js';
 
-export const D = (mix, ...roster) => Object.freeze({ mix, roster: Object.freeze(roster.map(([type, chance, lo, hi, pack = 1, kinds = { [type]: 1 }]) =>
-  Object.freeze({ type, chance, lo, hi, pack, kinds: Object.freeze(kinds) }))) });
+export const D = (mix, ...roster) => ({ mix, roster: roster.map(([type, chance, lo, hi, pack = 1, kinds = { [type]: 1 }]) =>
+  ({ type, chance, lo, hi, pack, kinds })) });
 
-export const DEPTH_SPAWNS = Object.freeze([
+export const DEPTH_SPAWNS = [
   /*  0 road out of town */ D(1, ['snake', 1, 1, 2]),
   /*  1 meadow islands */ D(2, ['snake', 1, 2, 4], ['stunder', .2, 1, 1]),
   /*  2 meadow islands */ D(3, ['snake', 1, 2, 5, 1, { snake: 4, sandviper: 1 }], ['spider', .6, 2, 4, 2], ['stunder', .25, 1, 1]),
@@ -63,7 +63,7 @@ export const DEPTH_SPAWNS = Object.freeze([
     ['stunder', .4, 1, 2, 1, { magmastunder: 2, stonestunder: 1 }]),
   /* 20 the core */ D(4, ['firecat', 1, 5, 9, 3], ['fireface', 1, 2, 4], ['triangle', .8, 2, 3, 1, { crimsontriangle: 2, triangle: 1 }],
     ['stunder', .5, 2, 3, 1, { magmastunder: 2, stonestunder: 1 }], ['spider', .3, 18, 26, 8, { redback: 2, spider: 1 }]),
-]);
+];
 export const spawnsAt = depth => DEPTH_SPAWNS[Math.min(DEPTH_SPAWNS.length - 1, Math.max(0, depth | 0))];
 
 const SALT = 0x3e1a5c7;

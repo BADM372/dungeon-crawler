@@ -31,7 +31,7 @@ export async function runTutorChecks() {
         P.fauxToolCall('show_code', { ref: 'src/core/constants.js', lines: '1-6', focus: '2', note: 'the dice' })], { stopReason: 'toolUse' }),
       P.fauxAssistantMessage([P.fauxToolCall('navigate', { slide: target }), P.fauxToolCall('run_js', { code: 'return $$("section.slide").length;', show: true })], { stopReason: 'toolUse' }),
       P.fauxAssistantMessage([P.fauxToolCall('highlight', { selector: `#${target} h2`, note: 'here', seconds: 3 }), P.fauxToolCall('game', { action: 'open', seed: 7 })], { stopReason: 'toolUse' }),
-      P.fauxAssistantMessage([P.fauxToolCall('run_js', { where: 'game', show: false, code: 'game.api.spawnEnemy("spider", 2); await wait(200); return game.api.enemies.length;' }), P.fauxToolCall('look_at_game', {})], { stopReason: 'toolUse' }),
+      P.fauxAssistantMessage([P.fauxToolCall('run_js', { where: 'game', show: false, code: 'game.api.spawnEnemy("spider", 2); teach.lens("awareness"); await wait(200); return game.api.enemies.length;' }), P.fauxToolCall('look_at_game', {})], { stopReason: 'toolUse' }),
       P.fauxAssistantMessage([P.fauxToolCall('navigate', { room: next })], { stopReason: 'toolUse' }),
       P.fauxAssistantMessage(`What do you **guess**? Look at [the first slide](#${slides[0].id}).`),
     ]);
@@ -58,6 +58,7 @@ export async function runTutorChecks() {
     check(text(result('run_js')) === `returned: ${slides.length}`, 'run_js runs in the page');
     check(/^returned: \d+$/.test(text(result('run_js', 1))) && +text(result('run_js', 1)).split(' ')[1] >= 1, 'run_js runs in the game');
     check(result('look_at_game').content.some(c => c.type === 'image') && /seed 7/.test(text(result('look_at_game'))), 'look_at_game sees the game');
+    check(/lenses: awareness/.test(text(result('look_at_game'))), 'run_js has the game\'s teach helpers, and the Guide sees what they show');
     check(location.pathname.endsWith('/' + next), 'navigate opened the next room');
     check(window.__tutorCheck, 'Moving to the next room did not reload the page');
     check(document.querySelector('#game-dock iframe')?.contentWindow.__game?.enemies.length >= 1, 'The game window stays open, with what happened in it');

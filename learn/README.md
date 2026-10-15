@@ -164,6 +164,15 @@ and a click on the guide takes back, and the window shows which). And it can run
 full access: the page, the demos, the game's modules (the same ones the demos use, or the running
 game's), and the running game's `window.__game`. It decides whether the reader sees the code.
 
+To show things in the game, the game has teaching helpers, `window.__game.teach`
+(`src/game/teach.js`, `teach` in `run_js`): drawings over the world (pins, labels, arrows, rings,
+slices, squares, which can follow the hero or an enemy), lenses that draw the game's own rules
+as they work (`src/game/lenses.js`: the sword's reach, what enemies see and hear, the paths they
+plan, the grid, the routes), pause, step and slow motion (`src/game/pace.js`), and changing the
+game's numbers with a way back (`src/game/tune.js`: every value it changes is put back by
+`untune()`; the game's tables are plain objects so they can be changed). `teach.reset()` undoes it
+all; the game window's line in the `<page>` block says what is on.
+
 | File | What |
 |---|---|
 | `tutor/tutor.js` | the button and the panel; loads the agent (about 1 MB) only when the panel opens |

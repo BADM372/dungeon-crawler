@@ -24,9 +24,10 @@ import { fireBeam } from './beams.js';
 import { tryHordeAttack } from './hordes.js';
 
 const THINK = 0.2;         // s between decisions
-const BEHIND = 0.5;        // the share of its aggro an enemy sees behind it
-const HEAR = 1.6;          // cells: this close it notices the player without seeing them
-const WARY = 1.4;          // times its aggro: it turns towards a player it can see this far
+export const AHEAD = -0.2; // ahead: the cosine of the angle to the player is above this (about 100 degrees each way)
+export const BEHIND = 0.5; // the share of its aggro an enemy sees behind it
+export const HEAR = 1.6;   // cells: this close it notices the player without seeing them
+export const WARY = 1.4;   // times its aggro: it turns towards a player it can see this far
 const REACT = 0.3;         // s (and up to as much again) from noticing to giving chase
 const CALL = 5;            // cells: how far a call to arms carries
 const MEMORY = 3;          // s it hunts on out of sight
@@ -83,10 +84,10 @@ function sees(e, range, rise = 1.6) {
 // does an unaware enemy notice the player? Ahead of it within aggro, behind it at half that,
 // or right next to it
 // learn: enemies.html#decide-code (see learn/README.md)
-function notices(e) {
+export function notices(e) {
   const p = player, d = Math.hypot(p.x - e.x, p.z - e.z);
   if (d < HEAR && Math.abs(p.y - e.y) < 1) return true;
-  const ahead = Math.cos(toPlayer(e) - e.yaw) > -0.2;
+  const ahead = Math.cos(toPlayer(e) - e.yaw) > AHEAD;
   return sees(e, e.profile.aggro * (ahead ? 1 : BEHIND));
 }
 // remember where the player is (and the floor they stand on, if this enemy can walk it)

@@ -9,7 +9,7 @@ import { ITEMS, POTIONS } from './items.js';
 
 // the stats a buff adds a share to: movement speed and jump height (physics/move.js), attack
 // speed and damage (core/combat.js)
-export const BUFFS = Object.freeze(['moveSpeed', 'attackSpeed', 'damage', 'jump']);
+export const BUFFS = ['moveSpeed', 'attackSpeed', 'damage', 'jump'];
 // a flask's damage grows with the player's level as fast as enemies' health grows with theirs
 // (core/enemies.js GROWTH), so a flask stays worth throwing
 export const FLASK_GROWTH = 0.17;

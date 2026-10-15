@@ -4,10 +4,10 @@
 import { ITEMS, POTIONS } from './items.js';
 import { addItem, spendCopper, copperTotal } from './inventory.js';
 
-export const SHOPS = Object.freeze({
+export const SHOPS = {
   // the potion seller in the wizard hat: every potion and flask there is
-  alchemist: Object.freeze({ title: 'Alchemist', trade: 'Potions', wares: Object.freeze(POTIONS.map(p => p.id)) }),
-});
+  alchemist: { title: 'Alchemist', trade: 'Potions', wares: POTIONS.map(p => p.id) },
+};
 // how close (cells) the player has to be to a villager to trade
 export const TRADE_REACH = 1.4;
 export const shopOf = villager => SHOPS[villager?.name] ?? null;

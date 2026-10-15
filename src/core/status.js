@@ -6,7 +6,7 @@
 // already affected. While poisoned the player does not regenerate (core/progression.js).
 import { ignite, burnStep, burntOut } from './projectiles.js';
 
-export const STATUSES = Object.freeze(['burning', 'toxic']);
+export const STATUSES = ['burning', 'toxic'];
 // a status of `spec` ({ time, damage, ticks }); reason: what the player is told when it kills
 export const afflict = (spec, reason = '') => ignite(spec, reason);
 // advance status d by dt: the damage due in this step
@@ -24,4 +24,4 @@ export const immuneTo = (e, status) => status === 'burning' && !!e.profile?.fire
 // `share` of the blow's damage on top, over `time` s.
 export const toxinOf = (spec, damage) => spec ? { time: spec.time, ticks: spec.ticks, damage: Math.max(1, Math.round(damage * spec.share)) } : null;
 // acid falls poison too (physics/hazards.js), for a share of the maximum health
-export const ACID_TOXIN = Object.freeze({ time: 4, ticks: 4, share: 0.12 });
+export const ACID_TOXIN = { time: 4, ticks: 4, share: 0.12 };

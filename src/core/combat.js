@@ -15,39 +15,39 @@ import { itemStats } from './gear/stats.js';
 import { effectMod, flaskStats } from './potions.js';
 
 // the clips' own timing (s): character.glb extras (blender/character.py)
-export const SLASH_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 });
+export const SLASH_CLIP = { duration: 32 / 30, activeStart: 15 / 30, activeEnd: 21 / 30 };
 // the bow is drawn and loosed at activeStart; a chained shot starts at `redraw`, the bow still up
-export const SHOOT_CLIP = Object.freeze({ duration: 32 / 30, activeStart: 18 / 30, activeEnd: 20 / 30, redraw: 7 / 30 });
+export const SHOOT_CLIP = { duration: 32 / 30, activeStart: 18 / 30, activeEnd: 20 / 30, redraw: 7 / 30 };
 // the bolt flies at activeStart, the crossbow is drawn and loaded again at `reloaded`
-export const CROSSBOW_CLIP = Object.freeze({ duration: 36 / 30, activeStart: 9 / 30, activeEnd: 11 / 30, reloaded: 26 / 30 });
-export const CAST_CLIP = Object.freeze({ duration: 28 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 });
+export const CROSSBOW_CLIP = { duration: 36 / 30, activeStart: 9 / 30, activeEnd: 11 / 30, reloaded: 26 / 30 };
+export const CAST_CLIP = { duration: 28 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 };
 // the flask leaves the hand at activeStart
-export const THROW_CLIP = Object.freeze({ duration: 26 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 });
+export const THROW_CLIP = { duration: 26 / 30, activeStart: 12 / 30, activeEnd: 14 / 30 };
 // game time (s) for the basic sword (the Old Sword's timing)
 // learn: checks.html#try-test, combat.html#chain #damage (see learn/README.md)
-export const SWORD = Object.freeze({
+export const SWORD = {
   damage: 30, range: 0.85, arc: Math.PI * 0.42,
   activeStart: 0.16, activeEnd: 0.27,   // the blade connects ~0.16 s after the click
   moveCancel: 0.3, chain: 0.42,         // walk out of the recovery / swing again from here
   duration: 0.62,
-});
+};
 // the ranged kinds at the interval of a middling one: activeStart is when the shot leaves
-export const BOW = Object.freeze({ activeStart: 0.36, activeEnd: 0.4, moveCancel: 0.44, chain: 0.62, duration: 0.78 });
-export const CROSSBOW = Object.freeze({ activeStart: 0.2, activeEnd: 0.24, moveCancel: 0.3, chain: 0.84, duration: 0.95 });
-export const STAFF = Object.freeze({ activeStart: 0.28, activeEnd: 0.32, moveCancel: 0.38, chain: 0.62, duration: 0.72 });
-export const THROW = Object.freeze({ activeStart: 0.3, activeEnd: 0.34, moveCancel: 0.38, chain: 0.7, duration: 0.8 });
+export const BOW = { activeStart: 0.36, activeEnd: 0.4, moveCancel: 0.44, chain: 0.62, duration: 0.78 };
+export const CROSSBOW = { activeStart: 0.2, activeEnd: 0.24, moveCancel: 0.3, chain: 0.84, duration: 0.95 };
+export const STAFF = { activeStart: 0.28, activeEnd: 0.32, moveCancel: 0.38, chain: 0.62, duration: 0.72 };
+export const THROW = { activeStart: 0.3, activeEnd: 0.34, moveCancel: 0.38, chain: 0.7, duration: 0.8 };
 // how each kind of weapon attacks: its timing, its clip, and what it shoots (core/shots.js SHOTS)
 // learn: combat.html#shoot (see learn/README.md)
-export const KINDS = Object.freeze({
-  sword: Object.freeze({ timing: SWORD, clip: SLASH_CLIP, shot: null, verb: 'Sword slash' }),
-  bow: Object.freeze({ timing: BOW, clip: SHOOT_CLIP, shot: 'arrow', verb: 'Bow shot' }),
-  crossbow: Object.freeze({ timing: CROSSBOW, clip: CROSSBOW_CLIP, shot: 'bolt', verb: 'Crossbow shot' }),
-  staff: Object.freeze({ timing: STAFF, clip: CAST_CLIP, shot: 'spell', verb: 'Spell cast' }),
-  throw: Object.freeze({ timing: THROW, clip: THROW_CLIP, shot: 'flask', verb: 'Throw' }),
-});
+export const KINDS = {
+  sword: { timing: SWORD, clip: SLASH_CLIP, shot: null, verb: 'Sword slash' },
+  bow: { timing: BOW, clip: SHOOT_CLIP, shot: 'arrow', verb: 'Bow shot' },
+  crossbow: { timing: CROSSBOW, clip: CROSSBOW_CLIP, shot: 'bolt', verb: 'Crossbow shot' },
+  staff: { timing: STAFF, clip: CAST_CLIP, shot: 'spell', verb: 'Spell cast' },
+  throw: { timing: THROW, clip: THROW_CLIP, shot: 'flask', verb: 'Throw' },
+};
 const TIMES = ['activeStart', 'activeEnd', 'moveCancel', 'chain', 'duration'];
 // how far above and below their feet the ranged kinds can aim (a sword sweeps knee to chest)
-export const AIM_BAND = Object.freeze({ below: 2.2, above: 2.6 });
+export const AIM_BAND = { below: 2.2, above: 2.6 };
 // a blow taking at least this share of an enemy's health staggers it even while it is poised
 // learn: combat.html#stagger-code (see learn/README.md)
 export const HEAVY_HIT = 0.25;

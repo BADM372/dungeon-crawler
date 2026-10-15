@@ -25,6 +25,8 @@ docs that explain how the game works, from the big ideas down to the real code:
     a `world/` file (`cascades`, `spouts`, `sites`, `town`) carve that shared decision into the cube.
   - `src/themes/`: per-depth data: palettes, lighting, generator settings, structure materials.
   - `src/physics/`, `src/render/`, `src/game/`: movement, drawing and game state/flow.
+    `src/game/teach.js` (`window.__game.teach`) draws over the world, shows the game's rules
+    (lenses), pauses / steps / slows time and tunes numbers with a way back, for the guide's tutor.
 - `assets/`: exported game data (GLB models, item icons, manifests). The game
   loads assets only from here (and music from `music/`). These files are generated; do not edit them by hand.
 - `music/`: hand-written Scrimshaw scores the game plays (`docs/music.md`). Before writing

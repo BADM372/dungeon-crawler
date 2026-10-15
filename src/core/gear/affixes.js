@@ -8,16 +8,16 @@
 export const MAX_PREFIXES = 3, MAX_SUFFIXES = 3;
 // the item level each tier starts at; tiers 6 and 7 come only from tierBonus
 // learn: loot.html#affixes (see learn/README.md)
-export const TIER_LEVELS = Object.freeze([1, 4, 8, 13, 19]);
+export const TIER_LEVELS = [1, 4, 8, 13, 19];
 export const MAX_TIER = 7;
 export const affixTier = ilvl => TIER_LEVELS.filter(l => ilvl >= l).length;
 
 const ANY = ['melee', 'ranged'];
 const affix = (id, kind, name, stat, op, tiers, text, decimals = 0, tags = ANY) =>
-  Object.freeze({ id, kind, name, stat, op, tiers: Object.freeze(tiers.map(t => Object.freeze(t))), text, decimals, tags: Object.freeze(tags) });
+  ({ id, kind, name, stat, op, tiers, text, decimals, tags });
 
 // learn: loot.html#affixes (see learn/README.md)
-export const AFFIXES = Object.freeze([
+export const AFFIXES = [
   affix('sharp', 'prefix', 'Sharp', 'damage', 'add',
     [[2, 4], [4, 7], [7, 11], [11, 16], [16, 22], [22, 29], [29, 38]], v => `+${v} damage`),
   affix('brutal', 'prefix', 'Brutal', 'damage', 'pct',
@@ -39,8 +39,8 @@ export const AFFIXES = Object.freeze([
     [[15, 30], [30, 45], [45, 60], [60, 80], [80, 100], [100, 125], [125, 150]], v => `+${v}% knockback`),
   affix('precision', 'suffix', 'of Precision', 'critDamage', 'add',
     [[10, 20], [20, 30], [30, 40], [40, 55], [55, 70], [70, 85], [85, 100]], v => `+${v}% critical damage`),
-]);
-export const AFFIX = Object.freeze(Object.fromEntries(AFFIXES.map(a => [a.id, a])));
+];
+export const AFFIX = Object.fromEntries(AFFIXES.map(a => [a.id, a]));
 
 export function rollAffixValue(a, tier, rng) {
   const [lo, hi] = a.tiers[tier - 1], k = 10 ** a.decimals;

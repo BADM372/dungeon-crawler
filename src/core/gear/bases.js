@@ -12,10 +12,10 @@ import { ITEMS } from '../items.js';
 
 const base = (itemId, minLevel, weight = 1, extra = []) => {
   const kind = ITEMS[itemId].weapon.kind;
-  return Object.freeze({ itemId, minLevel, weight, tags: Object.freeze([kind, kind === 'sword' ? 'melee' : 'ranged', ...extra]) });
+  return { itemId, minLevel, weight, tags: [kind, kind === 'sword' ? 'melee' : 'ranged', ...extra] };
 };
 
-export const BASES = Object.freeze([
+export const BASES = [
   base('weapon_sword_short', 1),
   base('weapon_sword_medium', 1),
   base('weapon_sword_long', 2),
@@ -36,8 +36,8 @@ export const BASES = Object.freeze([
   base('weapon_staff_ember', 4),
   base('weapon_staff_crystal', 6),
   base('weapon_staff_arcane', 8),
-]);
-export const BASE = Object.freeze(Object.fromEntries(BASES.map(b => [b.itemId, b])));
+];
+export const BASE = Object.fromEntries(BASES.map(b => [b.itemId, b]));
 // tags for any weapon, including those that never drop
 export function baseTags(itemId) {
   if (BASE[itemId]) return BASE[itemId].tags;

@@ -15,18 +15,18 @@ import { KINDS } from './combat.js';
 
 // speed (cells/s), radius (cells, for hitting), and how long the drawn shot takes to catch up
 // from the weapon to its true line
-export const SHOTS = Object.freeze({
-  arrow: Object.freeze({ speed: 16, radius: 0.08, catchUp: 0.1 }),
-  bolt: Object.freeze({ speed: 20, radius: 0.08, catchUp: 0.08 }),
-  spell: Object.freeze({ speed: 9, radius: 0.15, catchUp: 0.16 }),
-});
+export const SHOTS = {
+  arrow: { speed: 16, radius: 0.08, catchUp: 0.1 },
+  bolt: { speed: 20, radius: 0.08, catchUp: 0.08 },
+  spell: { speed: 9, radius: 0.15, catchUp: 0.16 },
+};
 // where each kind lets go of its shot (model space: x, up, forward; the clips' extras.muzzle)
-export const MUZZLES = Object.freeze({
-  bow: Object.freeze([0.015, 0.744, 0.523]),
-  crossbow: Object.freeze([-0.216, 0.753, 0.519]),
-  staff: Object.freeze([-0.171, 1.14, 0.821]),
-  throw: Object.freeze([-0.14, 0.938, 0.233]),   // the fist letting go of a flask (core/throws.js)
-});
+export const MUZZLES = {
+  bow: [0.015, 0.744, 0.523],
+  crossbow: [-0.216, 0.753, 0.519],
+  staff: [-0.171, 1.14, 0.821],
+  throw: [-0.14, 0.938, 0.233],   // the fist letting go of a flask (core/throws.js)
+};
 // the share of a spell's damage its burst deals to the others around where it hit
 export const BURST_SHARE = 0.5;
 const MAX_SLOPE = 1.6;   // shots may aim up or down this steeply (rise per cell)
