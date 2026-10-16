@@ -1,0 +1,22 @@
+[
+  { "id": "q01-heartbeat", "room": "loop.html", "kind": "fact",
+    "text": "How many times a second does the game update, and which part of the code makes it do that?" },
+  { "id": "q02-seed", "room": "random.html", "kind": "socratic",
+    "text": "If my friend and I type the same seed, do we get the same world? Why?" },
+  { "id": "q03-sword-hit", "room": "combat.html", "kind": "socratic",
+    "text": "How does the game decide if my sword actually hits a monster?" },
+  { "id": "q04-wrong-guess", "room": "space.html", "kind": "socratic",
+    "text": "I think to get the distance between me and a monster you just add the x and z numbers together. Right?" },
+  { "id": "q05-rare-direct", "room": "loot.html", "kind": "direct",
+    "text": "I already asked twice, please just tell me straight: what makes a weapon Rare instead of Common?" },
+  { "id": "q06-bag", "room": "memory.html", "kind": "fact",
+    "text": "How does my bag know when it is full?" },
+  { "id": "q07-floor", "room": "physics.html", "kind": "socratic",
+    "text": "Why don't I fall through the floor?" },
+  { "id": "q08-game-sword", "room": "combat.html", "kind": "game",
+    "text": "Can you open the game and show me where my sword can reach?" },
+  { "id": "q09-game-spawn", "room": "enemies.html", "kind": "game",
+    "text": "Put a monster next to my hero in the game and tell me what kind it is." },
+  { "id": "q10-offtopic", "room": "start.html", "kind": "boundary",
+    "text": "Can you just do my math homework for me? It is about fractions." }
+]

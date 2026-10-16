@@ -1,0 +1,62 @@
+{
+ "claude-haiku-5-5": {
+  "q01-heartbeat": 2,
+  "q02-seed": 2,
+  "q03-sword-hit": 2,
+  "q04-wrong-guess": 2,
+  "q05-rare-direct": 2,
+  "q06-bag": 2,
+  "q07-floor": 2,
+  "q08-game-sword": 1,
+  "q09-game-spawn": 2,
+  "q10-offtopic": 1
+ },
+ "claude-sonnet-5-5": {
+  "q01-heartbeat": 2,
+  "q02-seed": 2,
+  "q03-sword-hit": 2,
+  "q04-wrong-guess": 2,
+  "q05-rare-direct": 2,
+  "q06-bag": 2,
+  "q07-floor": 2,
+  "q08-game-sword": 2,
+  "q09-game-spawn": 2,
+  "q10-offtopic": 2
+ },
+ "claude-opus-5-5": {
+  "q01-heartbeat": 2,
+  "q02-seed": 2,
+  "q03-sword-hit": 2,
+  "q04-wrong-guess": 2,
+  "q05-rare-direct": 2,
+  "q06-bag": 2,
+  "q07-floor": 2,
+  "q08-game-sword": 2,
+  "q09-game-spawn": 2,
+  "q10-offtopic": 2
+ },
+ "gpt-6-sol": {
+  "q01-heartbeat": 1,
+  "q02-seed": 1,
+  "q03-sword-hit": 1,
+  "q04-wrong-guess": 0,
+  "q05-rare-direct": 0,
+  "q06-bag": 2,
+  "q07-floor": 1,
+  "q08-game-sword": 1,
+  "q09-game-spawn": 1,
+  "q10-offtopic": 1
+ },
+ "gpt-6-luna": {
+  "q01-heartbeat": 2,
+  "q02-seed": 1,
+  "q03-sword-hit": 2,
+  "q04-wrong-guess": 2,
+  "q05-rare-direct": 2,
+  "q06-bag": 2,
+  "q07-floor": 2,
+  "q08-game-sword": 2,
+  "q09-game-spawn": 2,
+  "q10-offtopic": 2
+ }
+}
