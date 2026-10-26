@@ -21,7 +21,7 @@ The tutor needs vision: its `look_at_game` tool sends screenshots.
 
    ```sh
    LITELLM_MASTER_KEY=$(cat ~/.litellm-local-key) LUMEN_KEY=$(cat ~/.lumen-api-key) \
-     uvx --from 'litellm[proxy]' litellm --config lumen/litellm.yaml --host 127.0.0.1 --port 4011
+     uvx --from 'litellm[proxy]==1.106.2' litellm --config lumen/litellm.yaml --host 127.0.0.1 --port 4011
    ```
 
 4. Start the game server in a second terminal:
